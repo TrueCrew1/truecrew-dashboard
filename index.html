@@ -200,6 +200,7 @@ canvas.sparkline { width:100%; height:60px; }
     <div class="nav-section">
       <div class="nav-label">Command</div>
       <div class="nav-item active" onclick="showPage('home')"><span class="nav-icon">⚡</span><span class="nav-text">Dashboard</span></div>
+      <div class="nav-item" onclick="showPage('links')"><span class="nav-icon">🔗</span><span class="nav-text">Quick Links</span></div>
       <div class="nav-item" onclick="showPage('calendar')"><span class="nav-icon">📅</span><span class="nav-text">Calendar</span></div>
       <div class="nav-item" onclick="showPage('tasks')"><span class="nav-icon">✅</span><span class="nav-text">Tasks & Sprints</span></div>
     </div>
@@ -229,7 +230,6 @@ canvas.sparkline { width:100%; height:60px; }
     <div class="nav-section">
       <div class="nav-label">Growth</div>
       <div class="nav-item" onclick="showPage('leads')"><span class="nav-icon">🎯</span><span class="nav-text">Lead Magnets &amp; CRM</span></div>
-      <div class="nav-item" onclick="showPage('links')"><span class="nav-icon">🔗</span><span class="nav-text">Quick Links</span></div>
     </div>
   </div>
   <div class="sidebar-footer">
@@ -252,6 +252,7 @@ canvas.sparkline { width:100%; height:60px; }
       <div class="widget-chip"><span class="dot"></span><span id="clockDisplay">--:--</span></div>
       <div class="widget-chip" id="weatherChip">🌡️ Loading...</div>
       <div class="widget-chip" style="cursor:pointer;" onclick="exportData()">📤 Export</div>
+      <div class="widget-chip" style="cursor:pointer;" onclick="importData()">📥 Import</div>
       <a class="widget-chip" style="cursor:pointer;text-decoration:none;color:var(--steel);" href="mailto:contact@truecrewllc.com?subject=TrueCrew%20Inquiry&body=%0A%0A---%0ATrueCrew%20LLC%0Acontact%40truecrewllc.com">✉️ New Email</a>
       <div class="widget-chip" style="cursor:pointer;" onclick="lockDashboard()">🔒 Lock</div>
     </div>
@@ -288,12 +289,18 @@ canvas.sparkline { width:100%; height:60px; }
   <div class="grid-2">
     <!-- Revenue Sparkline -->
     <div class="card">
-      <div class="card-title">7-Day Revenue Trend</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div class="card-title" style="margin-bottom:0;">7-Day Revenue Trend</div>
+        <button class="btn btn-ghost btn-sm" onclick="openModal('sparklineModal')">✏️ Edit Data</button>
+      </div>
       <canvas id="sparklineCanvas" class="sparkline" height="70"></canvas>
     </div>
     <!-- Goal Tracker -->
     <div class="card">
-      <div class="card-title">Goal Tracker</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div class="card-title" style="margin-bottom:0;">Goal Tracker</div>
+        <button class="btn btn-primary btn-sm" onclick="openModal('goalModal')">+ Add Goal</button>
+      </div>
       <div id="goalsList"></div>
     </div>
   </div>
@@ -301,9 +308,12 @@ canvas.sparkline { width:100%; height:60px; }
   <div class="grid-2-1">
     <!-- Pain Point Radar -->
     <div class="card">
-      <div class="card-title">Pain Point Radar — Urgency</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div class="card-title" style="margin-bottom:0;">Pain Point Radar — Urgency</div>
+        <button class="btn btn-primary btn-sm" onclick="openModal('painModal')">+ Add</button>
+      </div>
       <table class="data-table">
-        <thead><tr><th>Pain Point</th><th>Segment</th><th>Urgency</th><th>Status</th></tr></thead>
+        <thead><tr><th>Pain Point</th><th>Segment</th><th>Urgency</th><th>Status</th><th></th></tr></thead>
         <tbody id="painTable"></tbody>
       </table>
     </div>
@@ -324,9 +334,12 @@ canvas.sparkline { width:100%; height:60px; }
 
   <!-- Product Pipeline -->
   <div class="card" style="margin-bottom:20px;">
-    <div class="card-title">Product Pipeline</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div class="card-title" style="margin-bottom:0;">Product Pipeline</div>
+      <button class="btn btn-primary btn-sm" onclick="openModal('productModal')">+ Add Product</button>
+    </div>
     <table class="data-table">
-      <thead><tr><th>Product</th><th>Type</th><th>Platform</th><th>Price</th><th>Units</th><th>Revenue</th><th>Status</th></tr></thead>
+      <thead><tr><th>Product</th><th>Type</th><th>Platform</th><th>Price</th><th>Units</th><th>Revenue</th><th>Status</th><th></th></tr></thead>
       <tbody id="productTable"></tbody>
     </table>
   </div>
@@ -701,6 +714,7 @@ canvas.sparkline { width:100%; height:60px; }
       <div id="firstTimeHint" style="color:var(--steel-dim);font-size:11px;margin-top:12px;line-height:1.6;"></div>
     </div>
     <div style="margin-top:20px;font-size:11px;color:var(--steel-dim);">TrueCrew LLC · contact@truecrewllc.com</div>
+    <div style="margin-top:8px;"><button onclick="resetPassword()" style="background:none;border:none;color:var(--steel-dim);font-size:11px;cursor:pointer;text-decoration:underline;">Forgot access code? Reset it</button></div>
   </div>
 </div>
 
@@ -1033,6 +1047,91 @@ canvas.sparkline { width:100%; height:60px; }
   </div>
 </div>
 
+<!-- Goal Modal -->
+<div id="goalModal" class="modal-overlay">
+  <div class="modal">
+    <h3>🎯 Add / Edit Goal</h3>
+    <div class="form-group"><label>Goal Name</label><input type="text" id="gm-name" placeholder="Monthly Revenue $1,000"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Target</label><input type="number" id="gm-target" placeholder="1000"></div>
+      <div class="form-group"><label>Current</label><input type="number" id="gm-current" placeholder="86.5"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Unit prefix ($ or leave blank)</label><input type="text" id="gm-unit" placeholder="$" maxlength="3"></div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+      <button class="btn btn-ghost" onclick="closeModal('goalModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveGoal()">Save Goal</button>
+    </div>
+  </div>
+</div>
+
+<!-- Pain Point Modal -->
+<div id="painModal" class="modal-overlay">
+  <div class="modal">
+    <h3>⚡ Add Pain Point</h3>
+    <div class="form-group"><label>Pain Point Description</label><input type="text" id="pm2-name" placeholder="No standardized PM schedule..."></div>
+    <div class="form-row">
+      <div class="form-group"><label>Segment</label>
+        <select id="pm2-seg"><option>Mining</option><option>Fleet</option><option>Plant</option><option>Facilities</option><option>General</option></select>
+      </div>
+      <div class="form-group"><label>Urgency</label>
+        <select id="pm2-urgency"><option>Critical</option><option>High</option><option>Medium</option><option>Low</option></select>
+      </div>
+    </div>
+    <div class="form-group"><label>Status</label>
+      <select id="pm2-status"><option>Raw</option><option>In Progress</option><option>Content Made</option><option>Product Made</option></select>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+      <button class="btn btn-ghost" onclick="closeModal('painModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="savePainPoint()">Save Pain Point</button>
+    </div>
+  </div>
+</div>
+
+<!-- Product Modal -->
+<div id="productModal" class="modal-overlay">
+  <div class="modal">
+    <h3>📦 Add Product</h3>
+    <div class="form-group"><label>Product Name</label><input type="text" id="prod-name" placeholder="Weekly PM Planner"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Type</label>
+        <select id="prod-type"><option>Planner</option><option>Checklist</option><option>Tracker</option><option>Template</option><option>Guide</option></select>
+      </div>
+      <div class="form-group"><label>Platform</label>
+        <select id="prod-platform"><option>Gumroad</option><option>Etsy</option><option>Own Site</option><option>Other</option></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Price</label><input type="text" id="prod-price" placeholder="$17"></div>
+      <div class="form-group"><label>Status</label>
+        <select id="prod-status"><option>Idea</option><option>In Progress</option><option>Live</option><option>Archived</option></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Units Sold</label><input type="number" id="prod-units" placeholder="0"></div>
+      <div class="form-group"><label>Revenue ($)</label><input type="number" id="prod-rev" placeholder="0"></div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+      <button class="btn btn-ghost" onclick="closeModal('productModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveProduct()">Save Product</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sparkline Modal -->
+<div id="sparklineModal" class="modal-overlay">
+  <div class="modal">
+    <h3>📈 Edit 7-Day Revenue</h3>
+    <div style="font-size:12px;color:var(--steel-dim);margin-bottom:16px;">Enter revenue for each of the last 7 days (oldest → newest)</div>
+    <div id="sparklineInputs"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+      <button class="btn btn-ghost" onclick="closeModal('sparklineModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSparkline()">Update Chart</button>
+    </div>
+  </div>
+</div>
+
 <!-- Affiliate Modal -->
 <div id="affiliateModal" class="modal-overlay">
   <div class="modal">
@@ -1109,7 +1208,7 @@ function showPage(id) {
   if(id==='sops') renderSOPs();
   if(id==='wiki') renderWiki();
   if(id==='feedback') renderFeedback();
-  if(id==='subscriptions') renderPlans();
+  if(id==='subscriptions') { renderPlans(); syncMRRToFinance(); }
   if(id==='releases') renderReleases();
   if(id==='affiliate') renderAffiliate();
   if(id==='leads') renderLeads();
@@ -1125,7 +1224,7 @@ function toggleSidebar() {
 // ═══════════════════════ CLOCK & DATE ═══════════════════════
 function updateClock() {
   const now = new Date();
-  document.getElementById('clockDisplay').textContent = now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('clockDisplay').textContent = now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
   document.getElementById('dateDisplay').textContent = now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 }
 setInterval(updateClock, 1000); updateClock();
@@ -1172,38 +1271,56 @@ function drawSparkline() {
 setTimeout(drawSparkline, 300);
 
 // ═══════════════════════ GOALS ═══════════════════════
+const defaultGoals = [
+  {id:1,name:'Monthly Revenue $1,000',target:1000,current:86.5,unit:'$'},
+  {id:2,name:'Newsletter Subscribers 500',target:500,current:287,unit:''},
+  {id:3,name:'Sell 50 PM Planners',target:50,current:34,unit:''},
+  {id:4,name:'Affiliate Earnings $200/mo',target:200,current:43.5,unit:'$'}
+];
 function renderGoals() {
-  const goals = DB.load('goals',[
-    {name:'Monthly Revenue $1,000',target:1000,current:86.5,unit:'$'},
-    {name:'Newsletter Subscribers 500',target:500,current:287,unit:''},
-    {name:'Sell 50 PM Planners',target:50,current:34,unit:''},
-    {name:'Affiliate Earnings $200/mo',target:200,current:43.5,unit:'$'}
-  ]);
+  const goals = DB.load('goals', defaultGoals);
   const el = document.getElementById('goalsList');
   if(!el) return;
   el.innerHTML = goals.map(g => {
     const pct = Math.min(100, Math.round((g.current/g.target)*100));
     const color = pct>=80?'green':pct>=50?'':'red';
     return `<div style="margin-bottom:12px;">
-      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
         <span style="font-size:12px;">${g.name}</span>
-        <span style="font-size:12px;color:var(--steel-dim);">${g.unit}${g.current} / ${g.unit}${g.target}</span>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:11px;color:var(--steel-dim);">${g.unit}${g.current}/${g.unit}${g.target}</span>
+          <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:10px;" onclick="editGoalCurrent(${g.id})">✏️</button>
+          <button class="btn btn-danger btn-sm" style="padding:2px 6px;font-size:10px;" onclick="deleteGoal(${g.id})">✕</button>
+        </div>
       </div>
       <div class="progress-wrap"><div class="progress-bar ${color}" style="width:${pct}%"></div></div>
     </div>`;
-  }).join('');
+  }).join('') || '<div style="color:var(--steel-dim);font-size:12px;">No goals yet. Add your first goal!</div>';
+}
+function saveGoal() {
+  const goals = DB.load('goals', defaultGoals);
+  goals.push({id:Date.now(),name:document.getElementById('gm-name').value,target:parseFloat(document.getElementById('gm-target').value)||0,current:parseFloat(document.getElementById('gm-current').value)||0,unit:document.getElementById('gm-unit').value});
+  DB.save('goals',goals); closeModal('goalModal'); renderGoals();
+  document.getElementById('gm-name').value=''; document.getElementById('gm-target').value=''; document.getElementById('gm-current').value=''; document.getElementById('gm-unit').value='';
+}
+function deleteGoal(id) { DB.save('goals',DB.load('goals',defaultGoals).filter(g=>g.id!==id)); renderGoals(); }
+function editGoalCurrent(id) {
+  const goals=DB.load('goals',defaultGoals); const g=goals.find(g=>g.id===id); if(!g) return;
+  const val=prompt(`Update current value for "${g.name}":`, g.current);
+  if(val===null) return; g.current=parseFloat(val)||0; DB.save('goals',goals); renderGoals();
 }
 renderGoals();
 
 // ═══════════════════════ PAIN POINTS TABLE ═══════════════════════
+const defaultPains = [
+  {id:1,name:'No standardized PM schedule',seg:'Plant',urgency:'Critical',status:'In Progress'},
+  {id:2,name:"Can't find the right checklist in field",seg:'Fleet',urgency:'High',status:'Content Made'},
+  {id:3,name:'No way to track repeat failures',seg:'Mining',urgency:'Critical',status:'Raw'},
+  {id:4,name:'Manual work order reports — 3hr/wk',seg:'General',urgency:'High',status:'Product Made'},
+  {id:5,name:'No inspection log for compliance',seg:'Facilities',urgency:'Medium',status:'Raw'}
+];
 function renderPainTable() {
-  const pains = [
-    {name:'No standardized PM schedule',seg:'Plant',urgency:'Critical',status:'In Progress'},
-    {name:"Can't find the right checklist in field",seg:'Fleet',urgency:'High',status:'Content Made'},
-    {name:'No way to track repeat failures',seg:'Mining',urgency:'Critical',status:'Raw'},
-    {name:'Manual work order reports — 3hr/wk',seg:'General',urgency:'High',status:'Product Made'},
-    {name:'No inspection log for compliance',seg:'Facilities',urgency:'Medium',status:'Raw'}
-  ];
+  const pains = DB.load('pains', defaultPains);
   const ub = {'Critical':'badge-red','High':'badge-orange','Medium':'badge-yellow','Low':'badge-green'};
   const sb = {'Raw':'badge-gray','In Progress':'badge-yellow','Content Made':'badge-blue','Product Made':'badge-green'};
   document.getElementById('painTable').innerHTML = pains.map(p=>`<tr>
@@ -1211,30 +1328,59 @@ function renderPainTable() {
     <td><span class="badge badge-gray">${p.seg}</span></td>
     <td><span class="badge ${ub[p.urgency]||'badge-gray'}">${p.urgency}</span></td>
     <td><span class="badge ${sb[p.status]||'badge-gray'}">${p.status}</span></td>
-  </tr>`).join('');
+    <td><button class="btn btn-danger btn-sm" onclick="deletePain(${p.id})">✕</button></td>
+  </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--steel-dim);padding:12px;">No pain points yet.</td></tr>';
 }
+function savePainPoint() {
+  const pains=DB.load('pains',defaultPains);
+  pains.push({id:Date.now(),name:document.getElementById('pm2-name').value,seg:document.getElementById('pm2-seg').value,urgency:document.getElementById('pm2-urgency').value,status:document.getElementById('pm2-status').value});
+  DB.save('pains',pains); closeModal('painModal'); renderPainTable();
+  document.getElementById('pm2-name').value='';
+}
+function deletePain(id) { DB.save('pains',DB.load('pains',defaultPains).filter(p=>p.id!==id)); renderPainTable(); }
 renderPainTable();
 
 // ═══════════════════════ PRODUCT TABLE ═══════════════════════
+const defaultProds = [
+  {id:1,name:'Weekly PM Planner — Rotating Equipment',type:'Planner',platform:'Gumroad',price:'$17',units:34,rev:578,status:'Live'},
+  {id:2,name:'Field Inspection Checklist Pack',type:'Checklist',platform:'Etsy',price:'$9',units:61,rev:549,status:'Live'},
+  {id:3,name:'Work Order Report Builder',type:'Tracker',platform:'Gumroad',price:'$27',units:0,rev:0,status:'In Progress'},
+  {id:4,name:'Failure Mode Tracker',type:'Tracker',platform:'Gumroad',price:'$19',units:0,rev:0,status:'Idea'}
+];
 function renderProductTable() {
-  const prods = [
-    {name:'Weekly PM Planner — Rotating Equipment',type:'Planner',platform:'Gumroad',price:'$17',units:34,rev:'$578',status:'Live'},
-    {name:'Field Inspection Checklist Pack',type:'Checklist',platform:'Etsy',price:'$9',units:61,rev:'$549',status:'Live'},
-    {name:'Work Order Report Builder',type:'Tracker',platform:'Gumroad',price:'$27',units:0,rev:'$0',status:'In Progress'},
-    {name:'Failure Mode Tracker',type:'Tracker',platform:'Gumroad',price:'$19',units:0,rev:'$0',status:'Idea'}
-  ];
-  const sb={'Live':'badge-green','In Progress':'badge-yellow','Idea':'badge-gray'};
+  const prods = DB.load('products', defaultProds);
+  const sb={'Live':'badge-green','In Progress':'badge-yellow','Idea':'badge-gray','Archived':'badge-red'};
   document.getElementById('productTable').innerHTML = prods.map(p=>`<tr>
     <td style="font-size:12px;font-weight:500;">${p.name}</td>
     <td><span class="badge badge-blue">${p.type}</span></td>
     <td style="font-size:12px;color:var(--steel-dim);">${p.platform}</td>
     <td style="font-family:'Chakra Petch',sans-serif;color:var(--orange);">${p.price}</td>
     <td style="font-family:'Chakra Petch',sans-serif;">${p.units}</td>
-    <td style="font-family:'Chakra Petch',sans-serif;color:var(--green);">${p.rev}</td>
+    <td style="font-family:'Chakra Petch',sans-serif;color:var(--green);">$${p.rev}</td>
     <td><span class="badge ${sb[p.status]||'badge-gray'}">${p.status}</span></td>
-  </tr>`).join('');
+    <td><button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})">✕</button></td>
+  </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--steel-dim);padding:12px;">No products yet.</td></tr>';
 }
+function saveProduct() {
+  const prods=DB.load('products',defaultProds);
+  prods.push({id:Date.now(),name:document.getElementById('prod-name').value,type:document.getElementById('prod-type').value,platform:document.getElementById('prod-platform').value,price:document.getElementById('prod-price').value||'$0',units:parseInt(document.getElementById('prod-units').value)||0,rev:parseFloat(document.getElementById('prod-rev').value)||0,status:document.getElementById('prod-status').value});
+  DB.save('products',prods); closeModal('productModal'); renderProductTable();
+}
+function deleteProduct(id) { DB.save('products',DB.load('products',defaultProds).filter(p=>p.id!==id)); renderProductTable(); }
 renderProductTable();
+
+// ═══════════════════════ SPARKLINE EDITOR ═══════════════════════
+function openSparklineModal() {
+  const data = DB.load('sparkline',[12,17,9,26,17,43.5,86.5]);
+  const days = ['6 days ago','5 days ago','4 days ago','3 days ago','2 days ago','Yesterday','Today'];
+  document.getElementById('sparklineInputs').innerHTML = days.map((d,i)=>`
+    <div class="form-group"><label>${d}</label><input type="number" id="sp-${i}" placeholder="0" value="${data[i]||0}"></div>`).join('');
+}
+function saveSparkline() {
+  const data = Array.from({length:7},(_,i)=>parseFloat(document.getElementById('sp-'+i)?.value)||0);
+  DB.save('sparkline',data); closeModal('sparklineModal'); drawSparkline();
+}
+// openModal defined below — sparkline special case handled there
 
 // ═══════════════════════ QUICK NOTES ═══════════════════════
 function saveNotes() { DB.save('notes', document.getElementById('quickNotes').value); }
@@ -1378,6 +1524,7 @@ function saveRoadmap() {
   const rice=Math.round((impact*10*0.8)/effort);
   items.push({id:Date.now(),title:document.getElementById('rm-title').value,pillar:document.getElementById('rm-pillar').value,priority:document.getElementById('rm-priority').value,effort,impact,rice,status:document.getElementById('rm-status').value,release:document.getElementById('rm-release').value});
   DB.save('roadmap',items); closeModal('roadmapModal'); renderRoadmap();
+  ['rm-title','rm-effort','rm-impact','rm-release'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
 }
 function deleteRoadmap(id) { DB.save('roadmap',DB.load('roadmap',[]).filter(i=>i.id!==id)); renderRoadmap(); }
 
@@ -1407,6 +1554,7 @@ function saveBug() {
   const bugs = DB.load('bugs',[]);
   bugs.unshift({id:Date.now(),title:document.getElementById('bug-title').value,reporter:document.getElementById('bug-reporter').value,severity:document.getElementById('bug-severity').value,category:document.getElementById('bug-category').value,status:document.getElementById('bug-status').value,steps:document.getElementById('bug-steps').value,date:new Date().toLocaleDateString()});
   DB.save('bugs',bugs); closeModal('bugModal'); renderBugs();
+  ['bug-title','bug-reporter','bug-steps'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
 }
 function deleteBug(id) { DB.save('bugs',DB.load('bugs',[]).filter(b=>b.id!==id)); renderBugs(); }
 
@@ -1429,6 +1577,7 @@ function saveRelease() {
   const rels = DB.load('releases',[]);
   rels.unshift({id:Date.now(),version:document.getElementById('rel-version').value,title:document.getElementById('rel-title').value,type:document.getElementById('rel-type').value,status:document.getElementById('rel-status').value,date:document.getElementById('rel-date').value,features:document.getElementById('rel-features').value});
   DB.save('releases',rels); closeModal('releaseModal'); renderReleases();
+  ['rel-version','rel-title','rel-date','rel-features'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
 }
 function deleteRelease(id) { DB.save('releases',DB.load('releases',[]).filter(r=>r.id!==id)); renderReleases(); }
 renderReleases();
@@ -1457,7 +1606,7 @@ function renderNewsletter() {
     <td style="font-size:12px;color:var(--steel-dim);">${i.date||'—'}</td>
     <td style="font-family:'Chakra Petch',sans-serif;color:${i.openRate>35?'var(--green)':'var(--steel-dim)'};">${i.openRate||'—'}${i.openRate?'%':''}</td>
     <td style="font-family:'Chakra Petch',sans-serif;color:${i.ctr>5?'var(--green)':'var(--steel-dim)'};">${i.ctr||'—'}${i.ctr?'%':''}</td>
-    <td><button class="btn btn-danger btn-sm" onclick="deleteNewsletter(${i.id})">✕</button></td>
+    <td style="display:flex;gap:4px;"><button class="btn btn-ghost btn-sm" onclick="editNewsletterMetrics(${i.id})" title="Edit metrics">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteNewsletter(${i.id})">✕</button></td>
   </tr>`).join('');
 }
 function saveNewsletter() {
@@ -1491,8 +1640,16 @@ function renderPrompts() {
       </div>
       <div style="font-size:12px;color:var(--steel-dim);font-style:italic;">${p.useCase}</div>
       <div style="font-size:12px;color:var(--steel);background:rgba(0,0,0,0.2);border-radius:8px;padding:10px;line-height:1.6;flex:1;">${p.text}</div>
-      <button class="btn btn-ghost btn-sm" onclick="copyPrompt(${p.id})">📋 Copy Prompt</button>
-    </div>`).join('');
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-ghost btn-sm" style="flex:1;justify-content:center;" onclick="copyPrompt(${p.id})">📋 Copy Prompt</button>
+        <button class="btn btn-danger btn-sm" onclick="deletePrompt(${p.id})">✕</button>
+      </div>
+    </div>`).join('') || '<div style="color:var(--steel-dim);font-size:13px;padding:20px;text-align:center;">No prompts match your search.</div>';
+}
+function deletePrompt(id) {
+  if(!confirm('Delete this prompt?')) return;
+  DB.save('prompts', DB.load('prompts', defaultPrompts).filter(p=>p.id!==id));
+  renderPrompts();
 }
 function copyPrompt(id) {
   const p=DB.load('prompts',defaultPrompts).find(p=>p.id===id);
@@ -1553,8 +1710,8 @@ function calcBurn() {
   nb.textContent=netBurn>=0?'+$'+netBurn.toFixed(0):'-$'+Math.abs(netBurn).toFixed(0);
   nb.style.color=netBurn<=0?'var(--green)':netBurn>1000?'var(--red)':'var(--yellow)';
   const bmel=document.getElementById('brd-multiple');
-  bmel.textContent=typeof bm==='number'?bm:bm;
-  if(typeof bm==='string'&&bm!=='—') { const bv=parseFloat(bm); bmel.style.color=bv<1?'var(--green)':bv<2?'var(--yellow)':'var(--red)'; }
+  bmel.textContent=bm;
+  if(bm!=='—') { const bv=parseFloat(bm); bmel.style.color=bv<1?'var(--green)':bv<2?'var(--yellow)':'var(--red)'; }
 }
 
 // ═══════════════════════ SUBSCRIPTIONS ═══════════════════════
@@ -1683,8 +1840,11 @@ function saveFeedback() {
 function deleteFeedback(id) { DB.save('feedback',DB.load('feedback',[]).filter(i=>i.id!==id)); renderFeedback(); }
 
 // ═══════════════════════ MODALS ═══════════════════════
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openModal(id) {
+  document.getElementById(id)?.classList.add('open');
+  if(id==='sparklineModal') openSparklineModal();
+}
+function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
 document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('open'); }));
 
 // ═══════════════════════ EXPORT ═══════════════════════
@@ -1770,7 +1930,7 @@ function renderContacts() {
   document.getElementById('contactTable').innerHTML = filtered.map(c=>`<tr>
     <td style="font-size:13px;font-weight:500;">${c.name||'—'}</td>
     <td style="font-size:12px;"><a href="mailto:${c.email}" style="color:var(--orange);text-decoration:none;">${c.email||'—'}</a></td>
-    <td><span class="badge ${typeBadge[c.type]||'badge-gray'}">${c.type}</span></td>
+    <td><span class="badge ${typeBadge[c.type]||'badge-gray'}" style="cursor:pointer;" title="Click to cycle type" onclick="editContactType(${c.id})">${c.type} ✏️</span></td>
     <td style="font-size:12px;">${c.seg||'—'}</td>
     <td style="font-size:12px;color:var(--steel-dim);">${c.source||'—'}</td>
     <td style="font-size:11px;color:var(--steel-dim);">${c.date||'—'}</td>
@@ -1891,9 +2051,79 @@ function checkAccess() {
 }
 function lockDashboard() { sessionStorage.removeItem('tc_session'); location.reload(); }
 
+// ═══════════════════════ IMPORT DATA ═══════════════════════
+function importData() {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.json';
+  input.onchange = e => {
+    const file = e.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        let count = 0;
+        const keys = ['tasks','events','bugs','roadmap','newsletter','kpis','notes','goals','pains','products','affiliates','plans','releases','feedback','contacts','leadmagnets','links','prompts','wiki','sops','finkpis','sparkline'];
+        keys.forEach(k => { if(data[k] !== undefined) { localStorage.setItem('tc_'+k, JSON.stringify(data[k])); count++; } });
+        alert(`✅ Restored ${count} data sections. Reloading...`);
+        location.reload();
+      } catch { alert('❌ Invalid backup file. Please use a TrueCrew JSON export.'); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+// ═══════════════════════ MRR SYNC: Subscriptions → Finance ═══════════════════════
+function syncMRRToFinance() {
+  const plans = DB.load('plans', []);
+  const totalMRR = plans.reduce((s,p) => s + p.price * p.subs, 0);
+  if(totalMRR > 0) {
+    const finMRR = document.getElementById('fin-mrr');
+    if(finMRR && finMRR.textContent === '$0') {
+      finMRR.textContent = '$' + totalMRR.toFixed(0);
+    }
+    const arrEl = document.getElementById('fin-arr');
+    if(arrEl) arrEl.textContent = '$' + (totalMRR * 12).toFixed(0);
+  }
+}
+
+// ═══════════════════════ CONTACT TYPE EDIT ═══════════════════════
+function editContactType(id) {
+  const contacts = DB.load('contacts', []);
+  const c = contacts.find(c => c.id === id); if(!c) return;
+  const types = ['Lead','Subscriber','Customer','Partner'];
+  const current = types.indexOf(c.type);
+  const next = types[(current + 1) % types.length];
+  if(!confirm(`Change "${c.name}" from ${c.type} → ${next}?`)) return;
+  c.type = next; DB.save('contacts', contacts); renderLeads();
+}
+
+// ═══════════════════════ NEWSLETTER METRIC EDIT ═══════════════════════
+function editNewsletterMetrics(id) {
+  const items = DB.load('newsletter', []);
+  const item = items.find(i => i.id === id); if(!item) return;
+  const open = prompt(`Open Rate % for "${item.title}":`, item.openRate || '');
+  if(open === null) return;
+  const ctr = prompt('CTR %:', item.ctr || '');
+  if(ctr === null) return;
+  item.openRate = parseFloat(open) || 0;
+  item.ctr = parseFloat(ctr) || 0;
+  DB.save('newsletter', items); renderNewsletter();
+}
+
+// ═══════════════════════ PASSWORD RESET ═══════════════════════
+function resetPassword() {
+  if(!confirm('Reset your access code? You will need to set a new one on next login.')) return;
+  localStorage.removeItem('tc_pass');
+  sessionStorage.removeItem('tc_session');
+  alert('Access code cleared. Reloading to set a new one...');
+  location.reload();
+}
+
 // Init
 fetchWeather();
 loadFinKPIs();
+syncMRRToFinance();
 renderCalendar();
 renderTasks();
 renderPrompts();
