@@ -829,6 +829,10 @@ a {
     transform: translateX(0);
   }
 
+  .sidebar-header {
+    padding-top: calc(var(--space-6) + var(--space-2));
+  }
+
   .menu-button {
     display: inline-flex;
   }
