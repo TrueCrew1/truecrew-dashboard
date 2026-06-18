@@ -208,7 +208,7 @@ function renderShell(activeRoute) {
               type="search"
               minlength="${SEARCH_MIN_LENGTH}"
               maxlength="120"
-              placeholder="Search shell placeholder"
+              placeholder="Search workspace"
               autocomplete="off"
             />
           </form>
@@ -644,7 +644,7 @@ function handleSearch(event) {
   }
 
   recordAuditEvent("search.placeholder_used", { queryLength: query.length });
-  showToast("Search shell ready", "Global search will connect when module data is available.");
+  showToast("Search ready", "Search will connect as operational records are added.");
   input.value = "";
 }
 
