@@ -21,6 +21,10 @@ export interface Database {
           assignee: string | null;
           due_at: string | null;
           blocker: string | null;
+          site_name: string | null;
+          crew: string | null;
+          sla_tier: string | null;
+          waiting_on: string | null;
           github_ref: string | null;
           github_repo: string | null;
           github_issue_number: number | null;
@@ -42,6 +46,10 @@ export interface Database {
           assignee?: string | null;
           due_at?: string | null;
           blocker?: string | null;
+          site_name?: string | null;
+          crew?: string | null;
+          sla_tier?: string | null;
+          waiting_on?: string | null;
           created_by?: string;
         };
         Update: Partial<Database["public"]["Tables"]["tasks"]["Insert"]>;
