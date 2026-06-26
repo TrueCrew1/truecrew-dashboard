@@ -1,13 +1,10 @@
 import { FormEvent, useMemo, useState } from "react";
-import {
-  WIP_LIMIT,
-  aiNextStep,
-  createTodayItem,
-  loadTodayItems,
-  saveTodayItems,
-  type TodayItem,
-  type TodayPriority,
-} from "@/lib/today";
+import { StageBadge, SeverityBadge } from "@/components/ui";
+import { useData } from "@/context/DataContext";
+import { useSelection } from "@/context/SelectionContext";
+import { WorkflowStage } from "@/types";
+
+const WIP_LIMIT = 3;
 
 function formatTodayDate() {
   return new Intl.DateTimeFormat(undefined, {
@@ -17,137 +14,49 @@ function formatTodayDate() {
   }).format(new Date());
 }
 
-function TodayZone({
-  id,
-  title,
-  count,
-  countLabel,
-  variant,
-  padded,
-  children,
-}: {
-  id: string;
-  title: string;
-  count?: number | string;
-  countLabel?: string;
-  variant?: "default" | "danger" | "ai";
-  padded?: boolean;
-  children: React.ReactNode;
-}) {
-  const zoneClass = [
-    "today-zone",
-    variant === "danger" ? "today-zone-danger" : "",
-    variant === "ai" ? "today-zone-ai" : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  const titleClass = [
-    "today-zone-title",
-    variant === "danger" ? "today-zone-title-danger" : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  const badgeClass = [
-    "today-zone-count",
-    variant === "danger" ? "today-zone-count-danger" : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  return (
-    <section className={zoneClass} aria-labelledby={id}>
-      <div className="today-zone-header">
-        <h2 id={id} className={titleClass}>
-          {title}
-        </h2>
-        {countLabel ?? count !== undefined ? (
-          <span className={badgeClass}>{countLabel ?? count}</span>
-        ) : null}
-      </div>
-      <div className={`today-zone-body${padded ? " padded" : ""}`}>{children}</div>
-    </section>
-  );
-}
-
-function EmptyZone() {
-  return <p className="today-zone-empty">No items yet</p>;
-}
-
 export function TodayPage() {
-  const [items, setItems] = useState<TodayItem[]>(() => loadTodayItems());
+  const { setSelectedEntityId, selectedEntityId } = useSelection();
+  const { data } = useData();
   const [captureTitle, setCaptureTitle] = useState("");
-  const [capturePriority, setCapturePriority] = useState<TodayPriority>("normal");
-  const [captureDue, setCaptureDue] = useState("");
+  const [capturePriority, setCapturePriority] = useState("normal");
 
-  const wip = useMemo(
-    () => items.filter((i) => i.status === "in_progress"),
-    [items],
-  );
-  const blocked = useMemo(() => items.filter((i) => i.status === "blocked"), [items]);
-  const waiting = useMemo(() => items.filter((i) => i.status === "waiting"), [items]);
-  const queue = useMemo(() => items.filter((i) => i.status === "open"), [items]);
-  const overdue = useMemo(
-    () =>
-      items.filter(
-        (i) =>
-          i.dueDate &&
-          i.status !== "done" &&
-          i.status !== "blocked" &&
-          i.status !== "waiting" &&
-          new Date(i.dueDate) < new Date(),
-      ),
-    [items],
+  const mit = data.focusItems[0] ?? null;
+
+  const wipCount = useMemo(
+    () => data.tasks.filter((t) => t.stage === WorkflowStage.InProgress).length,
+    [data.tasks],
   );
 
-  const mit = useMemo(() => {
-    const active = items.filter((i) => i.status !== "done");
-    return active[0] ?? null;
-  }, [items]);
-
-  const wipCount = wip.length;
   const wipClass =
     wipCount >= WIP_LIMIT ? "wip-over" : wipCount === WIP_LIMIT - 1 ? "wip-near" : "wip-ok";
-  const nextStep = useMemo(() => aiNextStep(items), [items]);
 
-  function persist(next: TodayItem[]) {
-    setItems(next);
-    saveTodayItems(next);
-  }
+  const blockingTasks = data.tasks.filter((t) =>
+    t.gates.some((g) => g.required && !g.passed),
+  );
+
+  const activeIncidents = data.incidents.filter((i) => i.severity <= 2);
 
   function handleCapture(e: FormEvent) {
     e.preventDefault();
-    const title = captureTitle.trim();
-    if (!title) return;
-    const item = createTodayItem({
-      title,
-      priority: capturePriority,
-      dueDate: captureDue || null,
-    });
-    persist([item, ...items]);
     setCaptureTitle("");
     setCapturePriority("normal");
-    setCaptureDue("");
   }
 
   return (
     <div className="today-page">
       <section className="today-banner" aria-label="Today overview">
         <div className="today-banner-left">
-          <div className="today-banner-meta">
-            <p className="today-date">{formatTodayDate()}</p>
-            <span className="today-prototype-note">Prototype / Demo</span>
-          </div>
+          <p className="today-date">{formatTodayDate()}</p>
           {mit ? (
             <>
               <p className="today-mit-label">Most important now</p>
               <h1 className="today-mit-title">{mit.title}</h1>
+              <p className="today-mit-reason">{mit.reason}</p>
             </>
           ) : (
             <>
               <p className="today-mit-label">Most important now</p>
-              <h1 className="today-mit-title today-mit-clear">Queue is clear</h1>
+              <h1 className="today-mit-title">Queue is clear</h1>
             </>
           )}
         </div>
@@ -168,137 +77,125 @@ export function TodayPage() {
         </div>
       </section>
 
-      {wipCount >= WIP_LIMIT ? (
-        <div className="today-alert today-alert-danger" role="alert">
-          <strong>WIP limit reached ({wipCount} / {WIP_LIMIT}).</strong> Finish in-progress
-          work before starting new items.
-        </div>
-      ) : null}
-
       <div className="today-layout">
         <div className="today-main">
-          <TodayZone
-            id="today-wip-heading"
-            title="In Progress"
-            countLabel={`${wipCount} / ${WIP_LIMIT}`}
-          >
-            {wip.length ? (
-              <ul className="today-list">
-                {wip.map((item) => (
-                  <li key={item.id}>
-                    <div className="today-list-row today-list-row-static">
-                      <div className="today-list-main">
-                        <p className="today-list-title">{item.title}</p>
-                        <p className="today-list-meta">{item.module}</p>
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <EmptyZone />
-            )}
-          </TodayZone>
+          <section className="today-zone" aria-labelledby="today-focus-heading">
+            <div className="today-zone-header">
+              <h2 id="today-focus-heading" className="today-zone-title">
+                Focus queue
+              </h2>
+              <span className="today-zone-count">{data.focusItems.length}</span>
+            </div>
+            <div className="today-zone-body">
+              {data.focusItems.length ? (
+                <ul className="today-list">
+                  {data.focusItems.map((item) => (
+                    <li key={item.id}>
+                      <button
+                        type="button"
+                        className={`today-list-row${selectedEntityId === item.taskId ? " active" : ""}`}
+                        onClick={() => setSelectedEntityId(item.taskId)}
+                      >
+                        <div className="today-list-main">
+                          <p className="today-list-title">{item.title}</p>
+                          <p className="today-list-meta">{item.reason}</p>
+                        </div>
+                        <div className="today-list-actions">
+                          <StageBadge stage={item.stage} />
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="today-empty">No focus items in queue.</p>
+              )}
+            </div>
+          </section>
 
-          <TodayZone id="today-queue-heading" title="Priority Queue" count={queue.length}>
-            {queue.length ? (
-              <ul className="today-list">
-                {queue.map((item) => (
-                  <li key={item.id}>
-                    <div className="today-list-row today-list-row-static">
-                      <div className="today-list-main">
-                        <p className="today-list-title">{item.title}</p>
-                        <p className="today-list-meta">{item.module}</p>
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <EmptyZone />
-            )}
-          </TodayZone>
-
-          <TodayZone
-            id="today-overdue-heading"
-            title="Overdue"
-            count={overdue.length}
-            variant={overdue.length ? "danger" : "default"}
-          >
-            {overdue.length ? (
-              <ul className="today-list">
-                {overdue.map((item) => (
-                  <li key={item.id}>
-                    <div className="today-list-row today-list-row-static">
-                      <div className="today-list-main">
-                        <p className="today-list-title">{item.title}</p>
-                        <p className="today-list-meta">{item.module}</p>
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <EmptyZone />
-            )}
-          </TodayZone>
+          <section className="today-zone" aria-labelledby="today-gates-heading">
+            <div className="today-zone-header">
+              <h2 id="today-gates-heading" className="today-zone-title">
+                Blocking gates
+              </h2>
+              <span className="today-zone-count">{blockingTasks.length}</span>
+            </div>
+            <div className="today-zone-body">
+              {blockingTasks.length ? (
+                <ul className="today-list">
+                  {blockingTasks.map((task) => (
+                    <li key={task.id}>
+                      <button
+                        type="button"
+                        className={`today-list-row${selectedEntityId === task.id ? " active" : ""}`}
+                        onClick={() => setSelectedEntityId(task.id)}
+                      >
+                        <div className="today-list-main">
+                          <p className="today-list-title">{task.title}</p>
+                          <p className="today-list-meta">
+                            {task.gates
+                              .filter((g) => g.required && !g.passed)
+                              .map((g) => g.label)
+                              .join(" · ")}
+                          </p>
+                        </div>
+                        <div className="today-list-actions">
+                          <StageBadge stage={task.stage} />
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="today-empty">No blocking gates.</p>
+              )}
+            </div>
+          </section>
         </div>
 
         <aside className="today-sidebar">
-          <TodayZone id="today-next-heading" title="Next action" variant="ai">
-            <div className={`today-ai-card today-ai-${nextStep.urgency}`}>
-              <p className="today-ai-action">{nextStep.action}</p>
-              <p className="today-ai-detail">{nextStep.detail}</p>
+          <section className="today-zone" aria-labelledby="today-incidents-heading">
+            <div className="today-zone-header">
+              <h2 id="today-incidents-heading" className="today-zone-title">
+                Active incidents
+              </h2>
+              <span className="today-zone-count">{activeIncidents.length}</span>
             </div>
-          </TodayZone>
+            <div className="today-zone-body">
+              {activeIncidents.length ? (
+                <ul className="today-list">
+                  {activeIncidents.map((inc) => (
+                    <li key={inc.id}>
+                      <button
+                        type="button"
+                        className={`today-list-row${selectedEntityId === inc.id ? " active" : ""}`}
+                        onClick={() => setSelectedEntityId(inc.id)}
+                      >
+                        <div className="today-list-main">
+                          <p className="today-list-title">{inc.title}</p>
+                          <p className="today-list-meta">{inc.serviceName}</p>
+                        </div>
+                        <div className="today-list-actions">
+                          <SeverityBadge severity={inc.severity} />
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="today-empty">No Sev 1–2 incidents.</p>
+              )}
+            </div>
+          </section>
 
-          <TodayZone
-            id="today-blockers-heading"
-            title="Blockers"
-            count={blocked.length}
-            variant={blocked.length ? "danger" : "default"}
-          >
-            {blocked.length ? (
-              <ul className="today-list">
-                {blocked.map((item) => (
-                  <li key={item.id}>
-                    <div className="today-list-row today-list-row-static">
-                      <div className="today-list-main">
-                        <p className="today-list-title">{item.title}</p>
-                        <p className="today-list-meta">{item.blocker}</p>
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <EmptyZone />
-            )}
-          </TodayZone>
-
-          <TodayZone id="today-waiting-heading" title="Waiting" count={waiting.length}>
-            {waiting.length ? (
-              <ul className="today-list">
-                {waiting.map((item) => (
-                  <li key={item.id}>
-                    <div className="today-list-row today-list-row-static">
-                      <div className="today-list-main">
-                        <p className="today-list-title">{item.title}</p>
-                        <p className="today-list-meta">
-                          Waiting on: {item.waitingOn ?? "—"}
-                        </p>
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <EmptyZone />
-            )}
-          </TodayZone>
-
-          <TodayZone id="today-capture-heading" title="Quick capture" padded>
-            <form className="today-capture-form" onSubmit={handleCapture} noValidate>
+          <section className="today-zone" aria-labelledby="today-capture-heading">
+            <div className="today-zone-header">
+              <h2 id="today-capture-heading" className="today-zone-title">
+                Quick capture
+              </h2>
+            </div>
+            <div className="today-zone-body padded">
+              <form className="today-capture-form" onSubmit={handleCapture} noValidate>
                 <div className="today-field">
                   <label className="today-field-label" htmlFor="today-capture-title">
                     Item
@@ -322,7 +219,7 @@ export function TodayPage() {
                       id="today-capture-priority"
                       className="today-select"
                       value={capturePriority}
-                      onChange={(e) => setCapturePriority(e.target.value as TodayPriority)}
+                      onChange={(e) => setCapturePriority(e.target.value)}
                     >
                       <option value="normal">Normal</option>
                       <option value="high">High</option>
@@ -330,24 +227,13 @@ export function TodayPage() {
                       <option value="low">Low</option>
                     </select>
                   </div>
-                  <div className="today-field">
-                    <label className="today-field-label" htmlFor="today-capture-due">
-                      Due date
-                    </label>
-                    <input
-                      id="today-capture-due"
-                      className="today-input"
-                      type="date"
-                      value={captureDue}
-                      onChange={(e) => setCaptureDue(e.target.value)}
-                    />
-                  </div>
                 </div>
                 <button type="submit" className="today-btn today-btn-primary">
                   Capture
                 </button>
-            </form>
-          </TodayZone>
+              </form>
+            </div>
+          </section>
         </aside>
       </div>
     </div>

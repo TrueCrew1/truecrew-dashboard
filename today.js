@@ -25,6 +25,7 @@
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const TODAY_KEY = "truecrew.today.items";
+const TODAY_DEMO_KEY = "truecrew.today.demo_loaded";
 
 export const WIP_LIMIT = 3;
 const STALE_DAYS = 3;
@@ -36,6 +37,131 @@ const PRIORITY_SCORES = Object.freeze({
   normal: 10,
   low: 0,
 });
+
+// ─── Demo seed data ───────────────────────────────────────────────────────────
+// Clearly labeled demo data. Loaded once per session when no live items exist.
+// Replace by connecting operational modules that write to TODAY_KEY.
+
+function buildDemoItems() {
+  const now = Date.now();
+  const at = (d) => new Date(now + d * 86_400_000).toISOString();
+
+  return [
+    {
+      id: "tc-demo-001",
+      title: "Review incident report #IR-2026-041",
+      module: "Records",
+      status: "in_progress",
+      priority: "critical",
+      dueDate: at(-2),
+      owner: "Alex Admin",
+      blocker: null,
+      waitingOn: null,
+      createdAt: at(-5),
+      updatedAt: at(-3),
+      pinned: true,
+    },
+    {
+      id: "tc-demo-002",
+      title: "Submit weekly field operations report",
+      module: "Records",
+      status: "open",
+      priority: "high",
+      dueDate: at(0),
+      owner: "Alex Admin",
+      blocker: null,
+      waitingOn: null,
+      createdAt: at(-7),
+      updatedAt: at(-1),
+      pinned: false,
+    },
+    {
+      id: "tc-demo-003",
+      title: "Schedule preventive maintenance — Generator A",
+      module: "Maintenance",
+      status: "blocked",
+      priority: "high",
+      dueDate: at(-1),
+      owner: "Alex Admin",
+      blocker:
+        "Site access authorization pending from facility manager (J. Carver). Requested 4 days ago.",
+      waitingOn: null,
+      createdAt: at(-6),
+      updatedAt: at(-2),
+      pinned: false,
+    },
+    {
+      id: "tc-demo-004",
+      title: "Follow up with Apex Subcontractors — roof inspection quote",
+      module: "Field Service",
+      status: "waiting",
+      priority: "normal",
+      dueDate: at(1),
+      owner: "Alex Admin",
+      blocker: null,
+      waitingOn: "Apex Subcontractors",
+      createdAt: at(-4),
+      updatedAt: at(-3),
+      pinned: false,
+    },
+    {
+      id: "tc-demo-005",
+      title: "Update crew certification records — Q2 compliance",
+      module: "Records",
+      status: "open",
+      priority: "high",
+      dueDate: at(2),
+      owner: "Alex Admin",
+      blocker: null,
+      waitingOn: null,
+      createdAt: at(-3),
+      updatedAt: at(-1),
+      pinned: false,
+    },
+    {
+      id: "tc-demo-006",
+      title: "Inspect HVAC unit — Site B, Building 3",
+      module: "Maintenance",
+      status: "in_progress",
+      priority: "normal",
+      dueDate: at(-4),
+      owner: "Elliot Employee",
+      blocker: null,
+      waitingOn: null,
+      createdAt: at(-8),
+      updatedAt: at(-4),
+      pinned: false,
+    },
+    {
+      id: "tc-demo-007",
+      title: "Coordinate site access for Thursday field inspection",
+      module: "Field Service",
+      status: "open",
+      priority: "high",
+      dueDate: at(0),
+      owner: "Alex Admin",
+      blocker: null,
+      waitingOn: null,
+      createdAt: at(-2),
+      updatedAt: at(-1),
+      pinned: false,
+    },
+    {
+      id: "tc-demo-008",
+      title: "Close out work order WO-2026-089",
+      module: "Field Service",
+      status: "open",
+      priority: "normal",
+      dueDate: at(-3),
+      owner: null,
+      blocker: null,
+      waitingOn: null,
+      createdAt: at(-10),
+      updatedAt: at(-8),
+      pinned: false,
+    },
+  ];
+}
 
 // ─── Storage ──────────────────────────────────────────────────────────────────
 
@@ -55,10 +181,11 @@ function saveItems(items) {
 function getItems() {
   let items = loadItems();
   if (!items) {
-    items = [];
+    items = sessionStorage.getItem(TODAY_DEMO_KEY) ? [] : buildDemoItems();
+    sessionStorage.setItem(TODAY_DEMO_KEY, "1");
     saveItems(items);
   }
-  return items.filter((item) => !String(item.id).startsWith("tc-demo-"));
+  return items;
 }
 
 function patchItem(id, delta) {
@@ -300,10 +427,7 @@ function renderBanner(mit, wipCount, wipOver) {
   return `
     <div class="today-banner">
       <div class="today-banner-left">
-        <div class="today-banner-meta">
-          <p class="today-date">${esc(todayLabel())}</p>
-          <span class="today-prototype-note">Prototype / Demo</span>
-        </div>
+        <p class="today-date">${esc(todayLabel())}</p>
         ${mitBlock}
       </div>
       <div class="today-banner-right">
@@ -361,7 +485,7 @@ function renderWipCard(item) {
 function renderWipZone(wip) {
   const body = wip.length
     ? `<div class="today-wip-grid">${wip.map(renderWipCard).join("")}</div>`
-    : `<p class="today-zone-empty">No items yet</p>`;
+    : `<p class="today-zone-empty">No items in progress. Start a priority item from the queue below.</p>`;
 
   return `
     <section class="today-zone" aria-labelledby="tc-wip-heading">
@@ -408,7 +532,7 @@ function renderQueueRow(item, wipOver) {
 function renderQueueZone(queue, wipOver) {
   const body = queue.length
     ? queue.map((i) => renderQueueRow(i, wipOver)).join("")
-    : `<p class="today-zone-empty">No items yet</p>`;
+    : `<p class="today-zone-empty">No open items in queue. Use quick capture below to add work, or check for items stalled in other states.</p>`;
 
   return `
     <section class="today-zone" aria-labelledby="tc-queue-heading">
@@ -446,18 +570,16 @@ function renderOverdueRow(item) {
 }
 
 function renderOverdueZone(overdue) {
+  if (!overdue.length) return "";
   const sorted = [...overdue].sort((a, b) => daysOverdue(b) - daysOverdue(a));
-  const body = sorted.length
-    ? sorted.map(renderOverdueRow).join("")
-    : `<p class="today-zone-empty">No items yet</p>`;
 
   return `
-    <section class="today-zone${sorted.length ? " today-zone-danger" : ""}" aria-labelledby="tc-overdue-heading">
-      <h2 id="tc-overdue-heading" class="today-zone-title${sorted.length ? " today-zone-title-danger" : ""}">
+    <section class="today-zone today-zone-danger" aria-labelledby="tc-overdue-heading">
+      <h2 id="tc-overdue-heading" class="today-zone-title today-zone-title-danger">
         Overdue
-        <span class="today-zone-badge${sorted.length ? " today-badge-danger" : ""}">${sorted.length}</span>
+        <span class="today-zone-badge today-badge-danger">${overdue.length}</span>
       </h2>
-      ${body}
+      ${sorted.map(renderOverdueRow).join("")}
     </section>`;
 }
 
@@ -490,15 +612,22 @@ function renderBlockersZone(blocked) {
       </h2>
       ${blocked.length
         ? blocked.map(renderBlockerCard).join("")
-        : '<p class="today-zone-empty">No items yet</p>'}
+        : '<p class="today-zone-empty">No blockers. All items can proceed.</p>'}
     </section>`;
 }
 
 // ─── Zone: Waiting ────────────────────────────────────────────────────────────
 
 function renderWaitingZone(waiting) {
-  const body = waiting.length
-    ? waiting
+  if (!waiting.length) return "";
+
+  return `
+    <section class="today-zone" aria-labelledby="tc-waiting-heading">
+      <h2 id="tc-waiting-heading" class="today-zone-title">
+        Waiting
+        <span class="today-zone-badge">${waiting.length}</span>
+      </h2>
+      ${waiting
         .map(
           (item) => `
         <article class="today-sidebar-card" data-id="${esc(item.id)}">
@@ -516,16 +645,7 @@ function renderWaitingZone(waiting) {
           </div>
         </article>`,
         )
-        .join("")
-    : `<p class="today-zone-empty">No items yet</p>`;
-
-  return `
-    <section class="today-zone" aria-labelledby="tc-waiting-heading">
-      <h2 id="tc-waiting-heading" class="today-zone-title">
-        Waiting
-        <span class="today-zone-badge">${waiting.length}</span>
-      </h2>
-      ${body}
+        .join("")}
     </section>`;
 }
 
@@ -639,7 +759,8 @@ export function renderToday() {
         ${renderCapture()}
         ${done.length ? `<p class="today-done-note">${done.length} item${done.length !== 1 ? "s" : ""} completed this session</p>` : ""}
       </div>
-    </div>`;
+    </div>
+    <p class="today-demo-note">Demo data active — replace with live module records when operational modules connect to this view.</p>`;
 }
 
 // ─── Event binding ────────────────────────────────────────────────────────────
