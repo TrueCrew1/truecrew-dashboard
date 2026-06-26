@@ -15,7 +15,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
     {
       label: "Focus",
       items: [
-        { to: "/", icon: "◉", label: "Today", badge: data.focusItems.length },
+        { to: "/today", icon: "◉", label: "Today", badge: data.focusItems.length },
         { to: "/dashboard", icon: "▣", label: "Dashboard" },
       ],
     },
@@ -68,7 +68,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
               <NavLink
                 key={item.to}
                 to={item.to}
-                end={item.to === "/"}
+                end={item.to === "/today"}
                 className={({ isActive }) =>
                   `nav-link${isActive ? " active" : ""}`
                 }
