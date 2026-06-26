@@ -1,11 +1,10 @@
-import { mockData } from "@/data/mockData";
 import { PageHeader, Panel, StageBadge, SeverityBadge } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
 
 export function TodayPage() {
   const { setSelectedEntityId } = useSelection();
-  const { tasks } = useData();
+  const { data } = useData();
 
   return (
     <>
@@ -25,7 +24,7 @@ export function TodayPage() {
               </tr>
             </thead>
             <tbody>
-              {mockData.focusItems.map((item) => (
+              {data.focusItems.map((item) => (
                 <tr
                   key={item.id}
                   className="clickable-row"
@@ -52,7 +51,7 @@ export function TodayPage() {
               </tr>
             </thead>
             <tbody>
-              {mockData.incidents
+              {data.incidents
                 .filter((i) => i.severity <= 2)
                 .map((inc) => (
                   <tr
@@ -82,7 +81,7 @@ export function TodayPage() {
             </tr>
           </thead>
           <tbody>
-            {tasks
+            {data.tasks
               .filter((t) => t.gates.some((g) => g.required && !g.passed))
               .map((task) => (
                 <tr

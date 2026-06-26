@@ -1,7 +1,9 @@
-import { mockData } from "@/data/mockData";
 import { PageHeader, Panel, StageBadge, StatusBadge } from "@/components/ui";
+import { useData } from "@/context/DataContext";
 
 export function CustomersPage() {
+  const { data } = useData();
+
   return (
     <>
       <PageHeader
@@ -22,7 +24,7 @@ export function CustomersPage() {
             </tr>
           </thead>
           <tbody>
-            {mockData.customers.map((cust) => (
+            {data.customers.map((cust) => (
               <tr key={cust.id}>
                 <td>{cust.name}</td>
                 <td>{cust.tier}</td>

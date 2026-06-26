@@ -1,7 +1,9 @@
-import { mockData } from "@/data/mockData";
 import { PageHeader, Panel } from "@/components/ui";
+import { useData } from "@/context/DataContext";
 
 export function KnowledgePage() {
+  const { data } = useData();
+
   return (
     <>
       <PageHeader
@@ -22,7 +24,7 @@ export function KnowledgePage() {
               </tr>
             </thead>
             <tbody>
-              {mockData.prompts.map((prompt) => (
+              {data.prompts.map((prompt) => (
                 <tr key={prompt.id}>
                   <td>{prompt.title}</td>
                   <td>{prompt.category}</td>
@@ -46,7 +48,7 @@ export function KnowledgePage() {
               </tr>
             </thead>
             <tbody>
-              {mockData.notes.map((note) => (
+              {data.notes.map((note) => (
                 <tr key={note.id}>
                   <td>{note.title}</td>
                   <td>{note.type}</td>

@@ -1,5 +1,5 @@
-import { mockData } from "@/data/mockData";
 import { PageHeader, Panel, SeverityBadge, StatusBadge } from "@/components/ui";
+import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
 
 const statusVariant = (status: string) => {
@@ -11,6 +11,7 @@ const statusVariant = (status: string) => {
 
 export function MonitorPage() {
   const { selectedEntityId, setSelectedEntityId } = useSelection();
+  const { data } = useData();
 
   return (
     <>
@@ -33,7 +34,7 @@ export function MonitorPage() {
             </tr>
           </thead>
           <tbody>
-            {mockData.tools.map((tool) => (
+            {data.tools.map((tool) => (
               <tr key={tool.id}>
                 <td>{tool.name}</td>
                 <td>{tool.category}</td>
@@ -61,7 +62,7 @@ export function MonitorPage() {
             </tr>
           </thead>
           <tbody>
-            {mockData.incidents.map((inc) => (
+            {data.incidents.map((inc) => (
               <tr
                 key={inc.id}
                 className={`clickable-row${selectedEntityId === inc.id ? " selected" : ""}`}

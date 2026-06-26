@@ -1,6 +1,7 @@
 import { useLocation } from "react-router-dom";
-import { mockData } from "@/data/mockData";
 import { GateList, SeverityBadge, StageBadge, formatRelativeTime } from "@/components/ui";
+import { useData } from "@/context/DataContext";
+import type { MockData } from "@/data/mockData";
 import { WorkflowStage } from "@/types";
 
 interface ContextRailProps {
@@ -9,12 +10,16 @@ interface ContextRailProps {
   selectedEntityId?: string | null;
 }
 
-function DefaultRailContent() {
+function DefaultRailContent({ data }: { data: MockData }) {
+  const blockedBuild = data.tasks.find(
+    (t) => t.workflowType === "build" && t.gates.some((g) => g.required && !g.passed),
+  );
+
   return (
     <>
       <div className="rail-section">
         <div className="rail-section-title">Today's focus</div>
-        {mockData.focusItems.map((item) => (
+        {data.focusItems.map((item) => (
           <div key={item.id} className="rail-item">
             <div className="rail-item-title">{item.title}</div>
             <div className="rail-item-meta">
@@ -26,7 +31,7 @@ function DefaultRailContent() {
 
       <div className="rail-section">
         <div className="rail-section-title">Open alerts</div>
-        {mockData.alerts.map((alert) => (
+        {data.alerts.map((alert) => (
           <div key={alert.id} className="rail-item">
             <div className="rail-item-title">{alert.title}</div>
             <div className="rail-item-meta">
@@ -45,9 +50,13 @@ function DefaultRailContent() {
       <div className="rail-section">
         <div className="rail-section-title">Next gate due</div>
         <div className="rail-item">
-          <div className="rail-item-title">Billing API — PR review</div>
+          <div className="rail-item-title">
+            {blockedBuild?.title ?? "No blocking build gates"}
+          </div>
           <div className="rail-item-meta">
-            Build gate blocking deploy · {WorkflowStage.InProgress}
+            {blockedBuild
+              ? `Build gate blocking deploy · ${WorkflowStage.InProgress}`
+              : "All build gates clear"}
           </div>
         </div>
       </div>
@@ -55,8 +64,8 @@ function DefaultRailContent() {
   );
 }
 
-function EntityRailContent({ entityId }: { entityId: string }) {
-  const task = mockData.tasks.find((t) => t.id === entityId);
+function EntityRailContent({ entityId, data }: { entityId: string; data: MockData }) {
+  const task = data.tasks.find((t) => t.id === entityId);
   if (task) {
     const blocking = task.gates.filter((g) => g.required && !g.passed).length;
     return (
@@ -92,7 +101,7 @@ function EntityRailContent({ entityId }: { entityId: string }) {
     );
   }
 
-  const incident = mockData.incidents.find((i) => i.id === entityId);
+  const incident = data.incidents.find((i) => i.id === entityId);
   if (incident) {
     return (
       <>
@@ -117,7 +126,7 @@ function EntityRailContent({ entityId }: { entityId: string }) {
     );
   }
 
-  const workflow = mockData.workflows.find((w) => w.id === entityId);
+  const workflow = data.workflows.find((w) => w.id === entityId);
   if (workflow) {
     const blocking = workflow.gates.filter((g) => g.required && !g.passed).length;
     return (
@@ -141,11 +150,12 @@ function EntityRailContent({ entityId }: { entityId: string }) {
     );
   }
 
-  return <DefaultRailContent />;
+  return <DefaultRailContent data={data} />;
 }
 
 export function ContextRail({ open, onClose, selectedEntityId }: ContextRailProps) {
   const location = useLocation();
+  const { data } = useData();
 
   if (!open) return null;
 
@@ -174,9 +184,9 @@ export function ContextRail({ open, onClose, selectedEntityId }: ContextRailProp
       </div>
       <div className="rail-body">
         {selectedEntityId ? (
-          <EntityRailContent entityId={selectedEntityId} />
+          <EntityRailContent entityId={selectedEntityId} data={data} />
         ) : (
-          <DefaultRailContent />
+          <DefaultRailContent data={data} />
         )}
       </div>
     </aside>

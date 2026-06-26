@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { mockData } from "@/data/mockData";
+import { useData } from "@/context/DataContext";
 
 interface NavItem {
   to: string;
@@ -8,43 +8,45 @@ interface NavItem {
   badge?: number;
 }
 
-const navSections: { label: string; items: NavItem[] }[] = [
-  {
-    label: "Focus",
-    items: [
-      { to: "/", icon: "◉", label: "Today", badge: mockData.focusItems.length },
-      { to: "/dashboard", icon: "▣", label: "Dashboard" },
-    ],
-  },
-  {
-    label: "Operations",
-    items: [
-      { to: "/operations", icon: "⚙", label: "Operations" },
-      { to: "/builds", icon: "⬡", label: "Builds" },
-      { to: "/monitor", icon: "◎", label: "Monitor", badge: mockData.incidents.length },
-      { to: "/repair", icon: "⛊", label: "Repair" },
-    ],
-  },
-  {
-    label: "Business",
-    items: [
-      { to: "/customers", icon: "◈", label: "Customers" },
-      { to: "/knowledge", icon: "◫", label: "AI & Knowledge" },
-      { to: "/review", icon: "◑", label: "Review" },
-    ],
-  },
-  {
-    label: "System",
-    items: [{ to: "/settings", icon: "⬢", label: "Settings" }],
-  },
-];
+export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
+  const { data } = useData();
 
-interface SidebarProps {
-  collapsed: boolean;
-  onToggle: () => void;
-}
+  const navSections: { label: string; items: NavItem[] }[] = [
+    {
+      label: "Focus",
+      items: [
+        { to: "/", icon: "◉", label: "Today", badge: data.focusItems.length },
+        { to: "/dashboard", icon: "▣", label: "Dashboard" },
+      ],
+    },
+    {
+      label: "Operations",
+      items: [
+        { to: "/operations", icon: "⚙", label: "Operations" },
+        { to: "/builds", icon: "⬡", label: "Builds" },
+        {
+          to: "/monitor",
+          icon: "◎",
+          label: "Monitor",
+          badge: data.incidents.filter((i) => i.severity <= 2).length || undefined,
+        },
+        { to: "/repair", icon: "⛊", label: "Repair" },
+      ],
+    },
+    {
+      label: "Business",
+      items: [
+        { to: "/customers", icon: "◈", label: "Customers" },
+        { to: "/knowledge", icon: "◫", label: "AI & Knowledge" },
+        { to: "/review", icon: "◑", label: "Review" },
+      ],
+    },
+    {
+      label: "System",
+      items: [{ to: "/settings", icon: "⬢", label: "Settings" }],
+    },
+  ];
 
-export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   return (
     <aside className="sidebar">
       <div className="sidebar-header">

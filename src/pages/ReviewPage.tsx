@@ -1,11 +1,12 @@
-import { mockData } from "@/data/mockData";
 import { PageHeader, Panel, StageBadge } from "@/components/ui";
+import { useData } from "@/context/DataContext";
 import { WorkflowStage } from "@/types";
 
 export function ReviewPage() {
+  const { data } = useData();
   const reviewItems = [
-    ...mockData.tasks.filter((t) => t.stage === WorkflowStage.Review),
-    ...mockData.deploys.filter((d) => d.stage === WorkflowStage.Review),
+    ...data.tasks.filter((t) => t.stage === WorkflowStage.Review),
+    ...data.deploys.filter((d) => d.stage === WorkflowStage.Review),
   ];
 
   return (
@@ -28,7 +29,7 @@ export function ReviewPage() {
               </tr>
             </thead>
             <tbody>
-              {mockData.tasks
+              {data.tasks
                 .filter((t) => t.stage === WorkflowStage.Review)
                 .map((task) => (
                   <tr key={task.id}>
@@ -55,7 +56,7 @@ export function ReviewPage() {
             </tr>
           </thead>
           <tbody>
-            {mockData.deploys.map((d) => (
+            {data.deploys.map((d) => (
               <tr key={d.id}>
                 <td>{d.title}</td>
                 <td>{d.serviceName}</td>
