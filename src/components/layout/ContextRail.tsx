@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { GateList, SeverityBadge, StageBadge, formatRelativeTime } from "@/components/ui";
+import { useAdvanceFeedback } from "@/context/AdvanceFeedbackContext";
 import { useData } from "@/context/DataContext";
 import type { MockData } from "@/data/mockData";
+import { getWhatsNextGuidance } from "@/lib/nextStep";
 import { canAdvanceStage, getNextStage } from "../../../lib/gates/stage";
 import { WorkflowStage, type Task } from "@/types";
 
@@ -66,8 +68,45 @@ function DefaultRailContent({ data }: { data: MockData }) {
   );
 }
 
+function PostAdvanceBanner({
+  fromStage,
+  toStage,
+}: {
+  fromStage: WorkflowStage;
+  toStage: WorkflowStage;
+}) {
+  return (
+    <div className="rail-advance-banner">
+      <div className="rail-advance-banner-title">Advanced to {toStage}</div>
+      <div className="rail-advance-banner-stages">
+        <StageBadge stage={fromStage} />
+        <span className="rail-advance-banner-arrow">→</span>
+        <StageBadge stage={toStage} />
+      </div>
+    </div>
+  );
+}
+
+function WhatsNextSection({ task }: { task: Task }) {
+  const guidance = getWhatsNextGuidance(task);
+
+  return (
+    <div className="rail-section">
+      <div className="rail-section-title">What's next</div>
+      <div className="rail-next-step">
+        <div className="rail-next-step-headline">{guidance.headline}</div>
+        {guidance.nextGateLabel ? (
+          <div className="rail-next-step-gate">{guidance.nextGateLabel}</div>
+        ) : null}
+        <div className="rail-next-step-recommendation">{guidance.recommendation}</div>
+      </div>
+    </div>
+  );
+}
+
 function TaskAdvanceSection({ task }: { task: Task }) {
   const { advanceTaskStage } = useData();
+  const { recordAdvance } = useAdvanceFeedback();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -77,10 +116,16 @@ function TaskAdvanceSection({ task }: { task: Task }) {
   }
 
   const handleAdvance = async () => {
+    const fromStage = task.stage;
     setPending(true);
     setError(null);
     try {
       await advanceTaskStage(task.id, nextStage as WorkflowStage);
+      recordAdvance({
+        taskId: task.id,
+        fromStage,
+        toStage: nextStage as WorkflowStage,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to advance stage");
     } finally {
@@ -106,12 +151,27 @@ function TaskAdvanceSection({ task }: { task: Task }) {
   );
 }
 
-function EntityRailContent({ entityId, data }: { entityId: string; data: MockData }) {
+function EntityRailContent({
+  entityId,
+  data,
+  lastAdvance,
+}: {
+  entityId: string;
+  data: MockData;
+  lastAdvance: { taskId: string; fromStage: WorkflowStage; toStage: WorkflowStage } | null;
+}) {
   const task = data.tasks.find((t) => t.id === entityId);
   if (task) {
     const blocking = task.gates.filter((g) => g.required && !g.passed).length;
+    const showAdvanceBanner =
+      lastAdvance?.taskId === task.id && lastAdvance.toStage === task.stage;
+
     return (
       <>
+        {showAdvanceBanner ? (
+          <PostAdvanceBanner fromStage={lastAdvance.fromStage} toStage={lastAdvance.toStage} />
+        ) : null}
+        <WhatsNextSection task={task} />
         <div className="rail-section">
           <div className="rail-section-title">Stage tracker</div>
           <div className="rail-item">
@@ -199,6 +259,7 @@ function EntityRailContent({ entityId, data }: { entityId: string; data: MockDat
 export function ContextRail({ open, onClose, selectedEntityId }: ContextRailProps) {
   const location = useLocation();
   const { data } = useData();
+  const { lastAdvance } = useAdvanceFeedback();
 
   if (!open) return null;
 
@@ -227,7 +288,7 @@ export function ContextRail({ open, onClose, selectedEntityId }: ContextRailProp
       </div>
       <div className="rail-body">
         {selectedEntityId ? (
-          <EntityRailContent entityId={selectedEntityId} data={data} />
+          <EntityRailContent entityId={selectedEntityId} data={data} lastAdvance={lastAdvance} />
         ) : (
           <DefaultRailContent data={data} />
         )}
