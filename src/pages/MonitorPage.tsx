@@ -1,4 +1,4 @@
-import { PageHeader, Panel, SeverityBadge, StatusBadge } from "@/components/ui";
+import { PageHeader, PageShell, Panel, SeverityBadge, StatusBadge } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
 
@@ -14,8 +14,9 @@ export function MonitorPage() {
   const { data } = useData();
 
   return (
-    <>
+    <PageShell>
       <PageHeader
+        kicker="Service health"
         title="Monitor"
         accent="Services"
         subtitle="Service catalog health, open incidents, and deploy status"
@@ -82,6 +83,6 @@ export function MonitorPage() {
           </tbody>
         </table>
       </Panel>
-    </>
+    </PageShell>
   );
 }

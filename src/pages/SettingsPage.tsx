@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { PageHeader, Panel, StatusBadge } from "@/components/ui";
+import { PageHeader, PageShell, Panel, StatusBadge } from "@/components/ui";
 import { fetchHealth, isLiveApiEnabled } from "@/lib/api/client";
 import { WORKFLOW_STAGES } from "@/types";
 
@@ -19,8 +19,9 @@ export function SettingsPage() {
   }, []);
 
   return (
-    <>
+    <PageShell>
       <PageHeader
+        kicker="System configuration"
         title="Settings"
         subtitle="Stage-gate rules, routing configuration, users, and integrations"
       />
@@ -148,6 +149,6 @@ export function SettingsPage() {
           </tbody>
         </table>
       </Panel>
-    </>
+    </PageShell>
   );
 }

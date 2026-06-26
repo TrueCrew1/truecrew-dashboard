@@ -1,4 +1,4 @@
-import { PageHeader, Panel, StageBadge, StatusBadge } from "@/components/ui";
+import { PageHeader, PageShell, Panel, StageBadge, StatusBadge } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
 
@@ -7,8 +7,9 @@ export function OperationsPage() {
   const { data, source } = useData();
 
   return (
-    <>
+    <PageShell>
       <PageHeader
+        kicker="Workflow execution"
         title="Operations"
         subtitle={`All active workflows · data source: ${source}`}
       />
@@ -92,6 +93,6 @@ export function OperationsPage() {
           </tbody>
         </table>
       </Panel>
-    </>
+    </PageShell>
   );
 }

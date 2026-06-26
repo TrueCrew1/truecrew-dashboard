@@ -1,4 +1,4 @@
-import { PageHeader, Panel, StageBadge } from "@/components/ui";
+import { PageHeader, PageShell, Panel, StageBadge } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
 
@@ -9,8 +9,9 @@ export function BuildsPage() {
   const buildTasks = data.tasks.filter((t) => t.workflowType === "build");
 
   return (
-    <>
+    <PageShell>
       <PageHeader
+        kicker="Build pipeline"
         title="Builds"
         subtitle="Active and historical build workflows with per-build stage tracking"
       />
@@ -70,6 +71,6 @@ export function BuildsPage() {
           </tbody>
         </table>
       </Panel>
-    </>
+    </PageShell>
   );
 }

@@ -1,12 +1,13 @@
-import { PageHeader, Panel } from "@/components/ui";
+import { PageHeader, PageShell, Panel } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 
 export function KnowledgePage() {
   const { data } = useData();
 
   return (
-    <>
+    <PageShell>
       <PageHeader
+        kicker="Knowledge base"
         title="AI &"
         accent="Knowledge"
         subtitle="Prompt library and Obsidian-routed knowledge entries"
@@ -59,6 +60,6 @@ export function KnowledgePage() {
           </table>
         </Panel>
       </div>
-    </>
+    </PageShell>
   );
 }

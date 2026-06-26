@@ -1,4 +1,4 @@
-import { PageHeader, Panel, StageBadge, SeverityBadge } from "@/components/ui";
+import { PageHeader, PageShell, Panel, StageBadge, SeverityBadge } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 
 export function RepairPage() {
@@ -6,8 +6,9 @@ export function RepairPage() {
   const repairWorkflows = data.workflows.filter((w) => w.type === "repair");
 
   return (
-    <>
+    <PageShell>
       <PageHeader
+        kicker="Incident remediation"
         title="Repair"
         subtitle="Incident remediation workflows linked to services and post-mortems"
       />
@@ -68,6 +69,6 @@ export function RepairPage() {
           </tbody>
         </table>
       </Panel>
-    </>
+    </PageShell>
   );
 }
