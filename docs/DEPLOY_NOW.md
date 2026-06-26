@@ -4,7 +4,9 @@ PR #3 is merged to `main`. Complete these steps once — then every push to `mai
 
 ## Step 1 — Supabase (2 min)
 
-1. Go to [supabase.com/dashboard](https://supabase.com/dashboard) → **New project**
+> **Use the True Crew Command Center Supabase project — not the M&S Painting project.** All env vars in this guide must reference the same project.
+
+1. Go to [supabase.com/dashboard](https://supabase.com/dashboard) → **New project** (or open the existing Command Center project)
 2. Name: `true-crew` · Region: closest to you · Save the database password
 3. Open **SQL Editor** → **New query**
 4. Paste the entire contents of `supabase/combined_migration.sql` → **Run**
@@ -45,7 +47,7 @@ Repo → **Settings → Secrets and variables → Actions → New repository sec
 | `VITE_SUPABASE_ANON_KEY` | Step 1 |
 | `GITHUB_WEBHOOK_SECRET` | Same value as Vercel env var |
 | `SUPABASE_ACCESS_TOKEN` | [supabase.com/dashboard/account/tokens](https://supabase.com/dashboard/account/tokens) |
-| `SUPABASE_PROJECT_REF` | Supabase project URL: `https://<REF>.supabase.co` |
+| `SUPABASE_PROJECT_REF` | Subdomain of project URL only — e.g. `fmomafwhcuothygmuiwa` from `https://fmomafwhcuothygmuiwa.supabase.co` (not the full URL) |
 
 Then: **Actions → Deploy to Vercel → Run workflow**
 

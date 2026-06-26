@@ -31,12 +31,18 @@ npm run dev:vercel       # UI + API (requires .env.local)
 
 ## Environment variables
 
-| Variable | Scope |
-|---|---|
-| `SUPABASE_URL` | Server |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server |
-| `GITHUB_WEBHOOK_SECRET` | Server |
-| `VITE_USE_LIVE_API` | Client — set `true` for live Supabase reads |
+See `.env.example` for the full template. Copy to `.env.local` for local dev.
+
+| Variable | Scope | Notes |
+|---|---|---|
+| `SUPABASE_URL` | Server | Project URL from Supabase Settings → API |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server | Never expose to client |
+| `GITHUB_WEBHOOK_SECRET` | Server | Same value in Vercel and GitHub webhook config |
+| `VITE_USE_LIVE_API` | Client | Set `true` for live Supabase reads via `/api` |
+| `VITE_SUPABASE_URL` | Client | Same project as `SUPABASE_URL` (future client auth) |
+| `VITE_SUPABASE_ANON_KEY` | Client | Public anon key; not used in v1 API layer |
+
+**Consistency rule:** All Supabase variables must point to the same project — the **True Crew Command Center** Supabase project, not the M&S Painting project. `VITE_SUPABASE_URL` must equal `SUPABASE_URL`. For GitHub Actions migrations, `SUPABASE_PROJECT_REF` is the URL subdomain only (e.g. `fmomafwhcuothygmuiwa`), not the full URL.
 
 ## API routes
 
