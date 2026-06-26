@@ -1,74 +1,67 @@
-# True Crew — Command Center
+# True Crew — Next.js + Supabase Foundation
 
-Premium desktop command center for running business operations end-to-end.
+Operational command center rebuilt on **Next.js 15 (App Router)** with **Supabase Auth** and Postgres.
 
-## Stack (canonical)
+## Stack
 
 | Layer | Technology |
 |---|---|
-| **Host** | Vercel — SPA + serverless `/api` routes |
+| **App** | Next.js 15 + TypeScript (App Router) |
+| **Auth** | Supabase Auth (email/password) |
 | **Database** | Supabase Postgres |
-| **GitHub** | Webhooks → automatic gate updates |
-| **Knowledge** | Obsidian Sync (Phase C) |
-
-> Full setup guide: [docs/VERCEL_SUPABASE_SETUP.md](docs/VERCEL_SUPABASE_SETUP.md)  
-> **Deploy now (5 min):** [docs/DEPLOY_NOW.md](docs/DEPLOY_NOW.md)
+| **Legacy SPA** | Vite + React (still in repo; `npm run dev:vite`) |
 
 ## Quick start
 
 ```bash
 npm install
-npm run dev              # UI only (mock data)
-npm run dev:vercel       # UI + API (requires .env.local)
+cp .env.example .env.local
+# Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY
+npm run db:push          # Apply migrations (includes auth foundation)
+npm run dev              # Next.js dev server → http://localhost:3000
 ```
-
-## Production deploy
-
-1. Create Supabase project → `npm run db:push`
-2. Import repo in Vercel → set env vars from `.env.example`
-3. Add GitHub webhook → `/api/github/webhook`
-4. Set `VITE_USE_LIVE_API=true`
 
 ## Environment variables
 
-| Variable | Scope |
-|---|---|
-| `SUPABASE_URL` | Server |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server |
-| `GITHUB_WEBHOOK_SECRET` | Server |
-| `VITE_USE_LIVE_API` | Client — set `true` for live Supabase reads |
-
-## API routes
-
-| Route | Purpose |
-|---|---|
-| `GET /api/health` | Integration status |
-| `GET /api/data` | Full command center payload |
-| `GET /api/tasks` | Tasks + gates |
-| `POST /api/github/webhook` | PR/CI gate automation |
+| Variable | Scope | Required |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Client + server | Yes |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Client + server | Yes |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server only | For webhooks/admin scripts |
 
 ## App routes
 
-| Path | Module |
+| Path | Page |
 |---|---|
-| `/` | Today |
-| `/dashboard` | Dashboard |
-| `/operations` | Operations |
-| `/builds` | Builds |
-| `/monitor` | Monitor |
-| `/repair` | Repair |
-| `/customers` | Customers |
-| `/knowledge` | AI & Knowledge |
-| `/review` | Review |
-| `/settings` | Settings |
+| `/` | Command Center |
+| `/today` | Today workspace (live tasks from Supabase) |
+| `/workspace` | Assigned Work |
+| `/records` | Records |
+| `/admin` | Administration (admin role only) |
+| `/audit` | Audit Log |
+| `/login` | Sign in |
+| `/signup` | Create account |
 
-## Workflow stages
+## Database tables
 
-Inbox → Triage → Planned → In Progress → Waiting → Review → Done → Logged
+Core (from initial migration): `tasks`, `workflows`, `incidents`, `tools`, `customers`, `gate_checks`, …
 
-Mock seed data: `src/data/mockData.ts` · Supabase seed: `supabase/migrations/20260626000002_seed_data.sql`
+Auth foundation migration (`20260626000003_auth_foundation.sql`):
+- `profiles` — user role (`admin` / `employee`)
+- `workflow_stages` — reference stage definitions
+- `auth_audit_events` — sign-in/out and audit trail
+- RLS policies for authenticated read/write
 
-## Legacy
+## Promote a user to admin
 
-- Monolithic HTML prototype: `index.legacy.html`
-- Netlify config: `netlify.toml` (deprecated — use Vercel)
+After signup, in Supabase SQL editor:
+
+```sql
+update public.profiles set role = 'admin' where email = 'you@example.com';
+```
+
+Or set `role` in `auth.users.raw_app_meta_data` before first login.
+
+## Seed data
+
+Optional demo rows: `supabase/migrations/20260626000002_seed_data.sql` (applied with `db:push`).

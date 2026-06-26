@@ -4,17 +4,21 @@
   "version": "0.2.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "dev:vercel": "vercel dev",
-    "build": "tsc -b && vite build",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "dev:vite": "vite",
+    "build:vite": "tsc -b && vite build",
     "preview": "vite preview",
     "db:push": "supabase db push",
     "db:reset": "supabase db reset",
     "db:status": "supabase migration list"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.49.8",
     "@vercel/node": "^5.1.14",
+    "next": "^15.5.19",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.3"

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { WorkflowStage } from "@/types";
 
 export function StageBadge({ stage }: { stage: WorkflowStage }) {
@@ -34,40 +35,154 @@ export function StatusBadge({
   return <span className={`badge badge-${variant}`}>{status}</span>;
 }
 
+export function PageShell({ children }: { children: React.ReactNode }) {
+  return <div className="page-shell">{children}</div>;
+}
+
 export function PageHeader({
+  kicker,
   title,
   accent,
   subtitle,
+  description,
+  actions,
 }: {
+  kicker?: string;
   title: string;
   accent?: string;
   subtitle?: string;
+  description?: string;
+  actions?: React.ReactNode;
+}) {
+  const desc = description ?? subtitle;
+
+  return (
+    <header className="page-header-shell">
+      <div className="page-header-main">
+        {kicker ? <p className="page-kicker">{kicker}</p> : null}
+        <h1 className="page-title">
+          {title}
+          {accent ? <> <em>{accent}</em></> : null}
+        </h1>
+        {desc ? <p className="page-subtitle">{desc}</p> : null}
+      </div>
+      {actions ? <div className="page-header-actions">{actions}</div> : null}
+    </header>
+  );
+}
+
+export function PageButton({
+  variant = "secondary",
+  href,
+  onClick,
+  type = "button",
+  children,
+}: {
+  variant?: "primary" | "secondary";
+  href?: string;
+  onClick?: () => void;
+  type?: "button" | "submit";
+  children: React.ReactNode;
+}) {
+  const className = `page-btn page-btn-${variant}`;
+  if (href) {
+    return (
+      <Link href={href} className={className}>
+        {children}
+      </Link>
+    );
+  }
+  return (
+    <button type={type} className={className} onClick={onClick}>
+      {children}
+    </button>
+  );
+}
+
+export function FiltersToolbar({
+  searchPlaceholder = "Filter records…",
+  children,
+}: {
+  searchPlaceholder?: string;
+  children?: React.ReactNode;
 }) {
   return (
-    <header className="page-header">
-      <h1 className="page-title">
-        {title}
-        {accent ? <> <em>{accent}</em></> : null}
-      </h1>
-      {subtitle ? <p className="page-subtitle">{subtitle}</p> : null}
-    </header>
+    <div className="page-toolbar" role="toolbar" aria-label="Filters">
+      <div className="page-toolbar-group">
+        <input
+          type="search"
+          className="page-input"
+          placeholder={searchPlaceholder}
+          aria-label="Filter"
+        />
+        <select className="page-select" aria-label="Status filter" defaultValue="">
+          <option value="">All statuses</option>
+          <option value="active">Active</option>
+          <option value="pending">Pending</option>
+          <option value="closed">Closed</option>
+        </select>
+      </div>
+      {children ? <div className="page-toolbar-group">{children}</div> : null}
+    </div>
+  );
+}
+
+export function EmptyState({
+  icon = "TC",
+  title,
+  copy,
+}: {
+  icon?: string;
+  title: string;
+  copy: string;
+}) {
+  return (
+    <div className="page-state">
+      <div className="page-state-icon">{icon}</div>
+      <h2 className="page-state-title">{title}</h2>
+      <p className="page-state-copy">{copy}</p>
+    </div>
+  );
+}
+
+export function LoadingState({ copy }: { copy: string }) {
+  return (
+    <div className="page-state">
+      <p className="page-state-copy">{copy}</p>
+      <div className="page-loading-bar" aria-hidden="true" />
+    </div>
+  );
+}
+
+export function ErrorState({ title, copy }: { title: string; copy: string }) {
+  return (
+    <div className="page-state page-state-error">
+      <div className="page-state-icon">!</div>
+      <h2 className="page-state-title">{title}</h2>
+      <p className="page-state-copy">{copy}</p>
+    </div>
   );
 }
 
 export function Panel({
   title,
   action,
+  badge,
   children,
 }: {
   title: string;
   action?: React.ReactNode;
+  badge?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <section className="panel">
       <div className="panel-header">
         <span className="panel-title">{title}</span>
-        {action}
+        <div className="panel-header-end">
+          {badge}
+          {action}
+        </div>
       </div>
       <div className="panel-body">{children}</div>
     </section>
@@ -88,6 +203,52 @@ export function StatGrid({
           {stat.meta ? <div className="stat-meta">{stat.meta}</div> : null}
         </div>
       ))}
+    </div>
+  );
+}
+
+export function DataTableShell({
+  columns,
+  rows,
+  emptyTitle,
+  emptyCopy,
+}: {
+  columns: string[];
+  rows: React.ReactNode[][];
+  emptyTitle: string;
+  emptyCopy: string;
+}) {
+  if (rows.length === 0) {
+    return <EmptyState title={emptyTitle} copy={emptyCopy} />;
+  }
+
+  return (
+    <table className="data-table">
+      <thead>
+        <tr>
+          {columns.map((col) => (
+            <th key={col}>{col}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row, i) => (
+          <tr key={i}>
+            {row.map((cell, j) => (
+              <td key={j}>{cell}</td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+export function StatusRow({ label, copy }: { label: string; copy: React.ReactNode }) {
+  return (
+    <div className="status-row">
+      <div className="status-row-label">{label}</div>
+      <p className="status-row-copy">{copy}</p>
     </div>
   );
 }

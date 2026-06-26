@@ -16,7 +16,17 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
       label: "Focus",
       items: [
         { to: "/", icon: "◉", label: "Today", badge: data.focusItems.length },
-        { to: "/dashboard", icon: "▣", label: "Dashboard" },
+        { to: "/command-center", icon: "▣", label: "Command Center" },
+        { to: "/dashboard", icon: "◫", label: "Dashboard" },
+      ],
+    },
+    {
+      label: "Foundation",
+      items: [
+        { to: "/workspace", icon: "▤", label: "Workspace" },
+        { to: "/records", icon: "▥", label: "Records" },
+        { to: "/admin", icon: "⬢", label: "Admin" },
+        { to: "/audit", icon: "◧", label: "Audit" },
       ],
     },
     {

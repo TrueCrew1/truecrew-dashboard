@@ -1,0 +1,176 @@
+/* ── Operational modules (work orders, assets, crews) ─────────── */
+
+.ops-search-input {
+  min-width: 200px;
+}
+
+.ops-filter {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ops-filter-label {
+  font-family: var(--font-label);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-steel-dim);
+  white-space: nowrap;
+}
+
+.ops-filter-select {
+  min-width: 120px;
+}
+
+.ops-table-link {
+  display: grid;
+  gap: 2px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.ops-table-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.35;
+}
+
+.ops-table-meta {
+  font-size: 11px;
+  color: var(--color-steel-dim);
+  line-height: 1.35;
+}
+
+.ops-table-link:hover .ops-table-title {
+  color: var(--color-accent);
+}
+
+.ops-capacity {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* ── Detail layout ───────────────────────────────────────────── */
+
+.ops-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ops-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.ops-detail-main,
+.ops-detail-sidebar {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.ops-detail-note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-steel);
+}
+
+.ops-detail-empty {
+  margin: 0;
+  padding: var(--space-4);
+  font-size: 12px;
+  color: var(--color-steel-dim);
+  text-align: center;
+}
+
+.ops-inline-link {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.ops-inline-link:hover {
+  text-decoration: underline;
+}
+
+.ops-link-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ops-link-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  text-decoration: none;
+  color: inherit;
+  transition: background var(--transition-fast);
+}
+
+.ops-link-item:last-child {
+  border-bottom: none;
+}
+
+.ops-link-item:hover {
+  background: var(--color-surface-hover);
+}
+
+.ops-link-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  grid-column: 1 / -1;
+}
+
+.ops-link-meta {
+  font-size: 11px;
+  color: var(--color-steel-dim);
+}
+
+/* ── Crew capacity gauge ─────────────────────────────────────── */
+
+.ops-capacity-gauge {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+}
+
+.ops-capacity-bar {
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-2);
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+}
+
+.ops-capacity-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  opacity: 0.75;
+  transition: width var(--transition-base);
+}
+
+.ops-capacity-label {
+  margin: 0;
+  font-size: 11px;
+  color: var(--color-steel-dim);
+}
+
+@media (max-width: 960px) {
+  .ops-detail-layout {
+    grid-template-columns: 1fr;
+  }
+}
