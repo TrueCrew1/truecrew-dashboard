@@ -31,9 +31,7 @@
   padding: var(--space-5);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%),
-    var(--color-shell);
+  background: var(--surface-banner-gradient), var(--color-shell);
   box-shadow: var(--shadow-subtle), var(--shadow-inset-top);
 }
 
@@ -129,7 +127,7 @@
 
 .today-wip-gauge.wip-over {
   border-color: rgba(201, 64, 64, 0.35);
-  background: rgba(201, 64, 64, 0.08);
+  background: var(--color-critical-subtle);
 }
 
 .today-wip-gauge.wip-over .today-wip-count {
@@ -141,7 +139,7 @@
 .today-zone {
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
-  background: var(--color-surface-1);
+  background: var(--surface-panel-gradient), var(--color-surface-1);
   box-shadow: var(--shadow-subtle), var(--shadow-inset-top);
   overflow: hidden;
 }
@@ -226,6 +224,14 @@
 .today-list-row.active {
   background: var(--color-accent-subtle);
   box-shadow: inset 0 0 0 1px var(--color-accent-border);
+}
+
+.today-list-row-static {
+  cursor: default;
+}
+
+.today-list-row-static:hover {
+  background: transparent;
 }
 
 .today-list-main {
@@ -345,7 +351,8 @@
 
 .today-btn-primary {
   background: var(--color-accent);
-  color: var(--color-text-inverse, #141518);
+  color: var(--color-text-on-accent);
+  border-color: transparent;
 }
 
 .today-btn-primary:hover {
@@ -362,6 +369,133 @@
   background: var(--color-surface-hover);
   border-color: var(--border-strong);
   color: var(--text);
+}
+
+/* ── Filters toolbar ─────────────────────────────────────────── */
+
+.today-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-1);
+  box-shadow: var(--shadow-subtle), var(--shadow-inset-top);
+}
+
+.today-toolbar-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.today-filter {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.today-filter-label {
+  font-family: var(--font-label);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-steel-dim);
+  white-space: nowrap;
+}
+
+.today-filter-select {
+  min-width: 140px;
+  height: 32px;
+}
+
+/* ── MIT empty / alerts ──────────────────────────────────────── */
+
+.today-mit-clear {
+  color: var(--color-steel-dim);
+}
+
+.today-alert {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--color-steel);
+}
+
+.today-alert-danger {
+  border-color: rgba(201, 64, 64, 0.35);
+  background: var(--color-critical-subtle);
+  color: var(--text);
+}
+
+.today-alert-danger strong {
+  color: var(--red);
+}
+
+/* ── Danger zones ────────────────────────────────────────────── */
+
+.today-zone-danger {
+  border-color: rgba(201, 64, 64, 0.25);
+}
+
+.today-zone-title-danger {
+  color: var(--red);
+}
+
+.today-zone-count-danger {
+  border-color: rgba(201, 64, 64, 0.35);
+  background: var(--color-critical-subtle);
+  color: var(--red);
+}
+
+/* ── Next action card ────────────────────────────────────────── */
+
+.today-next-action {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.today-next-action-head {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.today-next-action-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text);
+}
+
+.today-next-action-detail {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--color-steel-dim);
+}
+
+.today-next-critical .today-next-action-title {
+  color: var(--red);
+}
+
+.today-next-high .today-next-action-title {
+  color: var(--orange);
+}
+
+/* ── Capture errors ──────────────────────────────────────────── */
+
+.today-capture-error {
+  margin: 0;
+  font-size: 11px;
+  color: var(--red);
+  line-height: 1.4;
 }
 
 @media (max-width: 960px) {

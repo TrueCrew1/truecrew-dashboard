@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { WorkflowStage } from "@/types";
 
 export function StageBadge({ stage }: { stage: WorkflowStage }) {
@@ -73,21 +73,21 @@ export function PageHeader({
 
 export function PageButton({
   variant = "secondary",
-  to,
+  href,
   onClick,
   type = "button",
   children,
 }: {
   variant?: "primary" | "secondary";
-  to?: string;
+  href?: string;
   onClick?: () => void;
   type?: "button" | "submit";
   children: React.ReactNode;
 }) {
   const className = `page-btn page-btn-${variant}`;
-  if (to) {
+  if (href) {
     return (
-      <Link to={to} className={className}>
+      <Link href={href} className={className}>
         {children}
       </Link>
     );

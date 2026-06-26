@@ -42,9 +42,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0.01) 48%, rgba(0, 0, 0, 0.08) 100%),
-    var(--color-shell);
+  background: var(--surface-shell-gradient), var(--color-shell);
   border-right: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-inset-top);
 }
@@ -354,14 +352,14 @@
 .topbar-btn.primary {
   border-color: var(--color-accent-border);
   background: var(--color-accent);
-  color: #141518;
-  font-weight: 600;
+  color: var(--color-text-on-accent);
+  font-weight: var(--weight-semibold);
 }
 
 .topbar-btn.primary:hover {
   background: var(--color-accent-hover);
   border-color: var(--color-accent-hover);
-  color: #141518;
+  color: var(--color-text-on-accent);
 }
 
 .topbar-avatar {
@@ -415,9 +413,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025) 0%, rgba(0, 0, 0, 0.06) 100%),
-    var(--color-shell);
+  background: var(--surface-rail-gradient), var(--color-shell);
   border-left: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-inset-top);
 }
@@ -503,9 +499,7 @@
 }
 
 .panel {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.008) 100%),
-    var(--color-surface-1);
+  background: var(--surface-panel-gradient), var(--color-surface-1);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   overflow: hidden;
@@ -553,18 +547,19 @@
 .data-table th {
   text-align: left;
   padding: 8px 14px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
   color: var(--steel-dim);
-  border-bottom: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--color-surface-hover);
 }
 
 .data-table td {
   padding: 9px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--border-subtle);
   vertical-align: middle;
 }
 
@@ -573,7 +568,7 @@
 }
 
 .data-table tr:hover td {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--color-surface-hover);
 }
 
 .stat-grid {
@@ -583,9 +578,7 @@
 }
 
 .stat-card {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.008) 100%),
-    var(--color-surface-1);
+  background: var(--surface-panel-gradient), var(--color-surface-1);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   padding: var(--space-3) var(--space-4);
@@ -785,8 +778,8 @@
   align-items: center;
   gap: 8px;
   padding: 6px 0;
-  font-size: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: var(--text-sm);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 .gate-list li:last-child {
