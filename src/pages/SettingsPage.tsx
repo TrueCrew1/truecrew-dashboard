@@ -7,6 +7,8 @@ export function SettingsPage() {
   const [health, setHealth] = useState<{
     supabase: boolean;
     githubWebhook: boolean;
+    host?: string;
+    liveApi?: boolean;
   } | null>(null);
 
   useEffect(() => {
@@ -99,9 +101,13 @@ export function SettingsPage() {
               <td className="mono">Supabase Postgres</td>
             </tr>
             <tr>
+              <td>Host</td>
+              <td className="mono">{health?.host ?? "unknown"}</td>
+            </tr>
+            <tr>
               <td>Live API</td>
               <td className="mono">
-                {isLiveApiEnabled() ? "VITE_USE_LIVE_API=true" : "mock fallback"}
+                {health?.liveApi ? "enabled" : isLiveApiEnabled() ? "pending deploy" : "mock mode"}
               </td>
             </tr>
             <tr>

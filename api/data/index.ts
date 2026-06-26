@@ -11,11 +11,11 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
   try {
     const raw = await fetchRawCommandCenterRows();
     const data = mapCommandCenterData(raw);
-    return res.status(200).json({ tasks: data.tasks, source: "supabase" });
+    return res.status(200).json({ ...data, source: "supabase" });
   } catch (error) {
-    console.error("Failed to fetch tasks", error);
+    console.error("Failed to fetch command center data", error);
     return res.status(500).json({
-      error: "Failed to fetch tasks",
+      error: "Failed to fetch data",
       message: error instanceof Error ? error.message : "Unknown error",
     });
   }

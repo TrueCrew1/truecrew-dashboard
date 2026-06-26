@@ -1,8 +1,9 @@
-import { mockData } from "@/data/mockData";
 import { PageHeader, Panel, StageBadge, SeverityBadge } from "@/components/ui";
+import { useData } from "@/context/DataContext";
 
 export function RepairPage() {
-  const repairWorkflows = mockData.workflows.filter((w) => w.type === "repair");
+  const { data } = useData();
+  const repairWorkflows = data.workflows.filter((w) => w.type === "repair");
 
   return (
     <>
@@ -23,9 +24,7 @@ export function RepairPage() {
           </thead>
           <tbody>
             {repairWorkflows.map((wf) => {
-              const incident = mockData.incidents.find(
-                (i) => i.linkedRepairId === wf.id,
-              );
+              const incident = data.incidents.find((i) => i.linkedRepairId === wf.id);
               return (
                 <tr key={wf.id}>
                   <td>{wf.title}</td>
@@ -36,8 +35,7 @@ export function RepairPage() {
                   <td>
                     {incident ? (
                       <>
-                        <SeverityBadge severity={incident.severity} />{" "}
-                        {incident.title}
+                        <SeverityBadge severity={incident.severity} /> {incident.title}
                       </>
                     ) : (
                       "—"
@@ -60,7 +58,7 @@ export function RepairPage() {
             </tr>
           </thead>
           <tbody>
-            {mockData.runbooks.map((rb) => (
+            {data.runbooks.map((rb) => (
               <tr key={rb.id}>
                 <td>{rb.title}</td>
                 <td>{rb.serviceName}</td>

@@ -1,11 +1,10 @@
-import { mockData } from "@/data/mockData";
 import { PageHeader, Panel, StageBadge, StatusBadge } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
 
 export function OperationsPage() {
   const { selectedEntityId, setSelectedEntityId } = useSelection();
-  const { tasks, source } = useData();
+  const { data, source } = useData();
 
   return (
     <>
@@ -26,15 +25,13 @@ export function OperationsPage() {
             </tr>
           </thead>
           <tbody>
-            {mockData.workflows.map((wf) => {
+            {data.workflows.map((wf) => {
               const blocking = wf.gates.filter((g) => g.required && !g.passed).length;
               return (
                 <tr
                   key={wf.id}
                   className={`clickable-row${selectedEntityId === wf.linkedTaskIds[0] ? " selected" : ""}`}
-                  onClick={() =>
-                    setSelectedEntityId(wf.linkedTaskIds[0] ?? wf.id)
-                  }
+                  onClick={() => setSelectedEntityId(wf.linkedTaskIds[0] ?? wf.id)}
                 >
                   <td>{wf.title}</td>
                   <td>
@@ -66,7 +63,7 @@ export function OperationsPage() {
             </tr>
           </thead>
           <tbody>
-            {tasks.map((task) => (
+            {data.tasks.map((task) => (
               <tr
                 key={task.id}
                 className={`clickable-row${selectedEntityId === task.id ? " selected" : ""}`}

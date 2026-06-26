@@ -1,11 +1,13 @@
-import { mockData } from "@/data/mockData";
 import { PageHeader, Panel, StatGrid, StageBadge } from "@/components/ui";
+import { useData } from "@/context/DataContext";
 import { WorkflowStage } from "@/types";
 
 export function DashboardPage() {
+  const { data } = useData();
+
   const stageCounts = Object.values(WorkflowStage).reduce(
     (acc, stage) => {
-      acc[stage] = mockData.tasks.filter((t) => t.stage === stage).length;
+      acc[stage] = data.tasks.filter((t) => t.stage === stage).length;
       return acc;
     },
     {} as Record<WorkflowStage, number>,
@@ -23,23 +25,23 @@ export function DashboardPage() {
         stats={[
           {
             label: "Active tasks",
-            value: mockData.tasks.filter((t) => t.stage !== WorkflowStage.Logged).length,
+            value: data.tasks.filter((t) => t.stage !== WorkflowStage.Logged).length,
             meta: `${stageCounts[WorkflowStage.InProgress]} in progress`,
           },
           {
             label: "Open incidents",
-            value: mockData.incidents.filter((i) => i.status !== "resolved").length,
-            meta: `${mockData.incidents.filter((i) => i.severity <= 2).length} Sev 1–2`,
+            value: data.incidents.filter((i) => i.status !== "resolved").length,
+            meta: `${data.incidents.filter((i) => i.severity <= 2).length} Sev 1–2`,
           },
           {
             label: "Services",
-            value: mockData.tools.length,
-            meta: `${mockData.tools.filter((t) => t.status !== "healthy").length} degraded`,
+            value: data.tools.length,
+            meta: `${data.tools.filter((t) => t.status !== "healthy").length} degraded`,
           },
           {
             label: "Customers",
-            value: mockData.customers.filter((c) => c.status === "active").length,
-            meta: `${mockData.customers.filter((c) => c.status === "onboarding").length} onboarding`,
+            value: data.customers.filter((c) => c.status === "active").length,
+            meta: `${data.customers.filter((c) => c.status === "onboarding").length} onboarding`,
           },
         ]}
       />
@@ -76,7 +78,7 @@ export function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {mockData.deploys.map((d) => (
+              {data.deploys.map((d) => (
                 <tr key={d.id}>
                   <td>{d.serviceName}</td>
                   <td>

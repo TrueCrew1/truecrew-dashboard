@@ -1,11 +1,12 @@
-import { mockData } from "@/data/mockData";
 import { PageHeader, Panel, StageBadge } from "@/components/ui";
+import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
 
 export function BuildsPage() {
   const { setSelectedEntityId } = useSelection();
-  const buildWorkflows = mockData.workflows.filter((w) => w.type === "build");
-  const buildTasks = mockData.tasks.filter((t) => t.workflowType === "build");
+  const { data } = useData();
+  const buildWorkflows = data.workflows.filter((w) => w.type === "build");
+  const buildTasks = data.tasks.filter((t) => t.workflowType === "build");
 
   return (
     <>

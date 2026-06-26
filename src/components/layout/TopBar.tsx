@@ -1,4 +1,4 @@
-import { mockData } from "@/data/mockData";
+import { useData } from "@/context/DataContext";
 
 interface TopBarProps {
   onToggleRail: () => void;
@@ -6,8 +6,9 @@ interface TopBarProps {
 }
 
 export function TopBar({ onToggleRail, railOpen }: TopBarProps) {
-  const alertCount = mockData.alerts.length;
-  const sevCount = mockData.incidents.filter((i) => i.severity <= 2).length;
+  const { data, source } = useData();
+  const alertCount = data.alerts.length;
+  const sevCount = data.incidents.filter((i) => i.severity <= 2).length;
 
   return (
     <header className="topbar">
@@ -21,6 +22,10 @@ export function TopBar({ onToggleRail, railOpen }: TopBarProps) {
       </div>
 
       <div className="topbar-actions">
+        {source !== "mock" ? (
+          <span className="badge badge-orange">{source}</span>
+        ) : null}
+
         <button type="button" className="topbar-btn primary">
           + Quick create
         </button>
