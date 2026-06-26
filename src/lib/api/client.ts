@@ -59,6 +59,22 @@ export async function fetchHealth(): Promise<{
   return response.json();
 }
 
+export async function advanceTaskStage(taskId: string, stage: string): Promise<void> {
+  const response = await fetch(`/api/tasks/${encodeURIComponent(taskId)}/stage`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ stage }),
+  });
+
+  if (!response.ok) {
+    const body = (await response.json().catch(() => ({}))) as {
+      error?: string;
+      message?: string;
+    };
+    throw new Error(body.message ?? body.error ?? `Stage advance failed (${response.status})`);
+  }
+}
+
 export function mergeWithMockFallback(live: Partial<CommandCenterPayload>): MockData {
   return {
     tasks: (live.tasks as Task[])?.length ? (live.tasks as Task[]) : mockData.tasks,

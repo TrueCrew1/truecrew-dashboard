@@ -1,10 +1,12 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { mockData, type MockData } from "@/data/mockData";
 import {
+  advanceTaskStage as advanceTaskStageApi,
   fetchCommandCenterData,
   isLiveApiEnabled,
   mergeWithMockFallback,
 } from "@/lib/api/client";
+import type { WorkflowStage } from "@/types";
 
 interface DataContextValue {
   data: MockData;
@@ -13,6 +15,7 @@ interface DataContextValue {
   source: "mock" | "supabase" | "mock-fallback";
   error: string | null;
   refresh: () => Promise<void>;
+  advanceTaskStage: (taskId: string, stage: WorkflowStage) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextValue | null>(null);
@@ -51,6 +54,27 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     void refresh();
   }, []);
 
+  const advanceTaskStage = async (taskId: string, stage: WorkflowStage) => {
+    if (!isLiveApiEnabled()) {
+      const updatedAt = new Date().toISOString();
+      setData((prev) => ({
+        ...prev,
+        tasks: prev.tasks.map((task) =>
+          task.id === taskId ? { ...task, stage, updatedAt } : task,
+        ),
+        workflows: prev.workflows.map((workflow) =>
+          workflow.linkedTaskIds.includes(taskId)
+            ? { ...workflow, stage, updatedAt }
+            : workflow,
+        ),
+      }));
+      return;
+    }
+
+    await advanceTaskStageApi(taskId, stage);
+    await refresh();
+  };
+
   const value = useMemo(
     () => ({
       data,
@@ -59,6 +83,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       source,
       error,
       refresh,
+      advanceTaskStage,
     }),
     [data, loading, source, error],
   );

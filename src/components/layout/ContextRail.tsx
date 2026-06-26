@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { GateList, SeverityBadge, StageBadge, formatRelativeTime } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import type { MockData } from "@/data/mockData";
-import { WorkflowStage } from "@/types";
+import { canAdvanceStage, getNextStage } from "../../../lib/gates/stage";
+import { WorkflowStage, type Task } from "@/types";
 
 interface ContextRailProps {
   open: boolean;
@@ -64,6 +66,46 @@ function DefaultRailContent({ data }: { data: MockData }) {
   );
 }
 
+function TaskAdvanceSection({ task }: { task: Task }) {
+  const { advanceTaskStage } = useData();
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const nextStage = getNextStage(task.stage);
+  if (!canAdvanceStage(task.stage, task.gates) || !nextStage) {
+    return null;
+  }
+
+  const handleAdvance = async () => {
+    setPending(true);
+    setError(null);
+    try {
+      await advanceTaskStage(task.id, nextStage as WorkflowStage);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to advance stage");
+    } finally {
+      setPending(false);
+    }
+  };
+
+  return (
+    <div className="rail-section">
+      <div className="rail-ready">
+        <div className="rail-ready-label">All required gates passed</div>
+        {error ? <div className="rail-ready-error">{error}</div> : null}
+        <button
+          type="button"
+          className="rail-advance-btn"
+          disabled={pending}
+          onClick={() => void handleAdvance()}
+        >
+          {pending ? "Advancing…" : `Advance to ${nextStage}`}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function EntityRailContent({ entityId, data }: { entityId: string; data: MockData }) {
   const task = data.tasks.find((t) => t.id === entityId);
   if (task) {
@@ -85,6 +127,7 @@ function EntityRailContent({ entityId, data }: { entityId: string; data: MockDat
           </div>
           <GateList gates={task.gates} />
         </div>
+        <TaskAdvanceSection task={task} />
         {task.githubRef ? (
           <div className="rail-section">
             <div className="rail-section-title">GitHub</div>

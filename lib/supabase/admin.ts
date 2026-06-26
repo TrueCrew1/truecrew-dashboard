@@ -86,10 +86,65 @@ export async function recordWebhookDelivery(
   return true;
 }
 
+export async function findTaskByClientId(clientId: string): Promise<DbTaskRow | null> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("tasks")
+    .select("*, gate_checks(*)")
+    .or(`legacy_id.eq.${clientId},id.eq.${clientId}`)
+    .maybeSingle();
+
+  if (error) throw error;
+  return (data as DbTaskRow | null) ?? null;
+}
+
+export async function updateTaskStage(
+  taskUuid: string,
+  newStage: string,
+): Promise<{ from: string; to: string }> {
+  const supabase = getSupabaseAdmin();
+
+  const { data: task, error: fetchError } = await supabase
+    .from("tasks")
+    .select("stage")
+    .eq("id", taskUuid)
+    .single();
+
+  if (fetchError) throw fetchError;
+
+  const fromStage = String(task.stage);
+
+  const { error: updateError } = await supabase
+    .from("tasks")
+    .update({ stage: newStage })
+    .eq("id", taskUuid);
+
+  if (updateError) throw updateError;
+
+  const { data: links, error: linksError } = await supabase
+    .from("workflow_tasks")
+    .select("workflow_id")
+    .eq("task_id", taskUuid);
+
+  if (linksError) throw linksError;
+
+  const workflowIds = (links ?? []).map((row) => row.workflow_id as string);
+  if (workflowIds.length > 0) {
+    const { error: workflowError } = await supabase
+      .from("workflows")
+      .update({ stage: newStage })
+      .in("id", workflowIds);
+
+    if (workflowError) throw workflowError;
+  }
+
+  return { from: fromStage, to: newStage };
+}
+
 export async function passGateForTasks(
   taskIds: string[],
   gateKey: string,
-  source: "github_webhook" | "system" = "github_webhook",
+  source: "github_webhook" | "system" | "manual" = "github_webhook",
 ): Promise<number> {
   if (taskIds.length === 0) return 0;
   const supabase = getSupabaseAdmin();
@@ -112,7 +167,7 @@ export async function passGateForTasks(
 export async function failGateForTasks(
   taskIds: string[],
   gateKey: string,
-  source: "github_webhook" | "system" = "github_webhook",
+  source: "github_webhook" | "system" | "manual" = "github_webhook",
 ): Promise<number> {
   if (taskIds.length === 0) return 0;
   const supabase = getSupabaseAdmin();
