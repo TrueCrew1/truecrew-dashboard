@@ -1,3 +1,5 @@
+# Deprecated: Netlify config retained for history. Production hosting is via Vercel. This file should not be used for new deploys.
+
 [build]
   command = "npm run build"
   publish = "dist"
