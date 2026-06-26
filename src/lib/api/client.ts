@@ -15,7 +15,10 @@ import type {
 } from "@/types";
 
 export function isLiveApiEnabled(): boolean {
-  return import.meta.env.VITE_USE_LIVE_API === "true";
+  return (
+    process.env.NEXT_PUBLIC_USE_LIVE_API === "true" ||
+    process.env.VITE_USE_LIVE_API === "true"
+  );
 }
 
 export interface CommandCenterPayload {

@@ -1,4 +1,6 @@
-import { useLocation } from "react-router-dom";
+"use client";
+
+import { usePathname } from "next/navigation";
 import { GateList, SeverityBadge, StageBadge, formatRelativeTime } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import type { MockData } from "@/data/mockData";
@@ -154,29 +156,25 @@ function EntityRailContent({ entityId, data }: { entityId: string; data: MockDat
 }
 
 export function ContextRail({ open, onClose, selectedEntityId }: ContextRailProps) {
-  const location = useLocation();
+  const pathname = usePathname();
   const { data } = useData();
 
   if (!open) return null;
 
   const routeLabels: Record<string, string> = {
-    "/": "Today",
-    "/dashboard": "Dashboard",
-    "/operations": "Operations",
-    "/builds": "Builds",
-    "/monitor": "Monitor",
-    "/repair": "Repair",
-    "/customers": "Customers",
-    "/knowledge": "AI & Knowledge",
-    "/review": "Review",
-    "/settings": "Settings",
+    "/": "Command Center",
+    "/today": "Today",
+    "/workspace": "Assigned Work",
+    "/records": "Records",
+    "/admin": "Administration",
+    "/audit": "Audit Log",
   };
 
   return (
     <aside className="context-rail">
       <div className="rail-header">
         <span className="rail-title">
-          {selectedEntityId ? "Context" : routeLabels[location.pathname] ?? "Context"}
+          {selectedEntityId ? "Context" : routeLabels[pathname] ?? "Context"}
         </span>
         <button type="button" className="rail-close" onClick={onClose} aria-label="Close panel">
           ×

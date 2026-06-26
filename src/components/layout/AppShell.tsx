@@ -1,11 +1,12 @@
+"use client";
+
 import { useState } from "react";
-import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { ContextRail } from "./ContextRail";
 import { SelectionContext } from "@/context/SelectionContext";
 
-export function AppShell() {
+export function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [railOpen, setRailOpen] = useState(true);
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
@@ -31,9 +32,7 @@ export function AppShell() {
             railOpen={railOpen}
             onToggleRail={() => setRailOpen((v) => !v)}
           />
-          <main className="page-content">
-            <Outlet />
-          </main>
+          <main className="page-content">{children}</main>
         </div>
 
         <ContextRail
