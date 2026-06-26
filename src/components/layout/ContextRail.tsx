@@ -150,6 +150,85 @@ function EntityRailContent({ entityId, data }: { entityId: string; data: MockDat
     );
   }
 
+  const deploy = data.deploys.find((d) => d.id === entityId);
+  if (deploy) {
+    return (
+      <>
+        <div className="rail-section">
+          <div className="rail-section-title">Deploy</div>
+          <div className="rail-item">
+            <div className="rail-item-title">{deploy.title}</div>
+            <div className="rail-item-meta">
+              {deploy.serviceName} · <StageBadge stage={deploy.stage} />
+            </div>
+            <div className="rail-item-meta mono">{deploy.version}</div>
+          </div>
+        </div>
+        <div className="rail-section">
+          <div className="rail-section-title">Rollback plan</div>
+          <div className="rail-item">{deploy.rollbackPlan}</div>
+        </div>
+      </>
+    );
+  }
+
+  const tool = data.tools.find((t) => t.id === entityId);
+  if (tool) {
+    return (
+      <>
+        <div className="rail-section">
+          <div className="rail-section-title">Service</div>
+          <div className="rail-item">
+            <div className="rail-item-title">{tool.name}</div>
+            <div className="rail-item-meta">
+              {tool.environment} · {tool.status}
+            </div>
+            {tool.currentVersion ? (
+              <div className="rail-item-meta mono">v{tool.currentVersion}</div>
+            ) : null}
+          </div>
+        </div>
+        {tool.openIncidentIds.length > 0 ? (
+          <div className="rail-section">
+            <div className="rail-section-title">Open incidents</div>
+            {tool.openIncidentIds.map((id) => {
+              const incident = data.incidents.find((i) => i.id === id);
+              return incident ? (
+                <div key={id} className="rail-item">
+                  <SeverityBadge severity={incident.severity} /> {incident.title}
+                </div>
+              ) : null;
+            })}
+          </div>
+        ) : null}
+      </>
+    );
+  }
+
+  const customer = data.customers.find((c) => c.id === entityId);
+  if (customer) {
+    const checklist = customer.onboardingChecklist.filter((item) => item.required);
+    return (
+      <>
+        <div className="rail-section">
+          <div className="rail-section-title">Customer</div>
+          <div className="rail-item">
+            <div className="rail-item-title">{customer.name}</div>
+            <div className="rail-item-meta">
+              {customer.tier} · {customer.status} · health {customer.healthScore}
+            </div>
+          </div>
+        </div>
+        {checklist.length > 0 ? (
+          <div className="rail-section">
+            <div className="rail-section-title">Onboarding checklist</div>
+            <GateList gates={checklist} />
+          </div>
+        ) : null}
+      </>
+    );
+  }
+
   return <DefaultRailContent data={data} />;
 }
 
