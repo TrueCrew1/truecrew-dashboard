@@ -1,23 +1,10 @@
 import type { MockData } from "@/data/mockData";
-import {
-  WorkflowStage,
-  type Customer,
-  type Deploy,
-  type Incident,
-  type Persona,
-  type Task,
-  type TaskPriority,
-  type Tool,
-} from "@/types";
+import type { Invoice, Job } from "@/types";
 
 const MS_HOUR = 3600000;
 
 export function hoursSince(iso: string): number {
   return (Date.now() - new Date(iso).getTime()) / MS_HOUR;
-}
-
-export function daysSince(iso: string): number {
-  return hoursSince(iso) / 24;
 }
 
 export function formatAge(iso: string): string {
@@ -27,107 +14,79 @@ export function formatAge(iso: string): string {
   return `${Math.floor(hours / 24)}d`;
 }
 
-export function isResolvedIncident(incident: Incident): boolean {
-  return incident.status === "resolved" || incident.status === "post_mortem_filed";
-}
-
-export function hasFailedRequiredGate(task: Task): boolean {
-  return task.gates.some((gate) => gate.required && !gate.passed);
-}
-
-export function failedGateLabels(task: Task): string[] {
-  return task.gates.filter((g) => g.required && !g.passed).map((g) => g.label);
-}
-
-export function isGateBlockedTask(task: Task): boolean {
-  const gatedStages = [WorkflowStage.InProgress, WorkflowStage.Review, WorkflowStage.Planned];
-  return gatedStages.includes(task.stage) && hasFailedRequiredGate(task);
-}
-
-export function isWaitingBlockedTask(task: Task): boolean {
-  return task.stage === WorkflowStage.Waiting && Boolean(task.blocker);
-}
-
-export function isBlockedTask(task: Task): boolean {
-  return isWaitingBlockedTask(task) || isGateBlockedTask(task);
-}
-
-export function productionTools(data: MockData): Tool[] {
-  return data.tools.filter((tool) => tool.environment === "production");
-}
-
-export function revenueCriticalTools(data: MockData): Tool[] {
-  return productionTools(data).filter((tool) => tool.tags.includes("revenue-critical"));
-}
-
-export function revenueCriticalToolIds(data: MockData): Set<string> {
-  return new Set(revenueCriticalTools(data).map((tool) => tool.id));
-}
-
-export function isRevenueCriticalTool(data: MockData, toolId: string): boolean {
-  return revenueCriticalToolIds(data).has(toolId);
-}
-
-export function taskTouchesRevenueCritical(data: MockData, task: Task): boolean {
-  return task.linkedEntities.some(
-    (ref) => ref.type === "tool" && isRevenueCriticalTool(data, ref.id),
+export function isSameDay(a: string, b: Date = new Date()): boolean {
+  const date = new Date(a);
+  return (
+    date.getFullYear() === b.getFullYear() &&
+    date.getMonth() === b.getMonth() &&
+    date.getDate() === b.getDate()
   );
 }
 
-export function openIncidents(data: MockData): Incident[] {
-  return data.incidents.filter((inc) => !isResolvedIncident(inc));
+export function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
 
-export function openHighRiskIncidents(data: MockData): Incident[] {
-  return openIncidents(data).filter((inc) => inc.severity <= 2);
+export function formatMoney(cents: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(cents / 100);
 }
 
-export function inFlightProductionDeploys(data: MockData): Deploy[] {
-  return data.deploys.filter(
-    (deploy) =>
-      deploy.environment === "production" &&
-      deploy.stage !== WorkflowStage.Done &&
-      deploy.stage !== WorkflowStage.Logged,
-  );
+export function isOpenJob(job: Job): boolean {
+  return job.status !== "complete";
 }
 
-export function checklistProgress(customer: Customer): { done: number; total: number } {
-  const required = customer.onboardingChecklist.filter((item) => item.required);
-  const total = required.length;
-  const done = required.filter((item) => item.passed).length;
-  return { done, total };
+export function isOverdueJob(job: Job): boolean {
+  return isOpenJob(job) && new Date(job.dueAt).getTime() < Date.now();
 }
 
-export function customerHasOpenHighTicket(data: MockData, customer: Customer): boolean {
-  return customer.linkedTicketIds.some((taskId) => {
-    const task = data.tasks.find((t) => t.id === taskId);
-    return (
-      task != null &&
-      (task.priority === "high" || task.priority === "critical") &&
-      task.stage !== WorkflowStage.Done &&
-      task.stage !== WorkflowStage.Logged
-    );
-  });
+export function isUnassignedJob(job: Job): boolean {
+  return isOpenJob(job) && !job.assigneeId;
 }
 
-export function personaLabel(persona: Persona): string {
-  return persona === "founder" ? "Founder" : persona === "operator" ? "Operator" : "Observer";
+export function isDueTodayJob(job: Job): boolean {
+  return isOpenJob(job) && isSameDay(job.dueAt);
 }
 
-export function priorityWeight(priority: TaskPriority): number {
-  const map: Record<TaskPriority, number> = {
-    critical: 4,
-    high: 3,
-    medium: 2,
-    low: 1,
+export function isLowStock(item: MockData["inventory"][number]): boolean {
+  return item.quantity <= item.reorderPoint;
+}
+
+export function isPendingInvoice(invoice: Invoice): boolean {
+  return invoice.status === "draft" || invoice.status === "sent" || invoice.status === "overdue";
+}
+
+export function isUnpaidInvoice(invoice: Invoice): boolean {
+  return invoice.status === "sent" || invoice.status === "overdue";
+}
+
+export function trendDirection(delta: number): "up" | "down" | "flat" {
+  if (delta > 0) return "up";
+  if (delta < 0) return "down";
+  return "flat";
+}
+
+export function formatTrendDelta(delta: number): string {
+  if (delta > 0) return `+${delta}`;
+  if (delta < 0) return String(delta);
+  return "→";
+}
+
+export function actionPill(type: string): string {
+  const map: Record<string, string> = {
+    closeout: "Closeout",
+    approval: "Approval",
+    failed_send: "Failed send",
+    follow_up: "Follow-up",
   };
-  return map[priority];
+  return map[type] ?? type;
 }
 
-export function withinDays(iso: string, days: number): boolean {
-  return daysSince(iso) <= days;
-}
-
-export function isOverdue(task: Task): boolean {
-  return task.dueAt != null && new Date(task.dueAt).getTime() < Date.now();
+export function actionDrillTo(type: string): string {
+  if (type === "closeout" || type === "approval") return "/review";
+  if (type === "failed_send") return "/customers?filter=invoices";
+  return "/repair";
 }

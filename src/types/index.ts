@@ -89,7 +89,10 @@ export interface LinkedEntityRef {
     | "customer"
     | "runbook"
     | "prompt"
-    | "note";
+    | "note"
+    | "job"
+    | "invoice"
+    | "inventory";
   id: string;
   label: string;
 }
@@ -227,4 +230,87 @@ export interface FocusItem {
   workflowType: WorkflowType;
   reason: string;
   dueAt?: string;
+}
+
+export type JobStatus =
+  | "scheduled"
+  | "in_progress"
+  | "blocked"
+  | "delayed"
+  | "complete"
+  | "closeout_review";
+
+export type CrewStatus = "available" | "on_job" | "off_shift" | "gap";
+
+export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue";
+
+export type DashboardActionType =
+  | "closeout"
+  | "approval"
+  | "failed_send"
+  | "follow_up";
+
+export interface Job extends EntityBase {
+  title: string;
+  customerId: string;
+  customerName: string;
+  status: JobStatus;
+  scheduledAt: string;
+  dueAt: string;
+  completedAt?: string;
+  assigneeId?: string;
+  assigneeName?: string;
+  crewId?: string;
+  blocker?: string;
+  repeatIssue?: boolean;
+  priority: TaskPriority;
+  address?: string;
+}
+
+export interface CrewMember extends EntityBase {
+  name: string;
+  role: string;
+  status: CrewStatus;
+  jobsToday: number;
+  shiftStart: string;
+  shiftEnd: string;
+}
+
+export interface DispatchSlot extends EntityBase {
+  label: string;
+  startAt: string;
+  endAt: string;
+  jobId?: string;
+  crewId?: string;
+  crewName?: string;
+  gapReason?: string;
+}
+
+export interface Invoice extends EntityBase {
+  number: string;
+  customerId: string;
+  customerName: string;
+  status: InvoiceStatus;
+  amountCents: number;
+  sentAt?: string;
+  dueAt?: string;
+  jobId?: string;
+}
+
+export interface InventoryItem extends EntityBase {
+  sku: string;
+  name: string;
+  quantity: number;
+  reorderPoint: number;
+  unit: string;
+  location: string;
+}
+
+export interface DashboardAction extends EntityBase {
+  type: DashboardActionType;
+  title: string;
+  reason: string;
+  entityId: string;
+  entityType: "job" | "invoice" | "task" | "customer";
+  priority: TaskPriority;
 }

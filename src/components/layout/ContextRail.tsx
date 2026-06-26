@@ -205,6 +205,73 @@ function EntityRailContent({ entityId, data }: { entityId: string; data: MockDat
     );
   }
 
+  const job = data.jobs.find((j) => j.id === entityId);
+  if (job) {
+    return (
+      <>
+        <div className="rail-section">
+          <div className="rail-section-title">Job</div>
+          <div className="rail-item">
+            <div className="rail-item-title">{job.title}</div>
+            <div className="rail-item-meta">
+              {job.customerName} · {job.status.replace("_", " ")}
+            </div>
+            {job.assigneeName ? (
+              <div className="rail-item-meta">Assigned · {job.assigneeName}</div>
+            ) : (
+              <div className="rail-item-meta">Unassigned</div>
+            )}
+          </div>
+        </div>
+        {job.blocker ? (
+          <div className="rail-section">
+            <div className="rail-section-title">Blocker</div>
+            <div className="rail-item">{job.blocker}</div>
+          </div>
+        ) : null}
+      </>
+    );
+  }
+
+  const invoice = data.invoices.find((i) => i.id === entityId);
+  if (invoice) {
+    return (
+      <>
+        <div className="rail-section">
+          <div className="rail-section-title">Invoice</div>
+          <div className="rail-item">
+            <div className="rail-item-title">{invoice.number}</div>
+            <div className="rail-item-meta">
+              {invoice.customerName} · {invoice.status}
+            </div>
+            <div className="rail-item-meta">
+              ${(invoice.amountCents / 100).toLocaleString()}
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  const inventory = data.inventory.find((i) => i.id === entityId);
+  if (inventory) {
+    return (
+      <>
+        <div className="rail-section">
+          <div className="rail-section-title">Inventory</div>
+          <div className="rail-item">
+            <div className="rail-item-title">{inventory.name}</div>
+            <div className="rail-item-meta mono">{inventory.sku}</div>
+            <div className="rail-item-meta">
+              {inventory.quantity} {inventory.unit} · reorder at {inventory.reorderPoint}
+            </div>
+            <div className="rail-item-meta">{inventory.location}</div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   const customer = data.customers.find((c) => c.id === entityId);
   if (customer) {
     const checklist = customer.onboardingChecklist.filter((item) => item.required);

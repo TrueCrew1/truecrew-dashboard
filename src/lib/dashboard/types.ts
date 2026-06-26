@@ -1,20 +1,9 @@
-import type { MockData } from "@/data/mockData";
-import type {
-  Incident,
-  Persona,
-  Tool,
-  WorkflowStage,
-} from "@/types";
-
-export type PostureLevel = "red" | "amber" | "green";
-export type KpiStatus = PostureLevel;
-export type CapacityStatus = "available" | "loaded" | "blocked";
+export type KpiStatus = "red" | "amber" | "green";
 export type TrendDirection = "up" | "down" | "flat";
 
-export interface Posture {
-  level: PostureLevel;
-  reason: string;
-  entityId?: string;
+export interface DrillLink {
+  label: string;
+  to: string;
 }
 
 export interface KpiTile {
@@ -23,70 +12,66 @@ export interface KpiTile {
   value: string;
   status: KpiStatus;
   context: string;
+  drillTo: string;
   entityId?: string;
 }
 
-export interface ActionQueueItem {
+export interface DispatchRow {
   id: string;
-  entityId: string;
-  tier: number;
+  time: string;
+  label: string;
+  detail: string;
+  status: "scheduled" | "gap" | "delayed" | "unassigned";
+  drillTo: string;
+  entityId?: string;
+}
+
+export interface DispatchSummary {
+  scheduledToday: number;
+  crewGaps: number;
+  delayedJobs: number;
+  rows: DispatchRow[];
+}
+
+export interface ActionQueueRow {
+  id: string;
   pill: string;
   title: string;
-  owner: string;
-  age: string;
   reason: string;
-  revenueImpact: boolean;
-  sortSeverity: number;
-  updatedAt: string;
-  dueAt?: string;
+  age: string;
+  drillTo: string;
+  entityId: string;
 }
 
-export interface OpsServiceRow {
+export interface RevenueRow {
   id: string;
-  name: string;
-  status: Tool["status"];
-  incidentCount: number;
-}
-
-export interface OpsIncidentRow {
-  id: string;
-  title: string;
-  severity: Incident["severity"];
-  status: Incident["status"];
-  serviceName: string;
-}
-
-export interface OpsDeployRow {
-  id: string;
-  title: string;
-  stage: WorkflowStage;
-  blocker: string;
-}
-
-export interface RevenueSegment {
   label: string;
   count: number;
-  note?: string;
+  amount: string;
+  drillTo: string;
 }
 
-export interface OnboardingRow {
+export interface RevenueLane {
+  draftCount: number;
+  sentCount: number;
+  unpaidBalance: string;
+  rows: RevenueRow[];
+}
+
+export interface RiskRow {
   id: string;
-  name: string;
-  checklistDone: number;
-  checklistTotal: number;
+  title: string;
+  detail: string;
+  pill: string;
+  drillTo: string;
+  entityId: string;
 }
 
-export interface AtRiskRow {
-  id: string;
-  name: string;
-  healthScore: number;
-  reason: string;
-}
-
-export interface CapacityRow {
-  persona: Persona;
-  label: string;
-  status: CapacityStatus;
+export interface RiskLane {
+  blockedCount: number;
+  repeatCount: number;
+  agingCount: number;
+  rows: RiskRow[];
 }
 
 export interface TrendCard {
@@ -95,27 +80,14 @@ export interface TrendCard {
   now: string;
   delta: string;
   direction: TrendDirection;
-  baselineBuilding: boolean;
+  drillTo: string;
 }
 
 export interface ExecutiveDashboardModel {
-  posture: Posture;
   kpis: KpiTile[];
-  actionQueue: ActionQueueItem[];
-  ops: {
-    services: OpsServiceRow[];
-    incidents: OpsIncidentRow[];
-    deploys: OpsDeployRow[];
-  };
-  revenue: {
-    segments: RevenueSegment[];
-    onboarding: OnboardingRow[];
-    atRisk: AtRiskRow[];
-    enterpriseBlocker?: string;
-  };
-  capacity: CapacityRow[];
+  dispatch: DispatchSummary;
+  actionQueue: ActionQueueRow[];
+  revenue: RevenueLane;
+  risk: RiskLane;
   trends: TrendCard[];
-  drillEntityId?: string;
 }
-
-export type DashboardData = MockData;

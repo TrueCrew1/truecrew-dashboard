@@ -2,10 +2,16 @@ import type { MockData } from "@/data/mockData";
 import { mockData } from "@/data/mockData";
 import type {
   AlertItem,
+  CrewMember,
   Customer,
+  DashboardAction,
   Deploy,
+  DispatchSlot,
   FocusItem,
   Incident,
+  InventoryItem,
+  Invoice,
+  Job,
   Note,
   Prompt,
   Runbook,
@@ -30,6 +36,12 @@ export interface CommandCenterPayload {
   notes: Note[];
   focusItems: FocusItem[];
   alerts: AlertItem[];
+  jobs?: Job[];
+  crew?: CrewMember[];
+  dispatch?: DispatchSlot[];
+  invoices?: Invoice[];
+  inventory?: InventoryItem[];
+  dashboardActions?: DashboardAction[];
   source?: string;
 }
 
@@ -61,28 +73,24 @@ export async function fetchHealth(): Promise<{
 
 export function mergeWithMockFallback(live: Partial<CommandCenterPayload>): MockData {
   return {
-    tasks: (live.tasks as Task[])?.length ? (live.tasks as Task[]) : mockData.tasks,
-    workflows: (live.workflows as Workflow[])?.length
-      ? (live.workflows as Workflow[])
-      : mockData.workflows,
-    incidents: (live.incidents as Incident[])?.length
-      ? (live.incidents as Incident[])
-      : mockData.incidents,
-    tools: (live.tools as Tool[])?.length ? (live.tools as Tool[]) : mockData.tools,
-    deploys: (live.deploys as Deploy[])?.length ? (live.deploys as Deploy[]) : mockData.deploys,
-    customers: (live.customers as Customer[])?.length
-      ? (live.customers as Customer[])
-      : mockData.customers,
-    runbooks: (live.runbooks as Runbook[])?.length
-      ? (live.runbooks as Runbook[])
-      : mockData.runbooks,
-    prompts: (live.prompts as Prompt[])?.length ? (live.prompts as Prompt[]) : mockData.prompts,
-    notes: (live.notes as Note[])?.length ? (live.notes as Note[]) : mockData.notes,
-    focusItems: (live.focusItems as FocusItem[])?.length
-      ? (live.focusItems as FocusItem[])
-      : mockData.focusItems,
-    alerts: (live.alerts as AlertItem[])?.length
-      ? (live.alerts as AlertItem[])
-      : mockData.alerts,
+    tasks: live.tasks?.length ? live.tasks : mockData.tasks,
+    workflows: live.workflows?.length ? live.workflows : mockData.workflows,
+    incidents: live.incidents?.length ? live.incidents : mockData.incidents,
+    tools: live.tools?.length ? live.tools : mockData.tools,
+    deploys: live.deploys?.length ? live.deploys : mockData.deploys,
+    customers: live.customers?.length ? live.customers : mockData.customers,
+    runbooks: live.runbooks?.length ? live.runbooks : mockData.runbooks,
+    prompts: live.prompts?.length ? live.prompts : mockData.prompts,
+    notes: live.notes?.length ? live.notes : mockData.notes,
+    focusItems: live.focusItems?.length ? live.focusItems : mockData.focusItems,
+    alerts: live.alerts?.length ? live.alerts : mockData.alerts,
+    jobs: live.jobs?.length ? live.jobs : mockData.jobs,
+    crew: live.crew?.length ? live.crew : mockData.crew,
+    dispatch: live.dispatch?.length ? live.dispatch : mockData.dispatch,
+    invoices: live.invoices?.length ? live.invoices : mockData.invoices,
+    inventory: live.inventory?.length ? live.inventory : mockData.inventory,
+    dashboardActions: live.dashboardActions?.length
+      ? live.dashboardActions
+      : mockData.dashboardActions,
   };
 }

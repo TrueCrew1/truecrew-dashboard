@@ -745,61 +745,28 @@
   font-size: 12px;
 }
 
-.exec-top-strip {
+.exec-status-strip {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 12px;
-  padding: 14px 16px;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 10px 14px;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--bg-panel);
 }
 
-.exec-posture {
-  min-width: 88px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
+.exec-status-title {
+  display: block;
   font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-align: center;
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
-.exec-posture.exec-status-red {
-  border-color: rgba(255, 68, 68, 0.35);
-  background: rgba(255, 68, 68, 0.12);
-  color: var(--red);
-}
-
-.exec-posture.exec-status-amber {
-  border-color: rgba(245, 158, 11, 0.35);
-  background: rgba(245, 158, 11, 0.1);
-  color: var(--yellow);
-}
-
-.exec-posture.exec-status-green {
-  border-color: rgba(34, 197, 94, 0.35);
-  background: rgba(34, 197, 94, 0.1);
-  color: var(--green);
-}
-
-.exec-top-copy {
-  flex: 1;
-  min-width: 0;
-}
-
-.exec-top-reason {
-  font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 4px;
-}
-
-.exec-top-meta {
+.exec-status-sub {
   font-size: 11px;
   color: var(--steel-dim);
 }
@@ -808,11 +775,21 @@
   flex-shrink: 0;
 }
 
+.exec-drill-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
 .exec-kpi-strip {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
   margin-bottom: 12px;
+}
+
+.exec-kpi-strip-6 {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
 }
 
 .exec-kpi-tile {
@@ -897,6 +874,69 @@
   grid-template-columns: 1.35fr 1fr 1fr;
   gap: 12px;
   margin-bottom: 12px;
+}
+
+.exec-main-grid-4 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.exec-summary-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.exec-mini-stat {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.exec-mini-stat:hover {
+  border-color: var(--orange-border);
+}
+
+.exec-mini-value {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.exec-mini-label {
+  display: block;
+  margin-top: 2px;
+  font-size: 10px;
+  color: var(--steel-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.exec-row-time {
+  font-size: 11px;
+  color: var(--steel-dim);
+  font-variant-numeric: tabular-nums;
+  min-width: 88px;
+  flex-shrink: 0;
+}
+
+.exec-row-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.exec-lane-footer {
+  padding: 12px 14px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--steel);
 }
 
 .exec-panel-primary {
@@ -991,7 +1031,7 @@
 
 .exec-queue-main {
   display: grid;
-  grid-template-columns: auto 1fr auto auto;
+  grid-template-columns: auto 1fr auto;
   gap: 8px;
   align-items: center;
 }
@@ -1039,6 +1079,10 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
+}
+
+.exec-trend-grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .exec-trend-card {
@@ -1102,30 +1146,39 @@
 }
 
 @media (max-width: 1200px) {
-  .exec-kpi-strip {
+  .exec-kpi-strip,
+  .exec-kpi-strip-6 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .exec-main-grid {
+  .exec-main-grid,
+  .exec-main-grid-4 {
     grid-template-columns: 1fr;
   }
 
-  .exec-trend-grid {
+  .exec-trend-grid,
+  .exec-trend-grid-3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 700px) {
   .exec-kpi-strip,
-  .exec-trend-grid {
+  .exec-kpi-strip-6,
+  .exec-trend-grid,
+  .exec-trend-grid-3 {
     grid-template-columns: 1fr;
   }
 
-  .exec-top-strip {
+  .exec-status-strip {
     flex-wrap: wrap;
   }
 
   .exec-queue-main {
+    grid-template-columns: 1fr;
+  }
+
+  .exec-summary-row {
     grid-template-columns: 1fr;
   }
 }
