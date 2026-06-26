@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
 import type { ProfileRow } from "@/types/database";
@@ -45,6 +46,7 @@ export function FoundationTopBar({ profile }: { profile: ProfileRow | null }) {
       </div>
 
       <div className="topbar-actions">
+        <ThemeToggle />
         <span className="topbar-role">{profile?.role === "admin" ? "Admin" : "Employee"}</span>
         <div className="topbar-avatar" title={profile?.full_name ?? profile?.email ?? "User"}>
           {(profile?.full_name ?? profile?.email ?? "U").charAt(0).toUpperCase()}

@@ -1,12 +1,6 @@
 @import "../src/styles/tokens.css";
 @import "../src/styles/global.css";
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
 html,
 body {
   margin: 0;
@@ -14,27 +8,31 @@ body {
   background: var(--color-base);
   color: var(--text);
   font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: 1.45;
   -webkit-font-smoothing: antialiased;
 }
 
 a {
   color: inherit;
+  text-decoration: none;
 }
 
 button,
 input,
 select {
   font: inherit;
+  cursor: pointer;
 }
+
+/* ── Auth pages ─────────────────────────────────────────────── */
 
 .auth-page {
   min-height: 100vh;
   display: grid;
   place-items: center;
   padding: var(--space-6);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, rgba(0, 0, 0, 0.12) 100%),
-    var(--color-base);
+  background: var(--surface-auth-gradient), var(--color-base);
 }
 
 .auth-card {
@@ -42,9 +40,7 @@ select {
   padding: var(--space-6);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0.01) 100%),
-    var(--color-shell);
+  background: var(--surface-header-gradient), var(--color-shell);
   box-shadow: var(--shadow-subtle), var(--shadow-inset-top);
 }
 
@@ -59,20 +55,21 @@ select {
   background: var(--color-accent-subtle);
   color: var(--color-accent);
   font-family: var(--font-display);
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
 }
 
 .auth-title {
   margin: 0 0 var(--space-1);
   font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: 700;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
 }
 
 .auth-subtitle {
   margin: 0 0 var(--space-5);
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--color-steel-dim);
 }
 
@@ -88,9 +85,9 @@ select {
 
 .auth-label {
   font-family: var(--font-label);
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wider);
   text-transform: uppercase;
   color: var(--color-steel-dim);
 }
@@ -103,6 +100,9 @@ select {
   background: var(--color-surface-1);
   color: var(--text);
   outline: none;
+  transition:
+    border-color var(--transition-base),
+    box-shadow var(--transition-base);
 }
 
 .auth-input:focus {
@@ -112,20 +112,19 @@ select {
 
 .auth-error {
   margin: 0;
-  font-size: 12px;
-  color: var(--red);
+  font-size: var(--text-sm);
+  color: var(--color-danger);
 }
 
 .auth-footer {
   margin-top: var(--space-4);
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--color-steel-dim);
   text-align: center;
 }
 
 .auth-footer a {
   color: var(--color-accent);
-  text-decoration: none;
 }
 
 .auth-footer a:hover {
