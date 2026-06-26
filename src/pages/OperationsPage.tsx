@@ -1,15 +1,17 @@
 import { mockData } from "@/data/mockData";
 import { PageHeader, Panel, StageBadge, StatusBadge } from "@/components/ui";
+import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
 
 export function OperationsPage() {
   const { selectedEntityId, setSelectedEntityId } = useSelection();
+  const { tasks, source } = useData();
 
   return (
     <>
       <PageHeader
         title="Operations"
-        subtitle="All active workflows across build, deploy, repair, ticket, onboarding, and decision types"
+        subtitle={`All active workflows · data source: ${source}`}
       />
 
       <Panel title="Active workflows">
@@ -64,7 +66,7 @@ export function OperationsPage() {
             </tr>
           </thead>
           <tbody>
-            {mockData.tasks.map((task) => (
+            {tasks.map((task) => (
               <tr
                 key={task.id}
                 className={`clickable-row${selectedEntityId === task.id ? " selected" : ""}`}

@@ -1,9 +1,11 @@
 import { mockData } from "@/data/mockData";
 import { PageHeader, Panel, StageBadge, SeverityBadge } from "@/components/ui";
+import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
 
 export function TodayPage() {
   const { setSelectedEntityId } = useSelection();
+  const { tasks } = useData();
 
   return (
     <>
@@ -80,7 +82,7 @@ export function TodayPage() {
             </tr>
           </thead>
           <tbody>
-            {mockData.tasks
+            {tasks
               .filter((t) => t.gates.some((g) => g.required && !g.passed))
               .map((task) => (
                 <tr
