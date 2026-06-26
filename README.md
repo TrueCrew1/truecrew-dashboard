@@ -6,7 +6,7 @@ Premium desktop command center for running business operations end-to-end.
 
 | Layer | Technology |
 |---|---|
-| **Host** | Vercel — SPA + serverless `/api` routes |
+| **Host** | Vercel — Next.js App Router + serverless `/api` routes |
 | **Database** | Supabase Postgres |
 | **GitHub** | Webhooks → automatic gate updates |
 | **Knowledge** | Obsidian Sync (Phase C) |
@@ -18,7 +18,7 @@ Premium desktop command center for running business operations end-to-end.
 
 ```bash
 npm install
-npm run dev              # UI only (mock data)
+npm run dev              # Next.js dev server (mock data)
 npm run dev:vercel       # UI + API (requires .env.local)
 ```
 
@@ -27,7 +27,7 @@ npm run dev:vercel       # UI + API (requires .env.local)
 1. Create Supabase project → `npm run db:push`
 2. Import repo in Vercel → set env vars from `.env.example`
 3. Add GitHub webhook → `/api/github/webhook`
-4. Set `VITE_USE_LIVE_API=true`
+4. Set `NEXT_PUBLIC_USE_LIVE_API=true`
 
 ## Environment variables
 
@@ -36,7 +36,7 @@ npm run dev:vercel       # UI + API (requires .env.local)
 | `SUPABASE_URL` | Server |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server |
 | `GITHUB_WEBHOOK_SECRET` | Server |
-| `VITE_USE_LIVE_API` | Client — set `true` for live Supabase reads |
+| `NEXT_PUBLIC_USE_LIVE_API` | Client — set `true` for live Supabase reads |
 
 ## API routes
 
@@ -51,16 +51,12 @@ npm run dev:vercel       # UI + API (requires .env.local)
 
 | Path | Module |
 |---|---|
-| `/` | Today |
-| `/dashboard` | Dashboard |
-| `/operations` | Operations |
-| `/builds` | Builds |
-| `/monitor` | Monitor |
-| `/repair` | Repair |
-| `/customers` | Customers |
-| `/knowledge` | AI & Knowledge |
-| `/review` | Review |
-| `/settings` | Settings |
+| `/` | Command Center |
+| `/today` | Today workspace |
+| `/workspace` | Assigned Work |
+| `/records` | Records |
+| `/admin` | Administration |
+| `/audit` | Audit Log |
 
 ## Workflow stages
 

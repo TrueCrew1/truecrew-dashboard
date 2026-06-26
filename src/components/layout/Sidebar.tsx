@@ -1,51 +1,49 @@
-import { NavLink } from "react-router-dom";
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useData } from "@/context/DataContext";
 
 interface NavItem {
-  to: string;
+  href: string;
   icon: string;
   label: string;
   badge?: number;
 }
 
 export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
+  const pathname = usePathname();
   const { data } = useData();
 
   const navSections: { label: string; items: NavItem[] }[] = [
     {
-      label: "Focus",
+      label: "Command",
+      items: [{ href: "/", icon: "▣", label: "Command Center" }],
+    },
+    {
+      label: "Work",
       items: [
-        { to: "/", icon: "◉", label: "Today", badge: data.focusItems.length },
-        { to: "/dashboard", icon: "▣", label: "Dashboard" },
+        { href: "/today", icon: "◉", label: "Today", badge: data.focusItems.length },
+        { href: "/workspace", icon: "⚙", label: "Assigned Work" },
       ],
     },
     {
-      label: "Operations",
-      items: [
-        { to: "/operations", icon: "⚙", label: "Operations" },
-        { to: "/builds", icon: "⬡", label: "Builds" },
-        {
-          to: "/monitor",
-          icon: "◎",
-          label: "Monitor",
-          badge: data.incidents.filter((i) => i.severity <= 2).length || undefined,
-        },
-        { to: "/repair", icon: "⛊", label: "Repair" },
-      ],
-    },
-    {
-      label: "Business",
-      items: [
-        { to: "/customers", icon: "◈", label: "Customers" },
-        { to: "/knowledge", icon: "◫", label: "AI & Knowledge" },
-        { to: "/review", icon: "◑", label: "Review" },
-      ],
+      label: "Data",
+      items: [{ href: "/records", icon: "◈", label: "Records" }],
     },
     {
       label: "System",
-      items: [{ to: "/settings", icon: "⬢", label: "Settings" }],
+      items: [
+        { href: "/admin", icon: "⬢", label: "Administration" },
+        { href: "/audit", icon: "◫", label: "Audit Log" },
+      ],
     },
   ];
+
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/";
+    return pathname === href || pathname.startsWith(`${href}/`);
+  };
 
   return (
     <aside className="sidebar">
@@ -65,13 +63,10 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
               <div className="nav-section-label">{section.label}</div>
             ) : null}
             {section.items.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.to === "/"}
-                className={({ isActive }) =>
-                  `nav-link${isActive ? " active" : ""}`
-                }
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`nav-link${isActive(item.href) ? " active" : ""}`}
                 title={collapsed ? item.label : undefined}
               >
                 <span className="nav-icon">{item.icon}</span>
@@ -83,7 +78,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
                     ) : null}
                   </>
                 ) : null}
-              </NavLink>
+              </Link>
             ))}
           </div>
         ))}
