@@ -263,6 +263,107 @@ export interface Database {
         };
         Update: Partial<Database["public"]["Tables"]["audit_events"]["Insert"]>;
       };
+      crews: {
+        Row: {
+          id: string;
+          slug: string;
+          name: string;
+          site_name: string | null;
+          capacity: number;
+          availability: string;
+          lead_name: string | null;
+          notes: string;
+          active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          name: string;
+          site_name?: string | null;
+          capacity?: number;
+          availability?: string;
+          lead_name?: string | null;
+          notes?: string;
+          active?: boolean;
+        };
+        Update: Partial<Database["public"]["Tables"]["crews"]["Insert"]>;
+      };
+      assets: {
+        Row: {
+          id: string;
+          legacy_id: string | null;
+          name: string;
+          asset_type: string;
+          site_name: string | null;
+          status: string;
+          serial_number: string | null;
+          manufacturer: string | null;
+          model: string | null;
+          crew_id: string | null;
+          last_service_at: string | null;
+          next_service_at: string | null;
+          notes: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          legacy_id?: string | null;
+          name: string;
+          asset_type?: string;
+          site_name?: string | null;
+          status?: string;
+          serial_number?: string | null;
+          manufacturer?: string | null;
+          model?: string | null;
+          crew_id?: string | null;
+          last_service_at?: string | null;
+          next_service_at?: string | null;
+          notes?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["assets"]["Insert"]>;
+      };
+      work_orders: {
+        Row: {
+          id: string;
+          legacy_id: string | null;
+          title: string;
+          description: string;
+          status: string;
+          priority: string;
+          site_name: string | null;
+          sla_tier: string;
+          due_at: string | null;
+          crew_id: string | null;
+          asset_id: string | null;
+          assignee: string | null;
+          blocker: string | null;
+          completed_at: string | null;
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          legacy_id?: string | null;
+          title: string;
+          description?: string;
+          status?: string;
+          priority?: string;
+          site_name?: string | null;
+          sla_tier?: string;
+          due_at?: string | null;
+          crew_id?: string | null;
+          asset_id?: string | null;
+          assignee?: string | null;
+          blocker?: string | null;
+          completed_at?: string | null;
+          created_by?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["work_orders"]["Insert"]>;
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -275,3 +376,14 @@ export type TaskRow = Database["public"]["Tables"]["tasks"]["Row"] & {
 };
 
 export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
+
+export type WorkOrderRow = Database["public"]["Tables"]["work_orders"]["Row"] & {
+  crews?: Pick<CrewRow, "id" | "name" | "slug"> | null;
+  assets?: Pick<AssetRow, "id" | "name" | "legacy_id"> | null;
+};
+
+export type AssetRow = Database["public"]["Tables"]["assets"]["Row"] & {
+  crews?: Pick<CrewRow, "id" | "name" | "slug"> | null;
+};
+
+export type CrewRow = Database["public"]["Tables"]["crews"]["Row"];

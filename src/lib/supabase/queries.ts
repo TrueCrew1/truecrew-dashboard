@@ -103,3 +103,99 @@ export async function recordAuthAudit(
     metadata,
   } as Database["public"]["Tables"]["auth_audit_events"]["Insert"]);
 }
+
+export async function fetchWorkOrders(): Promise<
+  import("@/types/database").WorkOrderRow[]
+> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("work_orders")
+    .select("*, crews(id, name, slug), assets(id, name, legacy_id)")
+    .order("updated_at", { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []) as import("@/types/database").WorkOrderRow[];
+}
+
+export async function fetchWorkOrderById(id: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("work_orders")
+    .select("*, crews(id, name, slug, site_name, availability), assets(id, name, legacy_id, asset_type, status)")
+    .eq("id", id)
+    .single();
+
+  if (error) throw error;
+  return data as import("@/types/database").WorkOrderRow;
+}
+
+export async function fetchAssets(): Promise<import("@/types/database").AssetRow[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("assets")
+    .select("*, crews(id, name, slug)")
+    .order("updated_at", { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []) as import("@/types/database").AssetRow[];
+}
+
+export async function fetchAssetById(id: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("assets")
+    .select("*, crews(id, name, slug, site_name, lead_name)")
+    .eq("id", id)
+    .single();
+
+  if (error) throw error;
+  return data as import("@/types/database").AssetRow;
+}
+
+export async function fetchCrews(): Promise<import("@/types/database").CrewRow[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("crews")
+    .select("*")
+    .order("name", { ascending: true });
+
+  if (error) throw error;
+  return (data ?? []) as import("@/types/database").CrewRow[];
+}
+
+export async function fetchCrewById(id: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("crews")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) throw error;
+  return data as import("@/types/database").CrewRow;
+}
+
+export async function fetchWorkOrdersByCrewId(crewId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("work_orders")
+    .select("id, title, status, priority, due_at")
+    .eq("crew_id", crewId)
+    .in("status", ["draft", "open", "in_progress", "blocked", "waiting"])
+    .order("due_at", { ascending: true });
+
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchAssetsByCrewId(crewId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("assets")
+    .select("id, name, asset_type, status")
+    .eq("crew_id", crewId)
+    .order("name", { ascending: true });
+
+  if (error) throw error;
+  return data ?? [];
+}

@@ -244,7 +244,7 @@ export function DataTableShell({
   );
 }
 
-export function StatusRow({ label, copy }: { label: string; copy: string }) {
+export function StatusRow({ label, copy }: { label: string; copy: React.ReactNode }) {
   return (
     <div className="status-row">
       <div className="status-row-label">{label}</div>
