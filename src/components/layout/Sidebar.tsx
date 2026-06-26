@@ -15,7 +15,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
     {
       label: "Focus",
       items: [
-        { to: "/", icon: "◉", label: "Today", badge: data.focusItems.length },
+        { to: "/", icon: "◉", label: "Today" },
         { to: "/command-center", icon: "▣", label: "Command Center" },
         { to: "/dashboard", icon: "◫", label: "Dashboard" },
       ],
