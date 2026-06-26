@@ -1,12 +1,13 @@
-import { PageHeader, Panel, StageBadge, StatusBadge } from "@/components/ui";
+import { PageHeader, PageShell, Panel, StageBadge, StatusBadge } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 
 export function CustomersPage() {
   const { data } = useData();
 
   return (
-    <>
+    <PageShell>
       <PageHeader
+        kicker="Account management"
         title="Customers"
         subtitle="Account records, onboarding pipelines, and health signals"
       />
@@ -54,6 +55,6 @@ export function CustomersPage() {
           </tbody>
         </table>
       </Panel>
-    </>
+    </PageShell>
   );
 }

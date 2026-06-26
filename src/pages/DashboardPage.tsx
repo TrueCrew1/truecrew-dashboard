@@ -1,4 +1,4 @@
-import { PageHeader, Panel, StatGrid, StageBadge } from "@/components/ui";
+import { PageHeader, PageShell, Panel, StatGrid, StageBadge } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import { WorkflowStage } from "@/types";
 
@@ -14,8 +14,9 @@ export function DashboardPage() {
   );
 
   return (
-    <>
+    <PageShell>
       <PageHeader
+        kicker="Operational overview"
         title="Dashboard"
         accent="Overview"
         subtitle="Operational snapshot across workflows, services, and customers"
@@ -91,6 +92,6 @@ export function DashboardPage() {
           </table>
         </Panel>
       </div>
-    </>
+    </PageShell>
   );
 }

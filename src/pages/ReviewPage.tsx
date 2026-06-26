@@ -1,4 +1,4 @@
-import { PageHeader, Panel, StageBadge } from "@/components/ui";
+import { PageHeader, PageShell, Panel, StageBadge } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import { WorkflowStage } from "@/types";
 
@@ -10,8 +10,9 @@ export function ReviewPage() {
   ];
 
   return (
-    <>
+    <PageShell>
       <PageHeader
+        kicker="Verification queue"
         title="Review"
         subtitle="Items awaiting verification: code review, QA, stakeholder sign-off"
       />
@@ -69,6 +70,6 @@ export function ReviewPage() {
           </tbody>
         </table>
       </Panel>
-    </>
+    </PageShell>
   );
 }
