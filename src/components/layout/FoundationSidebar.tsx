@@ -12,6 +12,9 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { href: "/", icon: "▣", label: "Command Center" },
   { href: "/today", icon: "◉", label: "Today" },
+  { href: "/work-orders", icon: "▦", label: "Work Orders" },
+  { href: "/assets", icon: "▧", label: "Assets" },
+  { href: "/crews", icon: "▨", label: "Crews" },
   { href: "/workspace", icon: "▤", label: "Workspace" },
   { href: "/records", icon: "▥", label: "Records" },
   { href: "/admin", icon: "⬢", label: "Admin" },
