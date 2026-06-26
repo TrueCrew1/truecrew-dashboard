@@ -10,14 +10,14 @@ import {
   StatusRow,
 } from "@/components/ui";
 
-export function CommandCenterPage() {
+export function CommandCenterPage({ roleLabel = "Employee" }: { roleLabel?: string }) {
   return (
     <PageShell>
       <PageHeader
         kicker="Application foundation"
         title="Command Center"
-        description="A protected operational shell with reusable patterns ready for maintenance, field-service, and administrative modules."
-        actions={<PageButton to="/workspace" variant="primary">Open workspace</PageButton>}
+        description="A protected operational shell with Supabase auth, Postgres records, and reusable page patterns."
+        actions={<PageButton href="/workspace" variant="primary">Open workspace</PageButton>}
       />
 
       <StatGrid
@@ -25,17 +25,17 @@ export function CommandCenterPage() {
           {
             label: "Protected shell",
             value: "Active",
-            meta: "Session-gated routing is enabled.",
+            meta: "Supabase session auth gates all routes.",
           },
           {
             label: "Role controls",
-            value: "Admin",
-            meta: "Navigation reflects the active role.",
+            value: roleLabel,
+            meta: "Navigation reflects the signed-in profile role.",
           },
           {
-            label: "Audit hooks",
-            value: "Ready",
-            meta: "Client-side audit plumbing is available for future modules.",
+            label: "Database",
+            value: "Supabase",
+            meta: "Tasks, workflows, incidents, tools, and customers.",
           },
         ]}
       />

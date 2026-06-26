@@ -228,6 +228,14 @@
   box-shadow: inset 0 0 0 1px var(--color-accent-border);
 }
 
+.today-list-row-static {
+  cursor: default;
+}
+
+.today-list-row-static:hover {
+  background: transparent;
+}
+
 .today-list-main {
   min-width: 0;
 }

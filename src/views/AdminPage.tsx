@@ -13,7 +13,7 @@ export function AdminPage() {
         kicker="Admin control"
         title="Administration"
         description="Admin-only route visibility is active. Future settings, user controls, and policy management can mount here."
-        actions={<PageButton to="/audit" variant="primary">View audit log</PageButton>}
+        actions={<PageButton href="/audit" variant="primary">View audit log</PageButton>}
       />
 
       <div className="grid-3">
