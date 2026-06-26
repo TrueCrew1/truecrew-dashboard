@@ -36,46 +36,31 @@
 
 /* Sidebar */
 .sidebar {
-  background: rgba(10, 11, 13, 0.96);
+  background: linear-gradient(180deg, rgba(14, 15, 18, 0.98) 0%, rgba(10, 11, 13, 0.98) 100%);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-shadow: inset -1px 0 0 rgba(255, 122, 26, 0.06);
 }
 
 .sidebar-header {
-  padding: 14px 14px 12px;
+  padding: 12px 12px 10px;
   border-bottom: 1px solid var(--border);
+  background: var(--brand-gradient);
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 52px;
+  min-height: 64px;
 }
 
-.sidebar-mark {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  background: linear-gradient(135deg, var(--orange), var(--orange-dim));
-  display: grid;
-  place-items: center;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 12px;
-  color: #0a0b0d;
-  flex-shrink: 0;
-}
-
-.sidebar-title {
-  font-family: var(--font-display);
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--orange);
-  white-space: nowrap;
-}
-
-.sidebar-title span {
-  color: var(--steel);
+.sidebar-footer-brand {
+  padding: 8px 14px 4px;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+  opacity: 0.7;
 }
 
 .sidebar-nav {
@@ -109,9 +94,10 @@
 }
 
 .nav-link.active {
-  background: rgba(255, 122, 26, 0.1);
+  background: linear-gradient(90deg, rgba(255, 122, 26, 0.14), rgba(168, 204, 232, 0.04));
   border-left-color: var(--orange);
-  color: var(--orange);
+  color: var(--orange-bright);
+  box-shadow: inset 0 0 0 1px rgba(255, 122, 26, 0.08);
 }
 
 .nav-icon {
@@ -167,11 +153,34 @@
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 20px;
-  background: rgba(10, 11, 13, 0.85);
-  backdrop-filter: blur(12px);
+  gap: 16px;
+  padding: 0 20px 0 16px;
+  background: rgba(10, 11, 13, 0.92);
+  backdrop-filter: blur(16px);
   flex-shrink: 0;
+  box-shadow: 0 1px 0 rgba(168, 204, 232, 0.04);
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-right: 16px;
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.topbar-brand .brand-logo {
+  height: 32px;
+  width: auto;
+}
+
+.topbar-brand .brand-wordmark-compact .brand-wordmark-title {
+  font-size: 11px;
+}
+
+.topbar-brand .brand-wordmark-sub {
+  display: none;
 }
 
 .topbar-search {
@@ -192,6 +201,7 @@
 
 .topbar-search input:focus {
   border-color: var(--orange-border);
+  box-shadow: 0 0 0 3px rgba(255, 122, 26, 0.08);
 }
 
 .topbar-search-icon {
@@ -228,9 +238,16 @@
 }
 
 .topbar-btn.primary {
-  background: rgba(255, 122, 26, 0.12);
+  background: linear-gradient(135deg, rgba(255, 122, 26, 0.18), rgba(255, 122, 26, 0.08));
   border-color: var(--orange-border);
-  color: var(--orange);
+  color: var(--orange-bright);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.topbar-btn.primary:hover {
+  background: linear-gradient(135deg, rgba(255, 122, 26, 0.28), rgba(255, 122, 26, 0.12));
+  border-color: var(--orange);
 }
 
 .topbar-avatar {
@@ -346,6 +363,9 @@
 /* Shared page components */
 .page-header {
   margin-bottom: 16px;
+  padding-left: 12px;
+  border-left: 3px solid transparent;
+  border-image: var(--brand-accent-bar) 1;
 }
 
 .page-title {
@@ -353,11 +373,13 @@
   font-size: 20px;
   font-weight: 700;
   margin: 0 0 4px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 .page-title em {
   font-style: normal;
-  color: var(--orange);
+  color: var(--orange-bright);
 }
 
 .page-subtitle {
@@ -371,6 +393,7 @@
   border: 1px solid var(--border);
   border-radius: 10px;
   overflow: hidden;
+  box-shadow: 0 1px 0 rgba(168, 204, 232, 0.03);
 }
 
 .panel-header {
@@ -380,15 +403,27 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  background: linear-gradient(90deg, rgba(255, 122, 26, 0.04), transparent 40%);
 }
 
 .panel-title {
   font-family: var(--font-display);
   font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--steel-dim);
+  color: var(--steel);
+}
+
+.panel-title::before {
+  content: "";
+  display: inline-block;
+  width: 3px;
+  height: 10px;
+  margin-right: 8px;
+  background: var(--brand-accent-bar);
+  border-radius: 1px;
+  vertical-align: middle;
 }
 
 .panel-body {
@@ -439,6 +474,19 @@
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--brand-accent-bar);
+  opacity: 0.65;
 }
 
 .stat-label {
@@ -455,6 +503,7 @@
   font-size: 22px;
   font-weight: 700;
   line-height: 1;
+  color: var(--steel-bright);
 }
 
 .stat-meta {
@@ -519,9 +568,9 @@
 }
 
 .badge-blue {
-  background: rgba(59, 130, 246, 0.12);
-  color: var(--blue);
-  border: 1px solid rgba(59, 130, 246, 0.25);
+  background: rgba(168, 204, 232, 0.1);
+  color: var(--ice);
+  border: 1px solid rgba(168, 204, 232, 0.22);
 }
 
 .badge-steel {
@@ -605,4 +654,82 @@
 
 .gate-check.failed {
   color: var(--steel-dim);
+}
+
+/* Brand */
+.brand-logo {
+  height: auto;
+  max-width: 100%;
+  object-fit: contain;
+  display: block;
+  user-select: none;
+}
+
+.brand-logo-glow {
+  filter: drop-shadow(0 0 10px rgba(255, 122, 26, 0.35))
+    drop-shadow(0 0 16px rgba(168, 204, 232, 0.12));
+}
+
+.brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.brand-lockup .brand-logo {
+  height: 46px;
+  width: auto;
+  flex-shrink: 0;
+}
+
+.sidebar.collapsed-brand .brand-logo {
+  height: 36px;
+  width: 36px;
+  object-fit: cover;
+  object-position: center 18%;
+}
+
+.brand-wordmark {
+  min-width: 0;
+}
+
+.brand-wordmark-title {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.1;
+}
+
+.brand-wordmark-true {
+  color: var(--steel-bright);
+  font-size: 13px;
+}
+
+.brand-wordmark-crew {
+  color: var(--orange-bright);
+  font-size: 13px;
+}
+
+.brand-wordmark-compact .brand-wordmark-true,
+.brand-wordmark-compact .brand-wordmark-crew {
+  font-size: 12px;
+}
+
+.brand-wordmark-sub {
+  margin-top: 2px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+}
+
+.badge-ice {
+  background: rgba(168, 204, 232, 0.1);
+  color: var(--ice);
+  border: 1px solid rgba(168, 204, 232, 0.22);
 }
