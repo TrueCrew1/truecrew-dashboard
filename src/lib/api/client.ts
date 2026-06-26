@@ -59,6 +59,28 @@ export async function fetchHealth(): Promise<{
   return response.json();
 }
 
+export type GateAction = "pass" | "fail";
+
+export async function updateGate(
+  taskId: string,
+  gateKey: string,
+  action: GateAction,
+): Promise<{ ok: boolean; updated: number }> {
+  const response = await fetch("/api/gates", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ taskId, gateKey, action }),
+  });
+
+  const payload = (await response.json()) as { error?: string; message?: string; updated?: number };
+
+  if (!response.ok) {
+    throw new Error(payload.message ?? payload.error ?? `Gate API returned ${response.status}`);
+  }
+
+  return { ok: true, updated: payload.updated ?? 0 };
+}
+
 export function mergeWithMockFallback(live: Partial<CommandCenterPayload>): MockData {
   return {
     tasks: (live.tasks as Task[])?.length ? (live.tasks as Task[]) : mockData.tasks,

@@ -606,3 +606,18 @@
 .gate-check.failed {
   color: var(--steel-dim);
 }
+
+.gate-list-interactive .gate-list-item-interactive {
+  cursor: pointer;
+  border-radius: 4px;
+  margin: 0 -6px;
+  padding: 6px;
+}
+
+.gate-list-interactive .gate-list-item-interactive:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.gate-check.pending {
+  opacity: 0.45;
+}

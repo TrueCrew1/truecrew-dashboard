@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { GateList, SeverityBadge, StageBadge, formatRelativeTime } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import type { MockData } from "@/data/mockData";
-import { WorkflowStage } from "@/types";
+import { updateGate } from "@/lib/api/client";
+import { WorkflowStage, type Task } from "@/types";
 
 interface ContextRailProps {
   open: boolean;
@@ -64,41 +66,78 @@ function DefaultRailContent({ data }: { data: MockData }) {
   );
 }
 
+function TaskRailContent({ task }: { task: Task }) {
+  const { refresh, source } = useData();
+  const [pendingGateKey, setPendingGateKey] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const interactive = source === "supabase";
+  const blocking = task.gates.filter((g) => g.required && !g.passed).length;
+
+  async function handleGateToggle(gateKey: string, passed: boolean) {
+    setPendingGateKey(gateKey);
+    setError(null);
+    try {
+      await updateGate(task.id, gateKey, passed ? "fail" : "pass");
+      await refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update gate");
+    } finally {
+      setPendingGateKey(null);
+    }
+  }
+
+  return (
+    <>
+      <div className="rail-section">
+        <div className="rail-section-title">Stage tracker</div>
+        <div className="rail-item">
+          <StageBadge stage={task.stage} />
+          <div className="rail-item-meta" style={{ marginTop: 6 }}>
+            {task.workflowType} · {task.priority} priority
+          </div>
+        </div>
+      </div>
+      <div className="rail-section">
+        <div className="rail-section-title">
+          Gate checklist {blocking > 0 ? `(${blocking} blocking)` : ""}
+        </div>
+        <GateList
+          gates={task.gates}
+          interactive={interactive}
+          onToggle={handleGateToggle}
+          pendingGateKey={pendingGateKey}
+          hint={
+            interactive
+              ? "Click a gate to pass or reset it."
+              : "Gate updates require live Supabase (VITE_USE_LIVE_API=true)."
+          }
+        />
+        {error ? (
+          <p className="rail-error" style={{ fontSize: 11, color: "var(--red)", margin: "8px 0 0" }}>
+            {error}
+          </p>
+        ) : null}
+      </div>
+      {task.githubRef ? (
+        <div className="rail-section">
+          <div className="rail-section-title">GitHub</div>
+          <div className="rail-item mono">{task.githubRef}</div>
+        </div>
+      ) : null}
+      {task.blocker ? (
+        <div className="rail-section">
+          <div className="rail-section-title">Blocker</div>
+          <div className="rail-item">{task.blocker}</div>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
 function EntityRailContent({ entityId, data }: { entityId: string; data: MockData }) {
   const task = data.tasks.find((t) => t.id === entityId);
   if (task) {
-    const blocking = task.gates.filter((g) => g.required && !g.passed).length;
-    return (
-      <>
-        <div className="rail-section">
-          <div className="rail-section-title">Stage tracker</div>
-          <div className="rail-item">
-            <StageBadge stage={task.stage} />
-            <div className="rail-item-meta" style={{ marginTop: 6 }}>
-              {task.workflowType} · {task.priority} priority
-            </div>
-          </div>
-        </div>
-        <div className="rail-section">
-          <div className="rail-section-title">
-            Gate checklist {blocking > 0 ? `(${blocking} blocking)` : ""}
-          </div>
-          <GateList gates={task.gates} />
-        </div>
-        {task.githubRef ? (
-          <div className="rail-section">
-            <div className="rail-section-title">GitHub</div>
-            <div className="rail-item mono">{task.githubRef}</div>
-          </div>
-        ) : null}
-        {task.blocker ? (
-          <div className="rail-section">
-            <div className="rail-section-title">Blocker</div>
-            <div className="rail-item">{task.blocker}</div>
-          </div>
-        ) : null}
-      </>
-    );
+    return <TaskRailContent task={task} />;
   }
 
   const incident = data.incidents.find((i) => i.id === entityId);

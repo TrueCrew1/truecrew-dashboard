@@ -94,25 +94,65 @@ export function StatGrid({
 
 export function GateList({
   gates,
+  interactive = false,
+  onToggle,
+  pendingGateKey,
+  hint,
 }: {
   gates: { id: string; label: string; required: boolean; passed: boolean }[];
+  interactive?: boolean;
+  onToggle?: (gateKey: string, passed: boolean) => void;
+  pendingGateKey?: string | null;
+  hint?: string;
 }) {
   return (
-    <ul className="gate-list">
-      {gates.map((gate) => (
-        <li key={gate.id}>
-          <span className={`gate-check ${gate.passed ? "passed" : "failed"}`}>
-            {gate.passed ? "✓" : ""}
-          </span>
-          <span>
-            {gate.label}
-            {!gate.required ? (
-              <span style={{ color: "var(--steel-dim)", marginLeft: 6 }}>(optional)</span>
-            ) : null}
-          </span>
-        </li>
-      ))}
-    </ul>
+    <>
+      {hint ? (
+        <p className="gate-list-hint" style={{ fontSize: 11, color: "var(--steel-dim)", margin: "0 0 8px" }}>
+          {hint}
+        </p>
+      ) : null}
+      <ul className={`gate-list ${interactive ? "gate-list-interactive" : ""}`}>
+        {gates.map((gate) => {
+          const pending = pendingGateKey === gate.id;
+          const handleActivate = () => {
+            if (interactive && onToggle && !pending) {
+              onToggle(gate.id, gate.passed);
+            }
+          };
+
+          return (
+            <li
+              key={gate.id}
+              className={interactive ? "gate-list-item-interactive" : undefined}
+              role={interactive ? "button" : undefined}
+              tabIndex={interactive ? 0 : undefined}
+              aria-busy={pending || undefined}
+              onClick={handleActivate}
+              onKeyDown={(event) => {
+                if (!interactive || !onToggle || pending) return;
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onToggle(gate.id, gate.passed);
+                }
+              }}
+            >
+              <span
+                className={`gate-check ${gate.passed ? "passed" : "failed"} ${pending ? "pending" : ""}`}
+              >
+                {gate.passed ? "✓" : ""}
+              </span>
+              <span>
+                {gate.label}
+                {!gate.required ? (
+                  <span style={{ color: "var(--steel-dim)", marginLeft: 6 }}>(optional)</span>
+                ) : null}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </>
   );
 }
 
