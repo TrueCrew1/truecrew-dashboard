@@ -4,6 +4,7 @@ import { RouterProvider } from "react-router-dom";
 import { DataProvider } from "@/context/DataContext";
 import { router } from "@/routes";
 import "@/styles/global.css";
+import "@/styles/today.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
