@@ -10,6 +10,11 @@ export interface ClientTask {
   assignee?: string;
   dueAt?: string;
   blocker?: string;
+  site?: string;
+  crew?: string;
+  slaTier?: string;
+  slaDueAt?: string;
+  isMit?: boolean;
   gates: { id: string; label: string; required: boolean; passed: boolean }[];
   linkedEntities: [];
   githubRef?: string;
@@ -37,6 +42,11 @@ export function mapDbTaskToClient(row: DbTaskRow): ClientTask {
     assignee: row.assignee ?? undefined,
     dueAt: row.due_at ?? undefined,
     blocker: row.blocker ?? undefined,
+    site: row.site ?? "production",
+    crew: row.crew ?? "platform",
+    slaTier: row.sla_tier ?? "p2",
+    slaDueAt: row.sla_due_at ?? undefined,
+    isMit: row.is_mit ?? false,
     gates,
     linkedEntities: [],
     githubRef: row.github_ref ?? undefined,

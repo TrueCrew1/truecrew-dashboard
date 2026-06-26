@@ -34,6 +34,11 @@ export interface DbTaskRow {
   assignee: string | null;
   due_at: string | null;
   blocker: string | null;
+  site?: string;
+  crew?: string;
+  sla_tier?: string;
+  sla_due_at?: string | null;
+  is_mit?: boolean;
   github_ref: string | null;
   github_repo: string | null;
   github_issue_number: number | null;

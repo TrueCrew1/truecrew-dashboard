@@ -94,6 +94,10 @@ export interface LinkedEntityRef {
   label: string;
 }
 
+export type TaskSite = "production" | "staging" | "internal";
+export type TaskCrew = "platform" | "support" | "founder" | "operator";
+export type SlaTier = "p0" | "p1" | "p2" | "p3";
+
 export interface Task extends EntityBase {
   title: string;
   description: string;
@@ -103,6 +107,11 @@ export interface Task extends EntityBase {
   assignee?: Persona;
   dueAt?: string;
   blocker?: string;
+  site?: TaskSite;
+  crew?: TaskCrew;
+  slaTier?: SlaTier;
+  slaDueAt?: string;
+  isMit?: boolean;
   gates: GateCheck[];
   linkedEntities: LinkedEntityRef[];
   githubRef?: string;
