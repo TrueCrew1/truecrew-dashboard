@@ -1,7 +1,21 @@
-import { PageHeader, Panel } from "@/components/ui";
+import { useEffect, useState } from "react";
+import { PageHeader, Panel, StatusBadge } from "@/components/ui";
+import { fetchHealth, isLiveApiEnabled } from "@/lib/api/client";
 import { WORKFLOW_STAGES } from "@/types";
 
 export function SettingsPage() {
+  const [health, setHealth] = useState<{
+    supabase: boolean;
+    githubWebhook: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!isLiveApiEnabled()) return;
+    fetchHealth()
+      .then((result) => setHealth(result))
+      .catch(() => setHealth(null));
+  }, []);
+
   return (
     <>
       <PageHeader
@@ -39,17 +53,64 @@ export function SettingsPage() {
             </thead>
             <tbody>
               <tr>
-                <td>GitHub</td>
-                <td style={{ color: "var(--steel-dim)" }}>Not connected</td>
+                <td>Supabase</td>
+                <td>
+                  {health?.supabase ? (
+                    <StatusBadge status="Connected" variant="green" />
+                  ) : (
+                    <span style={{ color: "var(--steel-dim)" }}>Not configured</span>
+                  )}
+                </td>
+              </tr>
+              <tr>
+                <td>GitHub webhook</td>
+                <td>
+                  {health?.githubWebhook ? (
+                    <StatusBadge status="Configured" variant="green" />
+                  ) : (
+                    <span style={{ color: "var(--steel-dim)" }}>Not configured</span>
+                  )}
+                </td>
               </tr>
               <tr>
                 <td>Obsidian vault</td>
-                <td style={{ color: "var(--steel-dim)" }}>Not connected</td>
+                <td style={{ color: "var(--steel-dim)" }}>Phase C — not connected</td>
               </tr>
             </tbody>
           </table>
         </Panel>
       </div>
+
+      <Panel title="Deployment">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Setting</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Host</td>
+              <td className="mono">Vercel (SPA + /api routes)</td>
+            </tr>
+            <tr>
+              <td>Database</td>
+              <td className="mono">Supabase Postgres</td>
+            </tr>
+            <tr>
+              <td>Live API</td>
+              <td className="mono">
+                {isLiveApiEnabled() ? "VITE_USE_LIVE_API=true" : "mock fallback"}
+              </td>
+            </tr>
+            <tr>
+              <td>Webhook endpoint</td>
+              <td className="mono">POST /api/github/webhook</td>
+            </tr>
+          </tbody>
+        </table>
+      </Panel>
 
       <Panel title="Personas & permissions">
         <table className="data-table">
