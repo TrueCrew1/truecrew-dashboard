@@ -1,3 +1,5 @@
+import { renderToday, bindTodayEvents, unbindTodayEvents } from "./today.js";
+
 const SESSION_KEY = "truecrew.session";
 const AUDIT_KEY = "truecrew.audit";
 const SEARCH_MIN_LENGTH = 2;
@@ -16,6 +18,7 @@ const roles = Object.freeze({
 const appState = {
   user: readSession(),
   sidebarOpen: false,
+  currentRouteId: null,
 };
 
 const routes = [
@@ -29,11 +32,20 @@ const routes = [
     render: renderDashboard,
   },
   {
+    id: "today",
+    path: "/today",
+    label: "Today",
+    section: "Workspace",
+    icon: "02",
+    roles: ["admin", "employee"],
+    render: renderToday,
+  },
+  {
     id: "workspace",
     path: "/workspace",
     label: "Assigned Work",
     section: "Workspace",
-    icon: "02",
+    icon: "03",
     roles: ["admin", "employee"],
     render: renderWorkspace,
   },
@@ -42,7 +54,7 @@ const routes = [
     path: "/records",
     label: "Records",
     section: "Workspace",
-    icon: "03",
+    icon: "04",
     roles: ["admin", "employee"],
     render: renderRecords,
   },
@@ -51,7 +63,7 @@ const routes = [
     path: "/admin",
     label: "Administration",
     section: "Admin",
-    icon: "04",
+    icon: "05",
     roles: ["admin"],
     render: renderAdmin,
   },
@@ -60,7 +72,7 @@ const routes = [
     path: "/audit",
     label: "Audit Log",
     section: "Admin",
-    icon: "05",
+    icon: "06",
     roles: ["admin"],
     render: renderAudit,
   },
@@ -169,6 +181,7 @@ function renderShell(activeRoute) {
   const app = getApp();
   const visibleRoutes = getVisibleRoutes();
   const route = activeRoute.route;
+  appState.currentRouteId = route.id;
   const content = activeRoute.status === "ok" ? route.render() : renderRouteState(activeRoute);
 
   app.innerHTML = `
@@ -568,6 +581,11 @@ function statusChip(label, tone = "success") {
 }
 
 function bindShellEvents() {
+  unbindTodayEvents();
+  if (appState.currentRouteId === "today") {
+    bindTodayEvents();
+  }
+
   document.getElementById("sign-out").addEventListener("click", handleSignOut);
   document.getElementById("menu-toggle")?.addEventListener("click", () => {
     appState.sidebarOpen = !appState.sidebarOpen;
