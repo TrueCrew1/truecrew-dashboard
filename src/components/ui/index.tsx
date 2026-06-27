@@ -1,4 +1,6 @@
-import { WorkflowStage } from "@/types";
+import { useState } from "react";
+import { useData } from "@/context/DataContext";
+import { WORKFLOW_STAGES, WorkflowStage } from "@/types";
 
 export function StageBadge({ stage }: { stage: WorkflowStage }) {
   const activeStages = [
@@ -10,6 +12,67 @@ export function StageBadge({ stage }: { stage: WorkflowStage }) {
     <span className={`stage-pill ${activeStages.includes(stage) ? "active" : ""}`}>
       {stage}
     </span>
+  );
+}
+
+export function StageSelect({
+  stage,
+  onChange,
+  disabled,
+  error,
+}: {
+  stage: WorkflowStage;
+  onChange: (stage: WorkflowStage) => void;
+  disabled?: boolean;
+  error?: string | null;
+}) {
+  return (
+    <span className="stage-select-wrap" onClick={(e) => e.stopPropagation()}>
+      <select
+        className="stage-select"
+        value={stage}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value as WorkflowStage)}
+        aria-label="Task stage"
+      >
+        {WORKFLOW_STAGES.map((value) => (
+          <option key={value} value={value}>
+            {value}
+          </option>
+        ))}
+      </select>
+      {error ? <span className="stage-select-error">{error}</span> : null}
+    </span>
+  );
+}
+
+export function TaskStageSelect({
+  taskId,
+  stage,
+}: {
+  taskId: string;
+  stage: WorkflowStage;
+}) {
+  const { updateTaskStage, isTaskUpdating } = useData();
+  const [error, setError] = useState<string | null>(null);
+
+  const handleChange = async (next: WorkflowStage) => {
+    if (next === stage) return;
+    setError(null);
+    try {
+      await updateTaskStage(taskId, next);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Update failed");
+    }
+  };
+
+  return (
+    <StageSelect
+      stage={stage}
+      onChange={handleChange}
+      disabled={isTaskUpdating(taskId)}
+      error={error}
+    />
   );
 }
 

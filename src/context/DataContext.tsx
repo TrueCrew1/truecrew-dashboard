@@ -1,10 +1,33 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { mockData, type MockData } from "@/data/mockData";
 import {
   fetchCommandCenterData,
   isLiveApiEnabled,
   mergeWithMockFallback,
+  patchTaskStage,
 } from "@/lib/api/client";
+import type { WorkflowStage } from "@/types";
+
+function applyTaskStage(data: MockData, taskId: string, stage: WorkflowStage): MockData {
+  return {
+    ...data,
+    tasks: data.tasks.map((task) =>
+      task.id === taskId
+        ? { ...task, stage, updatedAt: new Date().toISOString() }
+        : task,
+    ),
+    focusItems: data.focusItems.map((item) =>
+      item.taskId === taskId ? { ...item, stage } : item,
+    ),
+  };
+}
 
 interface DataContextValue {
   data: MockData;
@@ -13,6 +36,8 @@ interface DataContextValue {
   source: "mock" | "supabase" | "mock-fallback";
   error: string | null;
   refresh: () => Promise<void>;
+  updateTaskStage: (taskId: string, stage: WorkflowStage) => Promise<void>;
+  isTaskUpdating: (taskId: string) => boolean;
 }
 
 const DataContext = createContext<DataContextValue | null>(null);
@@ -22,6 +47,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(isLiveApiEnabled());
   const [source, setSource] = useState<DataContextValue["source"]>("mock");
   const [error, setError] = useState<string | null>(null);
+  const [updatingTaskIds, setUpdatingTaskIds] = useState<Set<string>>(new Set());
 
   const refresh = async () => {
     if (!isLiveApiEnabled()) {
@@ -47,6 +73,45 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateTaskStage = useCallback(async (taskId: string, stage: WorkflowStage) => {
+    let snapshot: MockData | null = null;
+
+    setData((prev) => {
+      snapshot = prev;
+      return applyTaskStage(prev, taskId, stage);
+    });
+
+    setUpdatingTaskIds((prev) => new Set(prev).add(taskId));
+
+    if (!isLiveApiEnabled()) {
+      setUpdatingTaskIds((prev) => {
+        const next = new Set(prev);
+        next.delete(taskId);
+        return next;
+      });
+      return;
+    }
+
+    try {
+      const updated = await patchTaskStage(taskId, stage);
+      setData((prev) => applyTaskStage(prev, taskId, updated.stage));
+    } catch (err) {
+      if (snapshot) setData(snapshot);
+      throw err;
+    } finally {
+      setUpdatingTaskIds((prev) => {
+        const next = new Set(prev);
+        next.delete(taskId);
+        return next;
+      });
+    }
+  }, []);
+
+  const isTaskUpdating = useCallback(
+    (taskId: string) => updatingTaskIds.has(taskId),
+    [updatingTaskIds],
+  );
+
   useEffect(() => {
     void refresh();
   }, []);
@@ -59,8 +124,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       source,
       error,
       refresh,
+      updateTaskStage,
+      isTaskUpdating,
     }),
-    [data, loading, source, error],
+    [data, loading, source, error, updateTaskStage, isTaskUpdating],
   );
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
