@@ -1,4 +1,27 @@
+import type { DbTaskRow } from "./admin";
 import { getSupabaseAdmin } from "./admin";
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export async function updateTaskStage(
+  taskId: string,
+  stage: string,
+): Promise<DbTaskRow> {
+  const supabase = getSupabaseAdmin();
+  const column = UUID_RE.test(taskId) ? "id" : "legacy_id";
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .update({ stage })
+    .eq(column, taskId)
+    .select("*, gate_checks(*)")
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) throw new Error("Task not found");
+  return data as DbTaskRow;
+}
 
 export async function fetchRawCommandCenterRows() {
   const supabase = getSupabaseAdmin();

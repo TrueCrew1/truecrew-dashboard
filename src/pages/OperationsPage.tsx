@@ -1,4 +1,4 @@
-import { PageHeader, Panel, StageBadge, StatusBadge } from "@/components/ui";
+import { PageHeader, Panel, StageBadge, StatusBadge, TaskStageSelect } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
 
@@ -83,8 +83,8 @@ export function OperationsPage() {
                     }
                   />
                 </td>
-                <td>
-                  <StageBadge stage={task.stage} />
+                <td onClick={(e) => e.stopPropagation()}>
+                  <TaskStageSelect taskId={task.id} stage={task.stage} />
                 </td>
                 <td>{task.assignee ?? "—"}</td>
               </tr>

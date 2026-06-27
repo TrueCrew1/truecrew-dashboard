@@ -12,6 +12,7 @@ import type {
   Task,
   Tool,
   Workflow,
+  WorkflowStage,
 } from "@/types";
 
 export function isLiveApiEnabled(): boolean {
@@ -44,6 +45,25 @@ export async function fetchCommandCenterData(): Promise<CommandCenterPayload> {
 export async function fetchTasksFromApi(): Promise<Task[]> {
   const data = await fetchCommandCenterData();
   return data.tasks;
+}
+
+export async function patchTaskStage(
+  taskId: string,
+  stage: WorkflowStage,
+): Promise<Task> {
+  const response = await fetch(`/api/tasks/${encodeURIComponent(taskId)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ stage }),
+  });
+
+  if (!response.ok) {
+    const body = (await response.json().catch(() => ({}))) as { error?: string };
+    throw new Error(body.error ?? `Task update returned ${response.status}`);
+  }
+
+  const payload = (await response.json()) as { task: Task };
+  return payload.task;
 }
 
 export async function fetchHealth(): Promise<{

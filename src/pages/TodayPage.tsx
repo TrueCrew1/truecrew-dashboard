@@ -1,4 +1,4 @@
-import { PageHeader, Panel, StageBadge, SeverityBadge } from "@/components/ui";
+import { PageHeader, Panel, SeverityBadge, TaskStageSelect } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
 
@@ -31,8 +31,8 @@ export function TodayPage() {
                   onClick={() => setSelectedEntityId(item.taskId)}
                 >
                   <td>{item.title}</td>
-                  <td>
-                    <StageBadge stage={item.stage} />
+                  <td onClick={(e) => e.stopPropagation()}>
+                    <TaskStageSelect taskId={item.taskId} stage={item.stage} />
                   </td>
                   <td style={{ color: "var(--steel-dim)" }}>{item.reason}</td>
                 </tr>
@@ -90,8 +90,8 @@ export function TodayPage() {
                   onClick={() => setSelectedEntityId(task.id)}
                 >
                   <td>{task.title}</td>
-                  <td>
-                    <StageBadge stage={task.stage} />
+                  <td onClick={(e) => e.stopPropagation()}>
+                    <TaskStageSelect taskId={task.id} stage={task.stage} />
                   </td>
                   <td>
                     {task.gates
