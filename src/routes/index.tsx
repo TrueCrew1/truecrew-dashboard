@@ -1,5 +1,7 @@
-import { createBrowserRouter } from "react-router-dom";
-import { AppShell } from "@/components/layout/AppShell";
+import { createBrowserRouter, Navigate } from "react-router-dom";
+import { ProtectedAppShell } from "@/components/auth/ProtectedAppShell";
+import LoginPage from "@/app/login/page";
+import SignupPage from "@/app/signup/page";
 import { TodayPage } from "@/pages/TodayPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { OperationsPage } from "@/pages/OperationsPage";
@@ -12,11 +14,14 @@ import { ReviewPage } from "@/pages/ReviewPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 
 export const router = createBrowserRouter([
+  { path: "/login", element: <LoginPage /> },
+  { path: "/signup", element: <SignupPage /> },
   {
     path: "/",
-    element: <AppShell />,
+    element: <ProtectedAppShell />,
     children: [
-      { index: true, element: <TodayPage /> },
+      { index: true, element: <Navigate to="/today" replace /> },
+      { path: "today", element: <TodayPage /> },
       { path: "dashboard", element: <DashboardPage /> },
       { path: "operations", element: <OperationsPage /> },
       { path: "builds", element: <BuildsPage /> },
@@ -31,7 +36,7 @@ export const router = createBrowserRouter([
 ]);
 
 export const routes = [
-  { path: "/", label: "Today" },
+  { path: "/today", label: "Today" },
   { path: "/dashboard", label: "Dashboard" },
   { path: "/operations", label: "Operations" },
   { path: "/builds", label: "Builds" },

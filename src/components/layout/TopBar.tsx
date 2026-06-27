@@ -1,3 +1,4 @@
+import { useSession } from "@/context/AuthContext";
 import { useData } from "@/context/DataContext";
 
 interface TopBarProps {
@@ -7,8 +8,13 @@ interface TopBarProps {
 
 export function TopBar({ onToggleRail, railOpen }: TopBarProps) {
   const { data, source } = useData();
+  const { user, signOut } = useSession();
   const alertCount = data.alerts.length;
   const sevCount = data.incidents.filter((i) => i.severity <= 2).length;
+  const avatarLabel =
+    user?.email?.charAt(0).toUpperCase() ??
+    user?.user_metadata?.full_name?.charAt(0)?.toUpperCase() ??
+    "?";
 
   return (
     <header className="topbar">
@@ -49,9 +55,14 @@ export function TopBar({ onToggleRail, railOpen }: TopBarProps) {
           <span className="badge badge-green">All clear</span>
         )}
 
-        <div className="topbar-avatar" title="Founder">
-          F
-        </div>
+        <button
+          type="button"
+          className="topbar-avatar topbar-avatar-btn"
+          title={user?.email ?? "Account"}
+          onClick={() => void signOut()}
+        >
+          {avatarLabel}
+        </button>
       </div>
     </header>
   );
