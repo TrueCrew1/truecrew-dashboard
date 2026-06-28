@@ -1,10 +1,44 @@
+import { useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { PageHeader, Panel, StageBadge, StatusBadge, TaskStageSelect } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
+import { WorkflowStage } from "@/types";
+
+const OPEN_TASK_STAGES = new Set<WorkflowStage>([
+  WorkflowStage.Inbox,
+  WorkflowStage.Triage,
+  WorkflowStage.Planned,
+  WorkflowStage.InProgress,
+  WorkflowStage.Waiting,
+  WorkflowStage.Review,
+]);
 
 export function OperationsPage() {
   const { selectedEntityId, setSelectedEntityId } = useSelection();
   const { data, source } = useData();
+  const [searchParams] = useSearchParams();
+  const filter = searchParams.get("filter");
+
+  const filteredTasks = useMemo(() => {
+    if (filter === "open-work-orders") {
+      return data.tasks.filter(
+        (task) =>
+          (task.workflowType === "repair" || task.workflowType === "ticket") &&
+          OPEN_TASK_STAGES.has(task.stage),
+      );
+    }
+    if (filter === "overdue-pms") {
+      const now = Date.now();
+      return data.tasks.filter(
+        (task) =>
+          task.dueAt &&
+          OPEN_TASK_STAGES.has(task.stage) &&
+          new Date(task.dueAt).getTime() < now,
+      );
+    }
+    return data.tasks;
+  }, [data.tasks, filter]);
 
   return (
     <>
@@ -63,7 +97,7 @@ export function OperationsPage() {
             </tr>
           </thead>
           <tbody>
-            {data.tasks.map((task) => (
+            {filteredTasks.map((task) => (
               <tr
                 key={task.id}
                 className={`clickable-row${selectedEntityId === task.id ? " selected" : ""}`}
