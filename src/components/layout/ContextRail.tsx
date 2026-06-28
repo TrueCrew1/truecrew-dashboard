@@ -1,5 +1,7 @@
+import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { GateList, SeverityBadge, StageBadge, formatRelativeTime } from "@/components/ui";
+import { WhatsNextPanel, whatsNextPanelPropsFromTask } from "@/components/rail/WhatsNextPanel";
 import { useData } from "@/context/DataContext";
 import type { MockData } from "@/data/mockData";
 import { WorkflowStage } from "@/types";
@@ -8,6 +10,10 @@ interface ContextRailProps {
   open: boolean;
   onClose: () => void;
   selectedEntityId?: string | null;
+}
+
+function RailEmpty({ children }: { children: React.ReactNode }) {
+  return <div className="rail-empty">{children}</div>;
 }
 
 function DefaultRailContent({ data }: { data: MockData }) {
@@ -19,36 +25,42 @@ function DefaultRailContent({ data }: { data: MockData }) {
     <>
       <div className="rail-section">
         <div className="rail-section-title">Today's focus</div>
-        {data.focusItems.map((item) => (
-          <div key={item.id} className="rail-item">
-            <div className="rail-item-title">{item.title}</div>
-            <div className="rail-item-meta">
-              <StageBadge stage={item.stage} /> · {item.reason}
+        {data.focusItems.length === 0 ? (
+          <RailEmpty>No focus items right now.</RailEmpty>
+        ) : (
+          data.focusItems.map((item) => (
+            <div key={item.id} className="rail-item">
+              <div className="rail-item-title">{item.title}</div>
+              <div className="rail-item-meta">
+                <StageBadge stage={item.stage} /> · {item.reason}
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
       <div className="rail-section">
         <div className="rail-section-title">Open alerts</div>
-        {data.alerts.map((alert) => (
-          <div key={alert.id} className="rail-item">
-            <div className="rail-item-title">{alert.title}</div>
-            <div className="rail-item-meta">
-              {typeof alert.severity === "number" ? (
-                <SeverityBadge severity={alert.severity} />
-              ) : null}{" "}
-              · {formatRelativeTime(alert.timestamp)}
+        {data.alerts.length === 0 ? (
+          <RailEmpty>No open alerts.</RailEmpty>
+        ) : (
+          data.alerts.map((alert) => (
+            <div key={alert.id} className="rail-item">
+              <div className="rail-item-title">{alert.title}</div>
+              <div className="rail-item-meta">
+                {typeof alert.severity === "number" ? (
+                  <SeverityBadge severity={alert.severity} />
+                ) : null}{" "}
+                · {formatRelativeTime(alert.timestamp)}
+              </div>
+              <div className="rail-item-meta rail-item-meta--spaced">{alert.message}</div>
             </div>
-            <div className="rail-item-meta" style={{ marginTop: 4 }}>
-              {alert.message}
-            </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
       <div className="rail-section">
-        <div className="rail-section-title">Next gate due</div>
+        <div className="rail-section-title">Next build gate</div>
         <div className="rail-item">
           <div className="rail-item-title">
             {blockedBuild?.title ?? "No blocking build gates"}
@@ -65,23 +77,27 @@ function DefaultRailContent({ data }: { data: MockData }) {
 }
 
 function EntityRailContent({ entityId, data }: { entityId: string; data: MockData }) {
+  const { lastAdvancedTaskId } = useData();
   const task = data.tasks.find((t) => t.id === entityId);
   if (task) {
     const blocking = task.gates.filter((g) => g.required && !g.passed).length;
+    const showWhatsNext = entityId === lastAdvancedTaskId;
+
     return (
       <>
+        {showWhatsNext ? <WhatsNextPanel {...whatsNextPanelPropsFromTask(task)} /> : null}
         <div className="rail-section">
           <div className="rail-section-title">Stage tracker</div>
           <div className="rail-item">
             <StageBadge stage={task.stage} />
-            <div className="rail-item-meta" style={{ marginTop: 6 }}>
+            <div className="rail-item-meta rail-item-meta--spaced">
               {task.workflowType} · {task.priority} priority
             </div>
           </div>
         </div>
         <div className="rail-section">
           <div className="rail-section-title">
-            Gate checklist {blocking > 0 ? `(${blocking} blocking)` : ""}
+            Gate checklist{blocking > 0 ? ` · ${blocking} blocking` : ""}
           </div>
           <GateList gates={task.gates} />
         </div>
@@ -109,9 +125,7 @@ function EntityRailContent({ entityId, data }: { entityId: string; data: MockDat
           <div className="rail-section-title">Incident</div>
           <div className="rail-item">
             <SeverityBadge severity={incident.severity} />
-            <div className="rail-item-title" style={{ marginTop: 8 }}>
-              {incident.title}
-            </div>
+            <div className="rail-item-title rail-item-title--spaced">{incident.title}</div>
             <div className="rail-item-meta">{incident.serviceName}</div>
           </div>
         </div>
@@ -142,7 +156,7 @@ function EntityRailContent({ entityId, data }: { entityId: string; data: MockDat
         </div>
         <div className="rail-section">
           <div className="rail-section-title">
-            Gate checklist {blocking > 0 ? `(${blocking} blocking)` : ""}
+            Gate checklist{blocking > 0 ? ` · ${blocking} blocking` : ""}
           </div>
           <GateList gates={workflow.gates} />
         </div>
@@ -155,7 +169,24 @@ function EntityRailContent({ entityId, data }: { entityId: string; data: MockDat
 
 export function ContextRail({ open, onClose, selectedEntityId }: ContextRailProps) {
   const location = useLocation();
-  const { data } = useData();
+  const { data, lastAdvancedTaskId, clearLastAdvancedTaskId } = useData();
+
+  const prevSelectedEntityId = useRef(selectedEntityId);
+
+  useEffect(() => {
+    if (!open) {
+      clearLastAdvancedTaskId();
+    }
+  }, [open, clearLastAdvancedTaskId]);
+
+  useEffect(() => {
+    if (prevSelectedEntityId.current !== selectedEntityId) {
+      if (selectedEntityId !== lastAdvancedTaskId) {
+        clearLastAdvancedTaskId();
+      }
+      prevSelectedEntityId.current = selectedEntityId;
+    }
+  }, [selectedEntityId, lastAdvancedTaskId, clearLastAdvancedTaskId]);
 
   if (!open) return null;
 

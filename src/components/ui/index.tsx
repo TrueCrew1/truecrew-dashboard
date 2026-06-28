@@ -137,6 +137,10 @@ export function Panel({
   );
 }
 
+export function EmptyState({ children }: { children: React.ReactNode }) {
+  return <div className="empty-state">{children}</div>;
+}
+
 export function StatGrid({
   stats,
 }: {
@@ -157,9 +161,15 @@ export function StatGrid({
 
 export function GateList({
   gates,
+  emptyMessage = "No gates configured.",
 }: {
   gates: { id: string; label: string; required: boolean; passed: boolean }[];
+  emptyMessage?: string;
 }) {
+  if (gates.length === 0) {
+    return <div className="rail-empty">{emptyMessage}</div>;
+  }
+
   return (
     <ul className="gate-list">
       {gates.map((gate) => (
@@ -170,7 +180,9 @@ export function GateList({
           <span>
             {gate.label}
             {!gate.required ? (
-              <span style={{ color: "var(--steel-dim)", marginLeft: 6 }}>(optional)</span>
+              <span className="cell-muted" style={{ marginLeft: 6 }}>
+                (optional)
+              </span>
             ) : null}
           </span>
         </li>
