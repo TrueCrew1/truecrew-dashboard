@@ -13,6 +13,7 @@ import {
   mergeWithMockFallback,
   patchTaskStage,
 } from "@/lib/api/client";
+import { useUI } from "@/context/UIContext";
 import type { WorkflowStage } from "@/types";
 
 function applyTaskStage(data: MockData, taskId: string, stage: WorkflowStage): MockData {
@@ -38,16 +39,32 @@ interface DataContextValue {
   refresh: () => Promise<void>;
   updateTaskStage: (taskId: string, stage: WorkflowStage) => Promise<void>;
   isTaskUpdating: (taskId: string) => boolean;
+  lastAdvancedTaskId: string | null;
+  clearLastAdvancedTaskId: () => void;
 }
 
 const DataContext = createContext<DataContextValue | null>(null);
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
+  const { openRailForEntity } = useUI();
   const [data, setData] = useState<MockData>(mockData);
   const [loading, setLoading] = useState(isLiveApiEnabled());
   const [source, setSource] = useState<DataContextValue["source"]>("mock");
   const [error, setError] = useState<string | null>(null);
   const [updatingTaskIds, setUpdatingTaskIds] = useState<Set<string>>(new Set());
+  const [lastAdvancedTaskId, setLastAdvancedTaskId] = useState<string | null>(null);
+
+  const clearLastAdvancedTaskId = useCallback(() => {
+    setLastAdvancedTaskId(null);
+  }, []);
+
+  const finalizeStageAdvance = useCallback(
+    (taskId: string) => {
+      setLastAdvancedTaskId(taskId);
+      openRailForEntity(taskId);
+    },
+    [openRailForEntity],
+  );
 
   const refresh = async () => {
     if (!isLiveApiEnabled()) {
@@ -89,12 +106,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         next.delete(taskId);
         return next;
       });
+      finalizeStageAdvance(taskId);
       return;
     }
 
     try {
       const updated = await patchTaskStage(taskId, stage);
       setData((prev) => applyTaskStage(prev, taskId, updated.stage));
+      finalizeStageAdvance(taskId);
     } catch (err) {
       if (snapshot) setData(snapshot);
       throw err;
@@ -105,7 +124,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         return next;
       });
     }
-  }, []);
+  }, [finalizeStageAdvance]);
 
   const isTaskUpdating = useCallback(
     (taskId: string) => updatingTaskIds.has(taskId),
@@ -126,8 +145,19 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       refresh,
       updateTaskStage,
       isTaskUpdating,
+      lastAdvancedTaskId,
+      clearLastAdvancedTaskId,
     }),
-    [data, loading, source, error, updateTaskStage, isTaskUpdating],
+    [
+      data,
+      loading,
+      source,
+      error,
+      updateTaskStage,
+      isTaskUpdating,
+      lastAdvancedTaskId,
+      clearLastAdvancedTaskId,
+    ],
   );
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
