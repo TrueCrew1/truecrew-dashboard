@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { BrandLockup } from "@/components/brand/BrandLogo";
+import { BRAND } from "@/brand/config";
 import { PageHeader, Panel, StatusBadge } from "@/components/ui";
 import { fetchHealth, isLiveApiEnabled } from "@/lib/api/client";
 import { WORKFLOW_STAGES } from "@/types";
@@ -24,6 +26,16 @@ export function SettingsPage() {
         title="Settings"
         subtitle="Stage-gate rules, routing configuration, users, and integrations"
       />
+
+      <Panel title="Company">
+        <div style={{ display: "flex", alignItems: "center", gap: 20, padding: "16px 14px" }}>
+          <BrandLockup logoSize={56} subtitle={BRAND.tagline} />
+          <div style={{ color: "var(--steel-dim)", fontSize: 12, lineHeight: 1.5 }}>
+            Premium command center for running your business end to end — shield, wrench, and
+            crystal split branding across the shell.
+          </div>
+        </div>
+      </Panel>
 
       <div className="grid-2">
         <Panel title="Workflow stages">

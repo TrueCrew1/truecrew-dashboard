@@ -1,3 +1,4 @@
+import { BrandLogo, BrandWordmark } from "@/components/brand/BrandLogo";
 import { useData } from "@/context/DataContext";
 
 interface TopBarProps {
@@ -12,6 +13,11 @@ export function TopBar({ onToggleRail, railOpen }: TopBarProps) {
 
   return (
     <header className="topbar">
+      <div className="topbar-brand">
+        <BrandLogo size={32} glow={false} />
+        <BrandWordmark compact />
+      </div>
+
       <div className="topbar-search">
         <span className="topbar-search-icon">⌕</span>
         <input
@@ -22,7 +28,9 @@ export function TopBar({ onToggleRail, railOpen }: TopBarProps) {
       </div>
 
       <div className="topbar-actions">
-        {source !== "mock" ? (
+        {source === "supabase" ? (
+          <span className="badge badge-ice">Live</span>
+        ) : source !== "mock" ? (
           <span className="badge badge-orange">{source}</span>
         ) : null}
 
