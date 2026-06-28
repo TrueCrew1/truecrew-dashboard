@@ -14,12 +14,13 @@ export function TodayPage() {
 
   return (
     <>
-      <PageHeader
-        title="Today"
-        subtitle="Focus queue, blocking gates, and active Sev 1–2 incidents"
-      />
-
-      <ShiftStatsStrip />
+      <div className="page-intro">
+        <PageHeader
+          title="Today"
+          subtitle="Focus queue, blocking gates, and active Sev 1–2 incidents"
+        />
+        <ShiftStatsStrip />
+      </div>
 
       <div className="page-stack">
         <div className="grid-2">
