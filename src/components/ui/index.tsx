@@ -46,6 +46,47 @@ export function StageSelect({
   );
 }
 
+export function getNextWorkflowStage(stage: WorkflowStage): WorkflowStage | null {
+  const index = WORKFLOW_STAGES.indexOf(stage);
+  if (index < 0 || index >= WORKFLOW_STAGES.length - 1) return null;
+  return WORKFLOW_STAGES[index + 1];
+}
+
+export function AdvanceButton({
+  label,
+  onClick,
+  disabled,
+  loading,
+  error,
+}: {
+  label: string;
+  onClick: () => void | Promise<void>;
+  disabled?: boolean;
+  loading?: boolean;
+  error?: string | null;
+}) {
+  return (
+    <div className="advance-btn-wrap">
+      <button
+        type="button"
+        className="topbar-btn primary advance-btn"
+        onClick={() => void onClick()}
+        disabled={disabled || loading}
+      >
+        {loading ? (
+          <>
+            <span className="advance-btn-spinner" aria-hidden="true" />
+            Advancing…
+          </>
+        ) : (
+          label
+        )}
+      </button>
+      {error ? <span className="stage-select-error">{error}</span> : null}
+    </div>
+  );
+}
+
 export function TaskStageSelect({
   taskId,
   stage,
