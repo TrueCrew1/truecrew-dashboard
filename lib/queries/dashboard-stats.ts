@@ -34,6 +34,18 @@ export const SHIFT_STAT_LINKS = {
   activeIncidents: "/monitor?filter=active-incidents",
 } as const;
 
+export type OperationsFilter = "open-work-orders" | "overdue-pms";
+export type MonitorFilter = "active-incidents";
+
+export const OPERATIONS_FILTER_LABELS: Record<OperationsFilter, string> = {
+  "open-work-orders": "Open work orders",
+  "overdue-pms": "Overdue PMs",
+};
+
+export const MONITOR_FILTER_LABELS: Record<MonitorFilter, string> = {
+  "active-incidents": "Active incidents",
+};
+
 function isOpenTaskStage(stage: string): boolean {
   return (OPEN_TASK_STAGES as readonly string[]).includes(stage);
 }
@@ -42,23 +54,58 @@ function isActiveIncidentStatus(status: string): boolean {
   return (ACTIVE_INCIDENT_STATUSES as readonly string[]).includes(status);
 }
 
+export function isOpenWorkOrderTask(task: ShiftStatsSource["tasks"][number]): boolean {
+  return (
+    (task.workflowType === "repair" || task.workflowType === "ticket") &&
+    isOpenTaskStage(task.stage)
+  );
+}
+
+export function isOverduePMTask(
+  task: ShiftStatsSource["tasks"][number],
+  now = Date.now(),
+): boolean {
+  if (!task.dueAt || !isOpenTaskStage(task.stage)) return false;
+  return new Date(task.dueAt).getTime() < now;
+}
+
+export function isActiveIncident(incident: ShiftStatsSource["incidents"][number]): boolean {
+  return isActiveIncidentStatus(incident.status);
+}
+
+export function parseOperationsFilter(
+  value: string | null,
+): OperationsFilter | null {
+  if (value === "open-work-orders" || value === "overdue-pms") return value;
+  return null;
+}
+
+export function parseMonitorFilter(value: string | null): MonitorFilter | null {
+  if (value === "active-incidents") return value;
+  return null;
+}
+
+export function filterOperationsTasks<T extends ShiftStatsSource["tasks"][number]>(
+  tasks: T[],
+  filter: OperationsFilter | null,
+): T[] {
+  if (filter === "open-work-orders") return tasks.filter(isOpenWorkOrderTask);
+  if (filter === "overdue-pms") return tasks.filter((task) => isOverduePMTask(task));
+  return tasks;
+}
+
+export function filterMonitorIncidents<T extends ShiftStatsSource["incidents"][number]>(
+  incidents: T[],
+  filter: MonitorFilter | null,
+): T[] {
+  if (filter === "active-incidents") return incidents.filter(isActiveIncident);
+  return incidents;
+}
+
 export function deriveShiftStats(source: ShiftStatsSource): ShiftStats {
-  const now = Date.now();
-
-  const openWorkOrders = source.tasks.filter(
-    (task) =>
-      (task.workflowType === "repair" || task.workflowType === "ticket") &&
-      isOpenTaskStage(task.stage),
-  ).length;
-
-  const overduePMs = source.tasks.filter((task) => {
-    if (!task.dueAt || !isOpenTaskStage(task.stage)) return false;
-    return new Date(task.dueAt).getTime() < now;
-  }).length;
-
-  const activeIncidents = source.incidents.filter((incident) =>
-    isActiveIncidentStatus(incident.status),
-  ).length;
+  const openWorkOrders = source.tasks.filter(isOpenWorkOrderTask).length;
+  const overduePMs = source.tasks.filter((task) => isOverduePMTask(task)).length;
+  const activeIncidents = source.incidents.filter(isActiveIncident).length;
 
   return { openWorkOrders, overduePMs, activeIncidents };
 }
