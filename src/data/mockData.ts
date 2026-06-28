@@ -12,6 +12,7 @@ import {
   type Tool,
   type Workflow,
 } from "@/types";
+import { mockFieldOps } from "./mockFieldOps";
 
 const now = new Date();
 const iso = (offsetHours: number) =>
@@ -548,6 +549,7 @@ export const mockData = {
   notes: mockNotes,
   alerts: mockAlerts,
   focusItems: mockFocusItems,
+  ...mockFieldOps,
 };
 
 export type MockData = typeof mockData;

@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import { BrandLockup } from "@/components/brand/BrandLogo";
 import { useData } from "@/context/DataContext";
 
 interface NavItem {
@@ -48,14 +49,9 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
   ];
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar${collapsed ? " collapsed-brand" : ""}`}>
       <div className="sidebar-header">
-        <div className="sidebar-mark">TC</div>
-        {!collapsed ? (
-          <div className="sidebar-title">
-            True <span>Crew</span>
-          </div>
-        ) : null}
+        <BrandLockup collapsed={collapsed} logoSize={46} />
       </div>
 
       <nav className="sidebar-nav">
@@ -90,6 +86,9 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
       </nav>
 
       <div className="sidebar-footer">
+        {!collapsed ? (
+          <div className="sidebar-footer-brand">True Crew LLC · Command Center</div>
+        ) : null}
         <button
           type="button"
           className="sidebar-toggle"
