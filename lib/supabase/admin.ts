@@ -89,7 +89,7 @@ export async function recordWebhookDelivery(
 export async function passGateForTasks(
   taskIds: string[],
   gateKey: string,
-  source: "github_webhook" | "system" = "github_webhook",
+  source: "github_webhook" | "system" | "manual" = "github_webhook",
 ): Promise<number> {
   if (taskIds.length === 0) return 0;
   const supabase = getSupabaseAdmin();
@@ -112,7 +112,7 @@ export async function passGateForTasks(
 export async function failGateForTasks(
   taskIds: string[],
   gateKey: string,
-  source: "github_webhook" | "system" = "github_webhook",
+  source: "github_webhook" | "system" | "manual" = "github_webhook",
 ): Promise<number> {
   if (taskIds.length === 0) return 0;
   const supabase = getSupabaseAdmin();
@@ -193,6 +193,22 @@ export async function findTasksByHeadSha(repo: string, headSha: string): Promise
 
   if (error) throw error;
   return (data ?? []).map((row) => row.id as string);
+}
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export async function resolveTaskUuid(taskIdOrLegacyId: string): Promise<string | null> {
+  const supabase = getSupabaseAdmin();
+  const column = UUID_RE.test(taskIdOrLegacyId) ? "id" : "legacy_id";
+  const { data, error } = await supabase
+    .from("tasks")
+    .select("id")
+    .eq(column, taskIdOrLegacyId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return (data?.id as string | undefined) ?? null;
 }
 
 export async function writeAuditEvent(
