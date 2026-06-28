@@ -77,6 +77,9 @@ function EntityRailContent({ entityId, data }: { entityId: string; data: MockDat
             <div className="rail-item-meta" style={{ marginTop: 6 }}>
               {task.workflowType} · {task.priority} priority
             </div>
+            <div className="rail-item-meta" style={{ marginTop: 4 }}>
+              Last updated {formatRelativeTime(task.updatedAt)}
+            </div>
           </div>
         </div>
         <div className="rail-section">
