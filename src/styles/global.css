@@ -586,6 +586,27 @@
   line-height: 1.2;
 }
 
+.rail-whats-next {
+  border-left: 2px solid var(--orange);
+  padding-left: 10px;
+  margin-bottom: 4px;
+}
+
+.rail-whats-next-action {
+  margin: 8px 0 6px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--steel);
+}
+
+.rail-whats-next-gates {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--steel-dim);
+}
+
 .empty-state {
   padding: 32px 20px;
   text-align: center;
