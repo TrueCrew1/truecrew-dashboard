@@ -9,6 +9,7 @@ export function AppShell() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [railOpen, setRailOpen] = useState(true);
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const shellClass = [
     "app-shell",
@@ -19,7 +20,9 @@ export function AppShell() {
     .join(" ");
 
   return (
-    <SelectionContext.Provider value={{ selectedEntityId, setSelectedEntityId }}>
+    <SelectionContext.Provider
+      value={{ selectedEntityId, setSelectedEntityId, searchQuery, setSearchQuery }}
+    >
       <div className={shellClass}>
         <Sidebar
           collapsed={sidebarCollapsed}

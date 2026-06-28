@@ -1,4 +1,5 @@
 import { useData } from "@/context/DataContext";
+import { useSelection } from "@/context/SelectionContext";
 
 interface TopBarProps {
   onToggleRail: () => void;
@@ -7,6 +8,7 @@ interface TopBarProps {
 
 export function TopBar({ onToggleRail, railOpen }: TopBarProps) {
   const { data, source } = useData();
+  const { searchQuery, setSearchQuery } = useSelection();
   const alertCount = data.alerts.length;
   const sevCount = data.incidents.filter((i) => i.severity <= 2).length;
 
@@ -18,6 +20,8 @@ export function TopBar({ onToggleRail, railOpen }: TopBarProps) {
           type="search"
           placeholder="Search tasks, services, customers, notes…"
           aria-label="Global search"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
         />
       </div>
 
