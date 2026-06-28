@@ -1,5 +1,7 @@
+import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { GateList, SeverityBadge, StageBadge, formatRelativeTime } from "@/components/ui";
+import { WhatsNextPanel, whatsNextPanelPropsFromTask } from "@/components/rail/WhatsNextPanel";
 import { useData } from "@/context/DataContext";
 import type { MockData } from "@/data/mockData";
 import { WorkflowStage } from "@/types";
@@ -65,11 +67,14 @@ function DefaultRailContent({ data }: { data: MockData }) {
 }
 
 function EntityRailContent({ entityId, data }: { entityId: string; data: MockData }) {
+  const { lastAdvancedTaskId } = useData();
   const task = data.tasks.find((t) => t.id === entityId);
   if (task) {
     const blocking = task.gates.filter((g) => g.required && !g.passed).length;
+    const showWhatsNext = entityId === lastAdvancedTaskId;
     return (
       <>
+        {showWhatsNext ? <WhatsNextPanel {...whatsNextPanelPropsFromTask(task)} /> : null}
         <div className="rail-section">
           <div className="rail-section-title">Stage tracker</div>
           <div className="rail-item">
@@ -155,7 +160,24 @@ function EntityRailContent({ entityId, data }: { entityId: string; data: MockDat
 
 export function ContextRail({ open, onClose, selectedEntityId }: ContextRailProps) {
   const location = useLocation();
-  const { data } = useData();
+  const { data, lastAdvancedTaskId, clearLastAdvancedTaskId } = useData();
+
+  const prevSelectedEntityId = useRef(selectedEntityId);
+
+  useEffect(() => {
+    if (!open) {
+      clearLastAdvancedTaskId();
+    }
+  }, [open, clearLastAdvancedTaskId]);
+
+  useEffect(() => {
+    if (prevSelectedEntityId.current !== selectedEntityId) {
+      if (selectedEntityId !== lastAdvancedTaskId) {
+        clearLastAdvancedTaskId();
+      }
+      prevSelectedEntityId.current = selectedEntityId;
+    }
+  }, [selectedEntityId, lastAdvancedTaskId, clearLastAdvancedTaskId]);
 
   if (!open) return null;
 
