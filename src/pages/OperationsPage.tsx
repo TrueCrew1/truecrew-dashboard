@@ -1,16 +1,36 @@
+import { useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { PageHeader, Panel, StageBadge, StatusBadge, TaskStageSelect } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
+import {
+  filterOperationsTasks,
+  OPERATIONS_FILTER_LABELS,
+  parseOperationsFilter,
+} from "../../lib/queries/dashboard-stats";
 
 export function OperationsPage() {
   const { selectedEntityId, setSelectedEntityId } = useSelection();
   const { data, source } = useData();
+  const [searchParams] = useSearchParams();
+  const taskFilter = parseOperationsFilter(searchParams.get("filter"));
+  const tasks = useMemo(
+    () => filterOperationsTasks(data.tasks, taskFilter),
+    [data.tasks, taskFilter],
+  );
+  const tasksPanelTitle = taskFilter
+    ? OPERATIONS_FILTER_LABELS[taskFilter]
+    : "All tasks";
 
   return (
     <>
       <PageHeader
         title="Operations"
-        subtitle={`All active workflows · data source: ${source}`}
+        subtitle={
+          taskFilter
+            ? `${OPERATIONS_FILTER_LABELS[taskFilter]} · data source: ${source}`
+            : `All active workflows · data source: ${source}`
+        }
       />
 
       <Panel title="Active workflows">
@@ -51,7 +71,7 @@ export function OperationsPage() {
         </table>
       </Panel>
 
-      <Panel title="All tasks">
+      <Panel title={tasksPanelTitle}>
         <table className="data-table">
           <thead>
             <tr>
@@ -63,7 +83,7 @@ export function OperationsPage() {
             </tr>
           </thead>
           <tbody>
-            {data.tasks.map((task) => (
+            {tasks.map((task) => (
               <tr
                 key={task.id}
                 className={`clickable-row${selectedEntityId === task.id ? " selected" : ""}`}
