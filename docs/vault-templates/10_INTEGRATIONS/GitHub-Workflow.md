@@ -16,7 +16,17 @@ status: pending-approval
 
 <!-- Agents add pending commands here. Ops runs them after approver sign-off. -->
 
-_No pending ops._
+### Vault seed — PR #45
+- **Added:** 2026-06-29
+- **PR:** #45
+- **Why:** Seed approver workflow templates into live iCloud vault
+- **Command:**
+  ```bash
+  npm run obsidian:setup-vault
+  npm run dev:vercel
+  ```
+- **Verify:** KnowledgePage shows 2 vault notes (`Agent Workflow`, `GitHub-Workflow`)
+- **Approver:** [x] approved
 
 ### Template (agents: copy and fill)
 
@@ -45,7 +55,7 @@ _No pending ops._
 
 | PR | Title | Agent summary | Approver |
 |----|-------|---------------|----------|
-| — | — | — | pending |
+| #45 | Verify obsidian:setup-vault and align seed templates with notes API | Vault seed + notes API contract alignment | approved |
 
 ---
 
