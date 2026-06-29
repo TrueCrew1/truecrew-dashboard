@@ -1,5 +1,7 @@
 ---
-type: ops-checklist
+type: ticket
+title: GitHub workflow — Ops checklist
+summary: Pending ops commands awaiting approver sign-off before ops runs them.
 source: true-crew
 integration: github
 status: pending-approval
