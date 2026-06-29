@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "db:push": "supabase db push",
     "db:reset": "supabase db reset",
-    "db:status": "supabase migration list"
+    "db:status": "supabase migration list",
+    "obsidian:log": "npx tsx scripts/obsidian-log.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.8",
