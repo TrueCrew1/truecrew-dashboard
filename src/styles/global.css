@@ -645,3 +645,48 @@
 .gate-check.failed {
   color: var(--steel-dim);
 }
+
+/* Knowledge page — note source badges & vault status */
+.source-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.source-badge-supabase {
+  background: rgba(59, 130, 246, 0.12);
+  color: var(--blue);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.source-badge-obsidian {
+  background: rgba(168, 85, 247, 0.12);
+  color: var(--purple, #a855f7);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+}
+
+.vault-status {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  white-space: nowrap;
+}
+
+.vault-status-syncing {
+  color: var(--steel-dim);
+}
+
+.vault-status-unreachable {
+  color: var(--red);
+}
+
+.vault-status-live {
+  color: var(--green);
+}
