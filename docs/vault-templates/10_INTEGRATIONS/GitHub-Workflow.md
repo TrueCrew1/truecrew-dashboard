@@ -4,7 +4,7 @@ title: GitHub workflow — Ops checklist
 summary: Pending ops commands awaiting approver sign-off before ops runs them.
 source: true-crew
 integration: github
-status: pending-approval
+status: approved
 ---
 
 # GitHub workflow — Ops checklist
@@ -16,17 +16,7 @@ status: pending-approval
 
 <!-- Agents add pending commands here. Ops runs them after approver sign-off. -->
 
-### Vault seed — PR #45
-- **Added:** 2026-06-29
-- **PR:** #45
-- **Why:** Seed approver workflow templates into live iCloud vault
-- **Command:**
-  ```bash
-  npm run obsidian:setup-vault
-  npm run dev:vercel
-  ```
-- **Verify:** KnowledgePage shows 2 vault notes (`Agent Workflow`, `GitHub-Workflow`)
-- **Approver:** [x] approved
+_No pending ops._
 
 ### Template (agents: copy and fill)
 
@@ -47,7 +37,19 @@ status: pending-approval
 
 ## Completed ops
 
-<!-- Move items here after ops runs them and verification passes -->
+### Vault seed — PR #45
+- **Added:** 2026-06-29
+- **Completed:** 2026-06-29
+- **PR:** #45
+- **Why:** Seed approver workflow templates into live iCloud vault
+- **Command:**
+  ```bash
+  git pull origin main
+  npm run obsidian:setup-vault
+  npm run dev:vercel
+  ```
+- **Verify:** KnowledgePage shows 2 vault notes (`Agent Workflow`, `GitHub-Workflow`)
+- **Approver:** [x] approved
 
 ---
 
