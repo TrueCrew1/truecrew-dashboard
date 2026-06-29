@@ -88,7 +88,7 @@ export const mockTasks: Task[] = [
     gates: [
       { id: "g1", label: "Options documented (min 2)", required: true, passed: true },
       { id: "g2", label: "Recommendation written", required: true, passed: true },
-      { id: "g3", label: "Decision recorded", required: true, passed: false },
+      { id: "g3", label: "Decision recorded", required: true, passed: true },
     ],
     linkedEntities: [],
   },

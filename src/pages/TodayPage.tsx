@@ -3,7 +3,7 @@ import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
 
 export function TodayPage() {
-  const { setSelectedEntityId } = useSelection();
+  const { selectedEntityId, setSelectedEntityId } = useSelection();
   const { data } = useData();
 
   return (
@@ -27,7 +27,7 @@ export function TodayPage() {
               {data.focusItems.map((item) => (
                 <tr
                   key={item.id}
-                  className="clickable-row"
+                  className={`clickable-row${selectedEntityId === item.taskId ? " selected" : ""}`}
                   onClick={() => setSelectedEntityId(item.taskId)}
                 >
                   <td>{item.title}</td>
@@ -56,7 +56,7 @@ export function TodayPage() {
                 .map((inc) => (
                   <tr
                     key={inc.id}
-                    className="clickable-row"
+                    className={`clickable-row${selectedEntityId === inc.id ? " selected" : ""}`}
                     onClick={() => setSelectedEntityId(inc.id)}
                   >
                     <td>{inc.title}</td>
@@ -86,7 +86,7 @@ export function TodayPage() {
               .map((task) => (
                 <tr
                   key={task.id}
-                  className="clickable-row"
+                  className={`clickable-row${selectedEntityId === task.id ? " selected" : ""}`}
                   onClick={() => setSelectedEntityId(task.id)}
                 >
                   <td>{task.title}</td>

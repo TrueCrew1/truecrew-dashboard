@@ -1,6 +1,28 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useData } from "@/context/DataContext";
+import type { GateCheck } from "@/types";
 import { WORKFLOW_STAGES, WorkflowStage } from "@/types";
+
+const CLOSEOUT_STAGES = new Set([WorkflowStage.Done, WorkflowStage.Logged]);
+
+function confirmCloseout(next: WorkflowStage, blockingGates: GateCheck[]): boolean {
+  const gateWarning =
+    blockingGates.length > 0
+      ? `${blockingGates.length} required gate(s) still open: ${blockingGates.map((g) => g.label).join(", ")}.\n\n`
+      : "";
+
+  if (next === WorkflowStage.Logged) {
+    return window.confirm(
+      `${gateWarning}Log this task? It will be archived from active workflows.`,
+    );
+  }
+
+  if (next === WorkflowStage.Done) {
+    return window.confirm(`${gateWarning}Mark as Done? Confirm work is complete.`);
+  }
+
+  return true;
+}
 
 export function StageBadge({ stage }: { stage: WorkflowStage }) {
   const activeStages = [
@@ -20,11 +42,13 @@ export function StageSelect({
   onChange,
   disabled,
   error,
+  status = "idle",
 }: {
   stage: WorkflowStage;
   onChange: (stage: WorkflowStage) => void;
   disabled?: boolean;
   error?: string | null;
+  status?: "idle" | "saving" | "saved";
 }) {
   return (
     <span className="stage-select-wrap" onClick={(e) => e.stopPropagation()}>
@@ -34,6 +58,7 @@ export function StageSelect({
         disabled={disabled}
         onChange={(e) => onChange(e.target.value as WorkflowStage)}
         aria-label="Task stage"
+        aria-busy={status === "saving"}
       >
         {WORKFLOW_STAGES.map((value) => (
           <option key={value} value={value}>
@@ -41,8 +66,58 @@ export function StageSelect({
           </option>
         ))}
       </select>
+      {status === "saving" ? (
+        <span className="stage-select-status saving" aria-live="polite">
+          Saving…
+        </span>
+      ) : status === "saved" ? (
+        <span className="stage-select-status saved" aria-live="polite">
+          Saved
+        </span>
+      ) : null}
       {error ? <span className="stage-select-error">{error}</span> : null}
     </span>
+  );
+}
+
+export function getNextWorkflowStage(stage: WorkflowStage): WorkflowStage | null {
+  const index = WORKFLOW_STAGES.indexOf(stage);
+  if (index < 0 || index >= WORKFLOW_STAGES.length - 1) return null;
+  return WORKFLOW_STAGES[index + 1];
+}
+
+export function AdvanceButton({
+  label,
+  onClick,
+  disabled,
+  loading,
+  error,
+}: {
+  label: string;
+  onClick: () => void | Promise<void>;
+  disabled?: boolean;
+  loading?: boolean;
+  error?: string | null;
+}) {
+  return (
+    <div className="advance-btn-wrap">
+      <button
+        type="button"
+        className="topbar-btn primary advance-btn"
+        onClick={() => void onClick()}
+        disabled={disabled || loading}
+      >
+        {loading ? (
+          <>
+            <span className="advance-btn-spinner" aria-hidden="true" />
+            Advancing…
+          </>
+        ) : (
+          label
+        )}
+      </button>
+      {error ? <span className="stage-select-error">{error}</span> : null}
+    </div>
   );
 }
 
@@ -53,25 +128,48 @@ export function TaskStageSelect({
   taskId: string;
   stage: WorkflowStage;
 }) {
-  const { updateTaskStage, isTaskUpdating } = useData();
+  const { updateTaskStage, isTaskUpdating, data } = useData();
   const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+    };
+  }, []);
 
   const handleChange = async (next: WorkflowStage) => {
     if (next === stage) return;
     setError(null);
+    setSaved(false);
+
+    if (CLOSEOUT_STAGES.has(next)) {
+      const taskGates = data.tasks.find((t) => t.id === taskId)?.gates ?? [];
+      const blockingGates = taskGates.filter((g) => g.required && !g.passed);
+      if (!confirmCloseout(next, blockingGates)) return;
+    }
+
     try {
       await updateTaskStage(taskId, next);
+      setSaved(true);
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+      savedTimerRef.current = setTimeout(() => setSaved(false), 2500);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Update failed");
     }
   };
 
+  const isUpdating = isTaskUpdating(taskId);
+  const status = isUpdating ? "saving" : saved ? "saved" : "idle";
+
   return (
     <StageSelect
       stage={stage}
       onChange={handleChange}
-      disabled={isTaskUpdating(taskId)}
+      disabled={isUpdating}
       error={error}
+      status={status}
     />
   );
 }
