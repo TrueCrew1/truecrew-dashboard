@@ -1,7 +1,16 @@
+import { useState } from "react";
 import { useLocation } from "react-router-dom";
-import { GateList, SeverityBadge, StageBadge, formatRelativeTime } from "@/components/ui";
+import {
+  AdvanceButton,
+  GateList,
+  SeverityBadge,
+  StageBadge,
+  formatRelativeTime,
+  getNextWorkflowStage,
+} from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import type { MockData } from "@/data/mockData";
+import type { Task } from "@/types";
 import { WorkflowStage } from "@/types";
 
 interface ContextRailProps {
@@ -64,6 +73,59 @@ function DefaultRailContent({ data }: { data: MockData }) {
   );
 }
 
+function TaskRailAdvance({ task }: { task: Task }) {
+  const { updateTaskStage, isTaskUpdating } = useData();
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  const blocking = task.gates.filter((g) => g.required && !g.passed);
+  const nextStage = getNextWorkflowStage(task.stage);
+
+  if (blocking.length > 0) {
+    return (
+      <div className="rail-advance-card blocked">
+        <div className="rail-advance-title">Gates blocking advance</div>
+        <div className="rail-item-meta">
+          {blocking.length} required gate{blocking.length === 1 ? "" : "s"} open
+        </div>
+      </div>
+    );
+  }
+
+  if (!nextStage) return null;
+
+  const handleAdvance = async () => {
+    setError(null);
+    setSaved(false);
+    try {
+      await updateTaskStage(task.id, nextStage);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Update failed");
+    }
+  };
+
+  return (
+    <div className="rail-advance-card ready">
+      <div className="rail-advance-title">Ready to advance</div>
+      <div className="rail-item-meta">All required gates clear · next: {nextStage}</div>
+      <AdvanceButton
+        label={`Advance to ${nextStage} →`}
+        onClick={handleAdvance}
+        disabled={isTaskUpdating(task.id)}
+        loading={isTaskUpdating(task.id)}
+        error={error}
+      />
+      {saved ? (
+        <span className="stage-select-status saved" aria-live="polite">
+          Stage updated
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 function EntityRailContent({ entityId, data }: { entityId: string; data: MockData }) {
   const task = data.tasks.find((t) => t.id === entityId);
   if (task) {
@@ -77,6 +139,9 @@ function EntityRailContent({ entityId, data }: { entityId: string; data: MockDat
             <div className="rail-item-meta" style={{ marginTop: 6 }}>
               {task.workflowType} · {task.priority} priority
             </div>
+            <div className="rail-item-meta" style={{ marginTop: 4 }}>
+              Last updated {formatRelativeTime(task.updatedAt)}
+            </div>
           </div>
         </div>
         <div className="rail-section">
@@ -84,6 +149,7 @@ function EntityRailContent({ entityId, data }: { entityId: string; data: MockDat
             Gate checklist {blocking > 0 ? `(${blocking} blocking)` : ""}
           </div>
           <GateList gates={task.gates} />
+          <TaskRailAdvance task={task} />
         </div>
         {task.githubRef ? (
           <div className="rail-section">
