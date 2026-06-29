@@ -1,6 +1,12 @@
+import { useMemo } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { PageHeader, Panel, SeverityBadge, StatusBadge } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
+import {
+  filterIncidentsByShiftParam,
+  SHIFT_FILTER_LABELS,
+} from "../../lib/queries/dashboard-stats";
 
 const statusVariant = (status: string) => {
   if (status === "healthy") return "green" as const;
@@ -12,6 +18,15 @@ const statusVariant = (status: string) => {
 export function MonitorPage() {
   const { selectedEntityId, setSelectedEntityId } = useSelection();
   const { data } = useData();
+  const [searchParams] = useSearchParams();
+  const filter = searchParams.get("filter");
+
+  const filteredIncidents = useMemo(
+    () => filterIncidentsByShiftParam(data.incidents, filter),
+    [data.incidents, filter],
+  );
+
+  const filterLabel = filter === "active-incidents" ? SHIFT_FILTER_LABELS["active-incidents"] : null;
 
   return (
     <>
@@ -20,6 +35,15 @@ export function MonitorPage() {
         accent="Services"
         subtitle="Service catalog health, open incidents, and deploy status"
       />
+
+      {filterLabel ? (
+        <div className="filter-banner">
+          Filtered: {filterLabel} ·{" "}
+          <Link to="/monitor" className="filter-banner-clear">
+            Clear filter
+          </Link>
+        </div>
+      ) : null}
 
       <Panel title="Service catalog">
         <table className="data-table">
@@ -50,7 +74,7 @@ export function MonitorPage() {
         </table>
       </Panel>
 
-      <Panel title="Open incidents">
+      <Panel title={filterLabel ? `Incidents · ${filterLabel}` : "Open incidents"}>
         <table className="data-table">
           <thead>
             <tr>
@@ -62,23 +86,31 @@ export function MonitorPage() {
             </tr>
           </thead>
           <tbody>
-            {data.incidents.map((inc) => (
-              <tr
-                key={inc.id}
-                className={`clickable-row${selectedEntityId === inc.id ? " selected" : ""}`}
-                onClick={() => setSelectedEntityId(inc.id)}
-              >
-                <td>{inc.title}</td>
-                <td>
-                  <SeverityBadge severity={inc.severity} />
-                </td>
-                <td>{inc.status}</td>
-                <td>{inc.serviceName}</td>
-                <td style={{ color: "var(--steel-dim)" }}>
-                  {new Date(inc.openedAt).toLocaleDateString()}
+            {filteredIncidents.length === 0 ? (
+              <tr>
+                <td colSpan={5}>
+                  <div className="empty-state">No incidents match this filter.</div>
                 </td>
               </tr>
-            ))}
+            ) : (
+              filteredIncidents.map((inc) => (
+                <tr
+                  key={inc.id}
+                  className={`clickable-row${selectedEntityId === inc.id ? " selected" : ""}`}
+                  onClick={() => setSelectedEntityId(inc.id)}
+                >
+                  <td>{inc.title}</td>
+                  <td>
+                    <SeverityBadge severity={inc.severity} />
+                  </td>
+                  <td>{inc.status}</td>
+                  <td>{inc.serviceName}</td>
+                  <td style={{ color: "var(--steel-dim)" }}>
+                    {new Date(inc.openedAt).toLocaleDateString()}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </Panel>

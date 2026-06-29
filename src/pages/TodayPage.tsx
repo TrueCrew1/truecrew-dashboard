@@ -1,4 +1,5 @@
 import { PageHeader, Panel, SeverityBadge, TaskStageSelect } from "@/components/ui";
+import { ShiftStatsStrip } from "@/components/dashboard/ShiftStatsStrip";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
 
@@ -12,6 +13,8 @@ export function TodayPage() {
         title="Today"
         subtitle="Focus items, overdue gates, and active Sev 1–2 incidents"
       />
+
+      <ShiftStatsStrip />
 
       <div className="grid-2">
         <Panel title="Focus queue">
