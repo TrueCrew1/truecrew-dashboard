@@ -1,4 +1,6 @@
 export { getVaultPath, isVaultConfigured, requireVaultPath } from "./config";
+export { loadLocalEnv } from "./load-env";
+export { listVaultNotes, type VaultNote, type VaultNoteType } from "./read";
 export {
   logBuild,
   logDecision,

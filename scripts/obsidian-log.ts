@@ -2,11 +2,14 @@
 import fs from "node:fs/promises";
 import {
   isVaultConfigured,
+  loadLocalEnv,
   logBuild,
   logDecision,
   logPr,
   updateHotContext,
 } from "../lib/obsidian/index";
+
+loadLocalEnv();
 
 type Command = "build" | "decision" | "pr" | "hot-context";
 
