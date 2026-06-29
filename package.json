@@ -11,7 +11,9 @@
     "db:push": "supabase db push",
     "db:reset": "supabase db reset",
     "db:status": "supabase migration list",
-    "obsidian:log": "npx tsx scripts/obsidian-log.ts"
+    "obsidian:log": "npx tsx scripts/obsidian-log.ts",
+    "obsidian:verify": "npx tsx scripts/obsidian-verify.ts",
+    "obsidian:setup": "npx tsx scripts/obsidian-setup.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.8",

@@ -1,6 +1,7 @@
 node_modules
 dist
 .netlify
+obsidian-vault
 *.local
 .DS_Store
 tsconfig.tsbuildinfo

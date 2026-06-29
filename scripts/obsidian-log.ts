@@ -7,6 +7,9 @@ import {
   logPr,
   updateHotContext,
 } from "../lib/obsidian/index";
+import { loadLocalEnv } from "../lib/obsidian/load-env";
+
+loadLocalEnv();
 
 type Command = "build" | "decision" | "pr" | "hot-context";
 
@@ -21,7 +24,10 @@ Usage:
   npm run obsidian:log -- hot-context --file <path>
 
 Environment:
-  OBSIDIAN_VAULT_PATH  Absolute path to your local Obsidian vault root
+  OBSIDIAN_VAULT_PATH  Absolute path to your Obsidian vault root
+                       (set in .env.local or your shell)
+
+Quickstart: docs/OBSIDIAN_LOGGING_QUICKSTART.md
 `;
 }
 

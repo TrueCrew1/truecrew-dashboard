@@ -2,6 +2,8 @@
 
 Minimal local-first logging from True Crew into your live Obsidian vault. Obsidian stays the markdown knowledge layer; Supabase remains the app database.
 
+> **New here?** Start with [OBSIDIAN_LOGGING_QUICKSTART.md](./OBSIDIAN_LOGGING_QUICKSTART.md) — setup, verification, and copy-paste daily commands.
+
 ## Recommended repo files
 
 | File | Role |
@@ -25,14 +27,16 @@ These align with existing seed/mock conventions (`Decisions/…`, `Operations/�
 
 ## Setup
 
-1. Set your vault root locally (not in Vercel production):
+1. Set your vault root in `.env.local` (loaded automatically; not used on Vercel production):
 
 ```bash
 # .env.local
 OBSIDIAN_VAULT_PATH=/absolute/path/to/your/vault
 ```
 
-2. Log from the repo root:
+2. Verify once: `npm run obsidian:verify`
+
+3. Log from the repo root:
 
 ```bash
 npm run obsidian:log -- build --result success --branch main --commit abc1234 --notes "CI green"
@@ -51,6 +55,9 @@ Obsidian Sync (or git on the vault) propagates notes to your second brain.
 - [x] `scripts/obsidian-log.ts` — four commands: `build`, `decision`, `pr`, `hot-context`
 - [x] `OBSIDIAN_VAULT_PATH` in `.env.example`
 - [x] `npm run obsidian:log` script
+- [x] `npm run obsidian:verify` — one-command local verification
+- [x] `.env.local` auto-load for daily use
+- [x] [OBSIDIAN_LOGGING_QUICKSTART.md](./OBSIDIAN_LOGGING_QUICKSTART.md)
 
 ### Deferred (safe next steps)
 
