@@ -11,11 +11,13 @@
     "db:push": "supabase db push",
     "db:reset": "supabase db reset",
     "db:status": "supabase migration list",
-    "obsidian:log": "npx tsx scripts/obsidian-log.ts"
+    "obsidian:log": "npx tsx scripts/obsidian-log.ts",
+    "obsidian:setup-vault": "npx tsx scripts/setup-obsidian-vault.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.8",
     "@vercel/node": "^5.1.14",
+    "gray-matter": "^4.0.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.3"
