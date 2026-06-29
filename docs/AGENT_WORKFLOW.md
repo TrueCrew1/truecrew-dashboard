@@ -45,7 +45,7 @@ True Crew work is split into two roles. **Agents and scripts do the work.** The 
 Agents run (or document for ops automation):
 
 ```bash
-# Set vault path in .env.local first
+# On your Mac, copy .env.example → .env.local (or rely on auto-detect when vault exists)
 npm run obsidian:setup-vault
 ```
 
