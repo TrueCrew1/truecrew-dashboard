@@ -1,10 +1,23 @@
-import { PageHeader, Panel, SeverityBadge, TaskStageSelect } from "@/components/ui";
+import { CustomerContextCell, PageHeader, Panel, SeverityBadge, TaskStageSelect } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
+import { getCustomerLabel, getLinkedCustomer, matchesSearch, taskMatchesSearch } from "@/lib/entities";
 
 export function TodayPage() {
-  const { setSelectedEntityId } = useSelection();
+  const { setSelectedEntityId, searchQuery } = useSelection();
   const { data } = useData();
+
+  const taskById = new Map(data.tasks.map((task) => [task.id, task]));
+
+  const filteredFocusItems = data.focusItems.filter((item) => {
+    const task = taskById.get(item.taskId);
+    if (!task) return matchesSearch(item.title, searchQuery);
+    return taskMatchesSearch(task, data.customers, searchQuery);
+  });
+
+  const filteredBlockingTasks = data.tasks
+    .filter((task) => task.gates.some((gate) => gate.required && !gate.passed))
+    .filter((task) => taskMatchesSearch(task, data.customers, searchQuery));
 
   return (
     <>
@@ -19,24 +32,39 @@ export function TodayPage() {
             <thead>
               <tr>
                 <th>Item</th>
+                <th>Customer</th>
                 <th>Stage</th>
                 <th>Reason</th>
               </tr>
             </thead>
             <tbody>
-              {data.focusItems.map((item) => (
-                <tr
-                  key={item.id}
-                  className="clickable-row"
-                  onClick={() => setSelectedEntityId(item.taskId)}
-                >
-                  <td>{item.title}</td>
-                  <td onClick={(e) => e.stopPropagation()}>
-                    <TaskStageSelect taskId={item.taskId} stage={item.stage} />
-                  </td>
-                  <td style={{ color: "var(--steel-dim)" }}>{item.reason}</td>
-                </tr>
-              ))}
+              {filteredFocusItems.map((item) => {
+                const task = taskById.get(item.taskId);
+                const customer = task ? getLinkedCustomer(task, data.customers) : undefined;
+                return (
+                  <tr
+                    key={item.id}
+                    className="clickable-row"
+                    onClick={() => setSelectedEntityId(item.taskId)}
+                  >
+                    <td>{item.title}</td>
+                    <td>
+                      {task ? (
+                        <CustomerContextCell
+                          name={getCustomerLabel(task, data.customers)}
+                          tier={customer?.tier}
+                        />
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td onClick={(e) => e.stopPropagation()}>
+                      <TaskStageSelect taskId={item.taskId} stage={item.stage} />
+                    </td>
+                    <td style={{ color: "var(--steel-dim)" }}>{item.reason}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </Panel>
@@ -76,31 +104,39 @@ export function TodayPage() {
           <thead>
             <tr>
               <th>Task</th>
+              <th>Customer</th>
               <th>Stage</th>
               <th>Blocking gates</th>
             </tr>
           </thead>
           <tbody>
-            {data.tasks
-              .filter((t) => t.gates.some((g) => g.required && !g.passed))
-              .map((task) => (
+            {filteredBlockingTasks.map((task) => {
+              const customer = getLinkedCustomer(task, data.customers);
+              return (
                 <tr
                   key={task.id}
                   className="clickable-row"
                   onClick={() => setSelectedEntityId(task.id)}
                 >
                   <td>{task.title}</td>
+                  <td>
+                    <CustomerContextCell
+                      name={getCustomerLabel(task, data.customers)}
+                      tier={customer?.tier}
+                    />
+                  </td>
                   <td onClick={(e) => e.stopPropagation()}>
                     <TaskStageSelect taskId={task.id} stage={task.stage} />
                   </td>
                   <td>
                     {task.gates
-                      .filter((g) => g.required && !g.passed)
-                      .map((g) => g.label)
+                      .filter((gate) => gate.required && !gate.passed)
+                      .map((gate) => gate.label)
                       .join(" · ")}
                   </td>
                 </tr>
-              ))}
+              );
+            })}
           </tbody>
         </table>
       </Panel>

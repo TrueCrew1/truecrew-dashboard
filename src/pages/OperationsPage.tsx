@@ -1,16 +1,30 @@
-import { PageHeader, Panel, StageBadge, StatusBadge, TaskStageSelect } from "@/components/ui";
+import {
+  CustomerContextCell,
+  PageHeader,
+  Panel,
+  StageBadge,
+  StatusBadge,
+  TaskStageSelect,
+} from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
+import { getCustomerLabel, getLinkedCustomer, taskMatchesSearch } from "@/lib/entities";
 
 export function OperationsPage() {
-  const { selectedEntityId, setSelectedEntityId } = useSelection();
+  const { selectedEntityId, setSelectedEntityId, searchQuery } = useSelection();
   const { data, source } = useData();
+
+  const filteredTasks = data.tasks.filter((task) =>
+    taskMatchesSearch(task, data.customers, searchQuery),
+  );
 
   return (
     <>
       <PageHeader
         title="Operations"
-        subtitle={`All active workflows · data source: ${source}`}
+        subtitle={`All active workflows · data source: ${source}${
+          searchQuery ? ` · ${filteredTasks.length} tasks match search` : ""
+        }`}
       />
 
       <Panel title="Active workflows">
@@ -56,6 +70,7 @@ export function OperationsPage() {
           <thead>
             <tr>
               <th>Task</th>
+              <th>Customer</th>
               <th>Type</th>
               <th>Priority</th>
               <th>Stage</th>
@@ -63,32 +78,49 @@ export function OperationsPage() {
             </tr>
           </thead>
           <tbody>
-            {data.tasks.map((task) => (
-              <tr
-                key={task.id}
-                className={`clickable-row${selectedEntityId === task.id ? " selected" : ""}`}
-                onClick={() => setSelectedEntityId(task.id)}
-              >
-                <td>{task.title}</td>
-                <td>{task.workflowType}</td>
-                <td>
-                  <StatusBadge
-                    status={task.priority}
-                    variant={
-                      task.priority === "critical"
-                        ? "red"
-                        : task.priority === "high"
-                          ? "orange"
-                          : "steel"
-                    }
-                  />
+            {filteredTasks.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="empty-table-cell">
+                  No tasks match the current search.
                 </td>
-                <td onClick={(e) => e.stopPropagation()}>
-                  <TaskStageSelect taskId={task.id} stage={task.stage} />
-                </td>
-                <td>{task.assignee ?? "—"}</td>
               </tr>
-            ))}
+            ) : (
+              filteredTasks.map((task) => {
+                const customer = getLinkedCustomer(task, data.customers);
+                return (
+                  <tr
+                    key={task.id}
+                    className={`clickable-row${selectedEntityId === task.id ? " selected" : ""}`}
+                    onClick={() => setSelectedEntityId(task.id)}
+                  >
+                    <td>{task.title}</td>
+                    <td>
+                      <CustomerContextCell
+                        name={getCustomerLabel(task, data.customers)}
+                        tier={customer?.tier}
+                      />
+                    </td>
+                    <td>{task.workflowType}</td>
+                    <td>
+                      <StatusBadge
+                        status={task.priority}
+                        variant={
+                          task.priority === "critical"
+                            ? "red"
+                            : task.priority === "high"
+                              ? "orange"
+                              : "steel"
+                        }
+                      />
+                    </td>
+                    <td onClick={(e) => e.stopPropagation()}>
+                      <TaskStageSelect taskId={task.id} stage={task.stage} />
+                    </td>
+                    <td>{task.assignee ?? "—"}</td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </Panel>

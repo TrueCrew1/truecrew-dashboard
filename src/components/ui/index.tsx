@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useData } from "@/context/DataContext";
-import { WORKFLOW_STAGES, WorkflowStage } from "@/types";
+import { WORKFLOW_STAGES, WorkflowStage, type Customer } from "@/types";
 
 export function StageBadge({ stage }: { stage: WorkflowStage }) {
   const activeStages = [
@@ -176,6 +176,29 @@ export function GateList({
         </li>
       ))}
     </ul>
+  );
+}
+
+export function CustomerContextCell({
+  name,
+  tier,
+}: {
+  name: string | null;
+  tier?: Customer["tier"];
+}) {
+  if (!name) {
+    return <span style={{ color: "var(--steel-dim)" }}>—</span>;
+  }
+
+  return (
+    <span className="customer-context">
+      <span>{name}</span>
+      {tier ? (
+        <span className="badge badge-steel" style={{ marginLeft: 6 }}>
+          {tier}
+        </span>
+      ) : null}
+    </span>
   );
 }
 

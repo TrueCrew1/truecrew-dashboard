@@ -1,13 +1,18 @@
-import { PageHeader, Panel, StageBadge } from "@/components/ui";
+import { CustomerContextCell, PageHeader, Panel, StageBadge } from "@/components/ui";
 import { useData } from "@/context/DataContext";
+import { useSelection } from "@/context/SelectionContext";
+import { getCustomerLabel, getLinkedCustomer, taskMatchesSearch } from "@/lib/entities";
 import { WorkflowStage } from "@/types";
 
 export function ReviewPage() {
+  const { selectedEntityId, setSelectedEntityId, searchQuery } = useSelection();
   const { data } = useData();
-  const reviewItems = [
-    ...data.tasks.filter((t) => t.stage === WorkflowStage.Review),
-    ...data.deploys.filter((d) => d.stage === WorkflowStage.Review),
-  ];
+
+  const reviewTasks = data.tasks
+    .filter((task) => task.stage === WorkflowStage.Review)
+    .filter((task) => taskMatchesSearch(task, data.customers, searchQuery));
+
+  const reviewDeploys = data.deploys.filter((deploy) => deploy.stage === WorkflowStage.Review);
 
   return (
     <>
@@ -17,29 +22,41 @@ export function ReviewPage() {
       />
 
       <Panel title="Pending review">
-        {reviewItems.length === 0 ? (
+        {reviewTasks.length === 0 && reviewDeploys.length === 0 ? (
           <div className="empty-state">No items in review stage.</div>
         ) : (
           <table className="data-table">
             <thead>
               <tr>
                 <th>Item</th>
+                <th>Customer</th>
                 <th>Type</th>
                 <th>Stage</th>
               </tr>
             </thead>
             <tbody>
-              {data.tasks
-                .filter((t) => t.stage === WorkflowStage.Review)
-                .map((task) => (
-                  <tr key={task.id}>
+              {reviewTasks.map((task) => {
+                const customer = getLinkedCustomer(task, data.customers);
+                return (
+                  <tr
+                    key={task.id}
+                    className={`clickable-row${selectedEntityId === task.id ? " selected" : ""}`}
+                    onClick={() => setSelectedEntityId(task.id)}
+                  >
                     <td>{task.title}</td>
+                    <td>
+                      <CustomerContextCell
+                        name={getCustomerLabel(task, data.customers)}
+                        tier={customer?.tier}
+                      />
+                    </td>
                     <td>{task.workflowType}</td>
                     <td>
                       <StageBadge stage={task.stage} />
                     </td>
                   </tr>
-                ))}
+                );
+              })}
             </tbody>
           </table>
         )}
@@ -56,14 +73,14 @@ export function ReviewPage() {
             </tr>
           </thead>
           <tbody>
-            {data.deploys.map((d) => (
-              <tr key={d.id}>
-                <td>{d.title}</td>
-                <td>{d.serviceName}</td>
+            {data.deploys.map((deploy) => (
+              <tr key={deploy.id}>
+                <td>{deploy.title}</td>
+                <td>{deploy.serviceName}</td>
                 <td>
-                  <StageBadge stage={d.stage} />
+                  <StageBadge stage={deploy.stage} />
                 </td>
-                <td>{d.environment}</td>
+                <td>{deploy.environment}</td>
               </tr>
             ))}
           </tbody>
