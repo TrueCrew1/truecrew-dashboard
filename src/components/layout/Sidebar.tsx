@@ -8,7 +8,17 @@ interface NavItem {
   badge?: number;
 }
 
-export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
+export function Sidebar({
+  collapsed,
+  onToggle,
+  mobileOpen,
+  onMobileClose,
+}: {
+  collapsed: boolean;
+  onToggle: () => void;
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
+}) {
   const { data } = useData();
 
   const navSections: { label: string; items: NavItem[] }[] = [
@@ -47,21 +57,33 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
     },
   ];
 
+  const showLabels = mobileOpen || !collapsed;
+
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar${mobileOpen ? " sidebar-mobile-open" : ""}`}>
       <div className="sidebar-header">
         <div className="sidebar-mark">TC</div>
-        {!collapsed ? (
+        {showLabels ? (
           <div className="sidebar-title">
             True <span>Crew</span>
           </div>
+        ) : null}
+        {mobileOpen ? (
+          <button
+            type="button"
+            className="sidebar-mobile-close"
+            onClick={onMobileClose}
+            aria-label="Close navigation"
+          >
+            ×
+          </button>
         ) : null}
       </div>
 
       <nav className="sidebar-nav">
         {navSections.map((section) => (
           <div key={section.label}>
-            {!collapsed ? (
+            {showLabels ? (
               <div className="nav-section-label">{section.label}</div>
             ) : null}
             {section.items.map((item) => (
@@ -72,10 +94,11 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
                 className={({ isActive }) =>
                   `nav-link${isActive ? " active" : ""}`
                 }
-                title={collapsed ? item.label : undefined}
+                title={showLabels ? undefined : item.label}
+                onClick={onMobileClose}
               >
                 <span className="nav-icon">{item.icon}</span>
-                {!collapsed ? (
+                {showLabels ? (
                   <>
                     <span className="nav-label">{item.label}</span>
                     {item.badge ? (

@@ -3,15 +3,25 @@ import { useData } from "@/context/DataContext";
 interface TopBarProps {
   onToggleRail: () => void;
   railOpen: boolean;
+  onToggleMobileNav?: () => void;
 }
 
-export function TopBar({ onToggleRail, railOpen }: TopBarProps) {
+export function TopBar({ onToggleRail, railOpen, onToggleMobileNav }: TopBarProps) {
   const { data, source } = useData();
   const alertCount = data.alerts.length;
   const sevCount = data.incidents.filter((i) => i.severity <= 2).length;
 
   return (
     <header className="topbar">
+      <button
+        type="button"
+        className="topbar-menu-btn"
+        onClick={onToggleMobileNav}
+        aria-label="Open navigation"
+      >
+        ☰
+      </button>
+
       <div className="topbar-search">
         <span className="topbar-search-icon">⌕</span>
         <input
@@ -23,11 +33,12 @@ export function TopBar({ onToggleRail, railOpen }: TopBarProps) {
 
       <div className="topbar-actions">
         {source !== "mock" ? (
-          <span className="badge badge-orange">{source}</span>
+          <span className="badge badge-orange topbar-source-badge">{source}</span>
         ) : null}
 
         <button type="button" className="topbar-btn primary">
-          + Quick create
+          <span className="topbar-btn-short">+</span>
+          <span className="topbar-btn-full">+ Quick create</span>
         </button>
 
         <button
@@ -37,16 +48,17 @@ export function TopBar({ onToggleRail, railOpen }: TopBarProps) {
           aria-label="Toggle alerts panel"
           aria-pressed={railOpen}
         >
-          Alerts
+          <span className="topbar-btn-full">Alerts</span>
+          <span className="topbar-btn-short">⌁</span>
           {alertCount > 0 ? (
             <span className="alert-badge-count">{alertCount}</span>
           ) : null}
         </button>
 
         {sevCount > 0 ? (
-          <span className="badge badge-red">Sev 1–2: {sevCount}</span>
+          <span className="badge badge-red topbar-sev-badge">Sev 1–2: {sevCount}</span>
         ) : (
-          <span className="badge badge-green">All clear</span>
+          <span className="badge badge-green topbar-sev-badge">All clear</span>
         )}
 
         <div className="topbar-avatar" title="Founder">
