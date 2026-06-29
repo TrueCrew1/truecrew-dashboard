@@ -9,6 +9,8 @@ Minimal local-first logging from True Crew into your live Obsidian vault. Obsidi
 | `lib/obsidian/` | Shared utility module — paths, templates, vault writes |
 | `scripts/obsidian-log.ts` | Thin CLI for manual / local automation |
 | `docs/OBSIDIAN_LOGGING.md` | This plan |
+| `docs/AGENT_WORKFLOW.md` | Agent ↔ approver roles and checklist |
+| `scripts/setup-obsidian-vault.ts` | Seed vault workflow templates |
 
 **Script + module (both).** The module holds path conventions and markdown rendering; the CLI is a small wrapper for local use. No API write routes in v1 — Vercel cannot reach a local vault.
 
