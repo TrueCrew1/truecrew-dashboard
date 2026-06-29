@@ -1,8 +1,126 @@
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader, Panel } from "@/components/ui";
 import { useData } from "@/context/DataContext";
+import {
+  fetchObsidianNotes,
+  ObsidianVaultError,
+  type ObsidianNote,
+} from "@/lib/api/client";
+import type { Note } from "@/types";
+
+type NoteSource = "supabase" | "obsidian";
+
+type KnowledgeEntry = Note & { source: NoteSource };
+
+type VaultStatus = "syncing" | "live" | "unreachable" | "unconfigured";
+
+function toObsidianEntry(note: ObsidianNote): KnowledgeEntry {
+  const syncedAt = note.syncedAt ?? new Date(0).toISOString();
+
+  return {
+    id: `obsidian:${note.obsidianPath}`,
+    title: note.title,
+    type: note.type,
+    obsidianPath: note.obsidianPath,
+    summary: note.summary ?? "",
+    syncedAt,
+    createdAt: syncedAt,
+    updatedAt: syncedAt,
+    createdBy: "operator",
+    source: "obsidian",
+  };
+}
+
+function mergeKnowledgeEntries(
+  supabaseNotes: Note[],
+  obsidianNotes: ObsidianNote[],
+): KnowledgeEntry[] {
+  const supabasePaths = new Set(supabaseNotes.map((note) => note.obsidianPath));
+  const merged: KnowledgeEntry[] = supabaseNotes.map((note) => ({
+    ...note,
+    source: "supabase",
+  }));
+
+  for (const note of obsidianNotes) {
+    if (!supabasePaths.has(note.obsidianPath)) {
+      merged.push(toObsidianEntry(note));
+    }
+  }
+
+  return merged;
+}
+
+function SourceBadge({ source }: { source: NoteSource }) {
+  return (
+    <span className={`source-badge source-badge-${source}`}>
+      {source}
+    </span>
+  );
+}
+
+function VaultStatusLabel({
+  status,
+  vaultCount,
+}: {
+  status: VaultStatus;
+  vaultCount: number;
+}) {
+  if (status === "syncing") {
+    return <span className="vault-status vault-status-syncing">syncing…</span>;
+  }
+
+  if (status === "unreachable") {
+    return (
+      <span className="vault-status vault-status-unreachable">vault unreachable</span>
+    );
+  }
+
+  if (status === "live") {
+    return (
+      <span className="vault-status vault-status-live">
+        {vaultCount} vault {vaultCount === 1 ? "note" : "notes"}
+      </span>
+    );
+  }
+
+  return null;
+}
 
 export function KnowledgePage() {
   const { data } = useData();
+  const [obsidianNotes, setObsidianNotes] = useState<ObsidianNote[]>([]);
+  const [vaultStatus, setVaultStatus] = useState<VaultStatus>("syncing");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    setVaultStatus("syncing");
+
+    fetchObsidianNotes()
+      .then(({ notes, configured }) => {
+        if (cancelled) return;
+        setObsidianNotes(notes);
+        setVaultStatus(configured ? "live" : "unconfigured");
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setObsidianNotes([]);
+        if (error instanceof ObsidianVaultError) {
+          setVaultStatus("unreachable");
+          return;
+        }
+        setVaultStatus("unreachable");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const knowledgeEntries = useMemo(
+    () => mergeKnowledgeEntries(data.notes, obsidianNotes),
+    [data.notes, obsidianNotes],
+  );
 
   return (
     <>
@@ -38,21 +156,30 @@ export function KnowledgePage() {
           </table>
         </Panel>
 
-        <Panel title="Knowledge entries (Obsidian)">
+        <Panel
+          title="Knowledge entries (Obsidian)"
+          action={
+            <VaultStatusLabel status={vaultStatus} vaultCount={obsidianNotes.length} />
+          }
+        >
           <table className="data-table">
             <thead>
               <tr>
                 <th>Note</th>
                 <th>Type</th>
                 <th>Path</th>
+                <th>Source</th>
               </tr>
             </thead>
             <tbody>
-              {data.notes.map((note) => (
-                <tr key={note.id}>
-                  <td>{note.title}</td>
-                  <td>{note.type}</td>
-                  <td className="mono">{note.obsidianPath}</td>
+              {knowledgeEntries.map((entry) => (
+                <tr key={`${entry.source}:${entry.id}`}>
+                  <td>{entry.title}</td>
+                  <td>{entry.type}</td>
+                  <td className="mono">{entry.obsidianPath}</td>
+                  <td>
+                    <SourceBadge source={entry.source} />
+                  </td>
                 </tr>
               ))}
             </tbody>
