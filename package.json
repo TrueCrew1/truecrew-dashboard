@@ -13,7 +13,8 @@
     "db:status": "supabase migration list"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.49.8",
+    "@supabase/auth-helpers-nextjs": "^0.15.0",
+    "@supabase/supabase-js": "^2.108.2",
     "@vercel/node": "^5.1.14",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
