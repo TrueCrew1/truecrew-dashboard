@@ -1,4 +1,5 @@
 export { getVaultPath, isVaultConfigured, requireVaultPath } from "./config";
+export { loadLocalEnv } from "./load-env";
 export {
   logBuild,
   logDecision,
