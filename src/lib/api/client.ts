@@ -79,6 +79,64 @@ export async function fetchHealth(): Promise<{
   return response.json();
 }
 
+export interface ObsidianNote {
+  title: string;
+  type: Note["type"];
+  obsidianPath: string;
+  summary?: string;
+  syncedAt?: string;
+}
+
+export interface ObsidianNotesResult {
+  notes: ObsidianNote[];
+  configured: boolean;
+}
+
+interface ObsidianNotesPayload {
+  notes?: ObsidianNote[];
+  configured?: boolean;
+  error?: string;
+}
+
+export class ObsidianVaultError extends Error {
+  constructor(message = "Vault unreachable") {
+    super(message);
+    this.name = "ObsidianVaultError";
+  }
+}
+
+function isObsidianUnconfigured(status: number, body: ObsidianNotesPayload | null): boolean {
+  if (status === 404) return true;
+  if (body?.configured === false) return true;
+  if (status === 503 && body?.error?.toLowerCase().includes("not configured")) return true;
+  return false;
+}
+
+export async function fetchObsidianNotes(): Promise<ObsidianNotesResult> {
+  let response: Response;
+
+  try {
+    response = await fetch("/api/obsidian/notes");
+  } catch {
+    throw new ObsidianVaultError();
+  }
+
+  const body = (await response.json().catch(() => null)) as ObsidianNotesPayload | null;
+
+  if (isObsidianUnconfigured(response.status, body)) {
+    return { notes: [], configured: false };
+  }
+
+  if (!response.ok) {
+    throw new ObsidianVaultError(body?.error ?? "Vault unreachable");
+  }
+
+  return {
+    notes: body?.notes ?? [],
+    configured: body?.configured ?? true,
+  };
+}
+
 export function mergeWithMockFallback(live: Partial<CommandCenterPayload>): MockData {
   return {
     tasks: (live.tasks as Task[])?.length ? (live.tasks as Task[]) : mockData.tasks,
