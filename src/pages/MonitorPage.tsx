@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { PageHeader, Panel, SeverityBadge, StatusBadge } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
@@ -12,6 +14,17 @@ const statusVariant = (status: string) => {
 export function MonitorPage() {
   const { selectedEntityId, setSelectedEntityId } = useSelection();
   const { data } = useData();
+  const [searchParams] = useSearchParams();
+  const filter = searchParams.get("filter");
+
+  const filteredIncidents = useMemo(() => {
+    if (filter === "active-incidents") {
+      return data.incidents.filter((inc) =>
+        ["open", "mitigating", "mitigated"].includes(inc.status),
+      );
+    }
+    return data.incidents;
+  }, [data.incidents, filter]);
 
   return (
     <>
@@ -62,7 +75,7 @@ export function MonitorPage() {
             </tr>
           </thead>
           <tbody>
-            {data.incidents.map((inc) => (
+            {filteredIncidents.map((inc) => (
               <tr
                 key={inc.id}
                 className={`clickable-row${selectedEntityId === inc.id ? " selected" : ""}`}
