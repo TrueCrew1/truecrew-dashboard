@@ -29,7 +29,7 @@ These align with existing seed/mock conventions (`Decisions/…`, `Operations/�
 
 ```bash
 # .env.local
-OBSIDIAN_VAULT_PATH=/absolute/path/to/your/vault
+OBSIDIAN_VAULT_PATH="/Users/truecrew/Library/Mobile Documents/iCloud~md~obsidian/Documents/TRUE CREW-SECOND BRAIN"
 ```
 
 2. Log from the repo root:
@@ -51,12 +51,12 @@ Obsidian Sync (or git on the vault) propagates notes to your second brain.
 - [x] `scripts/obsidian-log.ts` — four commands: `build`, `decision`, `pr`, `hot-context`
 - [x] `OBSIDIAN_VAULT_PATH` in `.env.example`
 - [x] `npm run obsidian:log` script
+- [x] `GET /api/obsidian/notes` — local vault read for KnowledgePage (`vercel dev` only)
 
 ### Deferred (safe next steps)
 
 | Step | Why later |
 |------|-----------|
-| `GET /api/obsidian/notes` read route | Needed for KnowledgePage live vault; separate from write logging |
 | CI / deploy hooks calling `obsidian:log` | Requires vault access in CI or a sync agent |
 | Task → `Logged` stage auto-write | Couples workflow to vault; needs prompt templates + Supabase index upsert |
 | Supabase `notes` row upsert on write | Index sync is useful but not required for markdown-first v1 |
@@ -70,7 +70,7 @@ Obsidian Sync (or git on the vault) propagates notes to your second brain.
 | **Decisions** | Manual CLI when a decision is made |
 | **Hot context** | Manual CLI when focus/blockers change |
 | **Vault path** | Manual env var on your machine |
-| **Note discovery in app** | Unchanged — KnowledgePage still uses Supabase + future read API |
+| **Note discovery in app** | `GET /api/obsidian/notes` when running `npm run dev:vercel` locally with `OBSIDIAN_VAULT_PATH` set |
 | **Supabase index** | Manual / unchanged — no auto-upsert in v1 |
 
 ## Safety constraints
