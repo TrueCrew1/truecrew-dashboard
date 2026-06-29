@@ -31,8 +31,34 @@ export function requireVaultPath(): string {
   const vaultPath = getVaultPath();
   if (!vaultPath) {
     throw new Error(
-      `${VAULT_ENV} is not set. Point it at your local Obsidian vault root.`,
+      `${VAULT_ENV} is not set or vault directory does not exist. Point it at your local Obsidian vault root.`,
     );
   }
   return vaultPath;
+}
+
+export function describeVaultResolution(): string {
+  const envRaw = process.env[VAULT_ENV]?.trim();
+  const lines = ["No readable Obsidian vault found.", ""];
+
+  if (envRaw) {
+    lines.push(`  ${VAULT_ENV} is set but not found on disk:`);
+    lines.push(`    ${envRaw}`, "");
+  } else {
+    lines.push(`  ${VAULT_ENV} is not set.`);
+    lines.push(`  Default iCloud path also not found:`);
+    lines.push(`    ${DEFAULT_VAULT_PATH}`, "");
+  }
+
+  lines.push("Run once (same line — path has spaces, keep quotes):");
+  lines.push(
+    `  OBSIDIAN_VAULT_PATH="${DEFAULT_VAULT_PATH}" npm run obsidian:setup-vault`,
+  );
+  lines.push("");
+  lines.push("Or pass the path as a flag:");
+  lines.push(
+    `  npm run obsidian:setup-vault -- --vault-path "${DEFAULT_VAULT_PATH}"`,
+  );
+
+  return lines.join("\n");
 }
