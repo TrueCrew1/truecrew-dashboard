@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:vercel": "vercel dev",
+    "dev:vercel": "npx vercel dev",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "db:push": "supabase db push",
@@ -28,6 +28,7 @@
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.5.2",
     "typescript": "~5.8.3",
+    "vercel": "^54.18.2",
     "vite": "^6.3.5"
   }
 }
