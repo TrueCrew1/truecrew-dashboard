@@ -34,10 +34,10 @@ export function TopBar({ onToggleRail, railOpen }: TopBarProps) {
           type="button"
           className="topbar-btn alert-badge"
           onClick={onToggleRail}
-          aria-label="Toggle alerts panel"
+          aria-label="Toggle context panel"
           aria-pressed={railOpen}
         >
-          Alerts
+          Context
           {alertCount > 0 ? (
             <span className="alert-badge-count">{alertCount}</span>
           ) : null}
