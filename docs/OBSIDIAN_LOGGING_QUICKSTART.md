@@ -8,9 +8,18 @@ From the True Crew repo root:
 
 ```bash
 npm install
+npm run obsidian:setup
 ```
 
-Create `.env.local` with your **Obsidian vault root** — the folder Obsidian opens as a vault (not a single note, not the `.obsidian` folder inside it):
+This creates `obsidian-vault/` beside the repo, writes `.env.local`, and runs a verification write.
+
+**Already have an Obsidian vault?** Point setup at it instead:
+
+```bash
+npm run obsidian:setup -- --vault=/Users/you/Documents/MyVault
+```
+
+Or create `.env.local` manually with your **Obsidian vault root** — the folder Obsidian opens as a vault (not a single note, not the `.obsidian` folder inside it):
 
 ```bash
 # .env.local
@@ -29,6 +38,8 @@ OBSIDIAN_VAULT_PATH=/Users/you/Documents/MyVault
 Find your vault root in Obsidian: **Settings → Files and links → Vault folder** (or the folder you chose when creating the vault).
 
 ## 2. First verification (one command)
+
+If you ran `npm run obsidian:setup`, verification already ran. Otherwise:
 
 ```bash
 npm run obsidian:verify
