@@ -61,6 +61,12 @@ function inferNoteType(relativePath: string, frontmatter: Record<string, unknown
   if (normalized.includes("/tickets/") || normalized.includes("ticket")) {
     return "ticket";
   }
+  if (normalized.includes("10_integrations/") || normalized.includes("/integrations/")) {
+    return "ticket";
+  }
+  if (normalized.includes("true crew/agent workflow")) {
+    return "onboarding";
+  }
 
   return "decision";
 }

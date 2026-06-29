@@ -1,5 +1,7 @@
 ---
-type: reference
+type: onboarding
+title: Agent ↔ Approver workflow
+summary: Quick reference for approver vs agent roles, vault paths, and logging commands.
 source: true-crew
 ---
 
