@@ -51,7 +51,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const notes = await listVaultNotes(vaultPath);
     return res.status(200).json({
       ok: true,
-      count: notes.length,
       notes,
     });
   } catch (error) {
