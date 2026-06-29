@@ -1,6 +1,13 @@
+import { useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { PageHeader, Panel, SeverityBadge, StatusBadge } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
+import {
+  filterMonitorIncidents,
+  MONITOR_FILTER_LABELS,
+  parseMonitorFilter,
+} from "../../lib/queries/dashboard-stats";
 
 const statusVariant = (status: string) => {
   if (status === "healthy") return "green" as const;
@@ -12,13 +19,26 @@ const statusVariant = (status: string) => {
 export function MonitorPage() {
   const { selectedEntityId, setSelectedEntityId } = useSelection();
   const { data } = useData();
+  const [searchParams] = useSearchParams();
+  const incidentFilter = parseMonitorFilter(searchParams.get("filter"));
+  const incidents = useMemo(
+    () => filterMonitorIncidents(data.incidents, incidentFilter),
+    [data.incidents, incidentFilter],
+  );
+  const incidentsPanelTitle = incidentFilter
+    ? MONITOR_FILTER_LABELS[incidentFilter]
+    : "Open incidents";
 
   return (
     <>
       <PageHeader
         title="Monitor"
         accent="Services"
-        subtitle="Service catalog health, open incidents, and deploy status"
+        subtitle={
+          incidentFilter
+            ? `${MONITOR_FILTER_LABELS[incidentFilter]} · service catalog and deploy status`
+            : "Service catalog health, open incidents, and deploy status"
+        }
       />
 
       <Panel title="Service catalog">
@@ -50,7 +70,7 @@ export function MonitorPage() {
         </table>
       </Panel>
 
-      <Panel title="Open incidents">
+      <Panel title={incidentsPanelTitle}>
         <table className="data-table">
           <thead>
             <tr>
@@ -62,7 +82,7 @@ export function MonitorPage() {
             </tr>
           </thead>
           <tbody>
-            {data.incidents.map((inc) => (
+            {incidents.map((inc) => (
               <tr
                 key={inc.id}
                 className={`clickable-row${selectedEntityId === inc.id ? " selected" : ""}`}
