@@ -1,4 +1,5 @@
 import { useLocation } from "react-router-dom";
+import { WOCard } from "@/components/rail/WOCard";
 import { GateList, SeverityBadge, StageBadge, formatRelativeTime } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import type { MockData } from "@/data/mockData";
@@ -20,12 +21,14 @@ function DefaultRailContent({ data }: { data: MockData }) {
       <div className="rail-section">
         <div className="rail-section-title">Today's focus</div>
         {data.focusItems.map((item) => (
-          <div key={item.id} className="rail-item">
-            <div className="rail-item-title">{item.title}</div>
-            <div className="rail-item-meta">
-              <StageBadge stage={item.stage} /> · {item.reason}
-            </div>
-          </div>
+          <WOCard
+            key={item.id}
+            taskId={item.taskId}
+            title={item.title}
+            stage={item.stage}
+            workflowType={item.workflowType}
+            meta={item.reason}
+          />
         ))}
       </div>
 
