@@ -22,6 +22,12 @@ check VERCEL_TOKEN
 check SUPABASE_URL
 check SUPABASE_SERVICE_ROLE_KEY
 
+if [ -n "${SUPABASE_URL:-}" ]; then
+  ref="${SUPABASE_URL#https://}"
+  ref="${ref%%.*}"
+  echo "  → SUPABASE_PROJECT_REF (GitHub Actions): $ref"
+fi
+
 echo ""
 if [ "${MISSING:-0}" -eq 1 ]; then
   echo "Add missing vars, then run:"

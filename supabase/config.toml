@@ -1,4 +1,5 @@
-# A string used to distinguish different Supabase projects on the same host.
+# Local CLI label only — distinguishes Supabase projects on the same host during `supabase start`.
+# This is NOT the remote project ref. Remote ref = subdomain of SUPABASE_URL (e.g. fmomafwhcuothygmuiwa).
 project_id = "true-crew"
 
 [api]

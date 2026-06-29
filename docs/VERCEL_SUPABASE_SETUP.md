@@ -16,8 +16,16 @@ GitHub (PR + CI events)
 
 ## 1. Supabase project
 
+### Project identity
+
+Use the **True Crew Command Center** Supabase project — **not** the M&S Painting Supabase project. Every Supabase-related env var in Vercel, GitHub Actions, and `.env.local` must reference the same project.
+
+- **Project URL** (`SUPABASE_URL`) — e.g. `https://fmomafwhcuothygmuiwa.supabase.co`
+- **Project ref** (`SUPABASE_PROJECT_REF`, GitHub Actions only) — subdomain only, e.g. `fmomafwhcuothygmuiwa`
+- **`supabase/config.toml` `project_id`** — local CLI label only; unrelated to the remote ref
+
 1. Create a project at [supabase.com/dashboard](https://supabase.com/dashboard).
-2. Note the **Project URL** and **service_role** key (Settings → API).
+2. Note the **Project URL**, **service_role** key, and **anon** key (Settings → API).
 3. Apply migrations:
 
 ```bash
@@ -43,8 +51,25 @@ Or run the SQL files manually in the Supabase SQL editor:
 | `SUPABASE_SERVICE_ROLE_KEY` | Production, Preview | Never expose to client |
 | `GITHUB_WEBHOOK_SECRET` | Production | Random 32+ char string |
 | `VITE_USE_LIVE_API` | Production, Preview | Set to `true` |
+| `VITE_SUPABASE_URL` | Production, Preview | Same value as `SUPABASE_URL` |
+| `VITE_SUPABASE_ANON_KEY` | Production, Preview | Public anon key; future client auth (not used in v1 API layer) |
 
 4. Deploy.
+
+### GitHub Actions secrets
+
+For CI deploy and migration workflows, add these in **Settings → Secrets and variables → Actions** (see also [DEPLOY_NOW.md](DEPLOY_NOW.md)):
+
+| Secret | Purpose |
+|---|---|
+| `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` | Deploy workflow |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Build-time server config |
+| `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | Build-time client config |
+| `GITHUB_WEBHOOK_SECRET` | Must match Vercel env var |
+| `SUPABASE_ACCESS_TOKEN` | Supabase CLI auth ([account tokens](https://supabase.com/dashboard/account/tokens)) |
+| `SUPABASE_PROJECT_REF` | Ref only — subdomain of project URL, not the full URL |
+
+`SUPABASE_ACCESS_TOKEN` and `SUPABASE_PROJECT_REF` are not needed in Vercel or `.env.local` for app runtime.
 
 ## 3. GitHub webhook
 
@@ -77,7 +102,7 @@ Open the app → **Settings** should show Supabase and GitHub as connected.
 
 ```bash
 cp .env.example .env.local
-# Fill SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, VITE_USE_LIVE_API=true
+# Fill SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, VITE_SUPABASE_*, VITE_USE_LIVE_API=true
 
 npm run dev:vercel
 ```
