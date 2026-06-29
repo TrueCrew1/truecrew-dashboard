@@ -16,14 +16,12 @@ status: approved
 
 <!-- Agents add pending commands here. Ops runs them after approver sign-off. -->
 
-### Vault seed — PR #45
+### Verify KnowledgePage — PR #45
 - **Added:** 2026-06-29
 - **PR:** #45
-- **Why:** Seed workflow templates into live iCloud vault (no manual Obsidian setup)
+- **Why:** Confirm live vault notes appear in dashboard
 - **Command:**
   ```bash
-  git pull origin main
-  npm run obsidian:setup-vault
   npm run dev:vercel
   ```
 - **Verify:** KnowledgePage shows 2 vault notes (`Agent Workflow`, `GitHub-Workflow`)
@@ -50,7 +48,13 @@ status: approved
 
 ## Completed ops
 
-<!-- Move items here after ops runs them and verification passes -->
+### Vault seed — PR #45
+- **Added:** 2026-06-29
+- **Completed:** 2026-06-29
+- **PR:** #45
+- **Result:** Seeded `10_INTEGRATIONS/GitHub-Workflow.md` and `True Crew/Agent Workflow.md`
+- **Approver:** [x] approved
+- **Ops:** [x] executed
 
 ---
 
