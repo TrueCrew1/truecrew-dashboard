@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
+import { ChiefPanel } from "@/components/chief/ChiefPanel";
 import { ContextRail } from "./ContextRail";
 import { SelectionContext } from "@/context/SelectionContext";
 
@@ -31,9 +32,12 @@ export function AppShell() {
             railOpen={railOpen}
             onToggleRail={() => setRailOpen((v) => !v)}
           />
-          <main className="page-content">
-            <Outlet />
-          </main>
+          <div className="main-workspace">
+            <main className="page-content">
+              <Outlet />
+            </main>
+            <ChiefPanel />
+          </div>
         </div>
 
         <ContextRail
