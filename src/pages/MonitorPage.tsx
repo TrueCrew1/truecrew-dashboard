@@ -1,6 +1,13 @@
 import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { PageHeader, Panel, SeverityBadge, StatusBadge } from "@/components/ui";
+import {
+  EmptyState,
+  PageHeader,
+  Panel,
+  SeverityBadge,
+  StatusBadge,
+  TableScroll,
+} from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
 import {
@@ -45,75 +52,99 @@ export function MonitorPage() {
         </div>
       ) : null}
 
-      <Panel title="Service catalog">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Service</th>
-              <th>Category</th>
-              <th>Status</th>
-              <th>Version</th>
-              <th>Environment</th>
-              <th>Incidents</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.tools.map((tool) => (
-              <tr key={tool.id}>
-                <td>{tool.name}</td>
-                <td>{tool.category}</td>
-                <td>
-                  <StatusBadge status={tool.status} variant={statusVariant(tool.status)} />
-                </td>
-                <td className="mono">{tool.currentVersion ?? "—"}</td>
-                <td>{tool.environment}</td>
-                <td>{tool.openIncidentIds.length || "—"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Panel>
+      <div className="page-stack">
+        <Panel title="Service catalog">
+          {data.tools.length === 0 ? (
+            <EmptyState
+              title="No services registered"
+              description="The service catalog is empty — add tools and APIs to track health here."
+            />
+          ) : (
+            <TableScroll wide>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Service</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Version</th>
+                    <th>Environment</th>
+                    <th>Incidents</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.tools.map((tool) => (
+                    <tr key={tool.id}>
+                      <td>{tool.name}</td>
+                      <td>{tool.category}</td>
+                      <td>
+                        <StatusBadge status={tool.status} variant={statusVariant(tool.status)} />
+                      </td>
+                      <td className="mono">{tool.currentVersion ?? "—"}</td>
+                      <td>{tool.environment}</td>
+                      <td>{tool.openIncidentIds.length || "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </TableScroll>
+          )}
+        </Panel>
 
-      <Panel title={filterLabel ? `Incidents · ${filterLabel}` : "Open incidents"}>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Incident</th>
-              <th>Sev</th>
-              <th>Status</th>
-              <th>Service</th>
-              <th>Opened</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredIncidents.length === 0 ? (
-              <tr>
-                <td colSpan={5}>
-                  <div className="empty-state">No incidents match this filter.</div>
-                </td>
-              </tr>
-            ) : (
-              filteredIncidents.map((inc) => (
-                <tr
-                  key={inc.id}
-                  className={`clickable-row${selectedEntityId === inc.id ? " selected" : ""}`}
-                  onClick={() => setSelectedEntityId(inc.id)}
-                >
-                  <td>{inc.title}</td>
-                  <td>
-                    <SeverityBadge severity={inc.severity} />
-                  </td>
-                  <td>{inc.status}</td>
-                  <td>{inc.serviceName}</td>
-                  <td style={{ color: "var(--steel-dim)" }}>
-                    {new Date(inc.openedAt).toLocaleDateString()}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </Panel>
+        <Panel title={filterLabel ? `Incidents · ${filterLabel}` : "Open incidents"}>
+          {data.incidents.length === 0 ? (
+            <EmptyState
+              title="No incidents recorded"
+              description="Incident history will appear here when services report issues."
+              variant="success"
+            />
+          ) : filteredIncidents.length === 0 && filterLabel ? (
+            <EmptyState
+              title={`No incidents match “${filterLabel}”`}
+              description="This filter shows incidents that are open, mitigating, or mitigated. None match right now — services may be fully resolved."
+              variant="filter"
+              action={
+                <Link to="/monitor" className="empty-state-link">
+                  Clear filter and show all incidents
+                </Link>
+              }
+            />
+          ) : (
+            <TableScroll>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Incident</th>
+                    <th>Sev</th>
+                    <th>Status</th>
+                    <th>Service</th>
+                    <th>Opened</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredIncidents.map((inc) => (
+                    <tr
+                      key={inc.id}
+                      className={`clickable-row${selectedEntityId === inc.id ? " selected" : ""}`}
+                      onClick={() => setSelectedEntityId(inc.id)}
+                    >
+                      <td>{inc.title}</td>
+                      <td>
+                        <SeverityBadge severity={inc.severity} />
+                      </td>
+                      <td>{inc.status}</td>
+                      <td>{inc.serviceName}</td>
+                      <td className="cell-muted">
+                        {new Date(inc.openedAt).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </TableScroll>
+          )}
+        </Panel>
+      </div>
     </>
   );
 }
