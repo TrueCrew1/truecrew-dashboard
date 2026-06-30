@@ -4,6 +4,7 @@ import {
   resolveStageChange,
   resolveTaskGates,
 } from "../../../lib/stage-change";
+import { useConfirm } from "@/components/ui/ConfirmModal";
 import { useData } from "@/context/DataContext";
 import { WORKFLOW_STAGES, WorkflowStage } from "@/types";
 
@@ -112,6 +113,7 @@ export function TaskStageSelect({
   stage: WorkflowStage;
 }) {
   const { updateTaskStage, isTaskUpdating, data } = useData();
+  const confirm = useConfirm();
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -129,7 +131,10 @@ export function TaskStageSelect({
 
     const gates = resolveTaskGates(taskId, data.tasks, data.workflows);
     const blockingGates = getBlockingGates(gates);
-    if (!resolveStageChange(next, blockingGates)) return;
+    const confirmed = await resolveStageChange(next, blockingGates, (options) =>
+      confirm(options),
+    );
+    if (!confirmed) return;
 
     try {
       await updateTaskStage(taskId, next);

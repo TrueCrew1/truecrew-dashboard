@@ -40,6 +40,7 @@ export function TodayPage() {
                 <EmptyState
                   title="Focus queue is clear"
                   description="No items need immediate operator attention right now."
+                  variant="success"
                   action={
                     <Link to="/operations" className="empty-state-link">
                       View all tasks
@@ -129,7 +130,7 @@ export function TodayPage() {
             <div className="panel-empty" data-empty="gates" role="status">
               <EmptyState
                 title="All gates passed"
-                description="Every task with required gates has cleared them — nothing is blocking progress."
+                description="No open required gates are blocking task progress."
                 variant="success"
                 action={
                   <Link to="/operations" className="empty-state-link">

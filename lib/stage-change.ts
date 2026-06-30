@@ -2,7 +2,6 @@
  * Shared stage-change gate warnings for operator UI.
  *
  * Limitations (intentional for this slice):
- * - Uses window.confirm (temporary; replace with in-app modal later)
  * - Frontend-only; API does not enforce gate rules on PATCH /api/tasks/:id
  * - Gated targets are fixed: Review, Done, Logged
  * - resolveTaskGates uses the first linked task for multi-task workflows
@@ -60,38 +59,79 @@ export function formatOpenGateSummary(blockingGates: GateCheck[]): string {
 }
 
 /**
- * Returns true when the operator confirms (or no warning is needed).
- * Review warns only when gates are open; Done/Logged always confirm close-out.
+ * Message shown before a gated stage change. Review warns only when gates are
+ * open; Done/Logged always confirm close-out. Returns null when no prompt.
  */
-export function confirmGatedStageChange(
+export function buildStageChangeConfirmMessage(
   next: WorkflowStage,
   blockingGates: GateCheck[],
-): boolean {
+): string | null {
   const openGateSummary = formatOpenGateSummary(blockingGates);
   const openGateBlock = openGateSummary ? `${openGateSummary}\n\n` : "";
 
   if (next === WorkflowStage.Logged) {
-    return window.confirm(
-      `${openGateBlock}Move to Logged? This archives the task from active workflows.`,
-    );
+    return `${openGateBlock}Move to Logged? This archives the task from active workflows.`;
   }
 
   if (next === WorkflowStage.Done) {
     const trailing =
       blockingGates.length > 0 ? " Open gates will remain unresolved." : "";
-    return window.confirm(
-      `${openGateBlock}Move to Done? Confirm work is complete.${trailing}`,
-    );
+    return `${openGateBlock}Move to Done? Confirm work is complete.${trailing}`;
   }
 
   if (next === WorkflowStage.Review) {
-    if (blockingGates.length === 0) return true;
-    return window.confirm(
-      `${openGateBlock}Move to Review anyway? Required gates should be cleared before sign-off.`,
-    );
+    if (blockingGates.length === 0) return null;
+    return `${openGateBlock}Move to Review anyway? Required gates should be cleared before sign-off.`;
   }
 
-  return true;
+  return null;
+}
+
+export type StageChangeConfirmOptions = {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  defaultFocus: "confirm" | "cancel";
+};
+
+/** Modal title and primary action for gated stage changes (message copy unchanged). */
+export function buildStageChangeConfirmOptions(
+  next: WorkflowStage,
+  blockingGates: GateCheck[],
+): StageChangeConfirmOptions | null {
+  const message = buildStageChangeConfirmMessage(next, blockingGates);
+  if (!message) return null;
+
+  const hasBlocking = blockingGates.length > 0;
+
+  if (next === WorkflowStage.Logged) {
+    return {
+      title: hasBlocking ? "Open gates remain" : "Archive task",
+      message,
+      confirmLabel: "Move to Logged",
+      defaultFocus: hasBlocking ? "cancel" : "confirm",
+    };
+  }
+
+  if (next === WorkflowStage.Done) {
+    return {
+      title: hasBlocking ? "Open gates remain" : "Confirm close-out",
+      message,
+      confirmLabel: "Move to Done",
+      defaultFocus: hasBlocking ? "cancel" : "confirm",
+    };
+  }
+
+  if (next === WorkflowStage.Review) {
+    return {
+      title: "Open gates remain",
+      message,
+      confirmLabel: "Move to Review anyway",
+      defaultFocus: "cancel",
+    };
+  }
+
+  return null;
 }
 
 export function shouldConfirmStageChange(
@@ -103,10 +143,13 @@ export function shouldConfirmStageChange(
   return false;
 }
 
-export function resolveStageChange(
+export async function resolveStageChange(
   next: WorkflowStage,
   blockingGates: GateCheck[],
-): boolean {
+  confirm: (options: StageChangeConfirmOptions) => Promise<boolean>,
+): Promise<boolean> {
   if (!shouldConfirmStageChange(next, blockingGates)) return true;
-  return confirmGatedStageChange(next, blockingGates);
+  const options = buildStageChangeConfirmOptions(next, blockingGates);
+  if (!options) return true;
+  return confirm(options);
 }
