@@ -235,6 +235,38 @@ export function Panel({
   );
 }
 
+export function EmptyState({
+  title,
+  description,
+  action,
+  variant = "default",
+}: {
+  title: string;
+  description?: string;
+  action?: React.ReactNode;
+  variant?: "default" | "filter" | "success";
+}) {
+  return (
+    <div className={`empty-state empty-state--${variant}`}>
+      <div className="empty-state-title">{title}</div>
+      {description ? <p className="empty-state-desc">{description}</p> : null}
+      {action ? <div className="empty-state-action">{action}</div> : null}
+    </div>
+  );
+}
+
+export function TableScroll({
+  children,
+  wide,
+}: {
+  children: React.ReactNode;
+  wide?: boolean;
+}) {
+  return (
+    <div className={`table-scroll${wide ? " table-scroll--wide" : ""}`}>{children}</div>
+  );
+}
+
 export function StatGrid({
   stats,
 }: {
