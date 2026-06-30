@@ -8,6 +8,7 @@ import {
   formatRelativeTime,
   getNextWorkflowStage,
 } from "@/components/ui";
+import { useConfirm } from "@/components/ui/ConfirmModal";
 import {
   CLOSEOUT_STAGES,
   formatOpenGateSummary,
@@ -37,32 +38,44 @@ function DefaultRailContent({ data }: { data: MockData }) {
     <>
       <div className="rail-section">
         <div className="rail-section-title">Today's focus</div>
-        {data.focusItems.map((item) => (
-          <div key={item.id} className="rail-item">
-            <div className="rail-item-title">{item.title}</div>
-            <div className="rail-item-meta">
-              <StageBadge stage={item.stage} /> · {item.reason}
-            </div>
+        {data.focusItems.length === 0 ? (
+          <div className="rail-item">
+            <div className="rail-item-meta">Focus queue is clear — nothing needs attention.</div>
           </div>
-        ))}
+        ) : (
+          data.focusItems.map((item) => (
+            <div key={item.id} className="rail-item">
+              <div className="rail-item-title">{item.title}</div>
+              <div className="rail-item-meta">
+                <StageBadge stage={item.stage} /> · {item.reason}
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       <div className="rail-section">
         <div className="rail-section-title">Open alerts</div>
-        {data.alerts.map((alert) => (
-          <div key={alert.id} className="rail-item">
-            <div className="rail-item-title">{alert.title}</div>
-            <div className="rail-item-meta">
-              {typeof alert.severity === "number" ? (
-                <SeverityBadge severity={alert.severity} />
-              ) : null}{" "}
-              · {formatRelativeTime(alert.timestamp)}
-            </div>
-            <div className="rail-item-meta" style={{ marginTop: 4 }}>
-              {alert.message}
-            </div>
+        {data.alerts.length === 0 ? (
+          <div className="rail-item">
+            <div className="rail-item-meta">No open alerts.</div>
           </div>
-        ))}
+        ) : (
+          data.alerts.map((alert) => (
+            <div key={alert.id} className="rail-item">
+              <div className="rail-item-title">{alert.title}</div>
+              <div className="rail-item-meta">
+                {typeof alert.severity === "number" ? (
+                  <SeverityBadge severity={alert.severity} />
+                ) : null}{" "}
+                · {formatRelativeTime(alert.timestamp)}
+              </div>
+              <div className="rail-item-meta" style={{ marginTop: 4 }}>
+                {alert.message}
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       <div className="rail-section">
@@ -84,6 +97,7 @@ function DefaultRailContent({ data }: { data: MockData }) {
 
 function TaskRailAdvance({ task }: { task: Task }) {
   const { updateTaskStage, isTaskUpdating } = useData();
+  const confirm = useConfirm();
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
@@ -100,7 +114,10 @@ function TaskRailAdvance({ task }: { task: Task }) {
     setError(null);
     setSaved(false);
 
-    if (!resolveStageChange(nextStage, blocking)) return;
+    const confirmed = await resolveStageChange(nextStage, blocking, (options) =>
+      confirm(options),
+    );
+    if (!confirmed) return;
 
     try {
       await updateTaskStage(task.id, nextStage);
@@ -172,8 +189,10 @@ function EntityRailContent({ entityId, data }: { entityId: string; data: MockDat
           <div className="rail-section-title">Stage tracker</div>
           <div className="rail-item">
             <div className="rail-item-title">{task.title}</div>
-            <TaskContextMeta context={context} />
-            <div className="rail-item-meta" style={{ marginTop: 6 }}>
+            <div style={{ marginTop: 4 }}>
+              <TaskContextMeta context={context} />
+            </div>
+            <div className="rail-item-meta" style={{ marginTop: 8 }}>
               <StageBadge stage={task.stage} />
               {" · "}
               {task.workflowType} · {task.priority} priority

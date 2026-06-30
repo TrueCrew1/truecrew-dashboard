@@ -22,12 +22,13 @@ function isShiftFilter(value: string | null): value is ShiftFilter {
   return value === "open-work-orders" || value === "overdue-pms";
 }
 
-const FILTER_EMPTY_COPY: Record<ShiftFilter, string> = {
+type OperationsTaskFilter = Exclude<ShiftFilter, "active-incidents">;
+
+const FILTER_EMPTY_COPY: Record<OperationsTaskFilter, string> = {
   "open-work-orders":
     "This filter shows repair and ticket tasks in open stages. None match right now.",
   "overdue-pms":
     "This filter shows open tasks past their due date. Nothing is overdue at the moment.",
-  "active-incidents": "",
 };
 
 export function OperationsPage() {
@@ -51,8 +52,8 @@ export function OperationsPage() {
       />
 
       {filterLabel ? (
-        <div className="filter-banner">
-          Filtered: {filterLabel} ·{" "}
+        <div className="filter-banner" role="status">
+          Showing: {filterLabel} ·{" "}
           <Link to="/operations" className="filter-banner-clear">
             Clear filter
           </Link>
@@ -121,7 +122,7 @@ export function OperationsPage() {
           ) : filteredTasks.length === 0 && filterLabel ? (
             <EmptyState
               title={`No tasks match “${filterLabel}”`}
-              description={FILTER_EMPTY_COPY[filter as ShiftFilter]}
+              description={FILTER_EMPTY_COPY[filter as OperationsTaskFilter]}
               variant="filter"
               action={
                 <Link to="/operations" className="empty-state-link">

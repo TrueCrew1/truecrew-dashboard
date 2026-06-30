@@ -478,7 +478,9 @@
 .table-scroll {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
   max-width: 100%;
+  scrollbar-gutter: stable;
 }
 
 .table-scroll > .data-table {
@@ -502,7 +504,10 @@
 
 .task-cell-title {
   font-weight: 500;
-  color: var(--steel-bright);
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .task-context-meta {
@@ -517,6 +522,7 @@
 
 .task-context-customer--missing {
   font-style: italic;
+  opacity: 0.75;
 }
 
 .task-context-customer--inferred {
@@ -776,6 +782,10 @@
   color: var(--orange);
 }
 
+.empty-state--filter .empty-state-desc {
+  color: var(--steel);
+}
+
 .mono {
   font-family: ui-monospace, "Cascadia Code", monospace;
   font-size: 11px;
@@ -992,4 +1002,50 @@
 
 .filter-banner-clear:hover {
   text-decoration: underline;
+}
+
+/* Confirm modal */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+}
+
+.confirm-dialog {
+  width: 100%;
+  max-width: 480px;
+  padding: 24px;
+  border-radius: 12px;
+  border: 1px solid var(--orange-border);
+  background: var(--bg-elevated);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+.confirm-dialog-title {
+  margin: 0 0 12px;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--orange);
+}
+
+.confirm-dialog-message {
+  margin: 0 0 20px;
+  color: var(--steel);
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
 }

@@ -63,7 +63,9 @@ export function TaskCell({ task }: { task: Task }) {
 
   return (
     <div className="task-cell">
-      <div className="task-cell-title">{task.title}</div>
+      <div className="task-cell-title" title={task.title}>
+        {task.title}
+      </div>
       <TaskContextMeta context={context} />
     </div>
   );
@@ -82,7 +84,9 @@ export function EntityContextMeta({ entityId, title }: { entityId: string; title
 
   return (
     <div className="task-cell">
-      <div className="task-cell-title">{title}</div>
+      <div className="task-cell-title" title={title}>
+        {title}
+      </div>
       <TaskContextMeta context={context} />
     </div>
   );
