@@ -9,6 +9,7 @@ import {
   TableScroll,
   TaskStageSelect,
 } from "@/components/ui";
+import { TaskCell } from "@/components/tasks/TaskCell";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
 import {
@@ -129,7 +130,7 @@ export function OperationsPage() {
               }
             />
           ) : (
-            <TableScroll>
+            <TableScroll wide>
               <table className="data-table">
                 <thead>
                   <tr>
@@ -147,7 +148,9 @@ export function OperationsPage() {
                       className={`clickable-row${selectedEntityId === task.id ? " selected" : ""}`}
                       onClick={() => setSelectedEntityId(task.id)}
                     >
-                      <td>{task.title}</td>
+                      <td>
+                        <TaskCell task={task} />
+                      </td>
                       <td>{task.workflowType}</td>
                       <td>
                         <StatusBadge

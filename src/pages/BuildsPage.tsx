@@ -1,4 +1,5 @@
 import { PageHeader, Panel, StageBadge } from "@/components/ui";
+import { TaskCell } from "@/components/tasks/TaskCell";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
 
@@ -57,7 +58,9 @@ export function BuildsPage() {
                 className="clickable-row"
                 onClick={() => setSelectedEntityId(task.id)}
               >
-                <td>{task.title}</td>
+                <td>
+                  <TaskCell task={task} />
+                </td>
                 <td>
                   <StageBadge stage={task.stage} />
                 </td>

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { ShiftStatsStrip } from "@/components/dashboard/ShiftStatsStrip";
+import { EntityContextMeta, TaskCell } from "@/components/tasks/TaskCell";
 import {
   EmptyState,
   PageHeader,
@@ -43,7 +44,7 @@ export function TodayPage() {
                 }
               />
             ) : (
-              <TableScroll>
+              <TableScroll wide>
                 <table className="data-table">
                   <thead>
                     <tr>
@@ -59,7 +60,9 @@ export function TodayPage() {
                         className={`clickable-row${selectedEntityId === item.taskId ? " selected" : ""}`}
                         onClick={() => setSelectedEntityId(item.taskId)}
                       >
-                        <td>{item.title}</td>
+                        <td>
+                          <EntityContextMeta entityId={item.taskId} title={item.title} />
+                        </td>
                         <td onClick={(e) => e.stopPropagation()}>
                           <TaskStageSelect taskId={item.taskId} stage={item.stage} />
                         </td>
@@ -128,7 +131,7 @@ export function TodayPage() {
               }
             />
           ) : (
-            <TableScroll>
+            <TableScroll wide>
               <table className="data-table">
                 <thead>
                   <tr>
@@ -144,7 +147,9 @@ export function TodayPage() {
                       className={`clickable-row${selectedEntityId === task.id ? " selected" : ""}`}
                       onClick={() => setSelectedEntityId(task.id)}
                     >
-                      <td>{task.title}</td>
+                      <td>
+                        <TaskCell task={task} />
+                      </td>
                       <td onClick={(e) => e.stopPropagation()}>
                         <TaskStageSelect taskId={task.id} stage={task.stage} />
                       </td>

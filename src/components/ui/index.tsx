@@ -1,28 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import {
+  getBlockingGates,
+  resolveStageChange,
+  resolveTaskGates,
+} from "../../../lib/stage-change";
 import { useData } from "@/context/DataContext";
-import type { GateCheck } from "@/types";
 import { WORKFLOW_STAGES, WorkflowStage } from "@/types";
-
-const CLOSEOUT_STAGES = new Set([WorkflowStage.Done, WorkflowStage.Logged]);
-
-function confirmCloseout(next: WorkflowStage, blockingGates: GateCheck[]): boolean {
-  const gateWarning =
-    blockingGates.length > 0
-      ? `${blockingGates.length} required gate(s) still open: ${blockingGates.map((g) => g.label).join(", ")}.\n\n`
-      : "";
-
-  if (next === WorkflowStage.Logged) {
-    return window.confirm(
-      `${gateWarning}Log this task? It will be archived from active workflows.`,
-    );
-  }
-
-  if (next === WorkflowStage.Done) {
-    return window.confirm(`${gateWarning}Mark as Done? Confirm work is complete.`);
-  }
-
-  return true;
-}
 
 export function StageBadge({ stage }: { stage: WorkflowStage }) {
   const activeStages = [
@@ -144,11 +127,9 @@ export function TaskStageSelect({
     setError(null);
     setSaved(false);
 
-    if (CLOSEOUT_STAGES.has(next)) {
-      const taskGates = data.tasks.find((t) => t.id === taskId)?.gates ?? [];
-      const blockingGates = taskGates.filter((g) => g.required && !g.passed);
-      if (!confirmCloseout(next, blockingGates)) return;
-    }
+    const gates = resolveTaskGates(taskId, data.tasks, data.workflows);
+    const blockingGates = getBlockingGates(gates);
+    if (!resolveStageChange(next, blockingGates)) return;
 
     try {
       await updateTaskStage(taskId, next);

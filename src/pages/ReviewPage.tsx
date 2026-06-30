@@ -1,4 +1,5 @@
 import { PageHeader, Panel, StageBadge } from "@/components/ui";
+import { TaskCell } from "@/components/tasks/TaskCell";
 import { useData } from "@/context/DataContext";
 import { WorkflowStage } from "@/types";
 
@@ -33,7 +34,9 @@ export function ReviewPage() {
                 .filter((t) => t.stage === WorkflowStage.Review)
                 .map((task) => (
                   <tr key={task.id}>
-                    <td>{task.title}</td>
+                    <td>
+                      <TaskCell task={task} />
+                    </td>
                     <td>{task.workflowType}</td>
                     <td>
                       <StageBadge stage={task.stage} />

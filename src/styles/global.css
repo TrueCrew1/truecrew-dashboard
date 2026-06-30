@@ -493,6 +493,44 @@
   color: var(--steel-dim);
 }
 
+.task-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.task-cell-title {
+  font-weight: 500;
+  color: var(--steel-bright);
+}
+
+.task-context-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--steel-dim);
+  line-height: 1.35;
+}
+
+.task-context-customer--missing {
+  font-style: italic;
+}
+
+.task-context-customer--inferred {
+  opacity: 0.85;
+}
+
+.task-context-sep {
+  opacity: 0.55;
+}
+
+.task-context-work-order .mono {
+  color: var(--steel-dim);
+}
+
 .cell-warning {
   color: var(--orange);
 }
