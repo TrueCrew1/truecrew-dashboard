@@ -5,6 +5,7 @@ import {
   resolveTaskGates,
 } from "../../../lib/stage-change";
 import { useConfirm } from "@/components/ui/ConfirmModal";
+import { showToast } from "@/components/ui/toast";
 import { useData } from "@/context/DataContext";
 import { WORKFLOW_STAGES, WorkflowStage } from "@/types";
 
@@ -25,14 +26,18 @@ export function StageSelect({
   stage,
   onChange,
   disabled,
+  saving = false,
+  confirmation,
   error,
-  status = "idle",
+  onRetry,
 }: {
   stage: WorkflowStage;
   onChange: (stage: WorkflowStage) => void;
   disabled?: boolean;
+  saving?: boolean;
+  confirmation?: string | null;
   error?: string | null;
-  status?: "idle" | "saving" | "saved";
+  onRetry?: () => void;
 }) {
   return (
     <span className="stage-select-wrap" onClick={(e) => e.stopPropagation()}>
@@ -42,7 +47,7 @@ export function StageSelect({
         disabled={disabled}
         onChange={(e) => onChange(e.target.value as WorkflowStage)}
         aria-label="Task stage"
-        aria-busy={status === "saving"}
+        aria-busy={saving}
       >
         {WORKFLOW_STAGES.map((value) => (
           <option key={value} value={value}>
@@ -50,16 +55,29 @@ export function StageSelect({
           </option>
         ))}
       </select>
-      {status === "saving" ? (
+      {saving ? (
         <span className="stage-select-status saving" aria-live="polite">
           Saving…
         </span>
-      ) : status === "saved" ? (
+      ) : confirmation ? (
         <span className="stage-select-status saved" aria-live="polite">
-          Saved
+          {confirmation}
         </span>
       ) : null}
-      {error ? <span className="stage-select-error">{error}</span> : null}
+      {error ? (
+        <span className="stage-select-error" role="alert">
+          <span>{error}</span>
+          {onRetry ? (
+            <button
+              type="button"
+              className="stage-select-retry"
+              onClick={onRetry}
+            >
+              Retry
+            </button>
+          ) : null}
+        </span>
+      ) : null}
     </span>
   );
 }
@@ -115,19 +133,20 @@ export function TaskStageSelect({
   const { updateTaskStage, isTaskUpdating, data } = useData();
   const confirm = useConfirm();
   const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
-  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [confirmation, setConfirmation] = useState<string | null>(null);
+  const lastAttemptRef = useRef<WorkflowStage | null>(null);
+  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     return () => {
-      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
     };
   }, []);
 
-  const handleChange = async (next: WorkflowStage) => {
-    if (next === stage) return;
+  const applyStage = async (next: WorkflowStage) => {
+    lastAttemptRef.current = next;
     setError(null);
-    setSaved(false);
+    setConfirmation(null);
 
     const gates = resolveTaskGates(taskId, data.tasks, data.workflows);
     const blockingGates = getBlockingGates(gates);
@@ -138,24 +157,38 @@ export function TaskStageSelect({
 
     try {
       await updateTaskStage(taskId, next);
-      setSaved(true);
-      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
-      savedTimerRef.current = setTimeout(() => setSaved(false), 2500);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Update failed");
+      setConfirmation(`Stage updated to ${next}`);
+      showToast("Stage change saved");
+      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+      confirmTimerRef.current = setTimeout(() => setConfirmation(null), 3000);
+    } catch {
+      setError(`Couldn't save the change to ${next}. Stage kept at ${stage}.`);
+      showToast(`Couldn't save stage change. Stage kept at ${stage}.`, "error");
     }
   };
 
-  const isUpdating = isTaskUpdating(taskId);
-  const status = isUpdating ? "saving" : saved ? "saved" : "idle";
+  const handleChange = (next: WorkflowStage) => {
+    if (next === stage) return;
+    void applyStage(next);
+  };
+
+  const handleRetry = () => {
+    const target = lastAttemptRef.current;
+    if (target && target !== stage) void applyStage(target);
+    else setError(null);
+  };
+
+  const saving = isTaskUpdating(taskId);
 
   return (
     <StageSelect
       stage={stage}
       onChange={handleChange}
-      disabled={isUpdating}
+      disabled={saving}
+      saving={saving}
+      confirmation={confirmation}
       error={error}
-      status={status}
+      onRetry={error ? handleRetry : undefined}
     />
   );
 }
