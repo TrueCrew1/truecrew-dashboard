@@ -1,0 +1,149 @@
+True Crew — Terminal Commands
+=============================
+
+These commands match THIS repo (Vite + Vercel + Supabase, /api routes under api/).
+Run from the repo root: /Users/truecrew/truecrew-dashboard
+
+----------------------------------------------------------------
+0. One-time prerequisites
+----------------------------------------------------------------
+
+# Node 20+ recommended
+node --version
+
+# Vercel CLI is a devDependency in this repo; use `npx vercel`.
+# (Skip the global install — `npx vercel` uses the version pinned in package.json.)
+npx vercel --version
+
+
+----------------------------------------------------------------
+1. Bootstrap .env.local from .env.example
+----------------------------------------------------------------
+
+cd /Users/truecrew/truecrew-dashboard
+
+chmod +x "True Crew/Implementation-Code/scripts-setup-integrations.sh"
+./True\ Crew/Implementation-Code/scripts-setup-integrations.sh
+
+# What this does:
+#   - Backs up existing .env.local
+#   - Appends any keys from .env.example that are missing
+#   - Generates GITHUB_WEBHOOK_SECRET if it's still the placeholder
+#   - Leaves real values (e.g. VERCEL_OIDC_TOKEN) untouched
+
+
+----------------------------------------------------------------
+2. Fill in real credentials
+----------------------------------------------------------------
+
+# Open .env.local and replace placeholders for:
+#   SUPABASE_URL
+#   SUPABASE_SERVICE_ROLE_KEY
+#   VITE_SUPABASE_URL
+#   VITE_SUPABASE_ANON_KEY
+#   OBSIDIAN_VAULT_PATH   (local dev only — not used on Vercel)
+nano .env.local
+
+# Verify it looks right (DO NOT paste output into chat — it contains secrets)
+cat .env.local
+
+
+----------------------------------------------------------------
+3. Install + build
+----------------------------------------------------------------
+
+npm install
+npm run build
+
+
+----------------------------------------------------------------
+4. Link to Vercel project (one time)
+----------------------------------------------------------------
+
+npx vercel link
+
+# Already linked? Verify:
+cat .vercel/project.json
+
+
+----------------------------------------------------------------
+5. Push env vars to Vercel
+----------------------------------------------------------------
+
+# `vercel env add` reads a value INTERACTIVELY (or from stdin for that one key).
+# It does NOT bulk-import a whole .env file. Run it once per key:
+
+npx vercel env add SUPABASE_URL production
+npx vercel env add SUPABASE_SERVICE_ROLE_KEY production
+npx vercel env add GITHUB_WEBHOOK_SECRET production
+npx vercel env add VITE_SUPABASE_URL production
+npx vercel env add VITE_SUPABASE_ANON_KEY production
+npx vercel env add VITE_USE_LIVE_API production
+
+# Or, easier: paste them into the Vercel dashboard:
+#   https://vercel.com/<team>/truecrew-dashboard/settings/environment-variables
+
+# Pull them back into a local .env (overwrites .env.local):
+# npx vercel env pull .env.local
+
+
+----------------------------------------------------------------
+6. Deploy
+----------------------------------------------------------------
+
+npx vercel deploy --prod
+
+# Or use the repo's helper (requires $VERCEL_TOKEN, $SUPABASE_URL, $SUPABASE_SERVICE_ROLE_KEY in the env):
+# ./scripts/deploy-vercel.sh
+
+
+----------------------------------------------------------------
+7. Verify
+----------------------------------------------------------------
+
+# Replace with the domain Vercel printed:
+curl https://truecrew-dashboard.vercel.app/api/health
+
+# Expected JSON: { ok: true, host: "vercel", supabase: true, githubWebhook: true, ... }
+
+
+----------------------------------------------------------------
+8. Optional — test the Slack webhook
+----------------------------------------------------------------
+
+# Replace YOUR/WEBHOOK/URL with the real Slack incoming webhook URL.
+curl -X POST https://hooks.slack.com/services/YOUR/WEBHOOK/URL \
+  -H "Content-Type: application/json" \
+  -d '{"text":"Integration test from True Crew dashboard"}'
+
+
+----------------------------------------------------------------
+9. Troubleshooting
+----------------------------------------------------------------
+
+# Tail Vercel logs (last deploy):
+npx vercel logs --follow
+
+# Inspect the most recent deployment:
+npx vercel inspect
+
+# Re-pull env vars from Vercel into local .env.local:
+npx vercel env pull .env.local
+
+# Generate a fresh secret (e.g. for a new webhook):
+openssl rand -hex 32
+
+
+----------------------------------------------------------------
+Order to run
+----------------------------------------------------------------
+
+1.  cd /Users/truecrew/truecrew-dashboard
+2.  chmod +x "True Crew/Implementation-Code/scripts-setup-integrations.sh"
+3.  ./True\ Crew/Implementation-Code/scripts-setup-integrations.sh
+4.  nano .env.local             # fill in Supabase + Obsidian values
+5.  npm install && npm run build
+6.  npx vercel link              # if not already linked
+7.  npx vercel env add <KEY> production   # repeat for each key
+8.  npx vercel deploy --prod
+9.  curl https://<your-domain>/api/health

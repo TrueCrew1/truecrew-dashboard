@@ -1,71 +1,71 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { getVaultPath } from "../../lib/obsidian/config";
+import { isVaultConfigured, resolveVaultAccess } from "../../lib/obsidian/access";
+import { listVaultNotes, readVaultNote } from "../../lib/obsidian/read";
 import {
-  assertVaultReadable,
-  listVaultNotes,
-  readVaultNote,
-} from "../../lib/obsidian/read";
+  obsidianNoteReadResponse,
+  obsidianNotesErrorResponse,
+  obsidianNotesListResponse,
+} from "../../lib/obsidian/responses";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
-    return res.status(405).json({ ok: false, error: "Method not allowed" });
+    return res.status(405).json(
+      obsidianNotesErrorResponse(false, "Method not allowed"),
+    );
   }
 
-  const vaultPath = getVaultPath();
-  if (!vaultPath) {
-    return res.status(503).json({
-      ok: false,
-      configured: false,
-      error: "OBSIDIAN_VAULT_PATH is not configured",
-    });
+  const access = await resolveVaultAccess();
+
+  if (access.kind === "missing") {
+    return res.status(503).json(
+      obsidianNotesErrorResponse(false, access.error),
+    );
   }
 
-  try {
-    await assertVaultReadable(vaultPath);
-  } catch (error) {
-    console.error("Obsidian vault is unreadable", error);
-    return res.status(503).json({
-      ok: false,
-      configured: false,
-      error: error instanceof Error ? error.message : "Vault path is missing or unreadable",
-    });
+  if (access.kind === "invalid") {
+    return res.status(503).json(
+      obsidianNotesErrorResponse(true, access.error),
+    );
   }
 
   const notePath = typeof req.query.path === "string" ? req.query.path.trim() : "";
 
   try {
     if (notePath) {
-      const note = await readVaultNote(vaultPath, notePath);
+      const note = await readVaultNote(access.path, notePath);
 
       if (!note) {
-        return res.status(404).json({
-          ok: false,
-          error: "Note not found",
-        });
+        return res.status(404).json(
+          obsidianNotesErrorResponse(true, "Note not found", notePath),
+        );
       }
 
-      return res.status(200).json({ ok: true, note });
+      return res.status(200).json(obsidianNoteReadResponse(note));
     }
 
-    const notes = await listVaultNotes(vaultPath);
-    return res.status(200).json({
-      ok: true,
-      notes,
-    });
+    const notes = await listVaultNotes(access.path);
+    return res.status(200).json(obsidianNotesListResponse(notes));
   } catch (error) {
     console.error("Failed to read Obsidian notes", error);
 
     if (error instanceof Error && error.message.includes("outside vault")) {
-      return res.status(400).json({
-        ok: false,
-        error: error.message,
-      });
+      return res.status(400).json(
+        obsidianNotesErrorResponse(isVaultConfigured(access), error.message, notePath || undefined),
+      );
     }
 
-    return res.status(500).json({
-      ok: false,
-      error: error instanceof Error ? error.message : "Failed to read notes",
-    });
+    if (error instanceof Error && error.message.includes("Only .md notes")) {
+      return res.status(400).json(
+        obsidianNotesErrorResponse(true, error.message, notePath || undefined),
+      );
+    }
+
+    return res.status(500).json(
+      obsidianNotesErrorResponse(
+        true,
+        error instanceof Error ? error.message : "Failed to read notes",
+      ),
+    );
   }
 }

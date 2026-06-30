@@ -90,12 +90,15 @@ export interface ObsidianNote {
 export interface ObsidianNotesResult {
   notes: ObsidianNote[];
   configured: boolean;
+  count: number;
 }
 
 interface ObsidianNotesPayload {
+  ok?: boolean;
   notes?: ObsidianNote[];
   configured?: boolean;
   error?: string;
+  count?: number;
 }
 
 export class ObsidianVaultError extends Error {
@@ -103,13 +106,6 @@ export class ObsidianVaultError extends Error {
     super(message);
     this.name = "ObsidianVaultError";
   }
-}
-
-function isObsidianUnconfigured(status: number, body: ObsidianNotesPayload | null): boolean {
-  if (status === 404) return true;
-  if (body?.configured === false) return true;
-  if (status === 503 && body?.error?.toLowerCase().includes("not configured")) return true;
-  return false;
 }
 
 export async function fetchObsidianNotes(): Promise<ObsidianNotesResult> {
@@ -123,17 +119,19 @@ export async function fetchObsidianNotes(): Promise<ObsidianNotesResult> {
 
   const body = (await response.json().catch(() => null)) as ObsidianNotesPayload | null;
 
-  if (isObsidianUnconfigured(response.status, body)) {
-    return { notes: [], configured: false };
+  if (body?.ok === false && body.configured === false) {
+    return { notes: [], configured: false, count: 0 };
   }
 
-  if (!response.ok) {
+  if (!response.ok || body?.ok === false) {
     throw new ObsidianVaultError(body?.error ?? "Vault unreachable");
   }
 
+  const notes = body?.notes ?? [];
   return {
-    notes: body?.notes ?? [],
-    configured: body?.configured ?? true,
+    notes,
+    configured: true,
+    count: body?.count ?? notes.length,
   };
 }
 

@@ -1,11 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
+import { DEFAULT_VAULT_PATH, VAULT_ENV } from "./config.shared";
 
-const VAULT_ENV = "OBSIDIAN_VAULT_PATH";
-
-/** Local iCloud vault — used only when the directory exists on disk. */
-export const DEFAULT_VAULT_PATH =
-  "/Users/truecrew/Library/Mobile Documents/iCloud~md~obsidian/Documents/TRUE CREW-SECOND BRAIN";
+export { DEFAULT_VAULT_PATH, VAULT_ENV };
 
 function resolveExistingVaultPath(candidate: string): string | null {
   const resolved = path.resolve(candidate);

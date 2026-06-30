@@ -27,9 +27,27 @@ export interface ObsidianNoteDetail extends ObsidianNoteSummary {
 }
 
 const SKIP_DIRS = new Set([".obsidian"]);
+const GLOB_FILENAME_CHARS = /[*?\[\]]/;
 
 function isHiddenEntry(name: string): boolean {
   return name.startsWith(".");
+}
+
+/** Exclude template/glob placeholder files (e.g. `04_INCIDENTS/*.md`) from dashboard lists. */
+export function isListableVaultNotePath(relativePath: string): boolean {
+  const normalized = relativePath.replace(/\\/g, "/").trim();
+  if (!normalized.endsWith(".md")) return false;
+
+  const fileName = path.basename(normalized, ".md");
+  if (!fileName.trim()) return false;
+  if (GLOB_FILENAME_CHARS.test(fileName)) return false;
+
+  return true;
+}
+
+function isPlaceholderTitle(title: string): boolean {
+  const trimmed = title.trim();
+  return trimmed.length === 0 || trimmed === "*" || trimmed === "?";
 }
 
 function isNoteType(value: unknown): value is ObsidianNoteType {
@@ -72,8 +90,35 @@ function inferNoteType(relativePath: string, frontmatter: Record<string, unknown
 }
 
 function titleFromPath(relativePath: string): string {
-  const fileName = path.basename(relativePath, ".md");
+  const fileName = path.basename(relativePath, ".md").trim();
+  if (fileName && !isPlaceholderTitle(fileName)) {
+    return fileName;
+  }
+
+  const parentDir = path.basename(path.dirname(relativePath));
+  if (parentDir && parentDir !== "." && !isPlaceholderTitle(parentDir)) {
+    return parentDir;
+  }
+
   return fileName || relativePath;
+}
+
+function resolveNoteTitle(
+  relativePath: string,
+  frontmatter: Record<string, unknown>,
+): string {
+  const fromFrontmatter =
+    typeof frontmatter.title === "string" ? frontmatter.title.trim() : "";
+  if (fromFrontmatter && !isPlaceholderTitle(fromFrontmatter)) {
+    return fromFrontmatter;
+  }
+
+  const fromPath = titleFromPath(relativePath);
+  if (!isPlaceholderTitle(fromPath)) {
+    return fromPath;
+  }
+
+  return fromFrontmatter || fromPath || "Untitled note";
 }
 
 function summaryFromBody(body: string, frontmatter: Record<string, unknown>): string {
@@ -97,10 +142,7 @@ function parseNoteFile(
 ): ObsidianNoteSummary {
   const parsed = matter(rawContent);
   const frontmatter = parsed.data as Record<string, unknown>;
-  const title =
-    typeof frontmatter.title === "string" && frontmatter.title.trim()
-      ? frontmatter.title.trim()
-      : titleFromPath(relativePath);
+  const title = resolveNoteTitle(relativePath, frontmatter);
 
   return {
     title,
@@ -160,7 +202,10 @@ async function walkMarkdownFiles(
     }
 
     if (entry.isFile() && entry.name.endsWith(".md")) {
-      results.push(path.relative(vaultRoot, absolutePath).replace(/\\/g, "/"));
+      const relativePath = path.relative(vaultRoot, absolutePath).replace(/\\/g, "/");
+      if (isListableVaultNotePath(relativePath)) {
+        results.push(relativePath);
+      }
     }
   }
 }
@@ -202,7 +247,8 @@ export async function readVaultNote(
       fs.stat(absolutePath),
     ]);
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === "ENOENT" || code === "EISDIR") {
       return null;
     }
     throw error;

@@ -1,0 +1,11 @@
+{
+  "remoteName": "origin",
+  "projects": [
+    {
+      "id": "prj_lEhXhQMSxirye6FVYZKVAMrnRUbk",
+      "name": "truecrew-dashboard",
+      "directory": ".",
+      "orgId": "team_C1WkLIRRrYwnV0DPRqE6CD4a"
+    }
+  ]
+}

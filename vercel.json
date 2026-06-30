@@ -4,8 +4,10 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/((?!api/|@|src/|lib/|node_modules/|assets/|favicon\\.ico).*)",
+      "destination": "/index.html"
+    }
   ],
   "headers": [
     {
