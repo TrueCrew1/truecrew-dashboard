@@ -1,3 +1,4 @@
+import type { LinkedEntityRef } from "../../src/types";
 import type { DbTaskRow } from "../supabase/admin";
 
 export interface ClientTask {
@@ -11,7 +12,7 @@ export interface ClientTask {
   dueAt?: string;
   blocker?: string;
   gates: { id: string; label: string; required: boolean; passed: boolean }[];
-  linkedEntities: [];
+  linkedEntities: LinkedEntityRef[];
   githubRef?: string;
   obsidianNoteId?: string;
   createdBy: string;

@@ -8,6 +8,15 @@ import {
   formatRelativeTime,
   getNextWorkflowStage,
 } from "@/components/ui";
+import {
+  CLOSEOUT_STAGES,
+  formatOpenGateSummary,
+  getBlockingGates,
+  resolveStageChange,
+  stageChangeRequiresGateWarning,
+} from "../../../lib/stage-change";
+import { resolveTaskContextFromTask } from "../../../lib/task-context";
+import { TaskContextMeta } from "@/components/tasks/TaskCell";
 import { useData } from "@/context/DataContext";
 import type { MockData } from "@/data/mockData";
 import type { Task } from "@/types";
@@ -78,25 +87,21 @@ function TaskRailAdvance({ task }: { task: Task }) {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
-  const blocking = task.gates.filter((g) => g.required && !g.passed);
+  const blocking = getBlockingGates(task.gates);
   const nextStage = getNextWorkflowStage(task.stage);
 
-  if (blocking.length > 0) {
-    return (
-      <div className="rail-advance-card blocked">
-        <div className="rail-advance-title">Gates blocking advance</div>
-        <div className="rail-item-meta">
-          {blocking.length} required gate{blocking.length === 1 ? "" : "s"} open
-        </div>
-      </div>
-    );
-  }
-
   if (!nextStage) return null;
+
+  const needsGateWarning =
+    stageChangeRequiresGateWarning(nextStage) && blocking.length > 0;
+  const needsCloseoutConfirm = CLOSEOUT_STAGES.has(nextStage);
 
   const handleAdvance = async () => {
     setError(null);
     setSaved(false);
+
+    if (!resolveStageChange(nextStage, blocking)) return;
+
     try {
       await updateTaskStage(task.id, nextStage);
       setSaved(true);
@@ -106,10 +111,37 @@ function TaskRailAdvance({ task }: { task: Task }) {
     }
   };
 
+  if (needsGateWarning) {
+    return (
+      <div className="rail-advance-card blocked">
+        <div className="rail-advance-title">Open gates before {nextStage}</div>
+        <div className="rail-item-meta">{formatOpenGateSummary(blocking)}</div>
+        <AdvanceButton
+          label={`Advance to ${nextStage} anyway →`}
+          onClick={handleAdvance}
+          disabled={isTaskUpdating(task.id)}
+          loading={isTaskUpdating(task.id)}
+          error={error}
+        />
+        {saved ? (
+          <span className="stage-select-status saved" aria-live="polite">
+            Stage updated
+          </span>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
     <div className="rail-advance-card ready">
-      <div className="rail-advance-title">Ready to advance</div>
-      <div className="rail-item-meta">All required gates clear · next: {nextStage}</div>
+      <div className="rail-advance-title">
+        {needsCloseoutConfirm ? "Ready to close out" : "Ready to advance"}
+      </div>
+      <div className="rail-item-meta">
+        {needsCloseoutConfirm
+          ? `Confirm before moving to ${nextStage}`
+          : `Next: ${nextStage}${blocking.length > 0 ? " · gates still open on this task" : ""}`}
+      </div>
       <AdvanceButton
         label={`Advance to ${nextStage} →`}
         onClick={handleAdvance}
@@ -129,14 +161,21 @@ function TaskRailAdvance({ task }: { task: Task }) {
 function EntityRailContent({ entityId, data }: { entityId: string; data: MockData }) {
   const task = data.tasks.find((t) => t.id === entityId);
   if (task) {
-    const blocking = task.gates.filter((g) => g.required && !g.passed).length;
+    const blocking = getBlockingGates(task.gates).length;
+    const context = resolveTaskContextFromTask(task, {
+      customers: data.customers,
+      workflows: data.workflows,
+    });
     return (
       <>
         <div className="rail-section">
           <div className="rail-section-title">Stage tracker</div>
           <div className="rail-item">
-            <StageBadge stage={task.stage} />
+            <div className="rail-item-title">{task.title}</div>
+            <TaskContextMeta context={context} />
             <div className="rail-item-meta" style={{ marginTop: 6 }}>
+              <StageBadge stage={task.stage} />
+              {" · "}
               {task.workflowType} · {task.priority} priority
             </div>
             <div className="rail-item-meta" style={{ marginTop: 4 }}>

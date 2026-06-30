@@ -1,9 +1,12 @@
-import { PageHeader, Panel, StatGrid, StageBadge } from "@/components/ui";
+import { PageHeader, Panel, StatGrid, StageBadge, TableScroll, EmptyState } from "@/components/ui";
+import { TaskCell } from "@/components/tasks/TaskCell";
 import { useData } from "@/context/DataContext";
+import { useSelection } from "@/context/SelectionContext";
 import { WorkflowStage } from "@/types";
 
 export function DashboardPage() {
   const { data } = useData();
+  const { selectedEntityId, setSelectedEntityId } = useSelection();
 
   const stageCounts = Object.values(WorkflowStage).reduce(
     (acc, stage) => {
@@ -12,6 +15,8 @@ export function DashboardPage() {
     },
     {} as Record<WorkflowStage, number>,
   );
+
+  const activeTasks = data.tasks.filter((task) => task.stage !== WorkflowStage.Logged);
 
   return (
     <>
@@ -91,6 +96,44 @@ export function DashboardPage() {
           </table>
         </Panel>
       </div>
+
+      <Panel title="Active tasks">
+        {activeTasks.length === 0 ? (
+          <EmptyState
+            title="No active tasks"
+            description="Tasks in Logged stage are hidden from this view."
+          />
+        ) : (
+          <TableScroll>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Task</th>
+                  <th>Stage</th>
+                  <th>Type</th>
+                </tr>
+              </thead>
+              <tbody>
+                {activeTasks.map((task) => (
+                  <tr
+                    key={task.id}
+                    className={`clickable-row${selectedEntityId === task.id ? " selected" : ""}`}
+                    onClick={() => setSelectedEntityId(task.id)}
+                  >
+                    <td>
+                      <TaskCell task={task} />
+                    </td>
+                    <td>
+                      <StageBadge stage={task.stage} />
+                    </td>
+                    <td className="cell-muted">{task.workflowType}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableScroll>
+        )}
+      </Panel>
     </>
   );
 }

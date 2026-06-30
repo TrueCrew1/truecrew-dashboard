@@ -1,4 +1,5 @@
 import type { DbTaskRow } from "../supabase/admin";
+import { enrichTaskCustomerLinks } from "../task-context";
 import { mapDbTaskToClient, type ClientTask } from "./tasks";
 
 type Row = Record<string, unknown>;
@@ -204,16 +205,18 @@ export function mapCommandCenterData(raw: Awaited<ReturnType<typeof import("../s
     updatedAt: String(row.updated_at),
   }));
 
-  const focusItems = buildFocusItems(tasks, incidents);
-  const alerts = buildAlerts(tasks, incidents, deploys, customers);
+  const linked = enrichTaskCustomerLinks(tasks, customers);
+
+  const focusItems = buildFocusItems(linked.tasks, incidents);
+  const alerts = buildAlerts(linked.tasks, incidents, deploys, linked.customers);
 
   return {
-    tasks,
+    tasks: linked.tasks,
     workflows,
     incidents,
     tools,
     deploys,
-    customers,
+    customers: linked.customers,
     runbooks,
     prompts,
     notes,
