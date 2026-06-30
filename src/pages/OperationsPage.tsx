@@ -6,7 +6,6 @@ import {
   Panel,
   StageBadge,
   StatusBadge,
-  TableScroll,
   TaskStageSelect,
 } from "@/components/ui";
 import { TaskCell } from "@/components/tasks/TaskCell";
@@ -17,6 +16,9 @@ import {
   SHIFT_FILTER_LABELS,
   type ShiftFilter,
 } from "../../lib/queries/dashboard-stats";
+
+const OPERATOR_TABLE =
+  "table-scroll table-scroll--wide table-scroll--sticky-first";
 
 function isShiftFilter(value: string | null): value is ShiftFilter {
   return value === "open-work-orders" || value === "overdue-pms";
@@ -62,17 +64,19 @@ export function OperationsPage() {
       <div className="page-stack">
         <Panel title="Active workflows">
           {data.workflows.length === 0 ? (
-            <EmptyState
-              title="No active workflows"
-              description="Workflows appear here when builds, deploys, repairs, or onboarding pipelines are in flight."
-              action={
-                <Link to="/" className="empty-state-link">
-                  Return to Today
-                </Link>
-              }
-            />
+            <div className="panel-empty" data-empty="workflows" role="status">
+              <EmptyState
+                title="No active workflows"
+                description="Workflows appear here when builds, deploys, repairs, or onboarding pipelines are in flight."
+                action={
+                  <Link to="/" className="empty-state-link">
+                    Return to Today
+                  </Link>
+                }
+              />
+            </div>
           ) : (
-            <TableScroll>
+            <div className={OPERATOR_TABLE}>
               <table className="data-table">
                 <thead>
                   <tr>
@@ -108,29 +112,33 @@ export function OperationsPage() {
                   })}
                 </tbody>
               </table>
-            </TableScroll>
+            </div>
           )}
         </Panel>
 
         <Panel title={filterLabel ? `Tasks · ${filterLabel}` : "All tasks"}>
           {data.tasks.length === 0 ? (
-            <EmptyState
-              title="No tasks yet"
-              description="Tasks are created from workflows and will show up here once work begins."
-            />
+            <div className="panel-empty" data-empty="tasks" role="status">
+              <EmptyState
+                title="No tasks yet"
+                description="Tasks are created from workflows and will show up here once work begins."
+              />
+            </div>
           ) : filteredTasks.length === 0 && filterLabel ? (
-            <EmptyState
-              title={`No tasks match “${filterLabel}”`}
-              description={FILTER_EMPTY_COPY[filter as ShiftFilter]}
-              variant="filter"
-              action={
-                <Link to="/operations" className="empty-state-link">
-                  Clear filter and show all tasks
-                </Link>
-              }
-            />
+            <div className="panel-empty" data-empty="tasks" role="status">
+              <EmptyState
+                title={`No tasks match “${filterLabel}”`}
+                description={FILTER_EMPTY_COPY[filter as ShiftFilter]}
+                variant="filter"
+                action={
+                  <Link to="/operations" className="empty-state-link">
+                    Clear filter and show all tasks
+                  </Link>
+                }
+              />
+            </div>
           ) : (
-            <TableScroll wide>
+            <div className={OPERATOR_TABLE}>
               <table className="data-table">
                 <thead>
                   <tr>
@@ -172,7 +180,7 @@ export function OperationsPage() {
                   ))}
                 </tbody>
               </table>
-            </TableScroll>
+            </div>
           )}
         </Panel>
       </div>
