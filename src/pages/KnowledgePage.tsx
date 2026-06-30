@@ -61,9 +61,11 @@ function SourceBadge({ source }: { source: NoteSource }) {
 function VaultStatusLabel({
   status,
   vaultCount,
+  shownCount,
 }: {
   status: VaultStatus;
   vaultCount: number;
+  shownCount: number;
 }) {
   if (status === "syncing") {
     return <span className="vault-status vault-status-syncing">reading vault…</span>;
@@ -81,17 +83,14 @@ function VaultStatusLabel({
     );
   }
 
-  if (vaultCount === 0) {
-    return (
-      <span className="vault-status vault-status-live vault-status-live--empty">
-        vault connected · 0 notes
-      </span>
-    );
-  }
+  const liveClassName =
+    vaultCount === 0 && shownCount === 0
+      ? "vault-status vault-status-live vault-status-live--empty"
+      : "vault-status vault-status-live";
 
   return (
-    <span className="vault-status vault-status-live">
-      vault connected · {vaultCount} {vaultCount === 1 ? "note" : "notes"}
+    <span className={liveClassName}>
+      vault connected · {vaultCount} in vault · {shownCount} shown
     </span>
   );
 }
@@ -268,7 +267,13 @@ export function KnowledgePage() {
 
         <Panel
           title="Knowledge entries (Obsidian)"
-          action={<VaultStatusLabel status={vaultStatus} vaultCount={vaultCount} />}
+          action={
+            <VaultStatusLabel
+              status={vaultStatus}
+              vaultCount={vaultCount}
+              shownCount={knowledgeEntries.length}
+            />
+          }
         >
           <KnowledgeEntriesBody
             status={vaultStatus}
