@@ -1,5 +1,5 @@
-import type { DbTaskRow } from "./admin";
-import { getSupabaseAdmin } from "./admin";
+import type { DbTaskRow } from "./admin.js";
+import { getSupabaseAdmin } from "./admin.js";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

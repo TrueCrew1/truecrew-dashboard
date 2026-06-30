@@ -3,7 +3,7 @@ import type {
   DecisionLogEntry,
   HotContextEntry,
   PrLogEntry,
-} from "./types";
+} from "./types.js";
 
 function formatTimestamp(date: Date): string {
   return date.toISOString().replace("T", " ").slice(0, 16);

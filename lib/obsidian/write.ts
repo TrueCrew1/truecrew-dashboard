@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { requireVaultPath } from "./config";
+import { requireVaultPath } from "./config.js";
 
 export function resolveVaultFile(relativePath: string): string {
   const vaultPath = requireVaultPath();

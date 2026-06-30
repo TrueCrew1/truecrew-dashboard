@@ -1,4 +1,4 @@
-import type { ObsidianNoteDetail, ObsidianNoteSummary } from "./read";
+import type { ObsidianNoteDetail, ObsidianNoteSummary } from "./read.js";
 
 export type ObsidianNotesListResponse = {
   ok: true;

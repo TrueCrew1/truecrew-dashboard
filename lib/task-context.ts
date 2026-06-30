@@ -1,4 +1,4 @@
-import type { Customer, Task, Workflow } from "../src/types";
+import type { Customer, Task, Workflow } from "../src/types/index.js";
 
 export const NO_CUSTOMER_LINKED = "No customer linked";
 

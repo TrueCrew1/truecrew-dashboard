@@ -1,11 +1,11 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { isVaultConfigured, resolveVaultAccess } from "../../lib/obsidian/access";
-import { listVaultNotes, readVaultNote } from "../../lib/obsidian/read";
+import { isVaultConfigured, resolveVaultAccess } from "../../lib/obsidian/access.js";
+import { listVaultNotes, readVaultNote } from "../../lib/obsidian/read.js";
 import {
   obsidianNoteReadResponse,
   obsidianNotesErrorResponse,
   obsidianNotesListResponse,
-} from "../../lib/obsidian/responses";
+} from "../../lib/obsidian/responses.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "GET") {

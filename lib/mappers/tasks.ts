@@ -1,5 +1,5 @@
-import type { LinkedEntityRef } from "../../src/types";
-import type { DbTaskRow } from "../supabase/admin";
+import type { LinkedEntityRef } from "../../src/types/index.js";
+import type { DbTaskRow } from "../supabase/admin.js";
 
 export interface ClientTask {
   id: string;

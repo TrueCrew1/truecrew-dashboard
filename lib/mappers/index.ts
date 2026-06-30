@@ -1,6 +1,6 @@
-import type { DbTaskRow } from "../supabase/admin";
-import { enrichTaskCustomerLinks } from "../task-context";
-import { mapDbTaskToClient, type ClientTask } from "./tasks";
+import type { DbTaskRow } from "../supabase/admin.js";
+import { enrichTaskCustomerLinks } from "../task-context.js";
+import { mapDbTaskToClient, type ClientTask } from "./tasks.js";
 
 type Row = Record<string, unknown>;
 

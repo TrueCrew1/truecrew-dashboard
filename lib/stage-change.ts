@@ -6,8 +6,8 @@
  * - Gated targets are fixed: Review, Done, Logged
  * - resolveTaskGates uses the first linked task for multi-task workflows
  */
-import type { GateCheck } from "../src/types";
-import { WorkflowStage } from "../src/types";
+import type { GateCheck } from "../src/types/index.js";
+import { WorkflowStage } from "../src/types/index.js";
 
 /** Stages that should warn when required gates are still open. */
 export const GATE_CHECK_TARGET_STAGES: ReadonlySet<WorkflowStage> = new Set([

@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { mapCommandCenterData } from "../../lib/mappers/index";
-import { fetchRawCommandCenterRows } from "../../lib/supabase/queries";
-import { isSupabaseConfigured } from "../../lib/supabase/admin";
+import { mapCommandCenterData } from "../../lib/mappers/index.js";
+import { fetchRawCommandCenterRows } from "../../lib/supabase/queries.js";
+import { isSupabaseConfigured } from "../../lib/supabase/admin.js";
 
 export default async function handler(_req: VercelRequest, res: VercelResponse) {
   if (!isSupabaseConfigured()) {

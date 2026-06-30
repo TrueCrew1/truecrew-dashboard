@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { DEFAULT_VAULT_PATH, VAULT_ENV } from "./config.shared";
+import { DEFAULT_VAULT_PATH, VAULT_ENV } from "./config.shared.js";
 
 export type VaultAccess =
   | { kind: "ready"; path: string }

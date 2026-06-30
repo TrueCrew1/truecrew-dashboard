@@ -1,6 +1,6 @@
-import { getSupabaseAdmin } from "../supabase/admin";
-import type { Incident, Task } from "../../src/types";
-import { WorkflowStage } from "../../src/types";
+import { getSupabaseAdmin } from "../supabase/admin.js";
+import type { Incident, Task } from "../../src/types/index.js";
+import { WorkflowStage } from "../../src/types/index.js";
 
 export interface ShiftStats {
   openWorkOrders: number;

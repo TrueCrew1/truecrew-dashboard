@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { DEFAULT_VAULT_PATH, VAULT_ENV } from "./config.shared";
+import { DEFAULT_VAULT_PATH, VAULT_ENV } from "./config.shared.js";
 
 export { DEFAULT_VAULT_PATH, VAULT_ENV };
 
