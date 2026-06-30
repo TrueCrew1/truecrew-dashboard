@@ -16,6 +16,7 @@ export interface ShiftStatsSource {
   }>;
   incidents: Array<{
     status: string;
+    severity?: number;
   }>;
 }
 
@@ -42,20 +43,22 @@ export const SHIFT_STAT_LINKS = {
 } as const;
 
 export const SHIFT_FILTER_LABELS: Record<ShiftFilter, string> = {
-  "open-work-orders": "Open work orders",
-  "overdue-pms": "Overdue PMs",
-  "active-incidents": "Active incidents",
+  "open-work-orders": "Open repair tasks",
+  "overdue-pms": "Overdue tasks",
+  "active-incidents": "Sev 1–2 active incidents",
 };
 
 const OPEN_TASK_STAGE_SET = new Set<string>(OPEN_TASK_STAGES);
 
-function isOpenTaskStage(stage: string): boolean {
-  return OPEN_TASK_STAGE_SET.has(stage);
-}
-
 function isActiveIncidentStatus(status: string): boolean {
   return (ACTIVE_INCIDENT_STATUSES as readonly string[]).includes(status);
 }
+
+export function isOpenTaskStage(stage: string): boolean {
+  return OPEN_TASK_STAGE_SET.has(stage);
+}
+
+export { isActiveIncidentStatus };
 
 export function deriveShiftStats(source: ShiftStatsSource): ShiftStats {
   const now = Date.now();
@@ -71,8 +74,10 @@ export function deriveShiftStats(source: ShiftStatsSource): ShiftStats {
     return new Date(task.dueAt).getTime() < now;
   }).length;
 
-  const activeIncidents = source.incidents.filter((incident) =>
-    isActiveIncidentStatus(incident.status),
+  const activeIncidents = source.incidents.filter(
+    (incident) =>
+      isActiveIncidentStatus(incident.status) &&
+      (incident.severity === undefined || incident.severity <= 2),
   ).length;
 
   return { openWorkOrders, overduePMs, activeIncidents };
@@ -103,7 +108,9 @@ export function filterIncidentsByShiftParam(
   filter: string | null,
 ): Incident[] {
   if (filter === "active-incidents") {
-    return incidents.filter((inc) => isActiveIncidentStatus(inc.status));
+    return incidents.filter(
+      (inc) => isActiveIncidentStatus(inc.status) && inc.severity <= 2,
+    );
   }
   return incidents;
 }

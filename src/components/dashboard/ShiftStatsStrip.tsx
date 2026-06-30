@@ -46,19 +46,19 @@ export function ShiftStatsStrip({ stats }: { stats?: ShiftStats }) {
   return (
     <nav className="shift-stats-strip" aria-label="Shift at-a-glance stats">
       <StatCard
-        label="Open Work Orders"
+        label="Open repair tasks"
         count={resolved.openWorkOrders}
         href={SHIFT_STAT_LINKS.openWorkOrders}
         loading={loading}
       />
       <StatCard
-        label="Overdue PMs"
+        label="Overdue tasks"
         count={resolved.overduePMs}
         href={SHIFT_STAT_LINKS.overduePMs}
         loading={loading}
       />
       <StatCard
-        label="Active Incidents"
+        label="Sev 1–2 incidents"
         count={resolved.activeIncidents}
         href={SHIFT_STAT_LINKS.activeIncidents}
         loading={loading}

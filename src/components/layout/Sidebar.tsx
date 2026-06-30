@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { useData } from "@/context/DataContext";
+import { isActiveIncidentStatus } from "../../../lib/queries/dashboard-stats";
 
 interface NavItem {
   to: string;
@@ -28,7 +29,10 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
           to: "/monitor",
           icon: "◎",
           label: "Monitor",
-          badge: data.incidents.filter((i) => i.severity <= 2).length || undefined,
+          badge:
+            data.incidents.filter(
+              (i) => i.severity <= 2 && isActiveIncidentStatus(i.status),
+            ).length || undefined,
         },
         { to: "/repair", icon: "⛊", label: "Repair" },
       ],

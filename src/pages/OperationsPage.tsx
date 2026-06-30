@@ -6,19 +6,19 @@ import {
   Panel,
   StageBadge,
   StatusBadge,
+  TableScroll,
   TaskStageSelect,
 } from "@/components/ui";
 import { TaskCell } from "@/components/tasks/TaskCell";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
+import { formatDataSourceLabel } from "@/lib/api/client";
 import {
   filterTasksByShiftParam,
+  isOpenTaskStage,
   SHIFT_FILTER_LABELS,
   type ShiftFilter,
 } from "../../lib/queries/dashboard-stats";
-
-const OPERATOR_TABLE =
-  "table-scroll table-scroll--wide table-scroll--sticky-first";
 
 function isShiftFilter(value: string | null): value is ShiftFilter {
   return value === "open-work-orders" || value === "overdue-pms";
@@ -39,6 +39,11 @@ export function OperationsPage() {
   const [searchParams] = useSearchParams();
   const filter = searchParams.get("filter");
 
+  const activeWorkflows = useMemo(
+    () => data.workflows.filter((wf) => isOpenTaskStage(wf.stage)),
+    [data.workflows],
+  );
+
   const filteredTasks = useMemo(
     () => filterTasksByShiftParam(data.tasks, filter),
     [data.tasks, filter],
@@ -50,12 +55,12 @@ export function OperationsPage() {
     <>
       <PageHeader
         title="Operations"
-        subtitle={`All active workflows · data source: ${source}`}
+        subtitle={`Active workflows and tasks · data source: ${formatDataSourceLabel(source)}`}
       />
 
       {filterLabel ? (
         <div className="filter-banner" role="status">
-          Showing: {filterLabel} ·{" "}
+          Filtered: {filterLabel} ·{" "}
           <Link to="/operations" className="filter-banner-clear">
             Clear filter
           </Link>
@@ -64,11 +69,20 @@ export function OperationsPage() {
 
       <div className="page-stack">
         <Panel title="Active workflows">
-          {data.workflows.length === 0 ? (
+          {activeWorkflows.length === 0 ? (
             <div className="panel-empty" data-empty="workflows" role="status">
               <EmptyState
-                title="No active workflows"
-                description="Workflows appear here when builds, deploys, repairs, or onboarding pipelines are in flight."
+                title={
+                  data.workflows.length === 0
+                    ? "No workflows yet"
+                    : "No active workflows"
+                }
+                description={
+                  data.workflows.length === 0
+                    ? "Workflows appear here when builds, deploys, repairs, or onboarding pipelines are in flight."
+                    : "All workflows are closed or archived. Nothing is in an open stage right now."
+                }
+                variant={data.workflows.length === 0 ? "default" : "success"}
                 action={
                   <Link to="/" className="empty-state-link">
                     Return to Today
@@ -77,7 +91,11 @@ export function OperationsPage() {
               />
             </div>
           ) : (
-            <div className={OPERATOR_TABLE}>
+            <TableScroll
+              wide
+              stickyFirst
+              label="Active workflows table; scroll horizontally on smaller screens to view type, stage, owner, and gates."
+            >
               <table className="data-table">
                 <thead>
                   <tr>
@@ -89,15 +107,17 @@ export function OperationsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.workflows.map((wf) => {
-                    const blocking = wf.gates.filter((g) => g.required && !g.passed).length;
+                  {activeWorkflows.map((wf) => {
+                    const openGates = wf.gates.filter((g) => g.required && !g.passed);
                     return (
                       <tr
                         key={wf.id}
                         className={`clickable-row${selectedEntityId === wf.linkedTaskIds[0] ? " selected" : ""}`}
                         onClick={() => setSelectedEntityId(wf.linkedTaskIds[0] ?? wf.id)}
                       >
-                        <td>{wf.title}</td>
+                        <td className="cell-truncate" title={wf.title}>
+                          {wf.title}
+                        </td>
                         <td>
                           <StatusBadge status={wf.type} variant="steel" />
                         </td>
@@ -105,15 +125,17 @@ export function OperationsPage() {
                           <StageBadge stage={wf.stage} />
                         </td>
                         <td>{wf.owner}</td>
-                        <td className={blocking > 0 ? "cell-warning" : "cell-success"}>
-                          {blocking > 0 ? `${blocking} blocking` : "Clear"}
+                        <td className={openGates.length > 0 ? "cell-warning cell-truncate" : "cell-success"}>
+                          {openGates.length > 0
+                            ? openGates.map((g) => g.label).join(" · ")
+                            : "Clear"}
                         </td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
-            </div>
+            </TableScroll>
           )}
         </Panel>
 
@@ -139,7 +161,11 @@ export function OperationsPage() {
               />
             </div>
           ) : (
-            <div className={OPERATOR_TABLE}>
+            <TableScroll
+              wide
+              stickyFirst
+              label="Tasks table; scroll horizontally on smaller screens to view type, priority, stage, and assignee."
+            >
               <table className="data-table">
                 <thead>
                   <tr>
@@ -181,7 +207,7 @@ export function OperationsPage() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </TableScroll>
           )}
         </Panel>
       </div>

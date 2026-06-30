@@ -6,21 +6,27 @@ import {
   PageHeader,
   Panel,
   SeverityBadge,
+  TableScroll,
   TaskStageSelect,
 } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
-
-const OPERATOR_TABLE =
-  "table-scroll table-scroll--wide table-scroll--sticky-first";
+import {
+  isActiveIncidentStatus,
+  isOpenTaskStage,
+} from "../../lib/queries/dashboard-stats";
 
 export function TodayPage() {
   const { selectedEntityId, setSelectedEntityId } = useSelection();
   const { data } = useData();
 
-  const activeIncidents = data.incidents.filter((i) => i.severity <= 2);
-  const blockingTasks = data.tasks.filter((t) =>
-    t.gates.some((g) => g.required && !g.passed),
+  const activeIncidents = data.incidents.filter(
+    (i) => i.severity <= 2 && isActiveIncidentStatus(i.status),
+  );
+  const blockingTasks = data.tasks.filter(
+    (t) =>
+      isOpenTaskStage(t.stage) &&
+      t.gates.some((g) => g.required && !g.passed),
   );
 
   return (
@@ -38,7 +44,7 @@ export function TodayPage() {
             {data.focusItems.length === 0 ? (
               <div className="panel-empty" data-empty="focus" role="status">
                 <EmptyState
-                  title="Focus queue is clear"
+                  title="Focus queue clear"
                   description="No items need immediate operator attention right now."
                   variant="success"
                   action={
@@ -49,11 +55,15 @@ export function TodayPage() {
                 />
               </div>
             ) : (
-              <div className={OPERATOR_TABLE}>
+              <TableScroll
+                wide
+                stickyFirst
+                label="Focus queue table; scroll horizontally on smaller screens to view stage and reason columns."
+              >
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th>Item</th>
+                      <th>Task</th>
                       <th>Stage</th>
                       <th>Reason</th>
                     </tr>
@@ -71,12 +81,14 @@ export function TodayPage() {
                         <td onClick={(e) => e.stopPropagation()}>
                           <TaskStageSelect taskId={item.taskId} stage={item.stage} />
                         </td>
-                        <td className="cell-muted">{item.reason}</td>
+                        <td className="cell-muted cell-truncate" title={item.reason}>
+                          {item.reason}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </TableScroll>
             )}
           </Panel>
 
@@ -95,7 +107,11 @@ export function TodayPage() {
                 />
               </div>
             ) : (
-              <div className={OPERATOR_TABLE}>
+              <TableScroll
+                wide
+                stickyFirst
+                label="Active incidents table; scroll horizontally on smaller screens to view severity and service columns."
+              >
                 <table className="data-table">
                   <thead>
                     <tr>
@@ -111,7 +127,9 @@ export function TodayPage() {
                         className={`clickable-row${selectedEntityId === inc.id ? " selected" : ""}`}
                         onClick={() => setSelectedEntityId(inc.id)}
                       >
-                        <td>{inc.title}</td>
+                        <td className="cell-truncate" title={inc.title}>
+                          {inc.title}
+                        </td>
                         <td>
                           <SeverityBadge severity={inc.severity} />
                         </td>
@@ -120,7 +138,7 @@ export function TodayPage() {
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </TableScroll>
             )}
           </Panel>
         </div>
@@ -130,7 +148,7 @@ export function TodayPage() {
             <div className="panel-empty" data-empty="gates" role="status">
               <EmptyState
                 title="All gates passed"
-                description="No open required gates are blocking task progress."
+                description="No open required gates are blocking active task progress."
                 variant="success"
                 action={
                   <Link to="/operations" className="empty-state-link">
@@ -140,7 +158,11 @@ export function TodayPage() {
               />
             </div>
           ) : (
-            <div className={OPERATOR_TABLE}>
+            <TableScroll
+              wide
+              stickyFirst
+              label="Blocking gates table; scroll horizontally on smaller screens to view stage and gate details."
+            >
               <table className="data-table">
                 <thead>
                   <tr>
@@ -162,7 +184,7 @@ export function TodayPage() {
                       <td onClick={(e) => e.stopPropagation()}>
                         <TaskStageSelect taskId={task.id} stage={task.stage} />
                       </td>
-                      <td className="cell-warning">
+                      <td className="cell-warning cell-truncate">
                         {task.gates
                           .filter((g) => g.required && !g.passed)
                           .map((g) => g.label)
@@ -172,7 +194,7 @@ export function TodayPage() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </TableScroll>
           )}
         </Panel>
       </div>

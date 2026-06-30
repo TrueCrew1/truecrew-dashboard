@@ -44,7 +44,7 @@ export function MonitorPage() {
       />
 
       {filterLabel ? (
-        <div className="filter-banner">
+        <div className="filter-banner" role="status">
           Filtered: {filterLabel} ·{" "}
           <Link to="/monitor" className="filter-banner-clear">
             Clear filter

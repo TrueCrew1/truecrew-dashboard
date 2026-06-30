@@ -36,9 +36,10 @@ export function AppShell() {
             <main className="page-content">
               <Outlet />
             </main>
-            <ChiefPanel />
           </div>
         </div>
+
+        <ChiefPanel />
 
         <ContextRail
           open={railOpen}

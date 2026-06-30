@@ -162,3 +162,16 @@ export function mergeWithMockFallback(live: Partial<CommandCenterPayload>): Mock
       : mockData.alerts,
   };
 }
+
+export type DataSourceKind = "mock" | "supabase" | "mock-fallback";
+
+export function formatDataSourceLabel(source: DataSourceKind): string {
+  switch (source) {
+    case "supabase":
+      return "live (Supabase)";
+    case "mock-fallback":
+      return "mock fallback";
+    default:
+      return "mock";
+  }
+}

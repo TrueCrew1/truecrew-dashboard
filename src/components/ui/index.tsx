@@ -277,12 +277,31 @@ export function EmptyState({
 export function TableScroll({
   children,
   wide,
+  stickyFirst,
+  label,
+  className,
 }: {
   children: React.ReactNode;
   wide?: boolean;
+  stickyFirst?: boolean;
+  /** Screen-reader hint for horizontally scrollable tables */
+  label?: string;
+  className?: string;
 }) {
+  const classes = [
+    "table-scroll",
+    wide ? "table-scroll--wide" : "",
+    stickyFirst ? "table-scroll--sticky-first" : "",
+    className ?? "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <div className={`table-scroll${wide ? " table-scroll--wide" : ""}`}>{children}</div>
+    <div className={classes} tabIndex={stickyFirst ? 0 : undefined}>
+      {label ? <span className="table-scroll-sr">{label}</span> : null}
+      {children}
+    </div>
   );
 }
 

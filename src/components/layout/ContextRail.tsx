@@ -274,6 +274,34 @@ function EntityRailContent({ entityId, data }: { entityId: string; data: MockDat
     );
   }
 
+  const deploy = data.deploys.find((d) => d.id === entityId);
+  if (deploy) {
+    return (
+      <>
+        <div className="rail-section">
+          <div className="rail-section-title">Deploy</div>
+          <div className="rail-item">
+            <div className="rail-item-title">{deploy.title}</div>
+            <div className="rail-item-meta">
+              {deploy.serviceName} · <StageBadge stage={deploy.stage} />
+            </div>
+            <div className="rail-item-meta" style={{ marginTop: 4 }}>
+              {deploy.environment} · v{deploy.version}
+            </div>
+          </div>
+        </div>
+        {deploy.rollbackPlan ? (
+          <div className="rail-section">
+            <div className="rail-section-title">Rollback plan</div>
+            <div className="rail-item">
+              <div className="rail-item-meta">{deploy.rollbackPlan}</div>
+            </div>
+          </div>
+        ) : null}
+      </>
+    );
+  }
+
   return <DefaultRailContent data={data} />;
 }
 
