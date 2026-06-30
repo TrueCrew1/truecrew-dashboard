@@ -6,11 +6,13 @@ import {
   PageHeader,
   Panel,
   SeverityBadge,
-  TableScroll,
   TaskStageSelect,
 } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
+
+const OPERATOR_TABLE =
+  "table-scroll table-scroll--wide table-scroll--sticky-first";
 
 export function TodayPage() {
   const { selectedEntityId, setSelectedEntityId } = useSelection();
@@ -34,18 +36,20 @@ export function TodayPage() {
         <div className="grid-2">
           <Panel title="Focus queue">
             {data.focusItems.length === 0 ? (
-              <EmptyState
-                title="Focus queue is clear"
-                description="No items need immediate operator attention right now."
-                variant="success"
-                action={
-                  <Link to="/operations" className="empty-state-link">
-                    View all tasks
-                  </Link>
-                }
-              />
+              <div className="panel-empty" data-empty="focus" role="status">
+                <EmptyState
+                  title="Focus queue is clear"
+                  description="No items need immediate operator attention right now."
+                  variant="success"
+                  action={
+                    <Link to="/operations" className="empty-state-link">
+                      View all tasks
+                    </Link>
+                  }
+                />
+              </div>
             ) : (
-              <TableScroll wide>
+              <div className={OPERATOR_TABLE}>
                 <table className="data-table">
                   <thead>
                     <tr>
@@ -72,24 +76,26 @@ export function TodayPage() {
                     ))}
                   </tbody>
                 </table>
-              </TableScroll>
+              </div>
             )}
           </Panel>
 
           <Panel title="Active incidents">
             {activeIncidents.length === 0 ? (
-              <EmptyState
-                title="No Sev 1–2 incidents"
-                description="No critical or high-severity incidents are open."
-                variant="success"
-                action={
-                  <Link to="/monitor" className="empty-state-link">
-                    Open Monitor
-                  </Link>
-                }
-              />
+              <div className="panel-empty" data-empty="incidents" role="status">
+                <EmptyState
+                  title="No Sev 1–2 incidents"
+                  description="No critical or high-severity incidents are open."
+                  variant="success"
+                  action={
+                    <Link to="/monitor" className="empty-state-link">
+                      Open Monitor
+                    </Link>
+                  }
+                />
+              </div>
             ) : (
-              <TableScroll>
+              <div className={OPERATOR_TABLE}>
                 <table className="data-table">
                   <thead>
                     <tr>
@@ -114,25 +120,27 @@ export function TodayPage() {
                     ))}
                   </tbody>
                 </table>
-              </TableScroll>
+              </div>
             )}
           </Panel>
         </div>
 
         <Panel title="Blocking gates">
           {blockingTasks.length === 0 ? (
-            <EmptyState
-              title="All gates passed"
-              description="No open required gates are blocking task progress."
-              variant="success"
-              action={
-                <Link to="/operations" className="empty-state-link">
-                  Review all workflows
-                </Link>
-              }
-            />
+            <div className="panel-empty" data-empty="gates" role="status">
+              <EmptyState
+                title="All gates passed"
+                description="No open required gates are blocking task progress."
+                variant="success"
+                action={
+                  <Link to="/operations" className="empty-state-link">
+                    Review all workflows
+                  </Link>
+                }
+              />
+            </div>
           ) : (
-            <TableScroll wide>
+            <div className={OPERATOR_TABLE}>
               <table className="data-table">
                 <thead>
                   <tr>
@@ -164,7 +172,7 @@ export function TodayPage() {
                   ))}
                 </tbody>
               </table>
-            </TableScroll>
+            </div>
           )}
         </Panel>
       </div>
