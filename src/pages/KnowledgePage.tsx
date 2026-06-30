@@ -50,6 +50,17 @@ function mergeKnowledgeEntries(
   return merged;
 }
 
+function matchesKnowledgeSearch(entry: KnowledgeEntry, query: string): boolean {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return true;
+
+  return (
+    entry.title.toLowerCase().includes(needle) ||
+    entry.obsidianPath.toLowerCase().includes(needle) ||
+    entry.type.toLowerCase().includes(needle)
+  );
+}
+
 function SourceBadge({ source }: { source: NoteSource }) {
   return (
     <span className={`source-badge source-badge-${source}`}>
@@ -100,11 +111,15 @@ function KnowledgeEntriesBody({
   vaultError,
   vaultCount,
   entries,
+  searchQuery,
+  totalEntryCount,
 }: {
   status: VaultStatus;
   vaultError: string | null;
   vaultCount: number;
   entries: KnowledgeEntry[];
+  searchQuery: string;
+  totalEntryCount: number;
 }) {
   if (status === "syncing") {
     return (
@@ -143,6 +158,18 @@ function KnowledgeEntriesBody({
   }
 
   if (entries.length === 0) {
+    if (totalEntryCount > 0 && searchQuery.trim()) {
+      return (
+        <div className="panel-empty" data-empty="knowledge-vault" role="status">
+          <EmptyState
+            title={`No entries match “${searchQuery.trim()}”`}
+            description="Try a different title, path, or type keyword."
+            variant="filter"
+          />
+        </div>
+      );
+    }
+
     return (
       <div className="panel-empty" data-empty="knowledge-vault" role="status">
         <EmptyState
@@ -179,7 +206,9 @@ function KnowledgeEntriesBody({
             <tr key={`${entry.source}:${entry.id}`}>
               <td>{entry.title}</td>
               <td>{entry.type}</td>
-              <td className="mono">{entry.obsidianPath}</td>
+              <td className="mono knowledge-path-cell" title={entry.obsidianPath}>
+                {entry.obsidianPath}
+              </td>
               <td>
                 <SourceBadge source={entry.source} />
               </td>
@@ -197,6 +226,7 @@ export function KnowledgePage() {
   const [vaultCount, setVaultCount] = useState(0);
   const [vaultStatus, setVaultStatus] = useState<VaultStatus>("syncing");
   const [vaultError, setVaultError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -230,6 +260,14 @@ export function KnowledgePage() {
     () => mergeKnowledgeEntries(data.notes, obsidianNotes),
     [data.notes, obsidianNotes],
   );
+
+  const filteredKnowledgeEntries = useMemo(
+    () => knowledgeEntries.filter((entry) => matchesKnowledgeSearch(entry, searchQuery)),
+    [knowledgeEntries, searchQuery],
+  );
+
+  const showKnowledgeSearch =
+    vaultStatus === "live" && knowledgeEntries.length > 0;
 
   return (
     <>
@@ -271,15 +309,29 @@ export function KnowledgePage() {
             <VaultStatusLabel
               status={vaultStatus}
               vaultCount={vaultCount}
-              shownCount={knowledgeEntries.length}
+              shownCount={filteredKnowledgeEntries.length}
             />
           }
         >
+          {showKnowledgeSearch ? (
+            <label className="knowledge-search">
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search title, path, or type…"
+                aria-label="Search knowledge entries"
+                spellCheck={false}
+              />
+            </label>
+          ) : null}
           <KnowledgeEntriesBody
             status={vaultStatus}
             vaultError={vaultError}
             vaultCount={vaultCount}
-            entries={knowledgeEntries}
+            entries={filteredKnowledgeEntries}
+            searchQuery={searchQuery}
+            totalEntryCount={knowledgeEntries.length}
           />
         </Panel>
       </div>
