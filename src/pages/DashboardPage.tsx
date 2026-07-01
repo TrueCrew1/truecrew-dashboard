@@ -9,10 +9,11 @@ import {
   TableText,
 } from "@/components/ui";
 import { TaskCell } from "@/components/tasks/TaskCell";
+import { TaskWarningSummary } from "@/components/tasks/TaskWarningSummary";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
 import { WorkflowStage } from "@/types";
-import { taskHasWarning } from "../../lib/task-warnings";
+import { summarizeTaskWarnings, taskHasWarning } from "../../lib/task-warnings";
 
 export function DashboardPage() {
   const { data } = useData();
@@ -28,6 +29,7 @@ export function DashboardPage() {
 
   const activeTasks = data.tasks.filter((task) => task.stage !== WorkflowStage.Logged);
   const warningContext = { customers: data.customers, workflows: data.workflows };
+  const warningSummary = summarizeTaskWarnings(activeTasks, warningContext);
 
   return (
     <>
@@ -134,6 +136,7 @@ export function DashboardPage() {
       </div>
 
       <Panel title="Active tasks">
+        <TaskWarningSummary summary={warningSummary} />
         {activeTasks.length === 0 ? (
           <PanelEmpty
             emptyKey="dashboard-tasks"

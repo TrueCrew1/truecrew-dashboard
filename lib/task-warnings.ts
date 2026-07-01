@@ -22,6 +22,12 @@ export interface TaskWarning {
   detail: string;
 }
 
+export interface TaskWarningSummary {
+  totalTasks: number;
+  warnedTasks: number;
+  byKind: Record<TaskWarningKind, number>;
+}
+
 const WARNING_PRIORITY: TaskWarningKind[] = [
   "external_dependency",
   "time_gate",
@@ -137,4 +143,32 @@ export function derivePrimaryTaskWarning(
 
 export function taskHasWarning(task: Task, context?: TaskContextData): boolean {
   return derivePrimaryTaskWarning(task, context) !== null;
+}
+
+export function summarizeTaskWarnings(
+  tasks: Task[],
+  context?: TaskContextData,
+): TaskWarningSummary {
+  const byKind: Record<TaskWarningKind, number> = {
+    external_dependency: 0,
+    gate_open: 0,
+    missing_data: 0,
+    time_gate: 0,
+    waiting: 0,
+    readiness: 0,
+  };
+
+  let warnedTasks = 0;
+  for (const task of tasks) {
+    const warning = derivePrimaryTaskWarning(task, context);
+    if (!warning) continue;
+    warnedTasks += 1;
+    byKind[warning.kind] += 1;
+  }
+
+  return {
+    totalTasks: tasks.length,
+    warnedTasks,
+    byKind,
+  };
 }

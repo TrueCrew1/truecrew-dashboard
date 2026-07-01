@@ -1276,6 +1276,33 @@
   white-space: nowrap;
 }
 
+.task-warning-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255, 122, 26, 0.04);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.task-warning-summary__lead {
+  font-weight: 600;
+  color: var(--orange);
+}
+
+.task-warning-summary__pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 122, 26, 0.28);
+  color: var(--steel);
+  background: rgba(255, 255, 255, 0.03);
+}
+
 .task-warning--external_dependency,
 .task-warning--time_gate,
 .task-warning--gate_open {
