@@ -29,7 +29,6 @@
 .app-shell > .main-column {
   grid-column: 2;
   grid-row: 1;
-  min-width: var(--main-min-width);
   min-height: 0;
 }
 
