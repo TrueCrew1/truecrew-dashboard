@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { requireInternalAuth } from "../../../lib/auth.js";
 import { mapDbChiefApprovalDecisionToClient } from "../../../lib/mappers/chief-approvals.js";
 import { isSupabaseConfigured } from "../../../lib/supabase/admin.js";
 import {
@@ -16,6 +17,8 @@ function parseActor(value: unknown): string | null {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (!requireInternalAuth(req, res)) return;
+
   if (!isSupabaseConfigured()) {
     return res.status(503).json({ error: "Database not configured" });
   }
