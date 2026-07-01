@@ -36,7 +36,7 @@ export const TASK_WARNING_KIND_LABEL: Record<TaskWarningKind, string> = {
   gate_open: "gates open",
   missing_data: "missing links",
   waiting: "waiting",
-  readiness: "no GitHub ref",
+  readiness: "missing GitHub ref",
 };
 
 const WARNING_PRIORITY: TaskWarningKind[] = [

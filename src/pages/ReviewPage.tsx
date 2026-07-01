@@ -1,9 +1,11 @@
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   GatesCell,
   PageHeader,
   Panel,
   PanelEmpty,
+  PanelFilterEmpty,
   StageBadge,
   StatusBadge,
   TableScroll,
@@ -14,16 +16,33 @@ import { TaskWarningSummary } from "@/components/tasks/TaskWarningSummary";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
 import { isOpenTaskStage } from "../../lib/queries/dashboard-stats";
-import { summarizeTaskWarnings, taskHasWarning } from "../../lib/task-warnings";
+import {
+  applyTaskWarningView,
+  summarizeTaskWarnings,
+  TASK_WARNING_KIND_LABEL,
+  taskHasWarning,
+  type TaskWarningKind,
+} from "../../lib/task-warnings";
 import { WorkflowStage } from "@/types";
 
 export function ReviewPage() {
   const { selectedEntityId, setSelectedEntityId } = useSelection();
   const { data } = useData();
-  const reviewTasks = data.tasks.filter((t) => t.stage === WorkflowStage.Review);
+  const [warningKind, setWarningKind] = useState<TaskWarningKind | null>(null);
+  const reviewTasks = useMemo(
+    () => data.tasks.filter((t) => t.stage === WorkflowStage.Review),
+    [data.tasks],
+  );
   const pendingDeploys = data.deploys.filter((d) => isOpenTaskStage(d.stage));
-  const warningContext = { customers: data.customers, workflows: data.workflows };
+  const warningContext = useMemo(
+    () => ({ customers: data.customers, workflows: data.workflows }),
+    [data.customers, data.workflows],
+  );
   const warningSummary = summarizeTaskWarnings(reviewTasks, warningContext);
+  const displayTasks = useMemo(
+    () => applyTaskWarningView(reviewTasks, warningKind, warningContext),
+    [reviewTasks, warningKind, warningContext],
+  );
 
   return (
     <>
@@ -34,7 +53,11 @@ export function ReviewPage() {
 
       <div className="page-stack">
         <Panel title="Pending review">
-          <TaskWarningSummary summary={warningSummary} />
+          <TaskWarningSummary
+            summary={warningSummary}
+            activeKind={warningKind}
+            onKindSelect={setWarningKind}
+          />
           {reviewTasks.length === 0 ? (
             <PanelEmpty
               emptyKey="review-queue"
@@ -45,6 +68,21 @@ export function ReviewPage() {
                 <Link to="/operations" className="empty-state-link">
                   View all tasks in Operations
                 </Link>
+              }
+            />
+          ) : displayTasks.length === 0 && warningKind ? (
+            <PanelFilterEmpty
+              emptyKey="review-warning-filter"
+              filterLabel={TASK_WARNING_KIND_LABEL[warningKind]}
+              description="No pending review tasks match this warning kind right now."
+              clearAction={
+                <button
+                  type="button"
+                  className="empty-state-link"
+                  onClick={() => setWarningKind(null)}
+                >
+                  Clear warning filter
+                </button>
               }
             />
           ) : (
@@ -69,7 +107,7 @@ export function ReviewPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {reviewTasks.map((task) => (
+                  {displayTasks.map((task) => (
                     <tr
                       key={task.id}
                       className={[
