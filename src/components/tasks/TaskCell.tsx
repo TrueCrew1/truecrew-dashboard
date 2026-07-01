@@ -4,8 +4,10 @@ import {
   resolveTaskContextFromTask,
   type TaskContext,
 } from "../../../lib/task-context";
+import { derivePrimaryTaskWarning } from "../../../lib/task-warnings";
 import { useData } from "@/context/DataContext";
 import type { Task } from "@/types";
+import { TaskWarningInline } from "@/components/tasks/TaskWarningInline";
 
 export function TaskContextMeta({ context }: { context: TaskContext }) {
   const isMissing = context.customerSource === "none";
@@ -60,6 +62,14 @@ export function TaskCell({ task }: { task: Task }) {
       }),
     [task, data.customers, data.workflows],
   );
+  const warning = useMemo(
+    () =>
+      derivePrimaryTaskWarning(task, {
+        customers: data.customers,
+        workflows: data.workflows,
+      }),
+    [task, data.customers, data.workflows],
+  );
 
   return (
     <div className="task-cell">
@@ -67,6 +77,7 @@ export function TaskCell({ task }: { task: Task }) {
         {task.title}
       </div>
       <TaskContextMeta context={context} />
+      <TaskWarningInline warning={warning} />
     </div>
   );
 }
@@ -81,6 +92,20 @@ export function EntityContextMeta({ entityId, title }: { entityId: string; title
       }),
     [entityId, data.tasks, data.customers, data.workflows],
   );
+  const task = useMemo(
+    () => data.tasks.find((entry) => entry.id === entityId),
+    [entityId, data.tasks],
+  );
+  const warning = useMemo(
+    () =>
+      task
+        ? derivePrimaryTaskWarning(task, {
+            customers: data.customers,
+            workflows: data.workflows,
+          })
+        : null,
+    [task, data.customers, data.workflows],
+  );
 
   return (
     <div className="task-cell">
@@ -88,6 +113,7 @@ export function EntityContextMeta({ entityId, title }: { entityId: string; title
         {title}
       </div>
       <TaskContextMeta context={context} />
+      <TaskWarningInline warning={warning} />
     </div>
   );
 }

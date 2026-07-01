@@ -17,6 +17,7 @@ import {
   isActiveIncidentStatus,
   isOpenTaskStage,
 } from "../../lib/queries/dashboard-stats";
+import { taskHasWarning } from "../../lib/task-warnings";
 
 export function TodayPage() {
   const { selectedEntityId, setSelectedEntityId } = useSelection();
@@ -30,6 +31,7 @@ export function TodayPage() {
       isOpenTaskStage(t.stage) &&
       t.gates.some((g) => g.required && !g.passed),
   );
+  const warningContext = { customers: data.customers, workflows: data.workflows };
 
   return (
     <>
@@ -72,10 +74,20 @@ export function TodayPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {data.focusItems.map((item) => (
+                    {data.focusItems.map((item) => {
+                      const focusTask = data.tasks.find((t) => t.id === item.taskId);
+                      return (
                       <tr
                         key={item.id}
-                        className={`clickable-row${selectedEntityId === item.taskId ? " selected" : ""}`}
+                        className={[
+                          "clickable-row",
+                          selectedEntityId === item.taskId ? "selected" : "",
+                          focusTask && taskHasWarning(focusTask, warningContext)
+                            ? "task-row--warned"
+                            : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" ")}
                         onClick={() => setSelectedEntityId(item.taskId)}
                       >
                         <td>
@@ -88,7 +100,8 @@ export function TodayPage() {
                           <TableText value={item.reason} className="cell-muted" truncate />
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </TableScroll>
@@ -186,7 +199,13 @@ export function TodayPage() {
                   {blockingTasks.map((task) => (
                     <tr
                       key={task.id}
-                      className={`clickable-row${selectedEntityId === task.id ? " selected" : ""}`}
+                      className={[
+                        "clickable-row",
+                        selectedEntityId === task.id ? "selected" : "",
+                        taskHasWarning(task, warningContext) ? "task-row--warned" : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
                       onClick={() => setSelectedEntityId(task.id)}
                     >
                       <td>

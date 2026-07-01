@@ -12,6 +12,7 @@ import { TaskCell } from "@/components/tasks/TaskCell";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
 import { WorkflowStage } from "@/types";
+import { taskHasWarning } from "../../lib/task-warnings";
 
 export function DashboardPage() {
   const { data } = useData();
@@ -26,6 +27,7 @@ export function DashboardPage() {
   );
 
   const activeTasks = data.tasks.filter((task) => task.stage !== WorkflowStage.Logged);
+  const warningContext = { customers: data.customers, workflows: data.workflows };
 
   return (
     <>
@@ -154,11 +156,17 @@ export function DashboardPage() {
               </thead>
               <tbody>
                 {activeTasks.map((task) => (
-                  <tr
-                    key={task.id}
-                    className={`clickable-row${selectedEntityId === task.id ? " selected" : ""}`}
-                    onClick={() => setSelectedEntityId(task.id)}
-                  >
+                    <tr
+                      key={task.id}
+                      className={[
+                        "clickable-row",
+                        selectedEntityId === task.id ? "selected" : "",
+                        taskHasWarning(task, warningContext) ? "task-row--warned" : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      onClick={() => setSelectedEntityId(task.id)}
+                    >
                     <td>
                       <TaskCell task={task} />
                     </td>

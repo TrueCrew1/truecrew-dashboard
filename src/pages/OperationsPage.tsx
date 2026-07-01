@@ -16,6 +16,7 @@ import { TaskCell } from "@/components/tasks/TaskCell";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
 import { formatDataSourceLabel } from "@/lib/api/client";
+import { taskHasWarning } from "../../lib/task-warnings";
 import {
   filterTasksByShiftParam,
   isOpenTaskStage,
@@ -53,6 +54,7 @@ export function OperationsPage() {
   );
 
   const filterLabel = isShiftFilter(filter) ? SHIFT_FILTER_LABELS[filter] : null;
+  const warningContext = { customers: data.customers, workflows: data.workflows };
 
   return (
     <>
@@ -192,7 +194,13 @@ export function OperationsPage() {
                   {filteredTasks.map((task) => (
                     <tr
                       key={task.id}
-                      className={`clickable-row${selectedEntityId === task.id ? " selected" : ""}`}
+                      className={[
+                        "clickable-row",
+                        selectedEntityId === task.id ? "selected" : "",
+                        taskHasWarning(task, warningContext) ? "task-row--warned" : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
                       onClick={() => setSelectedEntityId(task.id)}
                     >
                       <td>
