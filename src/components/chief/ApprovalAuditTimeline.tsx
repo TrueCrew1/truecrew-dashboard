@@ -1,4 +1,5 @@
 import type { ApprovalAuditEntry } from "./approvalAudit";
+import { ApprovalSurfaceEmpty } from "./approvalWrappers";
 
 interface ApprovalAuditTimelineProps {
   entries: ApprovalAuditEntry[];
@@ -11,10 +12,11 @@ export function ApprovalAuditTimeline({
 }: ApprovalAuditTimelineProps) {
   if (entries.length === 0) {
     return (
-      <div className="chief-audit-empty" role="status">
-        <p className="chief-audit-empty-lead">Audit log empty</p>
-        <p className="chief-audit-empty-desc">{emptyMessage}</p>
-      </div>
+      <ApprovalSurfaceEmpty
+        variant="audit"
+        lead="Audit log empty"
+        description={emptyMessage}
+      />
     );
   }
 

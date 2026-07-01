@@ -1296,6 +1296,10 @@
   line-height: 1.35;
 }
 
+.approval-summary-strip:empty {
+  display: none;
+}
+
 .task-warning-summary__lead {
   font-weight: 600;
   color: var(--orange);

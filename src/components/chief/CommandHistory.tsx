@@ -1,3 +1,4 @@
+import { ApprovalSectionShell, ApprovalSurfaceEmpty } from "./approvalWrappers";
 import { formatChiefTimestamp } from "./chiefMock";
 import type { CommandHistoryEntry, CommandHistoryStatus } from "./types";
 
@@ -20,22 +21,19 @@ const STATUS_BADGE: Record<CommandHistoryStatus, string> = {
 export function CommandHistory({ entries }: CommandHistoryProps) {
   if (entries.length === 0) {
     return (
-      <div className="chief-section-empty">
-        <p className="chief-section-empty-lead">No commands yet</p>
-        <p className="chief-section-empty-desc">
-          Commands you send to Chief will appear here with result summaries.
-        </p>
-      </div>
+      <ApprovalSurfaceEmpty
+        lead="No commands yet"
+        description="Commands you send to Chief will appear here with result summaries."
+      />
     );
   }
 
   return (
-    <div className="chief-history">
-      <div className="chief-section-header">
-        <h2 className="chief-section-title">Command history</h2>
-        <span className="chief-section-count">{entries.length} recent</span>
-      </div>
-
+    <ApprovalSectionShell
+      className="chief-history"
+      title="Command history"
+      count={`${entries.length} recent`}
+    >
       <div className="chief-history-list">
         {entries.map((entry) => (
           <article
@@ -55,6 +53,6 @@ export function CommandHistory({ entries }: CommandHistoryProps) {
           </article>
         ))}
       </div>
-    </div>
+    </ApprovalSectionShell>
   );
 }

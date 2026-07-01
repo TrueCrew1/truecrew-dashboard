@@ -1,5 +1,10 @@
 import { Link } from "react-router-dom";
 import { ChiefApprovalActions } from "./ChiefApprovalActions";
+import {
+  ApprovalSectionHeader,
+  ApprovalSectionShell,
+  ApprovalSurfaceEmpty,
+} from "./approvalWrappers";
 import { formatChiefTimestamp } from "./chiefMock";
 import { CHIEF_BOARD_LANES } from "./chiefLiveContext";
 import type { ApprovalActionState } from "./chiefApproval";
@@ -94,29 +99,25 @@ export function ChiefBoard({
 
   if (totalSignal === 0) {
     return (
-      <div className="chief-board">
-        <div className="chief-section-header">
-          <h2 className="chief-section-title">Operations board</h2>
-          <span className="chief-brief-status chief-brief-status--clear">Queue stable</span>
-        </div>
-        <div className="chief-section-empty">
-          <p className="chief-section-empty-lead">Nothing needs attention</p>
-          <p className="chief-section-empty-desc">
-            At-risk work, gate blocks, context gaps, and approval candidates are all clear
-            against current dashboard state.
-          </p>
-        </div>
-      </div>
+      <ApprovalSectionShell className="chief-board">
+        <ApprovalSectionHeader
+          title="Operations board"
+          status={<span className="chief-brief-status chief-brief-status--clear">Queue stable</span>}
+        />
+        <ApprovalSurfaceEmpty
+          lead="Nothing needs attention"
+          description="At-risk work, gate blocks, context gaps, and approval candidates are all clear against current dashboard state."
+        />
+      </ApprovalSectionShell>
     );
   }
 
   return (
-    <div className="chief-board">
-      <div className="chief-section-header">
-        <h2 className="chief-section-title">Operations board</h2>
-        <span className="chief-section-count">{totalSignal} item{totalSignal === 1 ? "" : "s"}</span>
-      </div>
-
+    <ApprovalSectionShell
+      className="chief-board"
+      title="Operations board"
+      count={`${totalSignal} item${totalSignal === 1 ? "" : "s"}`}
+    >
       <p className="chief-board-note">
         At-risk, blocked, and context lanes are read-only. Approve, reject, or send back directly
         in Needs approval — same decisions as the Approvals tab.
@@ -187,6 +188,6 @@ export function ChiefBoard({
           );
         })}
       </div>
-    </div>
+    </ApprovalSectionShell>
   );
 }
