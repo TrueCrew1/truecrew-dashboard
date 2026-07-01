@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { requireInternalAuth } from "../../lib/auth";
 import { mapDbTaskToClient } from "../../lib/mappers/tasks";
 import { isSupabaseConfigured } from "../../lib/supabase/admin";
 import { updateTaskStage } from "../../lib/supabase/queries";
@@ -15,6 +16,8 @@ const VALID_STAGES = [
 ] as const;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (!requireInternalAuth(req, res)) return;
+
   if (req.method !== "PATCH") {
     return res.status(405).json({ error: "Method not allowed" });
   }

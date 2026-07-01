@@ -15,6 +15,16 @@ import type {
   WorkflowStage,
 } from "@/types";
 
+const INTERNAL_KEY = import.meta.env.VITE_INTERNAL_KEY as string | undefined;
+
+function apiFetch(input: string, init: RequestInit = {}): Promise<Response> {
+  const headers = new Headers(init.headers);
+  if (INTERNAL_KEY) {
+    headers.set("x-internal-key", INTERNAL_KEY);
+  }
+  return fetch(input, { ...init, headers });
+}
+
 export function isLiveApiEnabled(): boolean {
   return import.meta.env.VITE_USE_LIVE_API === "true";
 }
@@ -35,7 +45,7 @@ export interface CommandCenterPayload {
 }
 
 export async function fetchCommandCenterData(): Promise<CommandCenterPayload> {
-  const response = await fetch("/api/data");
+  const response = await apiFetch("/api/data");
   if (!response.ok) {
     throw new Error(`Data API returned ${response.status}`);
   }
@@ -51,7 +61,7 @@ export async function patchTaskStage(
   taskId: string,
   stage: WorkflowStage,
 ): Promise<Task> {
-  const response = await fetch(`/api/tasks/${encodeURIComponent(taskId)}`, {
+  const response = await apiFetch(`/api/tasks/${encodeURIComponent(taskId)}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ stage }),
@@ -84,7 +94,7 @@ export class ChiefApprovalConflictError extends Error {
 }
 
 export async function fetchChiefApprovalDecisions(): Promise<ChiefApprovalDecisionPayload[]> {
-  const response = await fetch("/api/chief/approvals");
+  const response = await apiFetch("/api/chief/approvals");
   if (!response.ok) {
     throw new Error(`Approval decisions API returned ${response.status}`);
   }
@@ -97,7 +107,7 @@ export async function recordChiefApprovalDecision(
   status: "approved" | "rejected" | "sent_back",
   actor?: "founder" | "operator" | "observer" | null,
 ): Promise<ChiefApprovalDecisionPayload> {
-  const response = await fetch("/api/chief/approvals", {
+  const response = await apiFetch("/api/chief/approvals", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ proposalId, status, actor: actor ?? null }),
@@ -129,7 +139,7 @@ export async function fetchHealth(): Promise<{
   githubWebhook: boolean;
   host: string;
 }> {
-  const response = await fetch("/api/health");
+  const response = await apiFetch("/api/health");
   if (!response.ok) {
     throw new Error(`Health API returned ${response.status}`);
   }
@@ -173,7 +183,7 @@ export async function fetchObsidianNotes(): Promise<ObsidianNotesResult> {
   let response: Response;
 
   try {
-    response = await fetch("/api/obsidian/notes");
+    response = await apiFetch("/api/obsidian/notes");
   } catch {
     throw new ObsidianVaultError();
   }
