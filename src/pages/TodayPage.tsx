@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { ShiftStatsStrip } from "@/components/dashboard/ShiftStatsStrip";
 import { EntityContextMeta, TaskCell } from "@/components/tasks/TaskCell";
@@ -8,7 +8,6 @@ import {
   PageHeader,
   Panel,
   PanelEmpty,
-  PanelFilterEmpty,
   SeverityBadge,
   TableScroll,
   TableText,
@@ -16,24 +15,21 @@ import {
 } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
+import type { FocusItem } from "@/types";
 import {
   isActiveIncidentStatus,
   isOpenTaskStage,
 } from "../../lib/queries/dashboard-stats";
+import { taskHasWarning } from "../../lib/task-warnings";
 import {
-  filterTasksByWarningKind,
-  summarizeTaskWarnings,
-  TASK_WARNING_KIND_LABEL,
-  taskHasWarning,
-  taskMatchesWarningKind,
-  type TaskWarningKind,
-} from "../../lib/task-warnings";
+  TodayWarningFilterEmpty,
+  useTodayPanelWarningFilter,
+  useTodayTaskPanelWarningFilter,
+} from "./todayWarningPanel";
 
 export function TodayPage() {
   const { selectedEntityId, setSelectedEntityId } = useSelection();
   const { data } = useData();
-  const [focusWarningKind, setFocusWarningKind] = useState<TaskWarningKind | null>(null);
-  const [gateWarningKind, setGateWarningKind] = useState<TaskWarningKind | null>(null);
 
   const activeIncidents = data.incidents.filter(
     (i) => i.severity <= 2 && isActiveIncidentStatus(i.status),
@@ -51,22 +47,16 @@ export function TodayPage() {
     () => new Map(data.tasks.map((task) => [task.id, task])),
     [data.tasks],
   );
-  const focusTaskList = data.focusItems
-    .map((item) => tasksById.get(item.taskId))
-    .filter((task): task is NonNullable<typeof task> => Boolean(task));
-  const focusWarningSummary = summarizeTaskWarnings(focusTaskList, warningContext);
-  const displayFocusItems = useMemo(() => {
-    if (!focusWarningKind) return data.focusItems;
-    return data.focusItems.filter((item) => {
-      const task = tasksById.get(item.taskId);
-      return task && taskMatchesWarningKind(task, focusWarningKind, warningContext);
-    });
-  }, [data.focusItems, tasksById, focusWarningKind, warningContext]);
-  const gateWarningSummary = summarizeTaskWarnings(blockingTasks, warningContext);
-  const displayBlockingTasks = useMemo(
-    () => filterTasksByWarningKind(blockingTasks, gateWarningKind, warningContext),
-    [blockingTasks, gateWarningKind, warningContext],
+  const resolveFocusTask = useMemo(
+    () => (item: FocusItem) => tasksById.get(item.taskId),
+    [tasksById],
   );
+  const focusPanel = useTodayPanelWarningFilter(
+    data.focusItems,
+    warningContext,
+    resolveFocusTask,
+  );
+  const gatePanel = useTodayTaskPanelWarningFilter(blockingTasks, warningContext);
 
   return (
     <>
@@ -81,9 +71,9 @@ export function TodayPage() {
         <div className="grid-2">
           <Panel title="Focus queue">
             <TaskWarningSummary
-              summary={focusWarningSummary}
-              activeKind={focusWarningKind}
-              onKindSelect={setFocusWarningKind}
+              summary={focusPanel.warningSummary}
+              activeKind={focusPanel.warningKind}
+              onKindSelect={focusPanel.setWarningKind}
             />
             {data.focusItems.length === 0 ? (
               <PanelEmpty
@@ -97,20 +87,12 @@ export function TodayPage() {
                   </Link>
                 }
               />
-            ) : displayFocusItems.length === 0 && focusWarningKind ? (
-              <PanelFilterEmpty
+            ) : focusPanel.displayItems.length === 0 && focusPanel.warningKind ? (
+              <TodayWarningFilterEmpty
                 emptyKey="focus-warning-filter"
-                filterLabel={TASK_WARNING_KIND_LABEL[focusWarningKind]}
-                description={`No focus items match the ${TASK_WARNING_KIND_LABEL[focusWarningKind]} warning right now.`}
-                clearAction={
-                  <button
-                    type="button"
-                    className="empty-state-link"
-                    onClick={() => setFocusWarningKind(null)}
-                  >
-                    Clear warning filter
-                  </button>
-                }
+                warningKind={focusPanel.warningKind}
+                itemLabel="focus items"
+                onClear={() => focusPanel.setWarningKind(null)}
               />
             ) : (
               <TableScroll
@@ -129,8 +111,8 @@ export function TodayPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {displayFocusItems.map((item) => {
-                      const focusTask = tasksById.get(item.taskId);
+                    {focusPanel.displayItems.map((item) => {
+                      const focusTask = resolveFocusTask(item);
                       return (
                       <tr
                         key={item.id}
@@ -221,9 +203,9 @@ export function TodayPage() {
 
         <Panel title="Blocking gates">
           <TaskWarningSummary
-            summary={gateWarningSummary}
-            activeKind={gateWarningKind}
-            onKindSelect={setGateWarningKind}
+            summary={gatePanel.warningSummary}
+            activeKind={gatePanel.warningKind}
+            onKindSelect={gatePanel.setWarningKind}
           />
           {blockingTasks.length === 0 ? (
             <PanelEmpty
@@ -237,20 +219,12 @@ export function TodayPage() {
                 </Link>
               }
             />
-          ) : displayBlockingTasks.length === 0 && gateWarningKind ? (
-            <PanelFilterEmpty
+          ) : gatePanel.displayItems.length === 0 && gatePanel.warningKind ? (
+            <TodayWarningFilterEmpty
               emptyKey="gates-warning-filter"
-              filterLabel={TASK_WARNING_KIND_LABEL[gateWarningKind]}
-              description={`No blocking gate tasks match the ${TASK_WARNING_KIND_LABEL[gateWarningKind]} warning right now.`}
-              clearAction={
-                <button
-                  type="button"
-                  className="empty-state-link"
-                  onClick={() => setGateWarningKind(null)}
-                >
-                  Clear warning filter
-                </button>
-              }
+              warningKind={gatePanel.warningKind}
+              itemLabel="blocking gate tasks"
+              onClear={() => gatePanel.setWarningKind(null)}
             />
           ) : (
             <TableScroll
@@ -271,7 +245,7 @@ export function TodayPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {displayBlockingTasks.map((task) => (
+                  {gatePanel.displayItems.map((task) => (
                     <tr
                       key={task.id}
                       className={[
