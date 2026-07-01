@@ -62,7 +62,8 @@ export function resolvedApprovalMessage(
 
   if (audit?.decidedAt) {
     const when = formatChiefTimestamp(audit.decidedAt);
-    const who = audit.decidedBy ? ` by ${audit.decidedBy}` : "";
+    const decidedBy = audit.decidedBy;
+    const who = decidedBy ? ` by ${decidedBy.charAt(0).toUpperCase()}${decidedBy.slice(1)}` : "";
     return `${base} Decided ${when}${who}.`;
   }
 
