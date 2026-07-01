@@ -1,9 +1,12 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { requireInternalAuth } from "../../lib/auth";
 import { mapCommandCenterData } from "../../lib/mappers/index";
 import { fetchRawCommandCenterRows } from "../../lib/supabase/queries";
 import { isSupabaseConfigured } from "../../lib/supabase/admin";
 
-export default async function handler(_req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (!requireInternalAuth(req, res)) return;
+
   if (!isSupabaseConfigured()) {
     return res.status(503).json({ error: "Database not configured" });
   }
