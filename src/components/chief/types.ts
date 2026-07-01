@@ -59,3 +59,25 @@ export interface ChiefResponse {
   routedTo: ChiefSpecialist;
   specialists?: SpecialistContribution[];
 }
+
+export type ChiefBoardLane = "at_risk" | "blocked" | "missing_context" | "approval";
+
+export type ChiefBoardTone = "neutral" | "warn" | "critical";
+
+export interface ChiefBoardItem {
+  id: string;
+  lane: ChiefBoardLane;
+  title: string;
+  detail: string;
+  routeTo: string;
+  routeLabel: string;
+  meta?: string;
+  tone: ChiefBoardTone;
+  timestamp?: string;
+}
+
+export interface ChiefBoardLaneConfig {
+  lane: ChiefBoardLane;
+  label: string;
+  emptyMessage: string;
+}

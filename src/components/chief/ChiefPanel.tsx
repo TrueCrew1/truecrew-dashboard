@@ -10,10 +10,12 @@ import {
 import {
   buildChiefLiveContext,
   deriveApprovalCandidates,
+  deriveChiefBoardItems,
   resolveChiefCommand,
 } from "./chiefLiveContext";
 import { SpecialistCards } from "./SpecialistCards";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
+import { ChiefBoard } from "./ChiefBoard";
 import type { ApprovalProposal, ApprovalStatus, ChiefResponse, CommandHistoryEntry } from "./types";
 
 const EXAMPLE_COMMANDS = [
@@ -24,7 +26,7 @@ const EXAMPLE_COMMANDS = [
   "Show open alerts",
 ];
 
-type ChiefTab = "command" | "approvals" | "history";
+type ChiefTab = "command" | "board" | "approvals" | "history";
 
 export function ChiefPanel() {
   const { data, loading, source } = useData();
@@ -58,6 +60,13 @@ export function ChiefPanel() {
     () => approvals.filter((proposal) => proposal.status === "pending").length,
     [approvals],
   );
+
+  const boardItems = useMemo(
+    () => deriveChiefBoardItems(liveContext, approvals),
+    [liveContext, approvals],
+  );
+
+  const boardSignalCount = boardItems.length;
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -120,6 +129,22 @@ export function ChiefPanel() {
           onClick={() => setActiveTab("command")}
         >
           Command
+        </button>
+        <button
+          type="button"
+          role="tab"
+          id="chief-tab-board"
+          aria-selected={activeTab === "board"}
+          aria-controls="chief-panel-board"
+          className={`chief-tab${activeTab === "board" ? " chief-tab--active" : ""}`}
+          onClick={() => setActiveTab("board")}
+        >
+          Board
+          {boardSignalCount > 0 ? (
+            <span className="chief-tab-badge" aria-label={`${boardSignalCount} on board`}>
+              {boardSignalCount}
+            </span>
+          ) : null}
         </button>
         <button
           type="button"
@@ -256,6 +281,21 @@ export function ChiefPanel() {
                 ) : null}
               </article>
             ) : null}
+          </div>
+        ) : null}
+
+        {activeTab === "board" ? (
+          <div
+            id="chief-panel-board"
+            role="tabpanel"
+            aria-labelledby="chief-tab-board"
+            className="chief-tab-panel"
+          >
+            <ChiefBoard
+              items={boardItems}
+              pendingApprovalCount={pendingApprovalCount}
+              onOpenApprovals={() => setActiveTab("approvals")}
+            />
           </div>
         ) : null}
 

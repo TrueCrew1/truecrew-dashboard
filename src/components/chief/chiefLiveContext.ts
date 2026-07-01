@@ -21,7 +21,35 @@ import {
   routeForTask,
   routeLabelForPath,
 } from "./chiefRoutes";
-import type { ApprovalProposal, ChiefResponse } from "./types";
+import type {
+  ApprovalProposal,
+  ChiefBoardItem,
+  ChiefBoardLaneConfig,
+  ChiefResponse,
+} from "./types";
+
+export const CHIEF_BOARD_LANES: ChiefBoardLaneConfig[] = [
+  {
+    lane: "at_risk",
+    label: "At-risk work",
+    emptyMessage: "No focus-queue or overdue items.",
+  },
+  {
+    lane: "blocked",
+    label: "Blocked gates",
+    emptyMessage: "No open gates or held deploys.",
+  },
+  {
+    lane: "missing_context",
+    label: "Missing context",
+    emptyMessage: "All open tasks have customer and workflow links.",
+  },
+  {
+    lane: "approval",
+    label: "Needs approval",
+    emptyMessage: "No pending proposals — queue is clear.",
+  },
+];
 
 const OPEN_STAGE_SET = new Set<string>(OPEN_TASK_STAGES);
 
@@ -123,6 +151,18 @@ function gateRiskNote(task: Task): string {
 
 function proposalRoute(path: string) {
   return { routeTo: path, routeLabel: routeLabelForPath(path) };
+}
+
+function proposalEntityId(proposal: ApprovalProposal): string | undefined {
+  const match = proposal.id.match(
+    /^apr-(?:gate|repair|deploy|onboard|customer|workflow|focus|overdue|alert)-(.+)$/,
+  );
+  return match?.[1];
+}
+
+function alertTitleFromProposal(proposal: ApprovalProposal): string | null {
+  const match = proposal.title.match(/^Respond to alert:\s*(.+)$/i);
+  return match?.[1] ?? null;
 }
 
 function alertProposalFromItem(alert: AlertItem, coveredIds: Set<string>): ApprovalProposal | null {
@@ -327,6 +367,141 @@ export function deriveApprovalCandidates(
   }
 
   return proposals;
+}
+
+export function deriveChiefBoardItems(
+  ctx: ChiefLiveContext,
+  pendingApprovals: ApprovalProposal[],
+): ChiefBoardItem[] {
+  const items: ChiefBoardItem[] = [];
+  const focusTaskIds = new Set(ctx.focusItems.map((item) => item.taskId));
+  const blockingTaskIds = new Set(ctx.blockingTasks.map((task) => task.id));
+  const focusIds = new Set(ctx.focusItems.map((item) => item.id));
+  const focusTitles = new Set(ctx.focusItems.map((item) => item.title.toLowerCase()));
+
+  for (const item of ctx.focusItems) {
+    if (blockingTaskIds.has(item.taskId)) continue;
+
+    const route = routeForFocusItem(item);
+    items.push({
+      id: `board-risk-focus-${item.id}`,
+      lane: "at_risk",
+      title: item.title,
+      detail: item.reason,
+      routeTo: route,
+      routeLabel: routeLabelForPath(route),
+      meta: item.taskId,
+      tone: "warn",
+      timestamp: item.dueAt,
+    });
+  }
+
+  for (const task of ctx.overdueTasks.filter((entry) => !focusTaskIds.has(entry.id))) {
+    items.push({
+      id: `board-risk-overdue-${task.id}`,
+      lane: "at_risk",
+      title: task.title,
+      detail: task.dueAt ? `Past due ${task.dueAt}` : "Past due",
+      routeTo: CHIEF_ROUTES.operationsOverdue,
+      routeLabel: routeLabelForPath(CHIEF_ROUTES.operationsOverdue),
+      meta: task.id,
+      tone: "critical",
+      timestamp: task.dueAt ?? task.updatedAt,
+    });
+  }
+
+  for (const task of ctx.blockingTasks) {
+    const blockingGates = getBlockingGates(task.gates);
+    const route = routeForTask(task);
+    const detail =
+      blockingGates.length > 0
+        ? formatOpenGateSummary(blockingGates)
+        : (task.blocker ?? "External blocker on open work");
+
+    items.push({
+      id: `board-blocked-task-${task.id}`,
+      lane: "blocked",
+      title: task.title,
+      detail,
+      routeTo: route,
+      routeLabel: routeLabelForPath(route),
+      meta: task.id,
+      tone: blockingGates.length > 0 ? "warn" : "critical",
+      timestamp: task.updatedAt,
+    });
+  }
+
+  for (const deploy of ctx.blockedDeploys) {
+    items.push({
+      id: `board-blocked-deploy-${deploy.id}`,
+      lane: "blocked",
+      title: deploy.title,
+      detail: `Planned deploy for ${deploy.serviceName} — waiting on upstream build gates.`,
+      routeTo: CHIEF_ROUTES.review,
+      routeLabel: routeLabelForPath(CHIEF_ROUTES.review),
+      meta: deploy.id,
+      tone: "warn",
+      timestamp: deploy.createdAt,
+    });
+  }
+
+  for (const task of ctx.tasksMissingCustomer) {
+    const route = routeForTask(task);
+    items.push({
+      id: `board-context-customer-${task.id}`,
+      lane: "missing_context",
+      title: task.title,
+      detail: `${task.workflowType} task — ${NO_CUSTOMER_LINKED}`,
+      routeTo: route,
+      routeLabel: routeLabelForPath(route),
+      meta: task.id,
+      tone: "warn",
+      timestamp: task.updatedAt,
+    });
+  }
+
+  for (const task of ctx.tasksMissingWorkflow) {
+    const route = routeForTask(task);
+    items.push({
+      id: `board-context-workflow-${task.id}`,
+      lane: "missing_context",
+      title: task.title,
+      detail: "No linked workflow or work order for stage tracking.",
+      routeTo: route,
+      routeLabel: routeLabelForPath(route),
+      meta: task.id,
+      tone: "warn",
+      timestamp: task.updatedAt,
+    });
+  }
+
+  for (const proposal of pendingApprovals.filter((entry) => entry.status === "pending")) {
+    const entityId = proposalEntityId(proposal);
+
+    if (proposal.id.startsWith("apr-focus-") && entityId && focusIds.has(entityId)) {
+      continue;
+    }
+
+    if (proposal.id.startsWith("apr-alert-")) {
+      const alertTitle = alertTitleFromProposal(proposal);
+      if (alertTitle && focusTitles.has(alertTitle.toLowerCase())) continue;
+    }
+
+    const route = proposal.routeTo ?? CHIEF_ROUTES.today;
+    items.push({
+      id: `board-approval-${proposal.id}`,
+      lane: "approval",
+      title: proposal.title,
+      detail: proposal.summary,
+      routeTo: route,
+      routeLabel: proposal.routeLabel ?? routeLabelForPath(route),
+      meta: entityId ?? proposal.specialist,
+      tone: "critical",
+      timestamp: proposal.createdAt,
+    });
+  }
+
+  return items;
 }
 
 const DEFAULT_RESPONSE: ChiefResponse = {
