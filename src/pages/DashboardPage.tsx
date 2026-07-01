@@ -37,7 +37,10 @@ export function DashboardPage() {
   );
 
   const activeTasks = data.tasks.filter((task) => task.stage !== WorkflowStage.Logged);
-  const warningContext = { customers: data.customers, workflows: data.workflows };
+  const warningContext = useMemo(
+    () => ({ customers: data.customers, workflows: data.workflows }),
+    [data.customers, data.workflows],
+  );
   const warningSummary = summarizeTaskWarnings(activeTasks, warningContext);
   const displayTasks = useMemo(
     () => applyTaskWarningView(activeTasks, warningKind, warningContext),
@@ -191,17 +194,17 @@ export function DashboardPage() {
               </thead>
               <tbody>
                 {displayTasks.map((task) => (
-                    <tr
-                      key={task.id}
-                      className={[
-                        "clickable-row",
-                        selectedEntityId === task.id ? "selected" : "",
-                        taskHasWarning(task, warningContext) ? "task-row--warned" : "",
-                      ]
-                        .filter(Boolean)
-                        .join(" ")}
-                      onClick={() => setSelectedEntityId(task.id)}
-                    >
+                  <tr
+                    key={task.id}
+                    className={[
+                      "clickable-row",
+                      selectedEntityId === task.id ? "selected" : "",
+                      taskHasWarning(task, warningContext) ? "task-row--warned" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    onClick={() => setSelectedEntityId(task.id)}
+                  >
                     <td>
                       <TaskCell task={task} />
                     </td>

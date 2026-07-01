@@ -4,7 +4,8 @@ import {
   type TaskContextData,
 } from "./task-context.js";
 import { isOpenTaskStage } from "./queries/dashboard-stats.js";
-import type { GateCheck, Task, WorkflowStage } from "../src/types/index.js";
+import { WorkflowStage } from "../src/types/index.js";
+import type { GateCheck, Task } from "../src/types/index.js";
 
 export type TaskWarningKind =
   | "external_dependency"
@@ -35,7 +36,7 @@ export const TASK_WARNING_KIND_LABEL: Record<TaskWarningKind, string> = {
   gate_open: "gates open",
   missing_data: "missing links",
   waiting: "waiting",
-  readiness: "readiness",
+  readiness: "no GitHub ref",
 };
 
 const WARNING_PRIORITY: TaskWarningKind[] = [
@@ -116,7 +117,7 @@ export function deriveTaskWarnings(
     }
   }
 
-  if (task.stage === ("Waiting" as WorkflowStage) && !task.blocker?.trim()) {
+  if (task.stage === WorkflowStage.Waiting && !task.blocker?.trim()) {
     warnings.push({
       kind: "waiting",
       label: "Waiting on external party",
@@ -201,10 +202,7 @@ export function applyTaskWarningView(
   context?: TaskContextData,
 ): Task[] {
   const filtered = filterTasksByWarningKind(tasks, warningKind, context);
-  if (warningKind) {
-    return sortTasksWithWarningsFirst(filtered, context);
-  }
-  return filtered;
+  return sortTasksWithWarningsFirst(filtered, context);
 }
 
 export function summarizeTaskWarnings(
