@@ -1,7 +1,9 @@
+import { useMemo, useState } from "react";
 import {
   PageHeader,
   Panel,
   PanelEmpty,
+  PanelFilterEmpty,
   StatGrid,
   StageBadge,
   StatusBadge,
@@ -13,11 +15,18 @@ import { TaskWarningSummary } from "@/components/tasks/TaskWarningSummary";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
 import { WorkflowStage } from "@/types";
-import { summarizeTaskWarnings, taskHasWarning } from "../../lib/task-warnings";
+import {
+  applyTaskWarningView,
+  summarizeTaskWarnings,
+  TASK_WARNING_KIND_LABEL,
+  taskHasWarning,
+  type TaskWarningKind,
+} from "../../lib/task-warnings";
 
 export function DashboardPage() {
   const { data } = useData();
   const { selectedEntityId, setSelectedEntityId } = useSelection();
+  const [warningKind, setWarningKind] = useState<TaskWarningKind | null>(null);
 
   const stageCounts = Object.values(WorkflowStage).reduce(
     (acc, stage) => {
@@ -30,6 +39,10 @@ export function DashboardPage() {
   const activeTasks = data.tasks.filter((task) => task.stage !== WorkflowStage.Logged);
   const warningContext = { customers: data.customers, workflows: data.workflows };
   const warningSummary = summarizeTaskWarnings(activeTasks, warningContext);
+  const displayTasks = useMemo(
+    () => applyTaskWarningView(activeTasks, warningKind, warningContext),
+    [activeTasks, warningKind, warningContext],
+  );
 
   return (
     <>
@@ -136,12 +149,31 @@ export function DashboardPage() {
       </div>
 
       <Panel title="Active tasks">
-        <TaskWarningSummary summary={warningSummary} />
+        <TaskWarningSummary
+          summary={warningSummary}
+          activeKind={warningKind}
+          onKindSelect={setWarningKind}
+        />
         {activeTasks.length === 0 ? (
           <PanelEmpty
             emptyKey="dashboard-tasks"
             title="No active tasks"
             description="Tasks in Logged stage are hidden from this view."
+          />
+        ) : displayTasks.length === 0 && warningKind ? (
+          <PanelFilterEmpty
+            emptyKey="dashboard-tasks-warning"
+            filterLabel={TASK_WARNING_KIND_LABEL[warningKind]}
+            description="No active tasks match this warning kind right now."
+            clearAction={
+              <button
+                type="button"
+                className="empty-state-link"
+                onClick={() => setWarningKind(null)}
+              >
+                Clear warning filter
+              </button>
+            }
           />
         ) : (
           <TableScroll>
@@ -158,7 +190,7 @@ export function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {activeTasks.map((task) => (
+                {displayTasks.map((task) => (
                     <tr
                       key={task.id}
                       className={[

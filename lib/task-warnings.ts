@@ -28,6 +28,16 @@ export interface TaskWarningSummary {
   byKind: Record<TaskWarningKind, number>;
 }
 
+/** Short labels for summary pills and filter controls */
+export const TASK_WARNING_KIND_LABEL: Record<TaskWarningKind, string> = {
+  external_dependency: "blocked",
+  time_gate: "past due",
+  gate_open: "gates open",
+  missing_data: "missing links",
+  waiting: "waiting",
+  readiness: "readiness",
+};
+
 const WARNING_PRIORITY: TaskWarningKind[] = [
   "external_dependency",
   "time_gate",
@@ -143,6 +153,58 @@ export function derivePrimaryTaskWarning(
 
 export function taskHasWarning(task: Task, context?: TaskContextData): boolean {
   return derivePrimaryTaskWarning(task, context) !== null;
+}
+
+export function getPrimaryWarningKind(
+  task: Task,
+  context?: TaskContextData,
+): TaskWarningKind | null {
+  return derivePrimaryTaskWarning(task, context)?.kind ?? null;
+}
+
+/** Match on primary warning kind (same basis as summarizeTaskWarnings counts). */
+export function taskMatchesWarningKind(
+  task: Task,
+  kind: TaskWarningKind,
+  context?: TaskContextData,
+): boolean {
+  return getPrimaryWarningKind(task, context) === kind;
+}
+
+export function filterTasksByWarningKind(
+  tasks: Task[],
+  kind: TaskWarningKind | null,
+  context?: TaskContextData,
+): Task[] {
+  if (!kind) return tasks;
+  return tasks.filter((task) => taskMatchesWarningKind(task, kind, context));
+}
+
+/** Stable sort: warned tasks first, preserving relative order within each group. */
+export function sortTasksWithWarningsFirst(
+  tasks: Task[],
+  context?: TaskContextData,
+): Task[] {
+  const indexed = tasks.map((task, index) => ({ task, index }));
+  indexed.sort((a, b) => {
+    const aWarned = taskHasWarning(a.task, context) ? 0 : 1;
+    const bWarned = taskHasWarning(b.task, context) ? 0 : 1;
+    if (aWarned !== bWarned) return aWarned - bWarned;
+    return a.index - b.index;
+  });
+  return indexed.map(({ task }) => task);
+}
+
+export function applyTaskWarningView(
+  tasks: Task[],
+  warningKind: TaskWarningKind | null,
+  context?: TaskContextData,
+): Task[] {
+  const filtered = filterTasksByWarningKind(tasks, warningKind, context);
+  if (warningKind) {
+    return sortTasksWithWarningsFirst(filtered, context);
+  }
+  return filtered;
 }
 
 export function summarizeTaskWarnings(
