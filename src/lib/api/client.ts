@@ -144,22 +144,17 @@ export interface ObsidianNote {
   syncedAt?: string;
 }
 
+export type ObsidianVaultState = "live" | "unconfigured" | "unreachable";
+
 export interface ObsidianNotesResult {
   notes: ObsidianNote[];
-  configured: boolean;
+  vaultState: ObsidianVaultState;
 }
 
 interface ObsidianNotesPayload {
   notes?: ObsidianNote[];
   configured?: boolean;
   error?: string;
-}
-
-export class ObsidianVaultError extends Error {
-  constructor(message = "Vault unreachable") {
-    super(message);
-    this.name = "ObsidianVaultError";
-  }
 }
 
 function isObsidianUnconfigured(status: number, body: ObsidianNotesPayload | null): boolean {
@@ -170,28 +165,25 @@ function isObsidianUnconfigured(status: number, body: ObsidianNotesPayload | nul
 }
 
 export async function fetchObsidianNotes(): Promise<ObsidianNotesResult> {
-  let response: Response;
-
   try {
-    response = await fetch("/api/obsidian/notes");
+    const response = await fetch("/api/obsidian/notes");
+    const body = (await response.json().catch(() => null)) as ObsidianNotesPayload | null;
+
+    if (isObsidianUnconfigured(response.status, body)) {
+      return { notes: [], vaultState: "unconfigured" };
+    }
+
+    if (!response.ok) {
+      return { notes: [], vaultState: "unreachable" };
+    }
+
+    return {
+      notes: body?.notes ?? [],
+      vaultState: "live",
+    };
   } catch {
-    throw new ObsidianVaultError();
+    return { notes: [], vaultState: "unreachable" };
   }
-
-  const body = (await response.json().catch(() => null)) as ObsidianNotesPayload | null;
-
-  if (isObsidianUnconfigured(response.status, body)) {
-    return { notes: [], configured: false };
-  }
-
-  if (!response.ok) {
-    throw new ObsidianVaultError(body?.error ?? "Vault unreachable");
-  }
-
-  return {
-    notes: body?.notes ?? [],
-    configured: body?.configured ?? true,
-  };
 }
 
 export function mergeWithMockFallback(live: Partial<CommandCenterPayload>): MockData {

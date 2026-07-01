@@ -1,11 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { PageHeader, Panel } from "@/components/ui";
 import { useData } from "@/context/DataContext";
-import {
-  fetchObsidianNotes,
-  ObsidianVaultError,
-  type ObsidianNote,
-} from "@/lib/api/client";
+import { fetchObsidianNotes, type ObsidianNote } from "@/lib/api/client";
 import type { Note } from "@/types";
 
 type NoteSource = "supabase" | "obsidian";
@@ -96,21 +92,11 @@ export function KnowledgePage() {
 
     setVaultStatus("syncing");
 
-    fetchObsidianNotes()
-      .then(({ notes, configured }) => {
-        if (cancelled) return;
-        setObsidianNotes(notes);
-        setVaultStatus(configured ? "live" : "unconfigured");
-      })
-      .catch((error) => {
-        if (cancelled) return;
-        setObsidianNotes([]);
-        if (error instanceof ObsidianVaultError) {
-          setVaultStatus("unreachable");
-          return;
-        }
-        setVaultStatus("unreachable");
-      });
+    fetchObsidianNotes().then(({ notes, vaultState }) => {
+      if (cancelled) return;
+      setObsidianNotes(notes);
+      setVaultStatus(vaultState);
+    });
 
     return () => {
       cancelled = true;
