@@ -1,9 +1,11 @@
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   GatesCell,
   PageHeader,
   Panel,
   PanelEmpty,
+  PanelFilterEmpty,
   StageBadge,
   TableScroll,
   TableText,
@@ -12,15 +14,29 @@ import { TaskCell } from "@/components/tasks/TaskCell";
 import { TaskWarningSummary } from "@/components/tasks/TaskWarningSummary";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
-import { summarizeTaskWarnings, taskHasWarning } from "../../lib/task-warnings";
+import {
+  applyTaskWarningView,
+  summarizeTaskWarnings,
+  TASK_WARNING_KIND_LABEL,
+  taskHasWarning,
+  type TaskWarningKind,
+} from "../../lib/task-warnings";
 
 export function BuildsPage() {
   const { selectedEntityId, setSelectedEntityId } = useSelection();
   const { data } = useData();
+  const [warningKind, setWarningKind] = useState<TaskWarningKind | null>(null);
   const buildWorkflows = data.workflows.filter((w) => w.type === "build");
   const buildTasks = data.tasks.filter((t) => t.workflowType === "build");
-  const warningContext = { customers: data.customers, workflows: data.workflows };
+  const warningContext = useMemo(
+    () => ({ customers: data.customers, workflows: data.workflows }),
+    [data.customers, data.workflows],
+  );
   const warningSummary = summarizeTaskWarnings(buildTasks, warningContext);
+  const displayTasks = useMemo(
+    () => applyTaskWarningView(buildTasks, warningKind, warningContext),
+    [buildTasks, warningKind, warningContext],
+  );
 
   return (
     <>
@@ -92,7 +108,11 @@ export function BuildsPage() {
         </Panel>
 
         <Panel title="Build tasks">
-          <TaskWarningSummary summary={warningSummary} />
+          <TaskWarningSummary
+            summary={warningSummary}
+            activeKind={warningKind}
+            onKindSelect={setWarningKind}
+          />
           {buildTasks.length === 0 ? (
             <PanelEmpty
               emptyKey="build-tasks"
@@ -108,6 +128,21 @@ export function BuildsPage() {
                     ? "Open Operations to link tasks"
                     : "View all workflows in Operations"}
                 </Link>
+              }
+            />
+          ) : displayTasks.length === 0 && warningKind ? (
+            <PanelFilterEmpty
+              emptyKey="build-tasks-warning-filter"
+              filterLabel={TASK_WARNING_KIND_LABEL[warningKind]}
+              description="No build tasks match this warning kind right now."
+              clearAction={
+                <button
+                  type="button"
+                  className="empty-state-link"
+                  onClick={() => setWarningKind(null)}
+                >
+                  Clear warning filter
+                </button>
               }
             />
           ) : (
@@ -132,7 +167,7 @@ export function BuildsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {buildTasks.map((task) => (
+                  {displayTasks.map((task) => (
                     <tr
                       key={task.id}
                       className={[
