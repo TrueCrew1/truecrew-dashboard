@@ -66,6 +66,63 @@ export async function patchTaskStage(
   return payload.task;
 }
 
+export interface ChiefApprovalDecisionPayload {
+  proposalId: string;
+  status: "approved" | "rejected" | "sent_back";
+  decidedAt: string;
+  actor: "founder" | "operator" | "observer" | null;
+}
+
+export class ChiefApprovalConflictError extends Error {
+  decision: ChiefApprovalDecisionPayload;
+
+  constructor(decision: ChiefApprovalDecisionPayload) {
+    super("Already decided");
+    this.name = "ChiefApprovalConflictError";
+    this.decision = decision;
+  }
+}
+
+export async function fetchChiefApprovalDecisions(): Promise<ChiefApprovalDecisionPayload[]> {
+  const response = await fetch("/api/chief/approvals");
+  if (!response.ok) {
+    throw new Error(`Approval decisions API returned ${response.status}`);
+  }
+  const body = (await response.json()) as { decisions?: ChiefApprovalDecisionPayload[] };
+  return body.decisions ?? [];
+}
+
+export async function recordChiefApprovalDecision(
+  proposalId: string,
+  status: "approved" | "rejected" | "sent_back",
+  actor?: "founder" | "operator" | "observer" | null,
+): Promise<ChiefApprovalDecisionPayload> {
+  const response = await fetch("/api/chief/approvals", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ proposalId, status, actor: actor ?? null }),
+  });
+
+  const body = (await response.json().catch(() => ({}))) as {
+    error?: string;
+    decision?: ChiefApprovalDecisionPayload;
+  };
+
+  if (response.status === 409 && body.decision) {
+    throw new ChiefApprovalConflictError(body.decision);
+  }
+
+  if (!response.ok) {
+    throw new Error(body.error ?? `Approval decision API returned ${response.status}`);
+  }
+
+  if (!body.decision) {
+    throw new Error("Approval decision API returned no decision");
+  }
+
+  return body.decision;
+}
+
 export async function fetchHealth(): Promise<{
   ok: boolean;
   supabase: boolean;

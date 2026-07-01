@@ -1,8 +1,9 @@
 @import "./tokens.css";
+@import "./chief.css";
 
 .app-shell {
   display: grid;
-  grid-template-columns: var(--sidebar-width) 1fr;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr) var(--chief-width);
   grid-template-rows: 1fr;
   height: 100vh;
   position: relative;
@@ -10,21 +11,28 @@
 }
 
 .app-shell.rail-open {
-  grid-template-columns: var(--sidebar-width) 1fr var(--rail-width);
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr) var(--chief-width) var(--rail-width);
 }
 
 .app-shell.sidebar-collapsed {
-  grid-template-columns: var(--sidebar-collapsed) 1fr;
+  grid-template-columns: var(--sidebar-collapsed) minmax(0, 1fr) var(--chief-width);
 }
 
 .app-shell.sidebar-collapsed.rail-open {
-  grid-template-columns: var(--sidebar-collapsed) 1fr var(--rail-width);
+  grid-template-columns: var(--sidebar-collapsed) minmax(0, 1fr) var(--chief-width) var(--rail-width);
 }
 
 .main-column {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  overflow: hidden;
+}
+
+.main-workspace {
+  display: flex;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
