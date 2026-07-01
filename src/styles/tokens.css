@@ -21,6 +21,7 @@
   --topbar-height: 52px;
   --rail-width: 300px;
   --chief-width: 320px;
+  --main-min-width: 360px;
   --font-display: "Chakra Petch", sans-serif;
   --font-body: "IBM Plex Sans", sans-serif;
 }
