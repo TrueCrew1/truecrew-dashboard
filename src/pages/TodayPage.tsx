@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ShiftStatsStrip } from "@/components/dashboard/ShiftStatsStrip";
 import { EntityContextMeta, TaskCell } from "@/components/tasks/TaskCell";
@@ -7,6 +8,7 @@ import {
   PageHeader,
   Panel,
   PanelEmpty,
+  PanelFilterEmpty,
   SeverityBadge,
   TableScroll,
   TableText,
@@ -18,11 +20,18 @@ import {
   isActiveIncidentStatus,
   isOpenTaskStage,
 } from "../../lib/queries/dashboard-stats";
-import { summarizeTaskWarnings, taskHasWarning } from "../../lib/task-warnings";
+import {
+  summarizeTaskWarnings,
+  TASK_WARNING_KIND_LABEL,
+  taskHasWarning,
+  taskMatchesWarningKind,
+  type TaskWarningKind,
+} from "../../lib/task-warnings";
 
 export function TodayPage() {
   const { selectedEntityId, setSelectedEntityId } = useSelection();
   const { data } = useData();
+  const [focusWarningKind, setFocusWarningKind] = useState<TaskWarningKind | null>(null);
 
   const activeIncidents = data.incidents.filter(
     (i) => i.severity <= 2 && isActiveIncidentStatus(i.status),
@@ -32,11 +41,21 @@ export function TodayPage() {
       isOpenTaskStage(t.stage) &&
       t.gates.some((g) => g.required && !g.passed),
   );
-  const warningContext = { customers: data.customers, workflows: data.workflows };
+  const warningContext = useMemo(
+    () => ({ customers: data.customers, workflows: data.workflows }),
+    [data.customers, data.workflows],
+  );
   const focusTaskList = data.focusItems
     .map((item) => data.tasks.find((task) => task.id === item.taskId))
     .filter((task): task is NonNullable<typeof task> => Boolean(task));
   const focusWarningSummary = summarizeTaskWarnings(focusTaskList, warningContext);
+  const displayFocusItems = useMemo(() => {
+    if (!focusWarningKind) return data.focusItems;
+    return data.focusItems.filter((item) => {
+      const task = data.tasks.find((t) => t.id === item.taskId);
+      return task && taskMatchesWarningKind(task, focusWarningKind, warningContext);
+    });
+  }, [data.focusItems, data.tasks, focusWarningKind, warningContext]);
   const gateWarningSummary = summarizeTaskWarnings(blockingTasks, warningContext);
 
   return (
@@ -51,7 +70,11 @@ export function TodayPage() {
       <div className="page-stack">
         <div className="grid-2">
           <Panel title="Focus queue">
-            <TaskWarningSummary summary={focusWarningSummary} />
+            <TaskWarningSummary
+              summary={focusWarningSummary}
+              activeKind={focusWarningKind}
+              onKindSelect={setFocusWarningKind}
+            />
             {data.focusItems.length === 0 ? (
               <PanelEmpty
                 emptyKey="focus"
@@ -62,6 +85,21 @@ export function TodayPage() {
                   <Link to="/operations" className="empty-state-link">
                     View all tasks
                   </Link>
+                }
+              />
+            ) : displayFocusItems.length === 0 && focusWarningKind ? (
+              <PanelFilterEmpty
+                emptyKey="focus-warning-filter"
+                filterLabel={TASK_WARNING_KIND_LABEL[focusWarningKind]}
+                description={`No focus items match the ${TASK_WARNING_KIND_LABEL[focusWarningKind]} warning right now.`}
+                clearAction={
+                  <button
+                    type="button"
+                    className="empty-state-link"
+                    onClick={() => setFocusWarningKind(null)}
+                  >
+                    Clear warning filter
+                  </button>
                 }
               />
             ) : (
@@ -81,7 +119,7 @@ export function TodayPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {data.focusItems.map((item) => {
+                    {displayFocusItems.map((item) => {
                       const focusTask = data.tasks.find((t) => t.id === item.taskId);
                       return (
                       <tr
