@@ -1303,6 +1303,47 @@
   background: rgba(255, 255, 255, 0.03);
 }
 
+.task-warning-summary__pill--action {
+  cursor: pointer;
+  font: inherit;
+  line-height: inherit;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease,
+    color 0.12s ease;
+}
+
+.task-warning-summary__pill--action:hover {
+  border-color: rgba(255, 122, 26, 0.5);
+  background: rgba(255, 122, 26, 0.08);
+  color: var(--orange);
+}
+
+.task-warning-summary__pill--active {
+  border-color: rgba(255, 122, 26, 0.65);
+  background: rgba(255, 122, 26, 0.14);
+  color: var(--orange);
+  font-weight: 600;
+}
+
+.task-warning-summary__clear {
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--steel-dim);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.task-warning-summary__clear:hover {
+  color: var(--orange);
+}
+
 .task-warning--external_dependency,
 .task-warning--time_gate,
 .task-warning--gate_open {

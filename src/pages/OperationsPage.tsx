@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   GatesCell,
@@ -17,7 +17,13 @@ import { TaskWarningSummary } from "@/components/tasks/TaskWarningSummary";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
 import { formatDataSourceLabel } from "@/lib/api/client";
-import { summarizeTaskWarnings, taskHasWarning } from "../../lib/task-warnings";
+import {
+  applyTaskWarningView,
+  summarizeTaskWarnings,
+  TASK_WARNING_KIND_LABEL,
+  taskHasWarning,
+  type TaskWarningKind,
+} from "../../lib/task-warnings";
 import {
   filterTasksByShiftParam,
   isOpenTaskStage,
@@ -43,6 +49,7 @@ export function OperationsPage() {
   const { data, source } = useData();
   const [searchParams] = useSearchParams();
   const filter = searchParams.get("filter");
+  const [warningKind, setWarningKind] = useState<TaskWarningKind | null>(null);
 
   const activeWorkflows = useMemo(
     () => data.workflows.filter((wf) => isOpenTaskStage(wf.stage)),
@@ -57,6 +64,10 @@ export function OperationsPage() {
   const filterLabel = isShiftFilter(filter) ? SHIFT_FILTER_LABELS[filter] : null;
   const warningContext = { customers: data.customers, workflows: data.workflows };
   const warningSummary = summarizeTaskWarnings(filteredTasks, warningContext);
+  const displayTasks = useMemo(
+    () => applyTaskWarningView(filteredTasks, warningKind, warningContext),
+    [filteredTasks, warningKind, warningContext],
+  );
 
   return (
     <>
@@ -151,7 +162,11 @@ export function OperationsPage() {
         </Panel>
 
         <Panel title={filterLabel ? `Tasks · ${filterLabel}` : "All tasks"}>
-          <TaskWarningSummary summary={warningSummary} />
+          <TaskWarningSummary
+            summary={warningSummary}
+            activeKind={warningKind}
+            onKindSelect={setWarningKind}
+          />
           {data.tasks.length === 0 ? (
             <PanelEmpty
               emptyKey="tasks"
@@ -167,6 +182,25 @@ export function OperationsPage() {
                 <Link to="/operations" className="empty-state-link">
                   Clear filter and show all tasks
                 </Link>
+              }
+            />
+          ) : displayTasks.length === 0 && warningKind ? (
+            <PanelFilterEmpty
+              emptyKey="tasks-warning-filter"
+              filterLabel={TASK_WARNING_KIND_LABEL[warningKind]}
+              description={
+                filterLabel
+                  ? `No tasks in this view match the ${TASK_WARNING_KIND_LABEL[warningKind]} warning. Try clearing the warning filter or shift filter.`
+                  : `No tasks match the ${TASK_WARNING_KIND_LABEL[warningKind]} warning right now.`
+              }
+              clearAction={
+                <button
+                  type="button"
+                  className="empty-state-link"
+                  onClick={() => setWarningKind(null)}
+                >
+                  Clear warning filter
+                </button>
               }
             />
           ) : (
@@ -194,7 +228,7 @@ export function OperationsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredTasks.map((task) => (
+                  {displayTasks.map((task) => (
                     <tr
                       key={task.id}
                       className={[
