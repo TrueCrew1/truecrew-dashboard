@@ -53,9 +53,13 @@ function isOpenTaskStage(stage: string): boolean {
   return OPEN_TASK_STAGE_SET.has(stage);
 }
 
+export { isOpenTaskStage };
+
 function isActiveIncidentStatus(status: string): boolean {
   return (ACTIVE_INCIDENT_STATUSES as readonly string[]).includes(status);
 }
+
+export { isActiveIncidentStatus };
 
 export function deriveShiftStats(source: ShiftStatsSource): ShiftStats {
   const now = Date.now();

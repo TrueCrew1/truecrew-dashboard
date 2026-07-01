@@ -1,5 +1,13 @@
 import { Link } from "react-router-dom";
-import { EmptyState, PageHeader, Panel, StageBadge, StatusBadge, TableScroll } from "@/components/ui";
+import {
+  PageHeader,
+  Panel,
+  PanelEmpty,
+  StageBadge,
+  StatusBadge,
+  TableScroll,
+  TableText,
+} from "@/components/ui";
 import { useData } from "@/context/DataContext";
 
 export function CustomersPage() {
@@ -14,7 +22,8 @@ export function CustomersPage() {
 
       <Panel title="Customer accounts">
         {data.customers.length === 0 ? (
-          <EmptyState
+          <PanelEmpty
+            emptyKey="customers"
             title="No customer accounts"
             description="Customer records appear here after onboarding begins or accounts are imported."
             action={
@@ -25,22 +34,34 @@ export function CustomersPage() {
           />
         ) : (
           <TableScroll wide>
-            <table className="data-table">
+            <table className="data-table data-table--comfortable">
               <thead>
                 <tr>
-                  <th>Customer</th>
-                  <th>Tier</th>
-                  <th>Status</th>
-                  <th>Onboarding stage</th>
-                  <th>Health</th>
-                  <th>Contact</th>
+                  <th scope="col">Customer</th>
+                  <th scope="col" className="col-type">
+                    Tier
+                  </th>
+                  <th scope="col" className="col-stage">
+                    Status
+                  </th>
+                  <th scope="col" className="col-stage">
+                    Onboarding stage
+                  </th>
+                  <th scope="col" className="col-order">
+                    Health
+                  </th>
+                  <th scope="col">Contact</th>
                 </tr>
               </thead>
               <tbody>
                 {data.customers.map((cust) => (
                   <tr key={cust.id}>
-                    <td>{cust.name}</td>
-                    <td>{cust.tier}</td>
+                    <td className="cell-truncate" title={cust.name}>
+                      {cust.name}
+                    </td>
+                    <td>
+                      <StatusBadge status={cust.tier} variant="steel" />
+                    </td>
                     <td>
                       <StatusBadge
                         status={cust.status}
@@ -57,11 +78,13 @@ export function CustomersPage() {
                       {cust.status === "onboarding" ? (
                         <StageBadge stage={cust.stage} />
                       ) : (
-                        <span className="cell-muted">—</span>
+                        <TableText value={null} fallback="Not onboarding" />
                       )}
                     </td>
                     <td>{cust.healthScore}</td>
-                    <td className="cell-muted">{cust.primaryContact}</td>
+                    <td>
+                      <TableText value={cust.primaryContact} className="cell-muted" />
+                    </td>
                   </tr>
                 ))}
               </tbody>
