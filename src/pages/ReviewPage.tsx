@@ -13,6 +13,7 @@ import {
 } from "@/components/ui";
 import { TaskCell } from "@/components/tasks/TaskCell";
 import { TaskWarningSummary } from "@/components/tasks/TaskWarningSummary";
+import { ApprovalSummaryStrip } from "@/components/chief/approvalWrappers";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
 import { isOpenTaskStage } from "../../lib/queries/dashboard-stats";
@@ -53,11 +54,13 @@ export function ReviewPage() {
 
       <div className="page-stack">
         <Panel title="Pending review">
-          <TaskWarningSummary
-            summary={warningSummary}
-            activeKind={warningKind}
-            onKindSelect={setWarningKind}
-          />
+          <ApprovalSummaryStrip label="Review task warnings">
+            <TaskWarningSummary
+              summary={warningSummary}
+              activeKind={warningKind}
+              onKindSelect={setWarningKind}
+            />
+          </ApprovalSummaryStrip>
           {reviewTasks.length === 0 ? (
             <PanelEmpty
               emptyKey="review-queue"
