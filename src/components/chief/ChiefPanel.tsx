@@ -1,12 +1,24 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useData } from "@/context/DataContext";
-import { formatDataSourceLabel } from "@/lib/api/client";
+import {
+  ChiefApprovalConflictError,
+  fetchChiefApprovalDecisions,
+  formatDataSourceLabel,
+  isLiveApiEnabled,
+  recordChiefApprovalDecision,
+} from "@/lib/api/client";
 import { ApprovalBoard } from "./ApprovalBoard";
 import { CommandHistory } from "./CommandHistory";
 import {
   buildApprovalFromResponse,
   buildHistoryEntry,
 } from "./chiefMock";
+import {
+  APPROVAL_ACTION_DELAY_MS,
+  approvalActionSuccessMessage,
+  approvalActionToStatus,
+  type ApprovalActionState,
+} from "./chiefApproval";
 import {
   buildChiefLiveContext,
   deriveApprovalCandidates,
@@ -16,7 +28,13 @@ import {
 import { SpecialistCards } from "./SpecialistCards";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
 import { ChiefBoard } from "./ChiefBoard";
-import type { ApprovalProposal, ApprovalStatus, ChiefResponse, CommandHistoryEntry } from "./types";
+import type {
+  ApprovalAction,
+  ApprovalDecision,
+  ApprovalProposal,
+  ChiefResponse,
+  CommandHistoryEntry,
+} from "./types";
 
 const EXAMPLE_COMMANDS = [
   "What is at risk today?",
@@ -41,20 +59,73 @@ export function ChiefPanel() {
   const [response, setResponse] = useState<ChiefResponse | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [commandApprovals, setCommandApprovals] = useState<ApprovalProposal[]>([]);
-  const [approvalStatuses, setApprovalStatuses] = useState<Record<string, ApprovalStatus>>({});
+  const [approvalDecisions, setApprovalDecisions] = useState<Record<string, ApprovalDecision>>(
+    {},
+  );
+  const [approvalActionStates, setApprovalActionStates] = useState<
+    Record<string, ApprovalActionState>
+  >({});
   const [history, setHistory] = useState<CommandHistoryEntry[]>([]);
+
+  const liveApi = isLiveApiEnabled();
+  const [decisionsHydrated, setDecisionsHydrated] = useState(!liveApi);
+
+  useEffect(() => {
+    if (!liveApi) return;
+
+    let cancelled = false;
+    setDecisionsHydrated(false);
+
+    fetchChiefApprovalDecisions()
+      .then((decisions) => {
+        if (cancelled) return;
+        setApprovalDecisions(
+          Object.fromEntries(
+            decisions.map((decision) => [
+              decision.proposalId,
+              {
+                proposalId: decision.proposalId,
+                status: decision.status,
+                decidedAt: decision.decidedAt,
+                actor: decision.actor,
+              },
+            ]),
+          ),
+        );
+      })
+      .catch(() => {
+        // Leave previously hydrated/optimistic decisions in place — a failed
+        // refetch shouldn't erase decisions the operator already recorded.
+      })
+      .finally(() => {
+        if (!cancelled) setDecisionsHydrated(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [liveApi, source]);
+
+  const applyDecision = useCallback((decision: ApprovalDecision) => {
+    setApprovalDecisions((prev) => ({ ...prev, [decision.proposalId]: decision }));
+  }, []);
 
   const approvals = useMemo(() => {
     const byId = new Map<string, ApprovalProposal>();
     for (const proposal of [...derivedApprovals, ...commandApprovals]) {
       byId.set(proposal.id, proposal);
     }
-    return [...byId.values()].map((proposal) =>
-      approvalStatuses[proposal.id]
-        ? { ...proposal, status: approvalStatuses[proposal.id] }
-        : proposal,
-    );
-  }, [derivedApprovals, commandApprovals, approvalStatuses]);
+    return [...byId.values()].map((proposal) => {
+      const decision = approvalDecisions[proposal.id];
+      if (!decision) return proposal;
+      return {
+        ...proposal,
+        status: decision.status,
+        decidedAt: decision.decidedAt,
+        decidedBy: decision.actor ?? undefined,
+      };
+    });
+  }, [derivedApprovals, commandApprovals, approvalDecisions]);
 
   const pendingApprovalCount = useMemo(
     () => approvals.filter((proposal) => proposal.status === "pending").length,
@@ -66,7 +137,119 @@ export function ChiefPanel() {
     [liveContext, approvals],
   );
 
+  const proposalsById = useMemo(
+    () => new Map(approvals.map((proposal) => [proposal.id, proposal])),
+    [approvals],
+  );
+
   const boardSignalCount = boardItems.length;
+
+  const handleApprovalAction = useCallback(
+    async (id: string, action: ApprovalAction) => {
+      if (!decisionsHydrated) {
+        setApprovalActionStates((prev) => ({
+          ...prev,
+          [id]: {
+            phase: "error",
+            action,
+            message: "Still loading saved decisions — try again in a moment.",
+          },
+        }));
+        return;
+      }
+
+      const proposal = proposalsById.get(id);
+      if (!proposal) {
+        setApprovalActionStates((prev) => ({
+          ...prev,
+          [id]: {
+            phase: "error",
+            action,
+            message: "Proposal not found — refresh and try again.",
+          },
+        }));
+        return;
+      }
+
+      if (proposal.status !== "pending") {
+        setApprovalActionStates((prev) => ({
+          ...prev,
+          [id]: {
+            phase: "error",
+            action,
+            message: "This proposal was already decided.",
+          },
+        }));
+        return;
+      }
+
+      setApprovalActionStates((prev) => ({
+        ...prev,
+        [id]: { phase: "loading", action },
+      }));
+
+      try {
+        const nextStatus = approvalActionToStatus(action);
+
+        if (liveApi) {
+          const decision = await recordChiefApprovalDecision(id, nextStatus);
+          applyDecision({
+            proposalId: decision.proposalId,
+            status: decision.status,
+            decidedAt: decision.decidedAt,
+            actor: decision.actor,
+          });
+        } else {
+          await new Promise<void>((resolve) => {
+            window.setTimeout(resolve, APPROVAL_ACTION_DELAY_MS);
+          });
+          applyDecision({
+            proposalId: id,
+            status: nextStatus,
+            decidedAt: new Date().toISOString(),
+            actor: null,
+          });
+        }
+
+        setApprovalActionStates((prev) => ({
+          ...prev,
+          [id]: {
+            phase: "success",
+            action,
+            message: approvalActionSuccessMessage(action, proposal.routeLabel),
+          },
+        }));
+      } catch (error) {
+        if (error instanceof ChiefApprovalConflictError) {
+          applyDecision({
+            proposalId: error.decision.proposalId,
+            status: error.decision.status,
+            decidedAt: error.decision.decidedAt,
+            actor: error.decision.actor,
+          });
+          setApprovalActionStates((prev) => ({
+            ...prev,
+            [id]: {
+              phase: "error",
+              action,
+              message: "This proposal was already decided.",
+            },
+          }));
+          return;
+        }
+
+        setApprovalActionStates((prev) => ({
+          ...prev,
+          [id]: {
+            phase: "error",
+            action,
+            message: "Decision could not be recorded — try again.",
+          },
+        }));
+      }
+    },
+    [proposalsById, liveApi, applyDecision, decisionsHydrated],
+  );
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -93,10 +276,6 @@ export function ChiefPanel() {
 
   const handleExample = (example: string) => {
     setInput(example);
-  };
-
-  const handleApprovalStatusChange = (id: string, status: ApprovalStatus) => {
-    setApprovalStatuses((prev) => ({ ...prev, [id]: status }));
   };
 
   return (
@@ -294,6 +473,9 @@ export function ChiefPanel() {
             <ChiefBoard
               items={boardItems}
               pendingApprovalCount={pendingApprovalCount}
+              proposalsById={proposalsById}
+              approvalActionStates={approvalActionStates}
+              onApprovalAction={handleApprovalAction}
               onOpenApprovals={() => setActiveTab("approvals")}
             />
           </div>
@@ -306,7 +488,11 @@ export function ChiefPanel() {
             aria-labelledby="chief-tab-approvals"
             className="chief-tab-panel"
           >
-            <ApprovalBoard proposals={approvals} onStatusChange={handleApprovalStatusChange} />
+            <ApprovalBoard
+              proposals={approvals}
+              approvalActionStates={approvalActionStates}
+              onApprovalAction={handleApprovalAction}
+            />
           </div>
         ) : null}
 

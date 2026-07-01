@@ -1,34 +1,27 @@
-import { Link } from "react-router-dom";
+import { ChiefApprovalActions } from "./ChiefApprovalActions";
+import {
+  APPROVAL_STATUS_BADGE,
+  APPROVAL_STATUS_LABEL,
+  APPROVAL_STATUS_ORDER,
+  type ApprovalActionState,
+} from "./chiefApproval";
 import { formatChiefTimestamp } from "./chiefMock";
-import type { ApprovalProposal, ApprovalStatus } from "./types";
+import type { ApprovalAction, ApprovalProposal } from "./types";
 
 interface ApprovalBoardProps {
   proposals: ApprovalProposal[];
-  onStatusChange: (id: string, status: ApprovalStatus) => void;
+  approvalActionStates: Record<string, ApprovalActionState>;
+  onApprovalAction: (id: string, action: ApprovalAction) => void;
 }
 
-const STATUS_LABEL: Record<ApprovalStatus, string> = {
-  pending: "Pending",
-  approved: "Approved",
-  rejected: "Rejected",
-};
-
-const STATUS_BADGE: Record<ApprovalStatus, string> = {
-  pending: "badge-yellow",
-  approved: "badge-green",
-  rejected: "badge-red",
-};
-
-const STATUS_ORDER: Record<ApprovalProposal["status"], number> = {
-  pending: 0,
-  approved: 1,
-  rejected: 2,
-};
-
-export function ApprovalBoard({ proposals, onStatusChange }: ApprovalBoardProps) {
+export function ApprovalBoard({
+  proposals,
+  approvalActionStates,
+  onApprovalAction,
+}: ApprovalBoardProps) {
   const pendingCount = proposals.filter((p) => p.status === "pending").length;
   const sortedProposals = [...proposals].sort((a, b) => {
-    const statusDiff = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
+    const statusDiff = APPROVAL_STATUS_ORDER[a.status] - APPROVAL_STATUS_ORDER[b.status];
     if (statusDiff !== 0) return statusDiff;
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
@@ -61,8 +54,8 @@ export function ApprovalBoard({ proposals, onStatusChange }: ApprovalBoardProps)
           >
             <div className="chief-approval-card-header">
               <h3 className="chief-approval-card-title">{proposal.title}</h3>
-              <span className={`badge ${STATUS_BADGE[proposal.status]}`}>
-                {STATUS_LABEL[proposal.status]}
+              <span className={`badge ${APPROVAL_STATUS_BADGE[proposal.status]}`}>
+                {APPROVAL_STATUS_LABEL[proposal.status]}
               </span>
             </div>
 
@@ -94,38 +87,12 @@ export function ApprovalBoard({ proposals, onStatusChange }: ApprovalBoardProps)
               </time>
             </footer>
 
-            {proposal.status === "pending" ? (
-              <div className="chief-approval-card-actions">
-                {proposal.routeTo ? (
-                  <Link
-                    to={proposal.routeTo}
-                    className="chief-btn chief-btn-secondary"
-                  >
-                    {proposal.routeLabel ? `Open ${proposal.routeLabel}` : "View in dashboard"}
-                  </Link>
-                ) : null}
-                <button
-                  type="button"
-                  className="chief-btn chief-btn-primary"
-                  onClick={() => onStatusChange(proposal.id, "approved")}
-                >
-                  Approve
-                </button>
-                <button
-                  type="button"
-                  className="chief-btn chief-btn-danger"
-                  onClick={() => onStatusChange(proposal.id, "rejected")}
-                >
-                  Reject
-                </button>
-              </div>
-            ) : (
-              <p className="chief-approval-card-resolved" aria-live="polite">
-                {proposal.status === "approved"
-                  ? "Approved — no further action required."
-                  : "Rejected — action will not proceed."}
-              </p>
-            )}
+            <ChiefApprovalActions
+              proposal={proposal}
+              actionState={approvalActionStates[proposal.id]}
+              onAction={onApprovalAction}
+              variant="card"
+            />
           </article>
         ))}
       </div>

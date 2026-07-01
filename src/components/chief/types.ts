@@ -1,3 +1,5 @@
+import type { Persona } from "@/types";
+
 export type ChiefSpecialist =
   | "Workflow Gate Agent"
   | "Librarian Agent"
@@ -6,7 +8,16 @@ export type ChiefSpecialist =
   | "Marketer Agent"
   | "Chief";
 
-export type ApprovalStatus = "pending" | "approved" | "rejected";
+export type ApprovalStatus = "pending" | "approved" | "rejected" | "sent_back";
+
+export type ApprovalAction = Exclude<ApprovalStatus, "pending">;
+
+export interface ApprovalDecision {
+  proposalId: string;
+  status: ApprovalAction;
+  decidedAt: string;
+  actor: Persona | null;
+}
 
 export type ApprovalCategory =
   | "gate_override"
@@ -38,6 +49,8 @@ export interface ApprovalProposal {
   category?: ApprovalCategory;
   routeTo?: string;
   routeLabel?: string;
+  decidedAt?: string;
+  decidedBy?: Persona;
 }
 
 export interface CommandHistoryEntry {
@@ -74,6 +87,8 @@ export interface ChiefBoardItem {
   meta?: string;
   tone: ChiefBoardTone;
   timestamp?: string;
+  /** Set on approval-lane rows so board actions target the underlying proposal. */
+  proposalId?: string;
 }
 
 export interface ChiefBoardLaneConfig {

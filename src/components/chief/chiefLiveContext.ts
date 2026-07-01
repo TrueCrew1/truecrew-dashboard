@@ -498,6 +498,7 @@ export function deriveChiefBoardItems(
       meta: entityId ?? proposal.specialist,
       tone: "critical",
       timestamp: proposal.createdAt,
+      proposalId: proposal.id,
     });
   }
 

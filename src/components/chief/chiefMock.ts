@@ -5,11 +5,8 @@ import type {
   CommandHistoryStatus,
 } from "./types";
 
-let idCounter = 100;
-
 export function nextChiefId(prefix: string): string {
-  idCounter += 1;
-  return `${prefix}-${idCounter}`;
+  return `${prefix}-${crypto.randomUUID()}`;
 }
 
 export function formatChiefTimestamp(iso: string): string {

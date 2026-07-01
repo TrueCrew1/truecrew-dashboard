@@ -1144,6 +1144,23 @@ button.chief-brief-metric {
   border-left: 3px solid var(--orange);
 }
 
+.chief-board-card--actionable {
+  display: block;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-panel);
+  color: inherit;
+}
+
+.chief-board-card--actionable .chief-board-card-route {
+  text-decoration: none;
+}
+
+.chief-board-card--actionable .chief-board-card-route:hover {
+  text-decoration: underline;
+}
+
 .chief-board-card-header {
   display: flex;
   align-items: flex-start;
@@ -1209,6 +1226,71 @@ button.chief-brief-metric {
 
 .chief-board-lane-action:hover {
   text-decoration: underline;
+}
+
+.chief-board-approval-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.chief-board-approval-actions .chief-btn {
+  flex: 1 1 auto;
+  min-width: calc(33% - 6px);
+  padding: 6px 8px;
+  font-size: 10px;
+}
+
+.chief-board-approval-actions .chief-btn-secondary:first-of-type {
+  flex: 1 1 100%;
+}
+
+.chief-btn--compact {
+  padding: 6px 8px;
+  font-size: 10px;
+}
+
+.chief-approval-feedback {
+  margin: 10px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.chief-approval-feedback--success {
+  color: var(--green);
+}
+
+.chief-approval-feedback--error {
+  color: var(--red);
+}
+
+.chief-approval-feedback--resolved {
+  color: var(--steel-dim);
+}
+
+.chief-approval-feedback--resolved.chief-approval-feedback--approved {
+  color: var(--green);
+}
+
+.chief-approval-feedback--resolved.chief-approval-feedback--rejected {
+  color: var(--red);
+}
+
+.chief-approval-feedback--resolved.chief-approval-feedback--sent_back {
+  color: var(--blue, #5b9fd4);
+}
+
+.chief-board-approval-actions .chief-approval-feedback {
+  flex: 1 1 100%;
+  margin: 0 0 2px;
+  padding-top: 0;
+  border-top: none;
 }
 
 .chief-section-header {
@@ -1319,6 +1401,11 @@ button.chief-brief-metric {
 .chief-approval-card--rejected {
   border-left: 3px solid var(--red);
   opacity: 0.72;
+}
+
+.chief-approval-card--sent_back {
+  border-left: 3px solid var(--blue, #5b9fd4);
+  opacity: 0.88;
 }
 
 .chief-approval-card-header {
@@ -1447,6 +1534,11 @@ button.chief-brief-metric {
 
 .chief-approval-card--rejected .chief-approval-card-resolved {
   color: var(--red);
+}
+
+.chief-approval-card-actions .chief-btn-secondary:not(:first-of-type) {
+  flex: 1;
+  min-width: calc(33% - 6px);
 }
 
 .chief-btn-danger {
