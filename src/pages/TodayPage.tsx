@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ShiftStatsStrip } from "@/components/dashboard/ShiftStatsStrip";
 import { EntityContextMeta, TaskCell } from "@/components/tasks/TaskCell";
+import { TaskWarningSummary } from "@/components/tasks/TaskWarningSummary";
 import {
   GatesCell,
   PageHeader,
@@ -17,7 +18,7 @@ import {
   isActiveIncidentStatus,
   isOpenTaskStage,
 } from "../../lib/queries/dashboard-stats";
-import { taskHasWarning } from "../../lib/task-warnings";
+import { summarizeTaskWarnings, taskHasWarning } from "../../lib/task-warnings";
 
 export function TodayPage() {
   const { selectedEntityId, setSelectedEntityId } = useSelection();
@@ -32,6 +33,11 @@ export function TodayPage() {
       t.gates.some((g) => g.required && !g.passed),
   );
   const warningContext = { customers: data.customers, workflows: data.workflows };
+  const focusTaskList = data.focusItems
+    .map((item) => data.tasks.find((task) => task.id === item.taskId))
+    .filter((task): task is NonNullable<typeof task> => Boolean(task));
+  const focusWarningSummary = summarizeTaskWarnings(focusTaskList, warningContext);
+  const gateWarningSummary = summarizeTaskWarnings(blockingTasks, warningContext);
 
   return (
     <>
@@ -45,6 +51,7 @@ export function TodayPage() {
       <div className="page-stack">
         <div className="grid-2">
           <Panel title="Focus queue">
+            <TaskWarningSummary summary={focusWarningSummary} />
             {data.focusItems.length === 0 ? (
               <PanelEmpty
                 emptyKey="focus"
@@ -165,6 +172,7 @@ export function TodayPage() {
         </div>
 
         <Panel title="Blocking gates">
+          <TaskWarningSummary summary={gateWarningSummary} />
           {blockingTasks.length === 0 ? (
             <PanelEmpty
               emptyKey="gates"

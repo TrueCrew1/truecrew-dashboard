@@ -9,14 +9,18 @@ import {
   TableText,
 } from "@/components/ui";
 import { TaskCell } from "@/components/tasks/TaskCell";
+import { TaskWarningSummary } from "@/components/tasks/TaskWarningSummary";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
+import { summarizeTaskWarnings, taskHasWarning } from "../../lib/task-warnings";
 
 export function BuildsPage() {
   const { selectedEntityId, setSelectedEntityId } = useSelection();
   const { data } = useData();
   const buildWorkflows = data.workflows.filter((w) => w.type === "build");
   const buildTasks = data.tasks.filter((t) => t.workflowType === "build");
+  const warningContext = { customers: data.customers, workflows: data.workflows };
+  const warningSummary = summarizeTaskWarnings(buildTasks, warningContext);
 
   return (
     <>
@@ -88,6 +92,7 @@ export function BuildsPage() {
         </Panel>
 
         <Panel title="Build tasks">
+          <TaskWarningSummary summary={warningSummary} />
           {buildTasks.length === 0 ? (
             <PanelEmpty
               emptyKey="build-tasks"
@@ -130,7 +135,13 @@ export function BuildsPage() {
                   {buildTasks.map((task) => (
                     <tr
                       key={task.id}
-                      className={`clickable-row${selectedEntityId === task.id ? " selected" : ""}`}
+                      className={[
+                        "clickable-row",
+                        selectedEntityId === task.id ? "selected" : "",
+                        taskHasWarning(task, warningContext) ? "task-row--warned" : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
                       onClick={() => setSelectedEntityId(task.id)}
                     >
                       <td>

@@ -10,9 +10,11 @@ import {
   TableText,
 } from "@/components/ui";
 import { TaskCell } from "@/components/tasks/TaskCell";
+import { TaskWarningSummary } from "@/components/tasks/TaskWarningSummary";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
 import { isOpenTaskStage } from "../../lib/queries/dashboard-stats";
+import { summarizeTaskWarnings, taskHasWarning } from "../../lib/task-warnings";
 import { WorkflowStage } from "@/types";
 
 export function ReviewPage() {
@@ -20,6 +22,8 @@ export function ReviewPage() {
   const { data } = useData();
   const reviewTasks = data.tasks.filter((t) => t.stage === WorkflowStage.Review);
   const pendingDeploys = data.deploys.filter((d) => isOpenTaskStage(d.stage));
+  const warningContext = { customers: data.customers, workflows: data.workflows };
+  const warningSummary = summarizeTaskWarnings(reviewTasks, warningContext);
 
   return (
     <>
@@ -30,6 +34,7 @@ export function ReviewPage() {
 
       <div className="page-stack">
         <Panel title="Pending review">
+          <TaskWarningSummary summary={warningSummary} />
           {reviewTasks.length === 0 ? (
             <PanelEmpty
               emptyKey="review-queue"
@@ -67,7 +72,13 @@ export function ReviewPage() {
                   {reviewTasks.map((task) => (
                     <tr
                       key={task.id}
-                      className={`clickable-row${selectedEntityId === task.id ? " selected" : ""}`}
+                      className={[
+                        "clickable-row",
+                        selectedEntityId === task.id ? "selected" : "",
+                        taskHasWarning(task, warningContext) ? "task-row--warned" : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
                       onClick={() => setSelectedEntityId(task.id)}
                     >
                       <td>

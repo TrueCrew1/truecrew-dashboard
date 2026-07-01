@@ -13,10 +13,11 @@ import {
   TaskStageSelect,
 } from "@/components/ui";
 import { TaskCell } from "@/components/tasks/TaskCell";
+import { TaskWarningSummary } from "@/components/tasks/TaskWarningSummary";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
 import { formatDataSourceLabel } from "@/lib/api/client";
-import { taskHasWarning } from "../../lib/task-warnings";
+import { summarizeTaskWarnings, taskHasWarning } from "../../lib/task-warnings";
 import {
   filterTasksByShiftParam,
   isOpenTaskStage,
@@ -55,6 +56,7 @@ export function OperationsPage() {
 
   const filterLabel = isShiftFilter(filter) ? SHIFT_FILTER_LABELS[filter] : null;
   const warningContext = { customers: data.customers, workflows: data.workflows };
+  const warningSummary = summarizeTaskWarnings(filteredTasks, warningContext);
 
   return (
     <>
@@ -149,6 +151,7 @@ export function OperationsPage() {
         </Panel>
 
         <Panel title={filterLabel ? `Tasks · ${filterLabel}` : "All tasks"}>
+          <TaskWarningSummary summary={warningSummary} />
           {data.tasks.length === 0 ? (
             <PanelEmpty
               emptyKey="tasks"
