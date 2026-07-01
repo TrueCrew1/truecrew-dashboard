@@ -255,15 +255,89 @@ export function EmptyState({
   );
 }
 
+export function PanelEmpty({
+  emptyKey,
+  title,
+  description,
+  action,
+  variant = "default",
+}: {
+  emptyKey: string;
+  title: string;
+  description?: string;
+  action?: React.ReactNode;
+  variant?: "default" | "filter" | "success";
+}) {
+  return (
+    <div className="panel-empty" data-empty={emptyKey} role="status">
+      <EmptyState
+        title={title}
+        description={description}
+        action={action}
+        variant={variant}
+      />
+    </div>
+  );
+}
+
+export function PanelFilterEmpty({
+  emptyKey,
+  filterLabel,
+  description,
+  clearAction,
+}: {
+  emptyKey: string;
+  filterLabel: string;
+  description: string;
+  clearAction: React.ReactNode;
+}) {
+  return (
+    <PanelEmpty
+      emptyKey={emptyKey}
+      title={`No matches for “${filterLabel}”`}
+      description={description}
+      action={clearAction}
+      variant="filter"
+    />
+  );
+}
+
+export {
+  formatTableValue,
+  GatesCell,
+  isBlankTableValue,
+  TABLE_MISSING,
+  TableText,
+} from "@/components/ui/table";
+
 export function TableScroll({
   children,
   wide,
+  stickyFirst,
+  label,
+  className,
 }: {
   children: React.ReactNode;
   wide?: boolean;
+  stickyFirst?: boolean;
+  /** Screen-reader hint for horizontally scrollable tables */
+  label?: string;
+  className?: string;
 }) {
+  const classes = [
+    "table-scroll",
+    wide ? "table-scroll--wide" : "",
+    stickyFirst ? "table-scroll--sticky-first" : "",
+    className ?? "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <div className={`table-scroll${wide ? " table-scroll--wide" : ""}`}>{children}</div>
+    <div className={classes} tabIndex={stickyFirst ? 0 : undefined}>
+      {label ? <span className="table-scroll-sr">{label}</span> : null}
+      {children}
+    </div>
   );
 }
 

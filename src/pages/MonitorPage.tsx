@@ -1,12 +1,14 @@
 import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
-  EmptyState,
   PageHeader,
   Panel,
+  PanelEmpty,
+  PanelFilterEmpty,
   SeverityBadge,
   StatusBadge,
   TableScroll,
+  TableText,
 } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
@@ -55,34 +57,59 @@ export function MonitorPage() {
       <div className="page-stack">
         <Panel title="Service catalog">
           {data.tools.length === 0 ? (
-            <EmptyState
+            <PanelEmpty
+              emptyKey="services"
               title="No services registered"
               description="The service catalog is empty — add tools and APIs to track health here."
             />
           ) : (
             <TableScroll wide>
-              <table className="data-table">
+              <table className="data-table data-table--comfortable">
                 <thead>
                   <tr>
-                    <th>Service</th>
-                    <th>Category</th>
-                    <th>Status</th>
-                    <th>Version</th>
-                    <th>Environment</th>
-                    <th>Incidents</th>
+                    <th scope="col">Service</th>
+                    <th scope="col" className="col-type">
+                      Category
+                    </th>
+                    <th scope="col" className="col-stage">
+                      Status
+                    </th>
+                    <th scope="col" className="col-ref">
+                      Version
+                    </th>
+                    <th scope="col" className="col-env">
+                      Environment
+                    </th>
+                    <th scope="col" className="col-order">
+                      Incidents
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.tools.map((tool) => (
                     <tr key={tool.id}>
-                      <td>{tool.name}</td>
-                      <td>{tool.category}</td>
+                      <td className="cell-truncate" title={tool.name}>
+                        {tool.name}
+                      </td>
+                      <td>
+                        <TableText value={tool.category} />
+                      </td>
                       <td>
                         <StatusBadge status={tool.status} variant={statusVariant(tool.status)} />
                       </td>
-                      <td className="mono">{tool.currentVersion ?? "—"}</td>
-                      <td>{tool.environment}</td>
-                      <td>{tool.openIncidentIds.length || "—"}</td>
+                      <td>
+                        <TableText value={tool.currentVersion} mono />
+                      </td>
+                      <td>
+                        <TableText value={tool.environment} />
+                      </td>
+                      <td>
+                        {tool.openIncidentIds.length > 0 ? (
+                          tool.openIncidentIds.length
+                        ) : (
+                          <TableText value={null} />
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -93,17 +120,18 @@ export function MonitorPage() {
 
         <Panel title={filterLabel ? `Incidents · ${filterLabel}` : "Open incidents"}>
           {data.incidents.length === 0 ? (
-            <EmptyState
+            <PanelEmpty
+              emptyKey="incidents"
               title="No incidents recorded"
               description="Incident history will appear here when services report issues."
               variant="success"
             />
           ) : filteredIncidents.length === 0 && filterLabel ? (
-            <EmptyState
-              title={`No incidents match “${filterLabel}”`}
+            <PanelFilterEmpty
+              emptyKey="incidents-filter"
+              filterLabel={filterLabel}
               description="This filter shows incidents that are open, mitigating, or mitigated. None match right now — services may be fully resolved."
-              variant="filter"
-              action={
+              clearAction={
                 <Link to="/monitor" className="empty-state-link">
                   Clear filter and show all incidents
                 </Link>
@@ -111,14 +139,20 @@ export function MonitorPage() {
             />
           ) : (
             <TableScroll>
-              <table className="data-table">
+              <table className="data-table data-table--comfortable">
                 <thead>
                   <tr>
-                    <th>Incident</th>
-                    <th>Sev</th>
-                    <th>Status</th>
-                    <th>Service</th>
-                    <th>Opened</th>
+                    <th scope="col">Incident</th>
+                    <th scope="col" className="col-order">
+                      Sev
+                    </th>
+                    <th scope="col" className="col-stage">
+                      Status
+                    </th>
+                    <th scope="col" className="col-service">
+                      Service
+                    </th>
+                    <th scope="col">Opened</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -128,12 +162,18 @@ export function MonitorPage() {
                       className={`clickable-row${selectedEntityId === inc.id ? " selected" : ""}`}
                       onClick={() => setSelectedEntityId(inc.id)}
                     >
-                      <td>{inc.title}</td>
+                      <td className="cell-truncate" title={inc.title}>
+                        {inc.title}
+                      </td>
                       <td>
                         <SeverityBadge severity={inc.severity} />
                       </td>
-                      <td>{inc.status}</td>
-                      <td>{inc.serviceName}</td>
+                      <td>
+                        <StatusBadge status={inc.status} variant="steel" />
+                      </td>
+                      <td>
+                        <TableText value={inc.serviceName} fallback="Unknown service" />
+                      </td>
                       <td className="cell-muted">
                         {new Date(inc.openedAt).toLocaleDateString()}
                       </td>

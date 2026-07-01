@@ -3,9 +3,10 @@ import { useData } from "@/context/DataContext";
 interface TopBarProps {
   onToggleRail: () => void;
   railOpen: boolean;
+  railAvailable?: boolean;
 }
 
-export function TopBar({ onToggleRail, railOpen }: TopBarProps) {
+export function TopBar({ onToggleRail, railOpen, railAvailable = true }: TopBarProps) {
   const { data, source } = useData();
   const alertCount = data.alerts.length;
   const sevCount = data.incidents.filter((i) => i.severity <= 2).length;
@@ -36,6 +37,8 @@ export function TopBar({ onToggleRail, railOpen }: TopBarProps) {
           onClick={onToggleRail}
           aria-label="Toggle alerts panel"
           aria-pressed={railOpen}
+          disabled={!railAvailable}
+          title={railAvailable ? undefined : "Alerts panel needs a wider screen"}
         >
           Alerts
           {alertCount > 0 ? (

@@ -1,13 +1,59 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
+import { ChiefPanel } from "@/components/chief/ChiefPanel";
 import { ContextRail } from "./ContextRail";
 import { SelectionContext } from "@/context/SelectionContext";
 
-export function AppShell() {
+const RAIL_MAX_WIDTH = 1100;
+
+function useShellLayoutConstraints() {
+  const [railOpen, setRailOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [railOpen, setRailOpen] = useState(true);
+  const [railAvailable, setRailAvailable] = useState(
+    () => typeof window !== "undefined" && window.innerWidth > RAIL_MAX_WIDTH,
+  );
+
+  useEffect(() => {
+    const media = window.matchMedia(`(max-width: ${RAIL_MAX_WIDTH}px)`);
+    const sync = () => {
+      const narrow = media.matches;
+      setRailAvailable(!narrow);
+      if (narrow) {
+        setRailOpen(false);
+      }
+    };
+
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
+
+  const toggleRail = () => {
+    if (!railAvailable) return;
+    setRailOpen((open) => !open);
+  };
+
+  return {
+    railOpen,
+    railAvailable,
+    toggleRail,
+    closeRail: () => setRailOpen(false),
+    sidebarCollapsed,
+    setSidebarCollapsed,
+  };
+}
+
+export function AppShell() {
+  const {
+    railOpen,
+    railAvailable,
+    toggleRail,
+    closeRail,
+    sidebarCollapsed,
+    setSidebarCollapsed,
+  } = useShellLayoutConstraints();
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
 
   const shellClass = [
@@ -29,16 +75,21 @@ export function AppShell() {
         <div className="main-column">
           <TopBar
             railOpen={railOpen}
-            onToggleRail={() => setRailOpen((v) => !v)}
+            railAvailable={railAvailable}
+            onToggleRail={toggleRail}
           />
-          <main className="page-content">
-            <Outlet />
-          </main>
+          <div className="main-workspace">
+            <main className="page-content">
+              <Outlet />
+            </main>
+          </div>
         </div>
+
+        <ChiefPanel />
 
         <ContextRail
           open={railOpen}
-          onClose={() => setRailOpen(false)}
+          onClose={closeRail}
           selectedEntityId={selectedEntityId}
         />
       </div>
