@@ -169,13 +169,22 @@ function isObsidianUnconfigured(status: number, body: ObsidianNotesPayload | nul
   return false;
 }
 
+const OBSIDIAN_FETCH_TIMEOUT_MS = 10_000;
+
 export async function fetchObsidianNotes(): Promise<ObsidianNotesResult> {
   let response: Response;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), OBSIDIAN_FETCH_TIMEOUT_MS);
 
   try {
-    response = await fetch("/api/obsidian/notes");
-  } catch {
+    response = await fetch("/api/obsidian/notes", { signal: controller.signal });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new ObsidianVaultError();
+    }
     throw new ObsidianVaultError();
+  } finally {
+    clearTimeout(timeoutId);
   }
 
   const body = (await response.json().catch(() => null)) as ObsidianNotesPayload | null;
