@@ -223,6 +223,14 @@ create table public.github_webhook_deliveries (
   processed_at timestamptz not null default now()
 );
 
+-- Chief approval decisions (persisted operator decisions on derived proposals)
+create table public.chief_approval_decisions (
+  proposal_id text primary key,
+  status text not null check (status in ('approved', 'rejected', 'sent_back')),
+  decided_at timestamptz not null default now(),
+  actor text check (actor in ('founder', 'operator', 'observer'))
+);
+
 -- ---------------------------------------------------------------------------
 -- Indexes
 -- ---------------------------------------------------------------------------
@@ -233,6 +241,8 @@ create index idx_tasks_github_pr on public.tasks(github_repo, github_pr_number);
 create index idx_gate_checks_task on public.gate_checks(task_id);
 create index idx_incidents_status on public.incidents(status);
 create index idx_tools_status on public.tools(status);
+create index idx_chief_approval_decisions_decided_at
+  on public.chief_approval_decisions (decided_at desc);
 
 -- ---------------------------------------------------------------------------
 -- Updated-at triggers
@@ -277,6 +287,7 @@ alter table public.prompts enable row level security;
 alter table public.notes enable row level security;
 alter table public.audit_events enable row level security;
 alter table public.github_webhook_deliveries enable row level security;
+alter table public.chief_approval_decisions enable row level security;
 
 -- ---------------------------------------------------------------------------
 -- Gate helpers
