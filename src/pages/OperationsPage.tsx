@@ -62,7 +62,10 @@ export function OperationsPage() {
   );
 
   const filterLabel = isShiftFilter(filter) ? SHIFT_FILTER_LABELS[filter] : null;
-  const warningContext = { customers: data.customers, workflows: data.workflows };
+  const warningContext = useMemo(
+    () => ({ customers: data.customers, workflows: data.workflows }),
+    [data.customers, data.workflows],
+  );
   const warningSummary = summarizeTaskWarnings(filteredTasks, warningContext);
   const displayTasks = useMemo(
     () => applyTaskWarningView(filteredTasks, warningKind, warningContext),
