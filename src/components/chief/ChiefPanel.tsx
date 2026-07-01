@@ -13,6 +13,7 @@ import {
   resolveChiefCommand,
 } from "./chiefLiveContext";
 import { SpecialistCards } from "./SpecialistCards";
+import { ChiefSituationBrief } from "./ChiefSituationBrief";
 import type { ApprovalProposal, ApprovalStatus, ChiefResponse, CommandHistoryEntry } from "./types";
 
 const EXAMPLE_COMMANDS = [
@@ -20,6 +21,7 @@ const EXAMPLE_COMMANDS = [
   "What's blocked?",
   "Show approvals I need to review",
   "What tasks are missing customer context?",
+  "Show open alerts",
 ];
 
 type ChiefTab = "command" | "approvals" | "history";
@@ -156,6 +158,12 @@ export function ChiefPanel() {
             aria-labelledby="chief-tab-command"
             className="chief-tab-panel"
           >
+            <ChiefSituationBrief
+              context={liveContext}
+              pendingApprovalCount={pendingApprovalCount}
+              onOpenApprovals={() => setActiveTab("approvals")}
+            />
+
             {!response && !isProcessing ? (
               <div className="chief-empty">
                 <p className="chief-empty-lead">Ask Chief</p>

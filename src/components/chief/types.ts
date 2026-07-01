@@ -8,6 +8,17 @@ export type ChiefSpecialist =
 
 export type ApprovalStatus = "pending" | "approved" | "rejected";
 
+export type ApprovalCategory =
+  | "gate_override"
+  | "incident_repair"
+  | "deploy_release"
+  | "onboarding"
+  | "customer_link"
+  | "workflow_link"
+  | "focus_escalation"
+  | "overdue_review"
+  | "alert_action";
+
 export type CommandHistoryStatus = "completed" | "pending" | "failed";
 
 export interface SpecialistContribution {
@@ -24,6 +35,9 @@ export interface ApprovalProposal {
   status: ApprovalStatus;
   createdAt: string;
   specialist?: Exclude<ChiefSpecialist, "Chief">;
+  category?: ApprovalCategory;
+  routeTo?: string;
+  routeLabel?: string;
 }
 
 export interface CommandHistoryEntry {

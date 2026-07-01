@@ -724,6 +724,21 @@
   border-color: var(--orange);
 }
 
+.chief-btn-secondary {
+  flex: 1 1 100%;
+  border-color: var(--border);
+  color: var(--steel);
+  background: transparent;
+  text-decoration: none;
+  text-align: center;
+}
+
+.chief-btn-secondary:hover {
+  border-color: var(--orange-border);
+  color: var(--text);
+  background: rgba(255, 122, 26, 0.06);
+}
+
 .chief-approval-note {
   margin: 10px 0 0;
   font-size: 10px;
@@ -898,6 +913,125 @@
   font-size: 9px;
   font-weight: 700;
   line-height: 16px;
+}
+
+.chief-brief {
+  flex-shrink: 0;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.chief-brief-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.chief-brief-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+}
+
+.chief-brief-status {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--green);
+}
+
+.chief-brief-status--clear {
+  opacity: 0.85;
+}
+
+.chief-brief-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.chief-brief-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 52px;
+  padding: 6px 4px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-panel);
+  text-decoration: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+button.chief-brief-metric {
+  cursor: pointer;
+  width: 100%;
+}
+
+.chief-brief-metric:hover {
+  border-color: var(--orange-border);
+  background: rgba(255, 122, 26, 0.04);
+}
+
+.chief-brief-metric--warn {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.chief-brief-metric--critical {
+  border-color: rgba(255, 68, 68, 0.4);
+  background: rgba(255, 68, 68, 0.06);
+}
+
+.chief-brief-metric-count {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+
+.chief-brief-metric--warn .chief-brief-metric-count {
+  color: var(--yellow);
+}
+
+.chief-brief-metric--critical .chief-brief-metric-count {
+  color: var(--red);
+}
+
+.chief-brief-metric-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.chief-brief-footnote {
+  margin: 10px 0 0;
+  font-size: 10px;
+  color: var(--steel-dim);
+  line-height: 1.45;
+}
+
+.chief-brief-link {
+  color: var(--orange);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.chief-brief-link:hover {
+  text-decoration: underline;
 }
 
 .chief-section-header {
@@ -1109,8 +1243,15 @@
 
 .chief-approval-card-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 12px;
+}
+
+.chief-approval-card-actions .chief-btn-primary,
+.chief-approval-card-actions .chief-btn-danger {
+  flex: 1;
+  min-width: calc(50% - 4px);
 }
 
 .chief-approval-card-resolved {

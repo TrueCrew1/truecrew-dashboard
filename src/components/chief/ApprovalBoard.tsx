@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { formatChiefTimestamp } from "./chiefMock";
 import type { ApprovalProposal, ApprovalStatus } from "./types";
 
@@ -95,6 +96,14 @@ export function ApprovalBoard({ proposals, onStatusChange }: ApprovalBoardProps)
 
             {proposal.status === "pending" ? (
               <div className="chief-approval-card-actions">
+                {proposal.routeTo ? (
+                  <Link
+                    to={proposal.routeTo}
+                    className="chief-btn chief-btn-secondary"
+                  >
+                    {proposal.routeLabel ? `Open ${proposal.routeLabel}` : "View in dashboard"}
+                  </Link>
+                ) : null}
                 <button
                   type="button"
                   className="chief-btn chief-btn-primary"

@@ -1,5 +1,5 @@
 import type { MockData } from "@/data/mockData";
-import type { Task, WorkflowStage } from "@/types";
+import type { AlertItem, Task, WorkflowStage } from "@/types";
 import {
   deriveShiftStats,
   isActiveIncidentStatus,
@@ -14,6 +14,13 @@ import {
   resolveCustomerForTask,
   resolveTaskContextFromTask,
 } from "../../../lib/task-context";
+import {
+  CHIEF_ROUTES,
+  routeForEntityRef,
+  routeForFocusItem,
+  routeForTask,
+  routeLabelForPath,
+} from "./chiefRoutes";
 import type { ApprovalProposal, ChiefResponse } from "./types";
 
 const OPEN_STAGE_SET = new Set<string>(OPEN_TASK_STAGES);
@@ -31,6 +38,7 @@ export interface ChiefLiveContext {
   alerts: MockData["alerts"];
   openTaskCount: number;
   blockingTasks: Task[];
+  overdueTasks: Task[];
   tasksMissingCustomer: Task[];
   tasksMissingWorkflow: Task[];
   activeIncidents: MockData["incidents"];
@@ -64,6 +72,12 @@ export function buildChiefLiveContext(data: MockData): ChiefLiveContext {
       !workflowLinkedTaskIds.has(task.id),
   );
 
+  const now = Date.now();
+  const overdueTasks = openTasks.filter((task) => {
+    if (!task.dueAt) return false;
+    return new Date(task.dueAt).getTime() < now;
+  });
+
   return {
     stats: deriveShiftStats({
       tasks: data.tasks,
@@ -73,6 +87,7 @@ export function buildChiefLiveContext(data: MockData): ChiefLiveContext {
     alerts: data.alerts,
     openTaskCount: openTasks.length,
     blockingTasks,
+    overdueTasks,
     tasksMissingCustomer,
     tasksMissingWorkflow,
     activeIncidents: data.incidents.filter(
@@ -106,17 +121,63 @@ function gateRiskNote(task: Task): string {
     : "Confirm the external blocker is resolved or acceptable to override.";
 }
 
+function proposalRoute(path: string) {
+  return { routeTo: path, routeLabel: routeLabelForPath(path) };
+}
+
+function alertProposalFromItem(alert: AlertItem, coveredIds: Set<string>): ApprovalProposal | null {
+  const entityId = alert.entityRef?.id;
+  if (entityId && coveredIds.has(entityId)) return null;
+
+  const route = alert.entityRef
+    ? routeForEntityRef(alert.entityRef)
+    : alert.type === "inbox"
+      ? CHIEF_ROUTES.operations
+      : CHIEF_ROUTES.today;
+
+  const recommendedAction =
+    alert.type === "incident"
+      ? `Triage ${entityId ?? "incident"} and confirm repair workflow status.`
+      : alert.type === "gate_block"
+        ? `Review build gates blocking ${alert.entityRef?.label ?? "deploy"}.`
+        : alert.type === "waiting"
+          ? `Review onboarding checklist for ${alert.entityRef?.label ?? "customer"}.`
+          : alert.type === "deploy"
+            ? `Confirm deploy readiness for ${alert.entityRef?.label ?? "release"}.`
+            : `Review inbox item and propose next action.`;
+
+  return {
+    id: `apr-alert-${alert.id}`,
+    title: `Respond to alert: ${alert.title}`,
+    summary: alert.message,
+    recommendedAction,
+    riskNote: "Proposal only — operator confirms before any workflow change.",
+    status: "pending",
+    createdAt: alert.timestamp,
+    specialist: alert.type === "incident" ? "Research Agent" : "Workflow Gate Agent",
+    category: "alert_action",
+    ...proposalRoute(route),
+  };
+}
+
 export function deriveApprovalCandidates(
   data: MockData,
   ctx: ChiefLiveContext,
 ): ApprovalProposal[] {
   const proposals: ApprovalProposal[] = [];
+  const coveredEntityIds = new Set<string>();
   const contextData = { customers: data.customers, workflows: data.workflows };
+
+  const trackEntity = (id: string | undefined) => {
+    if (id) coveredEntityIds.add(id);
+  };
 
   for (const task of ctx.blockingTasks.filter((t) => t.workflowType === "build").slice(0, 2)) {
     const blockingGates = getBlockingGates(task.gates);
     if (blockingGates.length === 0 && !task.blocker) continue;
 
+    trackEntity(task.id);
+    const route = CHIEF_ROUTES.builds;
     proposals.push({
       id: `apr-gate-${task.id}`,
       title: `Override gates for ${task.id}`,
@@ -129,10 +190,13 @@ export function deriveApprovalCandidates(
       status: "pending",
       createdAt: new Date().toISOString(),
       specialist: "Workflow Gate Agent",
+      category: "gate_override",
+      ...proposalRoute(route),
     });
   }
 
   for (const incident of ctx.activeIncidents.filter((i) => !i.linkedRepairId).slice(0, 1)) {
+    trackEntity(incident.id);
     proposals.push({
       id: `apr-repair-${incident.id}`,
       title: `Open repair workflow for ${incident.serviceName}`,
@@ -142,10 +206,13 @@ export function deriveApprovalCandidates(
       status: "pending",
       createdAt: incident.openedAt,
       specialist: "Research Agent",
+      category: "incident_repair",
+      ...proposalRoute(CHIEF_ROUTES.monitor),
     });
   }
 
   for (const deploy of ctx.blockedDeploys.slice(0, 1)) {
+    trackEntity(deploy.id);
     proposals.push({
       id: `apr-deploy-${deploy.id}`,
       title: `Release ${deploy.serviceName} deploy hold`,
@@ -155,10 +222,13 @@ export function deriveApprovalCandidates(
       status: "pending",
       createdAt: deploy.createdAt,
       specialist: "Workflow Gate Agent",
+      category: "deploy_release",
+      ...proposalRoute(CHIEF_ROUTES.review),
     });
   }
 
   for (const customer of ctx.waitingCustomers.slice(0, 1)) {
+    trackEntity(customer.id);
     const openGates = customer.onboardingChecklist.filter(
       (gate) => gate.required && !gate.passed,
     );
@@ -174,11 +244,15 @@ export function deriveApprovalCandidates(
       status: "pending",
       createdAt: customer.updatedAt,
       specialist: "Workflow Gate Agent",
+      category: "onboarding",
+      ...proposalRoute(CHIEF_ROUTES.customers),
     });
   }
 
   for (const task of ctx.tasksMissingCustomer.slice(0, 1)) {
+    trackEntity(task.id);
     const workOrder = resolveTaskContextFromTask(task, contextData);
+    const route = routeForTask(task);
     proposals.push({
       id: `apr-customer-${task.id}`,
       title: `Link customer to ${task.id}`,
@@ -187,7 +261,69 @@ export function deriveApprovalCandidates(
       riskNote: "Missing customer context can delay SLA tracking and billing attribution.",
       status: "pending",
       createdAt: task.updatedAt,
+      category: "customer_link",
+      ...proposalRoute(route),
     });
+  }
+
+  for (const task of ctx.tasksMissingWorkflow.slice(0, 1)) {
+    trackEntity(task.id);
+    const route = routeForTask(task);
+    proposals.push({
+      id: `apr-workflow-${task.id}`,
+      title: `Attach workflow to ${task.id}`,
+      summary: `${task.title} (${task.workflowType}) is not linked to a workflow or work order.`,
+      recommendedAction: `Link ${task.id} to an active workflow for stage tracking and gate visibility.`,
+      riskNote: "Unlinked tasks may be invisible to gate scans and shift stats.",
+      status: "pending",
+      createdAt: task.updatedAt,
+      specialist: "Workflow Gate Agent",
+      category: "workflow_link",
+      ...proposalRoute(route),
+    });
+  }
+
+  const focusTaskIds = new Set(ctx.focusItems.map((item) => item.taskId));
+  for (const item of ctx.focusItems.slice(0, 2)) {
+    trackEntity(item.taskId);
+    const route = routeForFocusItem(item);
+    proposals.push({
+      id: `apr-focus-${item.id}`,
+      title: `Escalate: ${item.title}`,
+      summary: `Focus queue — ${item.reason}`,
+      recommendedAction: `Review ${item.taskId} and propose unblock or stage advance.`,
+      riskNote: "At-risk item may block downstream roadmap or deploy work.",
+      status: "pending",
+      createdAt: item.dueAt ?? new Date().toISOString(),
+      specialist: item.workflowType === "decision" ? "Roadmap Agent" : "Workflow Gate Agent",
+      category: "focus_escalation",
+      ...proposalRoute(route),
+    });
+  }
+
+  for (const task of ctx.overdueTasks.filter((t) => !focusTaskIds.has(t.id)).slice(0, 1)) {
+    trackEntity(task.id);
+    const route = CHIEF_ROUTES.operationsOverdue;
+    proposals.push({
+      id: `apr-overdue-${task.id}`,
+      title: `Review overdue ${task.id}`,
+      summary: `${task.title} is past due (${task.dueAt}).`,
+      recommendedAction: `Confirm priority, reassign, or advance ${task.id} to clear overdue backlog.`,
+      riskNote: "Overdue work may breach SLA or block dependent tasks.",
+      status: "pending",
+      createdAt: task.dueAt ?? task.updatedAt,
+      specialist: "Roadmap Agent",
+      category: "overdue_review",
+      ...proposalRoute(route),
+    });
+  }
+
+  for (const alert of ctx.alerts.slice(0, 2)) {
+    const alertProposal = alertProposalFromItem(alert, coveredEntityIds);
+    if (alertProposal) {
+      if (alert.entityRef?.id) trackEntity(alert.entityRef.id);
+      proposals.push(alertProposal);
+    }
   }
 
   return proposals;
@@ -202,7 +338,17 @@ const DEFAULT_RESPONSE: ChiefResponse = {
 };
 
 function resolveRiskToday(ctx: ChiefLiveContext): ChiefResponse {
-  const { stats, focusItems, openTaskCount, blockingTasks, activeIncidents } = ctx;
+  const {
+    stats,
+    focusItems,
+    openTaskCount,
+    blockingTasks,
+    activeIncidents,
+    overdueTasks,
+    alerts,
+    tasksMissingCustomer,
+    tasksMissingWorkflow,
+  } = ctx;
 
   const focusSummary =
     focusItems.length === 0
@@ -219,20 +365,38 @@ function resolveRiskToday(ctx: ChiefLiveContext): ChiefResponse {
       ? "No gate or external blockers on open work."
       : `${blockingTasks.length} blocked task(s) need attention.`;
 
+  const contextGapCount = tasksMissingCustomer.length + tasksMissingWorkflow.length;
+  const contextSummary =
+    contextGapCount === 0
+      ? "No missing customer or workflow context."
+      : `${contextGapCount} task(s) missing customer or workflow context.`;
+
+  const alertSummary =
+    alerts.length === 0
+      ? "Alert feed is quiet."
+      : `${alerts.length} open alert(s) — ${alerts.slice(0, 2).map((a) => a.title).join("; ")}${alerts.length > 2 ? "…" : ""}.`;
+
   const summary = [
     `${openTaskCount} open task(s).`,
     focusSummary,
     incidentSummary,
     blockerSummary,
+    overdueTasks.length > 0 ? `${overdueTasks.length} overdue task(s).` : null,
+    contextSummary,
+    alertSummary,
     `${stats.openWorkOrders} open work order(s), ${stats.overduePMs} overdue PM(s).`,
-  ].join(" ");
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   const recommendedAction =
     focusItems.length > 0
       ? `Start with focus queue item "${focusItems[0].title}" (${focusItems[0].reason}).`
       : blockingTasks.length > 0
         ? `Address blockers on ${blockingTasks[0].id} before taking new work.`
-        : "Queue is stable — review pending approvals or clear missing context gaps.";
+        : overdueTasks.length > 0
+          ? `Review overdue ${overdueTasks[0].id} on Operations.`
+          : "Queue is stable — review pending approvals or clear missing context gaps.";
 
   return {
     summary,
@@ -248,6 +412,9 @@ function resolveRiskToday(ctx: ChiefLiveContext): ChiefResponse {
         : []),
       ...(activeIncidents.length > 0
         ? [{ specialist: "Research Agent" as const, contribution: "Active incident summary" }]
+        : []),
+      ...(focusItems.some((item) => item.workflowType === "decision")
+        ? [{ specialist: "Roadmap Agent" as const, contribution: "Decision and roadmap risk" }]
         : []),
     ],
   };
@@ -355,16 +522,20 @@ function resolveMissingContext(ctx: ChiefLiveContext): ChiefResponse {
       customerGaps.length > 0
         ? `Link a customer to ${ctx.tasksMissingCustomer[0].id} first — ${ctx.tasksMissingCustomer[0].title}.`
         : `Attach ${ctx.tasksMissingWorkflow[0].id} to a workflow for work-order tracking.`,
-    approvalNeeded: customerGaps.length > 0,
+    approvalNeeded: gaps.length > 0,
     approvalTitle:
       customerGaps.length > 0
         ? `Link customer to ${ctx.tasksMissingCustomer[0].id}`
-        : undefined,
+        : workflowGaps.length > 0
+          ? `Attach workflow to ${ctx.tasksMissingWorkflow[0].id}`
+          : undefined,
     approvalPrompt:
       customerGaps.length > 0
         ? `Propose customer link for ${ctx.tasksMissingCustomer[0].title}?`
-        : undefined,
-    riskNote: "Proposal only — customer links must be confirmed in the task record.",
+        : workflowGaps.length > 0
+          ? `Propose workflow link for ${ctx.tasksMissingWorkflow[0].title}?`
+          : undefined,
+    riskNote: "Proposal only — context links must be confirmed in the task record.",
     routedTo: "Chief",
   };
 }
@@ -403,6 +574,47 @@ function resolveIncidents(ctx: ChiefLiveContext): ChiefResponse {
       {
         specialist: "Research Agent",
         contribution: `Correlated ${ctx.activeIncidents.length} active incident(s) with service health`,
+      },
+    ],
+  };
+}
+
+function resolveAlerts(ctx: ChiefLiveContext, approvalCandidates: ApprovalProposal[]): ChiefResponse {
+  if (ctx.alerts.length === 0) {
+    return {
+      summary: "No open alerts in the current dashboard feed.",
+      recommendedAction: "Run a status overview or check blockers for latent risk.",
+      routedTo: "Chief",
+    };
+  }
+
+  const alertApprovals = approvalCandidates.filter((p) => p.category === "alert_action" && p.status === "pending");
+  const lines = ctx.alerts.map(
+    (alert) =>
+      `${alert.title}: ${alert.message}${alert.entityRef ? ` (${alert.entityRef.label})` : ""}`,
+  );
+
+  return {
+    summary: `${ctx.alerts.length} open alert(s). ${ctx.alerts
+      .slice(0, 2)
+      .map((a) => a.title)
+      .join("; ")}${ctx.alerts.length > 2 ? "…" : ""}.`,
+    blockers: lines.slice(0, 6),
+    recommendedAction:
+      alertApprovals.length > 0
+        ? `Review ${alertApprovals.length} alert-driven proposal(s) on the Approvals tab.`
+        : `Triage highest-severity alert first: "${ctx.alerts[0].title}".`,
+    approvalNeeded: alertApprovals.length > 0,
+    approvalTitle: alertApprovals[0]?.title,
+    approvalPrompt: alertApprovals[0]
+      ? `Propose response for alert: ${alertApprovals[0].title}?`
+      : undefined,
+    riskNote: alertApprovals[0]?.riskNote,
+    routedTo: "Chief",
+    specialists: [
+      {
+        specialist: "Workflow Gate Agent",
+        contribution: `Correlated ${ctx.alerts.length} alert(s) with gate and deploy state`,
       },
     ],
   };
@@ -487,8 +699,12 @@ export function resolveChiefCommand(
     return resolveRiskToday(ctx);
   }
 
-  if (/\b(incident|alert|monitor|sev|uptime|degrad)\b/i.test(trimmed)) {
+  if (/\b(incident|monitor|sev|uptime|degrad)\b/i.test(trimmed)) {
     return resolveIncidents(ctx);
+  }
+
+  if (/\b(alert|alerts|feed|notify|notification)\b/i.test(trimmed)) {
+    return resolveAlerts(ctx, approvalCandidates);
   }
 
   if (/\b(knowledge|doc|search|library|note|obsidian|runbook)\b/i.test(trimmed)) {
