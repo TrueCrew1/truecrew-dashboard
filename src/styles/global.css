@@ -3,23 +3,34 @@
 
 .app-shell {
   display: grid;
-  grid-template-columns: var(--sidebar-width) minmax(0, 1fr) var(--chief-width);
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
   grid-template-rows: 1fr;
   height: 100vh;
   position: relative;
   z-index: 1;
+  padding-right: var(--chief-width);
+  box-sizing: border-box;
 }
 
 .app-shell.rail-open {
-  grid-template-columns: var(--sidebar-width) minmax(0, 1fr) var(--chief-width) var(--rail-width);
+  padding-right: calc(var(--chief-width) + var(--rail-width));
 }
 
 .app-shell.sidebar-collapsed {
-  grid-template-columns: var(--sidebar-collapsed) minmax(0, 1fr) var(--chief-width);
+  grid-template-columns: var(--sidebar-collapsed) minmax(0, 1fr);
 }
 
-.app-shell.sidebar-collapsed.rail-open {
-  grid-template-columns: var(--sidebar-collapsed) minmax(0, 1fr) var(--chief-width) var(--rail-width);
+.app-shell > .sidebar {
+  grid-column: 1;
+  grid-row: 1;
+  min-height: 0;
+}
+
+.app-shell > .main-column {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: var(--main-min-width);
+  min-height: 0;
 }
 
 .main-column {
@@ -40,6 +51,7 @@
   flex: 1;
   overflow: auto;
   padding: 16px 20px 24px;
+  min-width: 0;
 }
 
 /* Sidebar */
@@ -235,6 +247,16 @@
   color: var(--text);
 }
 
+.topbar-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.topbar-btn:disabled:hover {
+  border-color: var(--border);
+  color: var(--steel-dim);
+}
+
 .topbar-btn.primary {
   background: rgba(255, 122, 26, 0.12);
   border-color: var(--orange-border);
@@ -276,6 +298,12 @@
 
 /* Context rail */
 .context-rail {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--rail-width);
+  z-index: 26;
   background: rgba(10, 11, 13, 0.96);
   border-left: 1px solid var(--border);
   display: flex;
@@ -512,14 +540,6 @@
 @media (max-width: 1100px) {
   .grid-2 {
     grid-template-columns: 1fr;
-  }
-
-  .app-shell.rail-open {
-    grid-template-columns: var(--sidebar-width) 1fr;
-  }
-
-  .context-rail {
-    display: none;
   }
 }
 
@@ -1407,5 +1427,52 @@
 @media (max-width: 640px) {
   .cell-truncate {
     max-width: 10rem;
+  }
+}
+
+/* Shell chrome — keep main workspace readable as Chief/rail claim width */
+@media (max-width: 1280px) {
+  :root {
+    --chief-width: 288px;
+    --rail-width: 280px;
+  }
+
+  .page-content {
+    padding: 14px 16px 20px;
+  }
+}
+
+@media (max-width: 1180px) {
+  :root {
+    --chief-width: 272px;
+    --rail-width: 260px;
+  }
+}
+
+@media (max-width: 1100px) {
+  :root {
+    --chief-width: 260px;
+  }
+
+  .app-shell.rail-open {
+    padding-right: var(--chief-width);
+  }
+
+  .app-shell.rail-open .chief-panel {
+    right: 0;
+  }
+
+  .context-rail {
+    display: none;
+  }
+
+  .page-content {
+    padding: 12px 14px 18px;
+  }
+}
+
+@media (max-width: 900px) {
+  :root {
+    --chief-width: 248px;
   }
 }

@@ -35,6 +35,7 @@ import type {
   ChiefResponse,
   CommandHistoryEntry,
 } from "./types";
+import type { ApprovalStatusFilter } from "./approvalStatus";
 
 const EXAMPLE_COMMANDS = [
   "What is at risk today?",
@@ -66,6 +67,12 @@ export function ChiefPanel() {
     Record<string, ApprovalActionState>
   >({});
   const [history, setHistory] = useState<CommandHistoryEntry[]>([]);
+  const [approvalStatusFilter, setApprovalStatusFilter] = useState<ApprovalStatusFilter>("all");
+
+  const openApprovals = useCallback((filter: ApprovalStatusFilter = "all") => {
+    setApprovalStatusFilter(filter);
+    setActiveTab("approvals");
+  }, []);
 
   const liveApi = isLiveApiEnabled();
   const [decisionsHydrated, setDecisionsHydrated] = useState(!liveApi);
@@ -365,7 +372,7 @@ export function ChiefPanel() {
             <ChiefSituationBrief
               context={liveContext}
               pendingApprovalCount={pendingApprovalCount}
-              onOpenApprovals={() => setActiveTab("approvals")}
+              onOpenApprovals={() => openApprovals("pending")}
             />
 
             {!response && !isProcessing ? (
@@ -448,7 +455,7 @@ export function ChiefPanel() {
                     <button
                       type="button"
                       className="chief-approval-link"
-                      onClick={() => setActiveTab("approvals")}
+                      onClick={() => openApprovals()}
                     >
                       Open Approvals to review and decide
                     </button>
@@ -476,7 +483,7 @@ export function ChiefPanel() {
               proposalsById={proposalsById}
               approvalActionStates={approvalActionStates}
               onApprovalAction={handleApprovalAction}
-              onOpenApprovals={() => setActiveTab("approvals")}
+              onOpenApprovals={() => openApprovals("pending")}
             />
           </div>
         ) : null}
@@ -492,6 +499,8 @@ export function ChiefPanel() {
               proposals={approvals}
               approvalActionStates={approvalActionStates}
               onApprovalAction={handleApprovalAction}
+              statusFilter={approvalStatusFilter}
+              onStatusFilterChange={setApprovalStatusFilter}
             />
           </div>
         ) : null}
