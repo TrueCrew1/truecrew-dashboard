@@ -1,9 +1,21 @@
-import { PageHeader, Panel, StatGrid, StageBadge } from "@/components/ui";
+import {
+  PageHeader,
+  Panel,
+  PanelEmpty,
+  StatGrid,
+  StageBadge,
+  StatusBadge,
+  TableScroll,
+  TableText,
+} from "@/components/ui";
+import { TaskCell } from "@/components/tasks/TaskCell";
 import { useData } from "@/context/DataContext";
+import { useSelection } from "@/context/SelectionContext";
 import { WorkflowStage } from "@/types";
 
 export function DashboardPage() {
   const { data } = useData();
+  const { selectedEntityId, setSelectedEntityId } = useSelection();
 
   const stageCounts = Object.values(WorkflowStage).reduce(
     (acc, stage) => {
@@ -12,6 +24,8 @@ export function DashboardPage() {
     },
     {} as Record<WorkflowStage, number>,
   );
+
+  const activeTasks = data.tasks.filter((task) => task.stage !== WorkflowStage.Logged);
 
   return (
     <>
@@ -48,49 +62,119 @@ export function DashboardPage() {
 
       <div className="grid-2">
         <Panel title="Workflow pipeline">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Stage</th>
-                <th>Count</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(stageCounts).map(([stage, count]) => (
-                <tr key={stage}>
-                  <td>
-                    <StageBadge stage={stage as WorkflowStage} />
-                  </td>
-                  <td>{count}</td>
+          <TableScroll label="Task count by workflow stage.">
+            <table className="data-table data-table--comfortable">
+              <thead>
+                <tr>
+                  <th scope="col">Stage</th>
+                  <th scope="col" className="col-order">
+                    Count
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {Object.entries(stageCounts).map(([stage, count]) => (
+                  <tr key={stage}>
+                    <td>
+                      <StageBadge stage={stage as WorkflowStage} />
+                    </td>
+                    <td className={count === 0 ? "cell-muted" : undefined}>{count}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableScroll>
         </Panel>
 
         <Panel title="Recent deploys">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Deploy</th>
-                <th>Stage</th>
-                <th>Version</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.deploys.map((d) => (
-                <tr key={d.id}>
-                  <td>{d.serviceName}</td>
-                  <td>
-                    <StageBadge stage={d.stage} />
-                  </td>
-                  <td className="mono">{d.version}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {data.deploys.length === 0 ? (
+            <PanelEmpty
+              emptyKey="deploys"
+              title="No deploys on record"
+              description="Recent deploy activity will appear here once releases are tracked."
+              variant="default"
+            />
+          ) : (
+            <TableScroll label="Recent deploys table.">
+              <table className="data-table data-table--comfortable">
+                <thead>
+                  <tr>
+                    <th scope="col" className="col-service">
+                      Service
+                    </th>
+                    <th scope="col" className="col-stage">
+                      Stage
+                    </th>
+                    <th scope="col" className="col-ref">
+                      Version
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.deploys.map((d) => (
+                    <tr key={d.id}>
+                      <td>
+                        <TableText value={d.serviceName} fallback="Unknown service" truncate />
+                      </td>
+                      <td>
+                        <StageBadge stage={d.stage} />
+                      </td>
+                      <td>
+                        <TableText value={d.version} mono />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </TableScroll>
+          )}
         </Panel>
       </div>
+
+      <Panel title="Active tasks">
+        {activeTasks.length === 0 ? (
+          <PanelEmpty
+            emptyKey="dashboard-tasks"
+            title="No active tasks"
+            description="Tasks in Logged stage are hidden from this view."
+          />
+        ) : (
+          <TableScroll>
+            <table className="data-table data-table--comfortable">
+              <thead>
+                <tr>
+                  <th scope="col">Task</th>
+                  <th scope="col" className="col-stage">
+                    Stage
+                  </th>
+                  <th scope="col" className="col-type">
+                    Type
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {activeTasks.map((task) => (
+                  <tr
+                    key={task.id}
+                    className={`clickable-row${selectedEntityId === task.id ? " selected" : ""}`}
+                    onClick={() => setSelectedEntityId(task.id)}
+                  >
+                    <td>
+                      <TaskCell task={task} />
+                    </td>
+                    <td>
+                      <StageBadge stage={task.stage} />
+                    </td>
+                    <td>
+                      <StatusBadge status={task.workflowType} variant="steel" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableScroll>
+        )}
+      </Panel>
     </>
   );
 }
