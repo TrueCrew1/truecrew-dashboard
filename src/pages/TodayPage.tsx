@@ -21,6 +21,7 @@ import {
   isOpenTaskStage,
 } from "../../lib/queries/dashboard-stats";
 import {
+  filterTasksByWarningKind,
   summarizeTaskWarnings,
   TASK_WARNING_KIND_LABEL,
   taskHasWarning,
@@ -32,6 +33,7 @@ export function TodayPage() {
   const { selectedEntityId, setSelectedEntityId } = useSelection();
   const { data } = useData();
   const [focusWarningKind, setFocusWarningKind] = useState<TaskWarningKind | null>(null);
+  const [gateWarningKind, setGateWarningKind] = useState<TaskWarningKind | null>(null);
 
   const activeIncidents = data.incidents.filter(
     (i) => i.severity <= 2 && isActiveIncidentStatus(i.status),
@@ -45,18 +47,26 @@ export function TodayPage() {
     () => ({ customers: data.customers, workflows: data.workflows }),
     [data.customers, data.workflows],
   );
+  const tasksById = useMemo(
+    () => new Map(data.tasks.map((task) => [task.id, task])),
+    [data.tasks],
+  );
   const focusTaskList = data.focusItems
-    .map((item) => data.tasks.find((task) => task.id === item.taskId))
+    .map((item) => tasksById.get(item.taskId))
     .filter((task): task is NonNullable<typeof task> => Boolean(task));
   const focusWarningSummary = summarizeTaskWarnings(focusTaskList, warningContext);
   const displayFocusItems = useMemo(() => {
     if (!focusWarningKind) return data.focusItems;
     return data.focusItems.filter((item) => {
-      const task = data.tasks.find((t) => t.id === item.taskId);
+      const task = tasksById.get(item.taskId);
       return task && taskMatchesWarningKind(task, focusWarningKind, warningContext);
     });
-  }, [data.focusItems, data.tasks, focusWarningKind, warningContext]);
+  }, [data.focusItems, tasksById, focusWarningKind, warningContext]);
   const gateWarningSummary = summarizeTaskWarnings(blockingTasks, warningContext);
+  const displayBlockingTasks = useMemo(
+    () => filterTasksByWarningKind(blockingTasks, gateWarningKind, warningContext),
+    [blockingTasks, gateWarningKind, warningContext],
+  );
 
   return (
     <>
@@ -120,7 +130,7 @@ export function TodayPage() {
                   </thead>
                   <tbody>
                     {displayFocusItems.map((item) => {
-                      const focusTask = data.tasks.find((t) => t.id === item.taskId);
+                      const focusTask = tasksById.get(item.taskId);
                       return (
                       <tr
                         key={item.id}
@@ -210,7 +220,11 @@ export function TodayPage() {
         </div>
 
         <Panel title="Blocking gates">
-          <TaskWarningSummary summary={gateWarningSummary} />
+          <TaskWarningSummary
+            summary={gateWarningSummary}
+            activeKind={gateWarningKind}
+            onKindSelect={setGateWarningKind}
+          />
           {blockingTasks.length === 0 ? (
             <PanelEmpty
               emptyKey="gates"
@@ -221,6 +235,21 @@ export function TodayPage() {
                 <Link to="/operations" className="empty-state-link">
                   Review all workflows
                 </Link>
+              }
+            />
+          ) : displayBlockingTasks.length === 0 && gateWarningKind ? (
+            <PanelFilterEmpty
+              emptyKey="gates-warning-filter"
+              filterLabel={TASK_WARNING_KIND_LABEL[gateWarningKind]}
+              description={`No blocking gate tasks match the ${TASK_WARNING_KIND_LABEL[gateWarningKind]} warning right now.`}
+              clearAction={
+                <button
+                  type="button"
+                  className="empty-state-link"
+                  onClick={() => setGateWarningKind(null)}
+                >
+                  Clear warning filter
+                </button>
               }
             />
           ) : (
@@ -242,7 +271,7 @@ export function TodayPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {blockingTasks.map((task) => (
+                  {displayBlockingTasks.map((task) => (
                     <tr
                       key={task.id}
                       className={[
