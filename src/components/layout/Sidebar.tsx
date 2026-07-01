@@ -50,7 +50,7 @@ export function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
-        <div className="sidebar-mark">TC</div>
+        <img className="sidebar-mark" src="/logo.png" alt="True Crew" />
         {!collapsed ? (
           <div className="sidebar-title">
             True <span>Crew</span>

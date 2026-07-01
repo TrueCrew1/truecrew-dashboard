@@ -75,13 +75,8 @@
   width: 28px;
   height: 28px;
   border-radius: 6px;
-  background: linear-gradient(135deg, var(--orange), var(--orange-dim));
-  display: grid;
-  place-items: center;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 12px;
-  color: #0a0b0d;
+  object-fit: cover;
+  border: 1px solid var(--orange-border);
   flex-shrink: 0;
 }
 

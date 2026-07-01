@@ -9,6 +9,21 @@ export function nextChiefId(prefix: string): string {
   return `${prefix}-${crypto.randomUUID()}`;
 }
 
+/**
+ * Deterministic ID for content-derived proposals (FNV-1a hash of seed).
+ * The same command always produces the same proposal ID, so persisted
+ * approval decisions survive reloads instead of orphaning against a
+ * random UUID that never reappears.
+ */
+export function stableChiefId(prefix: string, seed: string): string {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash ^= seed.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return `${prefix}-${hash.toString(16).padStart(8, "0")}`;
+}
+
 export function formatChiefTimestamp(iso: string): string {
   const date = new Date(iso);
   const now = new Date();
@@ -50,7 +65,7 @@ export function buildApprovalFromResponse(
   if (!response.approvalNeeded) return null;
 
   return {
-    id: nextChiefId("apr"),
+    id: stableChiefId("apr-cmd", `${command}|${response.approvalTitle ?? ""}`),
     title: response.approvalTitle ?? `Approval: ${command.slice(0, 48)}`,
     summary: response.summary,
     recommendedAction: response.recommendedAction,
