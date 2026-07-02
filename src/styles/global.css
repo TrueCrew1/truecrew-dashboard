@@ -634,6 +634,19 @@
   border-color: var(--orange-border);
 }
 
+.stage-select-status {
+  font-size: 9px;
+  line-height: 1.2;
+}
+
+.stage-select-status.saving {
+  color: var(--steel-dim);
+}
+
+.stage-select-status.saved {
+  color: var(--green);
+}
+
 .stage-select-error {
   font-size: 9px;
   color: var(--red, #e55);
