@@ -274,7 +274,10 @@ export function ChiefPanel() {
 
       const newApproval = buildApprovalFromResponse(command, result);
       if (newApproval) {
-        setCommandApprovals((prev) => [newApproval, ...prev]);
+        setCommandApprovals((prev) => [
+          newApproval,
+          ...prev.filter((proposal) => proposal.id !== newApproval.id),
+        ]);
       }
 
       setIsProcessing(false);
