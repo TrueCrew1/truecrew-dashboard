@@ -26,7 +26,7 @@ function apiFetch(input: string, init: RequestInit = {}): Promise<Response> {
 }
 
 export function isLiveApiEnabled(): boolean {
-  return import.meta.env.VITE_USE_LIVE_API === "true";
+  return import.meta.env.VITE_USE_LIVE_API === "true" && Boolean(INTERNAL_KEY);
 }
 
 export interface CommandCenterPayload {
