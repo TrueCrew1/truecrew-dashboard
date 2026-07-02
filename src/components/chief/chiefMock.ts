@@ -9,12 +9,7 @@ export function nextChiefId(prefix: string): string {
   return `${prefix}-${crypto.randomUUID()}`;
 }
 
-/**
- * Deterministic ID for content-derived proposals (FNV-1a hash of seed).
- * The same command always produces the same proposal ID, so persisted
- * approval decisions survive reloads instead of orphaning against a
- * random UUID that never reappears.
- */
+/** FNV-1a hash — used for stable proposal IDs (see buildApprovalFromResponse). */
 export function stableChiefId(prefix: string, seed: string): string {
   let hash = 0x811c9dc5;
   for (let i = 0; i < seed.length; i += 1) {
@@ -58,6 +53,11 @@ export function buildHistoryEntry(
   };
 }
 
+// Command-generated approval IDs must be stable and deterministic.
+// - Uses FNV-1a via stableChiefId("apr-cmd", seed) — no Math.random(), Date.now(), or index-based IDs.
+// - Seed = command + approvalTitle so "same command, same context" → same proposal.id across reloads.
+// - State maps and React keys are all keyed by proposal.id.
+// - Command proposals use "apr-cmd-*" while derived ones use "apr-gate-*", "apr-alert-*", etc., so they never collide.
 export function buildApprovalFromResponse(
   command: string,
   response: ChiefResponse,
