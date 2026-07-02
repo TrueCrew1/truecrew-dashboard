@@ -72,12 +72,15 @@
 }
 
 .sidebar-mark {
+  display: block;
   width: 28px;
   height: 28px;
   border-radius: 6px;
   object-fit: cover;
+  object-position: center;
   border: 1px solid var(--orange-border);
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .sidebar-title {
