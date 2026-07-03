@@ -1,17 +1,17 @@
-import { GATE_KEYS } from "../gates/keys";
+import { GATE_KEYS } from "../gates/keys.js";
 import {
   failGateForTasks,
   findTasksByHeadSha,
   findTasksForPullRequest,
   passGateForTasks,
   writeAuditEvent,
-} from "../supabase/admin";
+} from "../supabase/admin.js";
 import {
   extractLinkedIssueNumbers,
   type GithubCheckRunPayload,
   type GithubCheckSuitePayload,
   type GithubPullRequestPayload,
-} from "./verify";
+} from "./verify.js";
 
 export interface WebhookResult {
   handled: boolean;

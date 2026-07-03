@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { requireInternalAuth } from "../lib/auth";
-import { isSupabaseConfigured } from "../lib/supabase/admin";
+import { requireInternalAuth } from "../lib/auth.js";
+import { isSupabaseConfigured } from "../lib/supabase/admin.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!requireInternalAuth(req, res)) return;
