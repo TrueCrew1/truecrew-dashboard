@@ -1,4 +1,4 @@
-import type { DbTaskRow } from "../supabase/admin";
+import type { DbTaskRow } from "../supabase/admin.js";
 
 export interface ClientTask {
   id: string;

@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { requireInternalAuth } from "../../lib/auth";
-import { mapCommandCenterData } from "../../lib/mappers/index";
-import { fetchRawCommandCenterRows } from "../../lib/supabase/queries";
-import { isSupabaseConfigured } from "../../lib/supabase/admin";
+import { requireInternalAuth } from "../../lib/auth.js";
+import { mapCommandCenterData } from "../../lib/mappers/index.js";
+import { fetchRawCommandCenterRows } from "../../lib/supabase/queries.js";
+import { isSupabaseConfigured } from "../../lib/supabase/admin.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!requireInternalAuth(req, res)) return;

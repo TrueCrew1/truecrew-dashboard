@@ -1,11 +1,11 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { requireInternalAuth } from "../../lib/auth";
-import { getVaultPath } from "../../lib/obsidian/config";
+import { requireInternalAuth } from "../../lib/auth.js";
+import { getVaultPath } from "../../lib/obsidian/config.js";
 import {
   assertVaultReadable,
   listVaultNotes,
   readVaultNote,
-} from "../../lib/obsidian/read";
+} from "../../lib/obsidian/read.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!requireInternalAuth(req, res)) return;

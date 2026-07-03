@@ -1,16 +1,16 @@
-export { getVaultPath, isVaultConfigured, requireVaultPath } from "./config";
+export { getVaultPath, isVaultConfigured, requireVaultPath } from "./config.js";
 export {
   logBuild,
   logDecision,
   logPr,
   updateHotContext,
-} from "./log";
+} from "./log.js";
 export {
   decisionNotePath,
   HOT_CONTEXT_PATH,
   ROLLING_LOG_PATHS,
   sanitizeFilenameSegment,
-} from "./paths";
+} from "./paths.js";
 export type {
   BuildLogEntry,
   DecisionLogEntry,
@@ -18,4 +18,4 @@ export type {
   ObsidianLogKind,
   ObsidianWriteResult,
   PrLogEntry,
-} from "./types";
+} from "./types.js";
