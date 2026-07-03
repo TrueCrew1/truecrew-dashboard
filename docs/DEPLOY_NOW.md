@@ -27,6 +27,8 @@ PR #3 is merged to `main`. Complete these steps once — then every push to `mai
 | `VITE_SUPABASE_ANON_KEY` | From Step 1 |
 | `VITE_USE_LIVE_API` | `true` |
 | `GITHUB_WEBHOOK_SECRET` | Generate: `openssl rand -hex 32` |
+| `INTERNAL_API_SECRET` | Generate: `openssl rand -hex 32` |
+| `VITE_INTERNAL_KEY` | Same value as `INTERNAL_API_SECRET` |
 
 4. Deploy → copy your production URL (e.g. `https://truecrew-dashboard.vercel.app`)
 
@@ -66,10 +68,10 @@ GitHub Pages cannot run Vercel API routes. In repo **Settings → Pages**, set s
 ## Verify
 
 ```bash
-curl https://YOUR_VERCEL_URL/api/health
+curl -H "x-internal-key: $VITE_INTERNAL_KEY" https://YOUR_VERCEL_URL/api/health
 # → {"ok":true,"host":"vercel","supabase":true,...}
 
-curl https://YOUR_VERCEL_URL/api/data
+curl -H "x-internal-key: $VITE_INTERNAL_KEY" https://YOUR_VERCEL_URL/api/data
 # → tasks, incidents, tools, ...
 ```
 

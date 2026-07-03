@@ -42,6 +42,8 @@ Or run the SQL files manually in the Supabase SQL editor:
 | `SUPABASE_URL` | Production, Preview | Server only |
 | `SUPABASE_SERVICE_ROLE_KEY` | Production, Preview | Never expose to client |
 | `GITHUB_WEBHOOK_SECRET` | Production | Random 32+ char string |
+| `INTERNAL_API_SECRET` | Production, Preview | Server only. Generate: `openssl rand -hex 32` |
+| `VITE_INTERNAL_KEY` | Production, Preview | Client copy, must match `INTERNAL_API_SECRET` exactly. Bundle-visible — gates the API, not a substitute for Deployment Protection. Vite inlines this at build time, so changing it requires a new deploy, not just saving the value |
 | `VITE_USE_LIVE_API` | Production, Preview | Set to `true` |
 
 4. Deploy.
@@ -63,13 +65,33 @@ Link tasks with `github_repo` + `github_issue_number` in Supabase (seed example:
 
 ## 4. Verify
 
+**Local** (after `npm run dev:vercel`, with `INTERNAL_API_SECRET` and
+`VITE_INTERNAL_KEY` set to the same placeholder value in `.env.local`):
+
 ```bash
-curl https://YOUR_VERCEL_DOMAIN/api/health
+curl http://localhost:3000/api/health
+# → 401 (no header sent — expected, fail-closed by design)
+
+curl -H "x-internal-key: <same value as INTERNAL_API_SECRET>" http://localhost:3000/api/health
+# → { "ok": true, "host": "vercel", "supabase": true, ... }
+```
+
+**Vercel Production** (after confirming `INTERNAL_API_SECRET` and
+`VITE_INTERNAL_KEY` are both set in Vercel → Settings → Environment Variables,
+and that a Production build has run since they were last set/changed):
+
+```bash
+curl -H "x-internal-key: <VITE_INTERNAL_KEY value>" https://YOUR_VERCEL_DOMAIN/api/health
 # → { "ok": true, "host": "vercel", "supabase": true, ... }
 
-curl https://YOUR_VERCEL_DOMAIN/api/data
+curl -H "x-internal-key: <VITE_INTERNAL_KEY value>" https://YOUR_VERCEL_DOMAIN/api/data
 # → full command center payload from Supabase
 ```
+
+A 401 with no header is expected (fail-closed by design). If you're sending the
+header and still get 401, see Troubleshooting below. Never paste real secret
+values into commands you'll keep in shell history or logs — use a placeholder
+like `<VITE_INTERNAL_KEY value>` and substitute manually.
 
 Open the app → **Settings** should show Supabase and GitHub as connected.
 
@@ -102,3 +124,4 @@ Requires Vercel CLI: `npm i -g vercel`.
 | Webhook 401 | Secret mismatch between GitHub and Vercel |
 | Webhook 500 | Check Vercel function logs; confirm migrations ran |
 | Empty `/api/data` | Run seed migration in Supabase |
+| `/api/health` or `/api/data` returns 401 | Confirm `INTERNAL_API_SECRET` and `VITE_INTERNAL_KEY` match exactly in Vercel, per environment, and that a new build has run since `VITE_INTERNAL_KEY` was last set/changed — Vite only inlines `VITE_` vars at build time |
