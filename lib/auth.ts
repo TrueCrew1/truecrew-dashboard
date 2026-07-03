@@ -24,7 +24,7 @@ export function requireInternalAuth(
   req: VercelRequest,
   res: VercelResponse,
 ): boolean {
-  const expected = process.env.INTERNAL_API_SECRET;
+  const expected = process.env.INTERNAL_API_SECRET?.trim();
 
   if (!expected) {
     console.error("INTERNAL_API_SECRET is not configured — rejecting request");
@@ -33,7 +33,7 @@ export function requireInternalAuth(
   }
 
   const header = req.headers[HEADER_NAME];
-  const provided = Array.isArray(header) ? header[0] : header;
+  const provided = (Array.isArray(header) ? header[0] : header)?.trim();
 
   if (!provided || !safeCompare(provided, expected)) {
     res.status(401).json({ error: "Unauthorized" });
