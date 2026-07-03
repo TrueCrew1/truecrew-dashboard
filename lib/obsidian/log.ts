@@ -2,7 +2,7 @@ import {
   decisionNotePath,
   HOT_CONTEXT_PATH,
   ROLLING_LOG_PATHS,
-} from "./paths";
+} from "./paths.js";
 import {
   renderBuildLogSection,
   renderBuildLogSeed,
@@ -10,15 +10,15 @@ import {
   renderHotContextNote,
   renderPrLogSection,
   renderPrLogSeed,
-} from "./templates";
+} from "./templates.js";
 import type {
   BuildLogEntry,
   DecisionLogEntry,
   HotContextEntry,
   ObsidianWriteResult,
   PrLogEntry,
-} from "./types";
-import { appendVaultNote, writeVaultNote } from "./write";
+} from "./types.js";
+import { appendVaultNote, writeVaultNote } from "./write.js";
 
 function toResult(relativePath: string, absolutePath: string): ObsidianWriteResult {
   return { obsidianPath: relativePath, absolutePath };

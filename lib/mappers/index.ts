@@ -1,5 +1,5 @@
-import type { DbTaskRow } from "../supabase/admin";
-import { mapDbTaskToClient, type ClientTask } from "./tasks";
+import type { DbTaskRow } from "../supabase/admin.js";
+import { mapDbTaskToClient, type ClientTask } from "./tasks.js";
 
 type Row = Record<string, unknown>;
 

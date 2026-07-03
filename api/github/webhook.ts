@@ -1,11 +1,11 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { buffer } from "node:stream/consumers";
-import { dispatchGithubEvent } from "../../lib/github/handlers";
-import { verifyGithubSignature } from "../../lib/github/verify";
+import { dispatchGithubEvent } from "../../lib/github/handlers.js";
+import { verifyGithubSignature } from "../../lib/github/verify.js";
 import {
   isSupabaseConfigured,
   recordWebhookDelivery,
-} from "../../lib/supabase/admin";
+} from "../../lib/supabase/admin.js";
 
 export const config = {
   api: {
