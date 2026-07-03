@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { requireInternalAuth } from "../../lib/auth";
-import { mapDbTaskToClient } from "../../lib/mappers/tasks";
-import { isSupabaseConfigured } from "../../lib/supabase/admin";
-import { updateTaskStage } from "../../lib/supabase/queries";
+import { requireInternalAuth } from "../../lib/auth.js";
+import { mapDbTaskToClient } from "../../lib/mappers/tasks.js";
+import { isSupabaseConfigured } from "../../lib/supabase/admin.js";
+import { updateTaskStage } from "../../lib/supabase/queries.js";
 
 const VALID_STAGES = [
   "Inbox",
