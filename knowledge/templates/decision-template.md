@@ -2,6 +2,8 @@
 title: 
 type: decision
 status: pending
+confidence: medium
+last_reviewed: 
 created: 
 updated: 
 related_pages: []

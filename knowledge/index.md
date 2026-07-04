@@ -1,7 +1,9 @@
 # Knowledge Base Index
 
-Start here. See [README.md](README.md) for what this vault is and how it's meant to be
-used.
+The **complete** map of every page in `knowledge/`. For the small, curated
+"check-this-first" index, see [MEMORY.md](MEMORY.md) instead — start there for any
+real task; come here when you need the full list. See [README.md](README.md) for what
+this vault is and how it's meant to be used.
 
 ## Vault size (at a glance)
 
@@ -15,66 +17,83 @@ for the full rule set.
 | Projects | 3 | 5 |
 | Decisions | 4 | 15 |
 | Sources | 10 | 50 |
-| Patterns | 6 | 10 |
+| Lessons | 5 | 20 |
+| Reference | 2 | 10 |
 
 ## Concepts
 
-Durable topic pages — the load-bearing ideas behind how this project runs.
+Durable topic pages, normalized into compact playbooks (Summary / What works / What
+to check first / Open questions / Related). `status` = memory trust
+(active/tentative/deprecated); `confidence` = high/medium/low.
 
-- [Chief Approvals](concepts/chief-approvals.md) — the approval routing model: agents
-  never ask David directly, everything becomes a card.
-- [Approval Load](concepts/approval-load.md) — how Chief bundles, prioritizes, and
-  defers cards to keep David's queue short without weakening any gate.
-- [Dashboard Maintenance](concepts/dashboard-maintenance.md) — the category of small,
-  low-risk repo upkeep that comes out of periodic audits.
-- [Vercel Status Checks](concepts/vercel-status-checks.md) — the read-only pattern for
-  Build checking real deploy/runtime state.
-- [Tool Catalog](concepts/tool-catalog.md) — governance-level classification of every
-  tool in David's stack for agent access.
-- [Second Brain Workflow](concepts/second-brain-workflow.md) — how this vault itself is
-  governed: caps, priority order, safeguards.
+- [Chief Approvals](concepts/chief-approvals.md) — *active, high* — the approval
+  routing model: agents never ask David directly, everything becomes a card.
+- [Approval Load](concepts/approval-load.md) — *active, high* — how Chief bundles,
+  prioritizes, and defers cards to keep David's queue short without weakening any gate.
+- [Dashboard Maintenance](concepts/dashboard-maintenance.md) — *active, high* — the
+  category of small, low-risk repo upkeep that comes out of periodic audits.
+- [Vercel Status Checks](concepts/vercel-status-checks.md) — *active, medium* — the
+  read-only pattern for Build checking real deploy/runtime state.
+- [Tool Catalog](concepts/tool-catalog.md) — *tentative, medium* — governance-level
+  classification of every tool in David's stack for agent access; first-pass, not yet
+  through a Memory Review.
+- [Second Brain Workflow](concepts/second-brain-workflow.md) — *active, medium* — how
+  this vault itself is governed: layers, caps, priority order, safeguards.
 
-## Patterns
+## Lessons
 
-Reusable judgment — not activity — grouped by type. Each page is a merged log of
-dated entries with next-time guidance and memory-worth tracking (`success_uses` /
-`failure_uses`). See `docs/AGENT_RUNBOOK.md` § **High-Value Learning Capture**.
+Compact, behavior-changing rules — one file per lesson, not activity logs. See
+`docs/AGENT_RUNBOOK.md` § **Lessons**.
 
-- [Winning Patterns](patterns/winning-patterns.md) — reliable success patterns worth
-  repeating (1 entry: re-verify real state immediately before acting).
-- [Failure Patterns](patterns/failure-patterns.md) — mistakes worth avoiding (1 entry:
-  trusting runbook prose over actual code state when drafting a gate reference).
-- [Constraints](patterns/constraints.md) — durable environment/tool limits (1 entry:
-  GitHub auto-closes a PR when its stacked base branch is deleted on merge).
-- [Recovery Patterns](patterns/recovery-patterns.md) — what worked after something
-  went wrong (1 entry: rebase the orphaned commit onto `main` and reopen as a new PR).
-- [Approval / Orchestration Patterns](patterns/approval-orchestration-patterns.md) —
-  Chief's card/bundling moves (1 entry: bundle same-decision findings into one card).
-- [Research Patterns](patterns/research-patterns.md) — no entry yet; Research hasn't
-  run a real (non-illustrative) workflow in this session.
+- [Re-verify state before acting](lessons/reverify-state-before-acting.md) —
+  *success-pattern, high confidence* — re-check real PR/branch state immediately
+  before merging or presenting a card.
+- [Bundle same-decision cards](lessons/bundle-same-decision-cards.md) —
+  *orchestration-pattern, high confidence* — one card per shared decision, not one
+  per finding.
+- [GitHub stacked-branch auto-close](lessons/github-stacked-branch-autoclose.md) —
+  *constraint, high confidence* — a PR auto-closes if its stacked base branch is
+  deleted on merge.
+- [Rebase-and-reopen recovery](lessons/rebase-and-reopen-recovery.md) —
+  *recovery-pattern, high confidence* — how to recover from the constraint above.
+- [Check code, not runbook prose](lessons/check-code-not-runbook-prose.md) —
+  *failure-pattern, medium confidence* — verify the actual array/enum before
+  referencing an indexed gate.
+- *(Research pattern: none yet — no real Research workflow has run in this session.)*
 
 ## Projects
 
 Active efforts.
 
-- [True Crew Dashboard](projects/truecrew-dashboard.md) — the umbrella project: the
-  product itself and its agent-mediated workflow.
-- [Dashboard Audit — July 2026](projects/dashboard-audit-july-2026.md) — the audit that
-  produced PRs #75/#76/#77.
-- [Second Brain Setup](projects/second-brain-setup.md) — this vault, its own project.
+- [True Crew Dashboard](projects/truecrew-dashboard.md) — *active, high* — the
+  umbrella project: the product itself and its agent-mediated workflow.
+- [Dashboard Audit — July 2026](projects/dashboard-audit-july-2026.md) — *active,
+  high* — the audit that produced PRs #75/#76/#77.
+- [Second Brain Setup](projects/second-brain-setup.md) — *active, medium* — this
+  vault, its own project.
 
 ## Decisions
 
-One page per meaningful decision, each marked approved / pending / declined.
+One page per meaningful decision, each marked approved / pending / declined
+(outcome), plus its own `confidence`.
 
-- **Approved** — [Dashboard maintenance bundle](decisions/dashboard-maintenance-bundle.md)
+- **Approved**, high confidence — [Dashboard maintenance bundle](decisions/dashboard-maintenance-bundle.md)
   (PRs #75/#76/#77, merged).
-- **Pending** — [Vercel Preview secret scope](decisions/vercel-preview-secret-scope.md)
+- **Pending**, medium confidence — [Vercel Preview secret scope](decisions/vercel-preview-secret-scope.md)
   (PR #78).
-- **Pending** — [Auth fix secret-rotation gate](decisions/auth-fix-secret-rotation.md)
+- **Pending**, high confidence — [Auth fix secret-rotation gate](decisions/auth-fix-secret-rotation.md)
   (PR #58).
-- **Pending** — [Agent Runbook adoption](decisions/agent-runbook-adoption.md)
+- **Pending**, high confidence — [Agent Runbook adoption](decisions/agent-runbook-adoption.md)
   (PR #71 vs. this pass's fresh copy).
+
+## Reference
+
+Stable lookup pages — no narrative, just facts for a fast check during a real run.
+
+- [Tool Access Quick Reference](reference/tool-access.md) — which agent, which tool,
+  what access level, what gate.
+- [Workflow Entry Points](reference/workflow-entry-points.md) — every Agent Workflow,
+  trigger phrase, owner, gate.
 
 ## Sources
 
@@ -95,18 +114,20 @@ just a folder pointer) so every note is actually reachable from this page, per t
 
 ## Recent updates
 
-- **2026-07-04** — High-Value Learning Capture: added the policy, six `patterns/`
-  pages, a required learning schema (with confidence + memory-worth tracking), a
-  "Learning capture and promotion" end step on every Agent Workflow, and memory
-  governance rules (active/tentative/deprecated, never silently deleted). Seeded the
-  first 5 real pattern entries (winning, failure, constraint, recovery,
-  approval-orchestration) from real session history; Research patterns page notes
-  honestly that no real Research workflow has run yet.
+- **2026-07-04** — Layered-memory upgrade: added `MEMORY.md` (always-checked-first
+  index), `reference/` (2 pages), and `lessons/` (superseding the earlier `patterns/`
+  folder — 5 real lessons migrated to the new one-file-per-lesson schema). Normalized
+  all 6 high-value concept pages into a compact playbook structure with
+  `status`/`confidence`/`last_reviewed` fields; added the same fields to all 3
+  projects and 4 decisions. Added a new **Memory Review Pass** workflow. See
+  [log.md](log.md) for the full line-by-line record.
+- **2026-07-04** — High-Value Learning Capture: added the policy, a required learning
+  schema, a "Learning capture and promotion" end step on every Agent Workflow, and
+  memory governance rules (active/tentative/deprecated, never silently deleted).
+  *(Superseded by the layered-memory upgrade above — the six `patterns/` pages from
+  this pass no longer exist; see `lessons/` instead.)*
 - **2026-07-04** — Governance pass: hard caps, priority hierarchy, page-quality rules,
-  and three safeguards added to `docs/AGENT_RUNBOOK.md`; one new concept page
-  (`second-brain-workflow`) and one source note added; no new PR/Build Log material
-  had appeared since the initial pass, so nothing else was ingested. See
-  [log.md](log.md) for the line-by-line record.
+  and three safeguards added to `docs/AGENT_RUNBOOK.md`.
 - **2026-07-04** — Second Brain Starter Pass (initial): vault created; 9 source notes,
   5 concept pages, 3 project pages, 4 decision pages seeded from real Build Log/PR
   history.

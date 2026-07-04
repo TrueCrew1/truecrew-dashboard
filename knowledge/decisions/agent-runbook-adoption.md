@@ -2,6 +2,8 @@
 title: Merge the Agent Runbook to main
 type: decision
 status: pending
+confidence: high
+last_reviewed: 2026-07-04
 created: 2026-07-04
 updated: 2026-07-04
 related_pages: [chief-approvals, approval-load, tool-catalog]

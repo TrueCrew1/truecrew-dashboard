@@ -1,7 +1,9 @@
 ---
 title: Dashboard Maintenance (small, low-risk repo upkeep)
 type: concept
-status: established
+status: active
+confidence: high
+last_reviewed: 2026-07-04
 created: 2026-07-04
 updated: 2026-07-04
 related_pages: [dashboard-audit-july-2026, approval-load]
@@ -17,33 +19,38 @@ The category of small, independently-verified, no-behavior-change fixes that com
 of periodic dashboard audits — UI consistency gaps, dead code, and hook-dependency
 correctness — as distinct from feature work, migrations, or anything production-risky.
 
-## Established facts
+## What works
 
-- The July 2026 dashboard audit (see `projects/dashboard-audit-july-2026.md`) produced
-  three real examples: PR #75 (KnowledgePage missing the established
-  `TableScroll`/`PanelEmpty` pattern), PR #76 (a duplicate date-formatting util plus a
-  confirmed-zero-callers dead export), PR #77 (a `useCallback`/`useMemo` dependency bug
-  in `DataContext` that silently defeated its own memoization).
-- All three were low-risk enough to bundle into one `ApprovalCard`
-  (`apr-build-dashboard-maintenance-bundle`, PR #79) rather than reviewed as three
-  separate decisions — see `decisions/dashboard-maintenance-bundle.md`.
-- David approved the entire bundle; all three merged to `main` 2026-07-04
-  (`bcdd981`, `e4a1746`, `f0fd0ea`).
-- Each fix was verified via `npm run qa` (lint + strict `tsc -b` + build) and a browser
-  QA pass before being proposed — not just asserted.
+- Small, focused PRs per finding (one fix per PR), each `npm run qa`-clean and
+  browser-QA'd before being proposed — not just asserted. Proven at
+  `projects/dashboard-audit-july-2026.md`'s three real fixes: PR #75 (missing
+  `TableScroll`/`PanelEmpty` pattern), PR #76 (duplicate util + dead export), PR #77
+  (`useCallback`/`useMemo` dependency bug).
+- Bundling same-risk, same-recommendation fixes into one `ApprovalCard`
+  (`apr-build-dashboard-maintenance-bundle`, PR #79) rather than reviewing them as
+  separate decisions — see `decisions/dashboard-maintenance-bundle.md` and
+  `lessons/bundle-same-decision-cards.md`.
+- Formalized as the recurring **Dashboard Maintenance Pass** workflow
+  (`docs/AGENT_RUNBOOK.md` § Agent Workflows), not a one-off.
 
-## Open questions / inference
+## What to check first
 
-- The audit that produced these three fixes also flagged bigger, explicitly
-  out-of-scope items (a mobile Chief-panel/sidebar overlap, `chiefLiveContext.ts` /
-  `ChiefPanel.tsx` file size, a spacing-token scale) — these are separate, larger
-  decisions, not yet scheduled, and deliberately excluded from this concept's scope.
-- No standing cadence for "run a dashboard maintenance pass" exists yet beyond the
-  Daily Build Health Check workflow — whether this becomes its own recurring workflow
-  or stays an occasional audit-driven activity is undecided.
+- `projects/dashboard-audit-july-2026.md` for what's already fixed vs. still
+  deliberately deferred, before auditing anything new.
+- `lessons/reverify-state-before-acting.md` before merging/presenting a bundle — PR
+  state can drift between discovery and action.
+- The excluded/deferred items (mobile Chief-panel/sidebar overlap,
+  `chiefLiveContext.ts`/`ChiefPanel.tsx` size, spacing tokens) — these are separate,
+  larger decisions, not part of this category's normal scope.
+
+## Open questions
+
+- No standing cadence beyond "run it via the Dashboard Maintenance Pass workflow when
+  asked, or after notable dashboard work" — whether it should also run automatically
+  alongside the Daily Build Health Check is undecided.
 
 ## Related
 
-- Pages: [dashboard-audit-july-2026](../projects/dashboard-audit-july-2026.md), [approval-load](approval-load.md)
-- PRs: #75, #76, #77, #79
 - Decisions: [dashboard-maintenance-bundle](../decisions/dashboard-maintenance-bundle.md)
+- Sources: [pr-75](../sources/pr-75-knowledgepage-fix.md), [pr-76](../sources/pr-76-dead-code-cleanup.md), [pr-77](../sources/pr-77-datacontext-memo-fix.md)
+- Lessons: [bundle-same-decision-cards](../lessons/bundle-same-decision-cards.md), [reverify-state-before-acting](../lessons/reverify-state-before-acting.md)

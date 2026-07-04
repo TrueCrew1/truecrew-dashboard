@@ -1,7 +1,9 @@
 ---
 title: Dashboard Audit — July 2026
 type: project
-status: mostly-complete
+status: active
+confidence: high
+last_reviewed: 2026-07-04
 created: 2026-07-04
 updated: 2026-07-04
 related_pages: [dashboard-maintenance, truecrew-dashboard]
