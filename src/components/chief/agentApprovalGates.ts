@@ -185,6 +185,35 @@ export const BUILD_REQUEST_DUPLICATE_AUTH_FIX: BuildApprovalRequest = {
   createdAt: "2026-07-04T07:20:01.000Z",
 };
 
+/**
+ * Real, not illustrative — follow-up from the Dashboard Audit hand-off
+ * (2026-07-04): three small, independently-verified PRs (#75, #76, #77),
+ * each already `npm run qa`-clean and browser-checked, all sharing the
+ * exact same decision ("approve, low-risk dashboard maintenance, no
+ * behavior change"). Bundled per Approval Load — one card, one checklist
+ * item per PR, rather than three separate cards for the same call.
+ * Re-verified immediately before this card was created, not assumed from
+ * the hand-off alone: all three still OPEN, MERGEABLE, CI green
+ * (`gh pr view 75/76/77`).
+ */
+export const BUILD_REQUEST_DASHBOARD_MAINTENANCE_BUNDLE: BuildApprovalRequest = {
+  id: "apr-build-dashboard-maintenance-bundle",
+  gate: APPROVAL_GATES.build[0],
+  summary:
+    "Three small, low-risk dashboard fixes from this session's audit, all verified via npm run qa and a browser check, all preserving existing behavior exactly: KnowledgePage table layout/empty states (#75), a duplicate-util + dead-export cleanup (#76), and a DataContext memoization fix (#77). Bundled as one approve/merge decision — same risk profile, same recommendation, no cross-cutting interaction between them.",
+  riskLevel: "low",
+  testsOrChecksDone: [
+    { label: "PR #75 — KnowledgePage: TableScroll + PanelEmpty + scope=\"col\" (1 file, +75/-45). Low risk, UX-only.", status: "pass" },
+    { label: "PR #76 — remove duplicate formatTimeAgo + dead toggleApprovalStatusFilter export (3 files, +3/-18). Low risk, no behavior change.", status: "pass" },
+    { label: "PR #77 — wrap DataContext.refresh in useCallback, fix value memoization (1 file, +4/-4). Low risk, perf-only.", status: "pass" },
+    { label: "Re-confirmed all three still OPEN/MERGEABLE/CI-green immediately before this card", status: "pass" },
+  ],
+  requestedAction:
+    "Approve all three and merge (recommended — same low risk profile, already independently verified), or approve a subset and leave the rest open, or decline with a reason. Follow-ups not included in this bundle (tracked separately, not decided here): the mobile Chief-panel/sidebar overlap, chiefLiveContext.ts/ChiefPanel.tsx size, and a spacing-token scale — all flagged in the Dashboard Audit as needing their own dedicated slices.",
+  filesOrAreas: ["src/pages/KnowledgePage.tsx", "src/pages/MonitorPage.tsx", "src/components/ui/index.tsx", "src/components/chief/approvalStatus.ts", "src/context/DataContext.tsx"],
+  createdAt: "2026-07-04T18:10:10.000Z",
+};
+
 export const EXAMPLE_RESEARCH_REQUEST: ResearchApprovalRequest = {
   id: "apr-research-example-notification-vendor",
   gate: APPROVAL_GATES.research[1],
@@ -218,6 +247,7 @@ export const EXAMPLE_CONTENT_REQUEST: ContentApprovalRequest = {
 export const AGENT_APPROVAL_CARDS: ApprovalCard[] = [
   createApprovalCardFromPlannerRequest(EXAMPLE_PLANNER_REQUEST),
   createApprovalCardFromBuildRequest(BUILD_REQUEST_DUPLICATE_AUTH_FIX),
+  createApprovalCardFromBuildRequest(BUILD_REQUEST_DASHBOARD_MAINTENANCE_BUNDLE),
   createApprovalCardFromResearchRequest(EXAMPLE_RESEARCH_REQUEST),
   createApprovalCardFromContentRequest(EXAMPLE_CONTENT_REQUEST),
 ];
