@@ -9,6 +9,7 @@ import {
 } from "@/lib/api/client";
 import { ApprovalBoard } from "./ApprovalBoard";
 import { CommandHistory } from "./CommandHistory";
+import { MOCK_PR_APPROVAL_CARDS } from "./chiefApprovalCardMocks";
 import {
   buildApprovalFromResponse,
   buildHistoryEntry,
@@ -59,7 +60,11 @@ export function ChiefPanel() {
   const [input, setInput] = useState("");
   const [response, setResponse] = useState<ChiefResponse | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [commandApprovals, setCommandApprovals] = useState<ApprovalProposal[]>([]);
+  // Seeded with demo PR approval cards so every approval routes through this
+  // one queue — see chiefApprovalCardMocks.ts for the extension point where a
+  // real GitHub PRs fetch (or agent job feed) would replace this seed.
+  const [commandApprovals, setCommandApprovals] =
+    useState<ApprovalProposal[]>(MOCK_PR_APPROVAL_CARDS);
   const [approvalDecisions, setApprovalDecisions] = useState<Record<string, ApprovalDecision>>(
     {},
   );
@@ -113,6 +118,9 @@ export function ChiefPanel() {
     };
   }, [liveApi, source]);
 
+  // Extension point: a "card resolved" notification hook (email/Slack/SMS)
+  // would fire here, once a notification service exists — this is the one
+  // place every approval decision (approve/reject/send back) lands.
   const applyDecision = useCallback((decision: ApprovalDecision) => {
     setApprovalDecisions((prev) => ({ ...prev, [decision.proposalId]: decision }));
   }, []);
@@ -274,6 +282,9 @@ export function ChiefPanel() {
 
       const newApproval = buildApprovalFromResponse(command, result);
       if (newApproval) {
+        // Extension point: a "card created" notification hook would fire
+        // here too, alongside any future real approval sources (GitHub PRs,
+        // agent job queue) that push a new ApprovalCard into this list.
         setCommandApprovals((prev) => [newApproval, ...prev]);
       }
 

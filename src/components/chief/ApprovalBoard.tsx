@@ -15,6 +15,11 @@ import {
 } from "./approvalWrappers";
 import { ChiefApprovalActions } from "./ChiefApprovalActions";
 import {
+  APPROVAL_CHECKLIST_STATUS_ICON,
+  APPROVAL_RECOMMENDED_DECISION_BADGE,
+  APPROVAL_RECOMMENDED_DECISION_LABEL,
+  APPROVAL_SOURCE_BADGE,
+  APPROVAL_SOURCE_LABEL,
   APPROVAL_STATUS_BADGE,
   APPROVAL_STATUS_LABEL,
   APPROVAL_STATUS_ORDER,
@@ -118,6 +123,23 @@ export function ApprovalBoard({
                   </span>
                 </div>
 
+                {proposal.source || proposal.recommendedDecision ? (
+                  <div className="chief-approval-card-tags">
+                    {proposal.source ? (
+                      <span className={`badge ${APPROVAL_SOURCE_BADGE[proposal.source]}`}>
+                        {APPROVAL_SOURCE_LABEL[proposal.source]}
+                      </span>
+                    ) : null}
+                    {proposal.recommendedDecision ? (
+                      <span
+                        className={`badge ${APPROVAL_RECOMMENDED_DECISION_BADGE[proposal.recommendedDecision]}`}
+                      >
+                        {APPROVAL_RECOMMENDED_DECISION_LABEL[proposal.recommendedDecision]}
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
+
                 <p className="chief-approval-card-summary">{proposal.summary}</p>
 
                 <div className="chief-approval-card-details">
@@ -130,6 +152,25 @@ export function ApprovalBoard({
                     <span className="chief-approval-card-label">Risk / impact</span>
                     <p className="chief-approval-card-value">{proposal.riskNote}</p>
                   </div>
+
+                  {proposal.checklist && proposal.checklist.length > 0 ? (
+                    <div className="chief-approval-card-field">
+                      <span className="chief-approval-card-label">Checklist</span>
+                      <ul className="chief-approval-checklist">
+                        {proposal.checklist.map((item) => (
+                          <li
+                            key={item.label}
+                            className={`chief-approval-checklist-item chief-approval-checklist-item--${item.status}`}
+                          >
+                            <span aria-hidden="true">
+                              {APPROVAL_CHECKLIST_STATUS_ICON[item.status]}
+                            </span>
+                            {item.label}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
                 </div>
 
                 <footer
