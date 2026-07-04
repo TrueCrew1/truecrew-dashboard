@@ -36,3 +36,38 @@ lightweight ledger, not a duplicate of it.
 - 2026-07-04 — created — `decisions/agent-runbook-adoption.md` — status: pending.
 - 2026-07-04 — updated — `index.md` — linked all pages created in this pass.
 - 2026-07-04 — updated — `docs/AGENT_RUNBOOK.md` — added the Second Brain Starter Pass workflow and Knowledge Maintenance operating-rules section (not a `knowledge/` page itself, logged here since it governs this vault).
+
+---
+
+## 2026-07-04 — Governance pass (caps, priority order, safeguards)
+
+Triggered by explicit request, not by new dashboard/governance work — checked
+`gh pr list` and the branch's git log first; nothing had landed since the initial
+pass, so this run added rules rather than ingesting new material.
+
+- 2026-07-04 — updated — `docs/AGENT_RUNBOOK.md` § Second Brain Starter Pass — added
+  "Scope limits (first month)": hard caps (concepts ≤10, projects ≤5, decisions ≤15,
+  sources ≤50), a 4-tier priority order, the "3–6 month" test, and a run-frequency
+  rule (explicit ask or notable work only, no timer).
+- 2026-07-04 — updated — `docs/AGENT_RUNBOOK.md` § Knowledge Maintenance — added page
+  quality rules and three named safeguards (no orphaned pages, no duplicate topics,
+  no uncontrolled renaming), plus a tightened logging-discipline rule.
+- 2026-07-04 — created — `sources/second-brain-governance-rules.md` — source note for
+  this rule change itself.
+- 2026-07-04 — created — `concepts/second-brain-workflow.md` — durable-pattern page
+  for the vault's own governance (tier-2 priority: "Second Brain workflow itself").
+- 2026-07-04 — updated — `projects/second-brain-setup.md` — new milestone entry,
+  updated open items and current-count headroom.
+- 2026-07-04 — updated — `index.md` — added a "Vault size (at a glance)" table,
+  linked the new concept page, and converted the Sources section from a folder
+  pointer into direct links to all 10 source notes (closing a "no orphaned pages"
+  gap that existed since the first pass).
+- 2026-07-04 — **deferred (duplicate-topic decision, not a cap):** a standalone
+  `concepts/agent-runbook.md` was considered and rejected — `concepts/chief-approvals.md`
+  already covers the runbook's approval-routing content; a separate page would
+  restate it under a different name. No page created.
+- 2026-07-04 — **deferred (below the 3–6 month bar):** the 7 remaining dashboard-audit
+  findings (beyond PRs #75/#76/#77) still don't have their own source notes — noted
+  again as a candidate for a future pass, not created now.
+- **Counts after this pass:** concepts 6/10, projects 3/5, decisions 4/15,
+  sources 10/50. No caps were hit or approached.

@@ -293,6 +293,40 @@ notes and/or cards.
 - **Logging:** Build Log entry summarizing the pass (what was collected, what was created/updated, counts by type) **and** the corresponding lines in `knowledge/log.md` — the Build Log is the session record, `knowledge/log.md` is the vault's own append-only ledger; a real pass writes both.
 - **Triggering it (for David):** ask Chief by name — e.g. "Ask Chief for a Second Brain Starter Pass" or "Ask Chief to ingest this week's dashboard work into the knowledge base." Nothing runs on a timer. Expect back a short summary of pages added/updated — not a raw chat dump, not full page contents pasted inline — plus an `ApprovalCard` only if the pass hits the gate above (external-facing content, or a structural vault change).
 
+**Scope limits (first month).** The vault is new and the failure mode to actively guard
+against is sprawl, not thinness. For the vault's first month:
+- **Hard caps, not soft targets:** Concepts ≤10, Projects ≤5, Decisions ≤15,
+  Sources ≤50. A pass that would exceed a cap does not exceed it — see the deferral
+  rule below instead.
+- **When a new page would exceed its cap:** prefer updating an existing page first
+  (per Knowledge Maintenance's "prefer updating over duplicating"). If updating would
+  overload or confuse that page, log the candidate page idea as a line in
+  `knowledge/log.md` — do **not** create it. A logged, deferred idea is a completed
+  action for this pass, not an unfinished one.
+- **Priority order for what earns a page at all**, highest first: (1) active
+  projects and live systems depended on daily (True Crew dashboard, Chief →
+  Approvals, the Agent Runbook itself); (2) durable rules and patterns (Approval
+  Load, bundling rules, correlation workflows, the Second Brain workflow itself);
+  (3) significant decisions with ongoing impact (auth rotation, tool-catalog
+  classifications, Vercel/Supabase gating); (4) — lowest, and the default answer is
+  **no page** — ephemeral details, one-off experiments, minor tweaks. Ephemeral
+  items still get logged in `knowledge/log.md` if worth a line, they just don't get a
+  standalone page.
+- **The 3–6 month test:** before creating any `concepts/`/`projects/`/`decisions/`
+  page, ask "will I likely care about this 3–6 months from now?" Only create the page
+  if the honest answer is yes. This is a stricter filter than "is this true and
+  real" — plenty of true, real, well-verified facts still don't clear this bar and
+  belong in a `sources/` note (or nowhere) instead of a durable page.
+- **Run frequency, first month:** only after notable dashboard/governance work (a
+  batch of merged PRs, a new Approval Load rule, a new Tool Catalog section) or when
+  David explicitly asks — never on an automatic schedule. Between passes, agents may
+  read the vault freely; writing or updating a page happens only inside this
+  workflow, not ad hoc mid-task.
+- **Depth over breadth.** A few strong, current pages beat many shallow ones. If a
+  pass's honest output is "nothing new clears the bar this time," that's a valid,
+  complete pass — log it as such rather than manufacturing a page to have something
+  to show.
+
 **How Chief handles it, every time:** whichever workflow ran, any `*ApprovalRequest` it produced goes through the usual `createApprovalCardFrom*Request()` path and shows up in Chief → Approvals like any other card — a workflow is just another way a request gets created, not a separate approval path.
 
 ---
@@ -325,6 +359,42 @@ during a formal pass.
   or stored under `knowledge/` even as a draft.
 - **Search before you write.** This is the same rule as "prefer updating over
   duplicating," stated as a habit: check first, write second.
+
+**Page quality.** Every `concepts/`/`projects/`/`decisions/` page stays short and
+structured, not a dumping ground:
+- 1–2 paragraphs of summary, a handful of bullets for key facts or steps, and links
+  out to the `sources/` notes and PRs/cards it's grounded in — not more.
+- Don't duplicate large chunks of raw source text into a concept/project/decision
+  page; point to the `sources/` note instead. The source note is where the raw
+  detail lives.
+- Keep established facts, assumptions/inference, and open questions visibly
+  separate — never blended into one paragraph a reader has to untangle.
+- A `sources/` note itself captures only what's needed to understand the
+  concept/project/decision it feeds — not a copy of the whole Build Log entry or PR
+  description. Summarize, and link back to the original (PR number, Build Log
+  heading) for anyone who needs the full text.
+
+**Safeguards against chaos:**
+- **No orphaned pages.** Every page must be reachable starting from
+  `knowledge/index.md` — either linked directly, or reachable by following a link
+  from a page `index.md` does link to. A page nobody can navigate to is as good as
+  lost.
+- **No duplicate topics.** Before creating a page, check whether an existing page
+  already covers materially the same topic under a different name or angle. If so:
+  either merge the new material into the existing page, or — if the new framing is
+  genuinely different but not yet worth its own page — record that alternative
+  framing as a line in `knowledge/log.md` instead of creating a near-duplicate.
+- **No uncontrolled renaming.** Page titles (and filenames) are stable once created.
+  A rename is a deliberate act, not a side effect of a later edit — it must be
+  called out explicitly as its own line in `knowledge/log.md`, not silently folded
+  into an unrelated content update.
+
+**Logging discipline.** Every Second Brain pass — not just ones that create new
+pages — appends a summary to `knowledge/log.md` covering: which pages were created
+or updated (by name); current page counts for each category (concepts, projects,
+decisions, sources) against their caps; and any candidate pages that were deferred
+because of a cap, a duplicate-topic decision, or the 3–6 month test not being met.
+A pass that changes nothing still logs that it ran and why nothing qualified.
 
 ---
 
