@@ -46,12 +46,20 @@ top of those, it doesn't replace them.
 **Verification before asking for approval:**
 - Plan is consistent with existing docs (check the current roadmap doc and Build Log first —
   don't propose something already shipped or already decided)
+- **Vault-aware:** for anything touching the dashboard, check `knowledge/` (start at
+  `knowledge/index.md`, then `knowledge/projects/truecrew-dashboard.md` and any
+  `knowledge/decisions/*.md` on the topic) before proposing — don't repropose
+  something the vault already shows as decided, shipped, or already pending a
+  decision elsewhere (e.g. via an open PR/card).
 - Risks and trade-offs are listed, not just the upside
 - Scoped against actual Build capacity, not aspirational
 
 **Approval request → card:** create a `PlannerApprovalRequest` — `gate`, `summary`, `riskLevel`,
 `testsOrChecksDone`, `requestedAction`, `affectedPhases`, `createdAt` — through
-`createApprovalCardFromPlannerRequest()`.
+`createApprovalCardFromPlannerRequest()`. When the request touches a topic already covered in
+`knowledge/decisions/` or `knowledge/concepts/`, name and link that page directly in `summary`
+(no new schema field — this is free text, same as how PR numbers are already referenced), and
+say explicitly whether the request extends, revises, or is independent of it.
 
 ---
 
@@ -77,11 +85,19 @@ top of those, it doesn't replace them.
 - Files touched are listed
 - Risk level assigned (low / medium / high) — and if a precondition is unmet (e.g. a PR says
   "don't merge until X is confirmed"), risk/recommendation must reflect that, not just the code
+- **Vault-aware:** for dashboard work, check `knowledge/concepts/dashboard-maintenance.md` (or
+  whichever concept applies) and any relevant `knowledge/decisions/*.md` before proposing. PR
+  descriptions reference the pages they follow when applicable — e.g. "This PR follows the rules
+  in `dashboard-maintenance.md` and `approval-load.md`" — so a reviewer doesn't have to
+  reconstruct the reasoning from scratch.
 
 **Approval request → card:** create a `BuildApprovalRequest` — `gate` (`BuildApprovalGate`),
 `summary`, `riskLevel`, `testsOrChecksDone`, `requestedAction`, `filesOrAreas`, `createdAt`,
 optional `title` override — through `createApprovalCardFromBuildRequest()`. Live example:
 `BUILD_REQUEST_DUPLICATE_AUTH_FIX` (PR #57 vs #58) — use it as the template for real requests.
+When the request involves a topic already in `knowledge/decisions/` or `knowledge/concepts/`,
+name and link that page in `summary`, and state whether this extends, revises, or stands
+independent of it.
 
 ---
 
@@ -165,6 +181,10 @@ operator's decision.
   recommendation is **Hold**, not Approve, regardless of the underlying risk level.
 - Confirm the request doesn't duplicate or contradict something already shipped or decided (check
   the Build Log first).
+- Check whether the request touches a topic already covered in `knowledge/decisions/` or
+  `knowledge/concepts/` — if so, the resulting `ApprovalCard` links to that page and states
+  whether it extends, revises, or is independent of it, so David doesn't have to re-derive
+  context the vault already holds.
 
 **Rules:**
 - Never bypass or dilute an approval gate — every action in each agent's "Requires Chief approval"
@@ -216,21 +236,39 @@ notes and/or cards.
 
 ### Weekly Planner Pass
 - **Purpose:** refresh slice and priority notes against current dashboard state and shipped work.
-- **Steps:** read the Build Log and current roadmap doc (`Chief/Approvals Roadmap.md`, `01_DASHBOARD/Current Priority List.md`); check what's shipped since the last pass; draft updated slice/priority notes.
+- **Steps:**
+  - **0. Second Brain check** — read `knowledge/index.md`, `knowledge/projects/truecrew-dashboard.md`, `knowledge/concepts/dashboard-maintenance.md`, and any `knowledge/decisions/*.md` touching roadmap/priority topics (e.g. `agent-runbook-adoption.md` if the runbook itself is in flux). Summarize existing decisions, open questions, and applicable rules — this is a recall step, not a fresh investigation.
+  - **1.** Read the Build Log and current roadmap doc (`Chief/Approvals Roadmap.md`, `01_DASHBOARD/Current Priority List.md`); check what's shipped since the last pass **against the Second Brain summary**, not from scratch — don't repropose or re-flag something the vault already shows as decided, shipped, or already pending elsewhere (e.g. an open PR/card).
+  - **2.** Draft updated slice/priority notes.
 - **Agent owner:** Planner.
 - **Good output:** one short planning note (Obsidian) **plus 1–3 `ApprovalCard`s at most** — only for roadmap changes that genuinely need the operator's judgment.
 - **Auto-resolvable (log only, no card):** slice/priority notes refreshed within an existing tier; re-confirming a phase's status is unchanged; minor wording fixes to plan docs.
 - **Needs approval:** changing which tier a feature/phase sits in; adding or removing a major feature or phase; anything altering an operating-model constraint.
-- **Logging:** Build Log entry noting what was refreshed and what's unchanged; if a card was created, link it.
+- **Logging:** Build Log entry noting what was refreshed and what's unchanged; if a card was created, link it. Also append a line to `knowledge/log.md` recording the vault recall (pages consulted, and whether it changed what the pass proposed) — reading the vault doesn't create/update a vault page, but the fact that a recall happened still gets logged.
+
+### Dashboard Maintenance Pass
+- **Purpose:** periodically audit the dashboard's UI/UX/code structure for small, safe, no-behavior-change fixes — the pattern proven by the July 2026 audit (PRs #75/#76/#77) — without letting it become an unbounded refactor.
+- **Steps:**
+  - **0. Second Brain check** — read `knowledge/index.md`, `knowledge/concepts/dashboard-maintenance.md`, `knowledge/projects/dashboard-audit-july-2026.md`, `knowledge/projects/truecrew-dashboard.md`, and `knowledge/decisions/dashboard-maintenance-bundle.md`. Confirm what's already fixed vs. still open (e.g. the mobile Chief-panel/sidebar overlap, `chiefLiveContext.ts`/`ChiefPanel.tsx` size, spacing tokens — deliberately deferred by the prior pass) before auditing anything new.
+  - **1.** Audit layout/UX, code structure, performance, and dead code, same categories as the prior pass; pick up findings not already tracked as deferred/open in the vault, or explicitly revisit a deferred one if it's now in scope — don't rediscover what's already catalogued.
+  - **2.** Implement 2–3 safe, small, independently-verified fixes as separate branches/PRs — no direct push to `main`, no unrelated GitHub cleanup, same guardrails as the July 2026 pass.
+  - **3.** Bundle same-decision fixes into one `ApprovalCard` per Approval Load; PR descriptions and the card both name which vault concept/decision pages they follow or extend (e.g. "follows `dashboard-maintenance.md`; extends the deferred-items list in `dashboard-audit-july-2026.md`").
+- **Agent owner:** Build (audit + fixes), Chief (bundling + card).
+- **Good output:** 2–3 small PRs **plus at most 1 bundled `ApprovalCard`** for the batch — matches Build's normal 0–3 card cap.
+- **Auto-resolvable (log only, no card):** the audit itself; any finding judged too large/risky for this pass (logged as deferred, same as the prior pass's excluded items).
+- **Needs approval:** merging any of the resulting PRs (Build's standard merge gate).
+- **Logging:** Build Log entry per PR, plus one bundling entry — same shape as the July 2026 pass. A pass's Second Brain check gets a `knowledge/log.md` recall line same as any other dashboard workflow; new vault pages (if the findings are durable enough to matter) only get created later, via a Second Brain Starter Pass, not by this workflow directly.
 
 ### Daily Build Health Check
 - **Purpose:** catch stale, duplicate, or drifting PRs/branches before they pile up (the #57/#58 pattern).
-- **Steps:** `gh pr list --state open`; scan for duplicates, stale branches, or PRs blocked on an unmet precondition; do not edit code or merge/close anything directly.
+- **Steps:**
+  - **0. Second Brain check** — read `knowledge/index.md`, `knowledge/concepts/dashboard-maintenance.md`, `knowledge/projects/truecrew-dashboard.md`, and any `knowledge/decisions/*.md` touching open PRs' topics (e.g. `auth-fix-secret-rotation.md`, `vercel-preview-secret-scope.md`). Summarize what's already known and already tracked before scanning.
+  - **1.** `gh pr list --state open`; scan for duplicates, stale branches, or PRs blocked on an unmet precondition, cross-checked against the Second Brain summary — e.g. don't re-flag PR #58 as a fresh duplicate-PR problem when the vault already tracks its rotation-confirmation blocker as a pending decision. Do not edit code or merge/close anything directly.
 - **Agent owner:** Build.
 - **Good output:** one repo-health summary **plus 0–3 `ApprovalCard`s at most** — only for changes that actually require clearance.
 - **Auto-resolvable (log only, no card):** lint/format-only fixes on a branch that hasn't merged yet; informational stale-branch or duplicate-PR flags with nothing to decide yet; routine Build Log updates.
 - **Needs approval:** merging or closing any PR; any migration or schema change; any security/auth or external-API change; any production-impacting refactor.
-- **Logging:** Build Log entry listing what was scanned and what (if anything) surfaced as a card.
+- **Logging:** Build Log entry listing what was scanned and what (if anything) surfaced as a card, plus a `knowledge/log.md` recall line.
 
 ### Weekly Research Scan
 - **Purpose:** stay current on tools/integrations relevant to True Crew without committing to any of them.
@@ -252,7 +290,7 @@ notes and/or cards.
 
 ### Chief Weekly Digest
 - **Purpose:** give the operator one summary of the week's approval activity instead of requiring them to scroll the Audit log.
-- **Steps:** summarize cards resolved this week (approved/sent back/rejected), list what's still pending, and flag anything the stale-pending badge has already caught.
+- **Steps:** summarize cards resolved this week (approved/sent back/rejected), list what's still pending, and flag anything the stale-pending badge has already caught. When summarizing dashboard-related activity, include pointers (by name/link) to any `knowledge/` concept/project/decision pages created or updated this week, and note any vault change that affects how the dashboard should be thought about going forward — reference the page, never restate or reanalyze its content in the digest itself.
 - **Agent owner:** Chief.
 - **Good output:** one digest note. No cards of its own — see **Approval Load** below for how Chief handles a backlog of pending cards surfaced by other workflows.
 - **Approval gate:** none — this is reporting, not an action; nothing here changes state.
@@ -261,6 +299,7 @@ notes and/or cards.
 ### Research–Planner–Build Correlation Pass
 - **Purpose:** catch overlaps where a Research recommendation, a Planner roadmap item, and Build's actual code/PRs disagree or duplicate effort on the same capability — before the operator discovers the conflict after the fact.
 - **Owner:** Chief.
+- **Step 0 — Second Brain check:** read `knowledge/index.md`, `knowledge/concepts/approval-load.md`, `knowledge/concepts/tool-catalog.md`, `knowledge/projects/truecrew-dashboard.md`, and any `knowledge/decisions/*.md` on the domain being correlated (auth, Vercel/Supabase, tooling). Summarize existing decisions and open questions so a correlation already resolved or already tracked in the vault isn't flagged as new.
 - **Inputs:**
   - Research: recent adopt/drop or tool/library/service recommendations; open `ResearchApprovalRequest`s.
   - Planner: roadmap slices/phases touching the same domain (auth, dashboard, agents, etc.); any Planner-origin PRs.
@@ -275,7 +314,7 @@ notes and/or cards.
   - Minor overlap, no real decision needed → log it in the Build Log and surface it via the next **Chief Weekly Digest**, not as a card.
   - If an overlap this pass finds was **already surfaced by an earlier workflow's card** (e.g. a Build Health Check already caught a Planner/Build conflict), don't create a duplicate card — reference the existing one. Approval Load's "don't create redundant cards" discipline applies here too.
 - **Gate:** none for detection itself; whatever the correlated finding touches (roadmap, code, external copy) still goes through that agent's normal gate.
-- **Logging:** every pass writes a Build Log entry with the number of overlaps found, the number of high-impact cards created, and any items deferred to the digest.
+- **Logging:** every pass writes a Build Log entry with the number of overlaps found, the number of high-impact cards created, and any items deferred to the digest, plus a `knowledge/log.md` recall line for the Second Brain check.
 
 ### Second Brain Starter Pass
 - **Purpose:** turn work David already produces — Build Log entries, Agent Runbook sections, PRs, ApprovalCard outcomes, audits, status checks — into a durable internal knowledge base (`knowledge/`), without requiring David to take notes himself.
@@ -292,6 +331,12 @@ notes and/or cards.
 - **Needs approval:** a page that would put external-facing copy in the vault (redirect it to Content's normal external-copy path instead — it doesn't belong in `knowledge/` at all); a rename/removal/schema change to the vault's top-level structure.
 - **Logging:** Build Log entry summarizing the pass (what was collected, what was created/updated, counts by type) **and** the corresponding lines in `knowledge/log.md` — the Build Log is the session record, `knowledge/log.md` is the vault's own append-only ledger; a real pass writes both.
 - **Triggering it (for David):** ask Chief by name — e.g. "Ask Chief for a Second Brain Starter Pass" or "Ask Chief to ingest this week's dashboard work into the knowledge base." Nothing runs on a timer. Expect back a short summary of pages added/updated — not a raw chat dump, not full page contents pasted inline — plus an `ApprovalCard` only if the pass hits the gate above (external-facing content, or a structural vault change).
+
+**Note:** this workflow doesn't get its own "Second Brain check" step 0 like the other
+dashboard workflows below — Step A (Collect inputs) already reads the vault's own
+`index.md` as part of deciding what's new, and a check-before-checking-the-vault step
+would be circular. This workflow is where new knowledge *enters* the vault; the
+dashboard workflows below are where existing knowledge gets *recalled* before acting.
 
 **Scope limits (first month).** The vault is new and the failure mode to actively guard
 against is sprawl, not thinness. For the vault's first month:
@@ -328,6 +373,43 @@ against is sprawl, not thinness. For the vault's first month:
   to show.
 
 **How Chief handles it, every time:** whichever workflow ran, any `*ApprovalRequest` it produced goes through the usual `createApprovalCardFrom*Request()` path and shows up in Chief → Approvals like any other card — a workflow is just another way a request gets created, not a separate approval path.
+
+---
+
+## Second Brain Usage
+
+**Vault-first for dashboard work.** Before Planner, Build, Research, or Chief act on
+the True Crew dashboard — planning, maintenance, correlation, or approvals — they
+consult `knowledge/` first: relevant `concepts/`, `projects/`, and `decisions/` pages,
+starting from `knowledge/index.md`. New proposals, PRs, and cards get framed against
+what the vault already says, not derived as if there's no memory. No dashboard
+workflow should act as if the vault doesn't exist — recall is a required step, not an
+optional nicety.
+
+- **It's a recall step, not a research pass.** A few minutes reading existing pages
+  before acting — not a fresh investigation, not a trigger to create new pages. See
+  each dashboard workflow's "Second Brain check" (step 0) in Agent Workflows above for
+  the specific pages each one reads.
+- **PR descriptions and requests reference what they follow.** A PR description names
+  the concept/decision page(s) it follows when applicable (e.g. "This PR follows the
+  rules in `dashboard-maintenance.md` and `approval-load.md`"). A `*ApprovalRequest`
+  that touches a topic already in the vault links the relevant page in its `summary`
+  and states plainly whether it extends, revises, or stands independent of it — free
+  text, no new schema field needed.
+- **This does not require David to use the vault manually.** The requirement is on
+  agents, not on him — he keeps working exactly as he does today. The vault-first step
+  happens on the agent side, before a proposal ever reaches him as a card.
+- **This is about memory, not autonomy.** Every existing Approval Load rule and
+  approval gate still applies in full. Recalling the vault changes what an agent
+  already knows going in — it never changes what an agent is allowed to do without a
+  cleared card.
+- **Read freely, write narrowly.** Any agent may read `knowledge/` at any time, for any
+  reason. Only the **Second Brain Starter Pass** creates or updates vault pages, under
+  its own caps and rules (see above and Knowledge Maintenance below). A dashboard
+  workflow's Second Brain check is read-only — if it notices something worth capturing
+  that isn't in the vault yet, it logs the observation (Build Log and/or a
+  `knowledge/log.md` note) and leaves the actual page-creation decision to the next
+  Second Brain Starter Pass, rather than writing a page itself mid-task.
 
 ---
 
