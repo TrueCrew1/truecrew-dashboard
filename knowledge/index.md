@@ -15,6 +15,7 @@ for the full rule set.
 | Projects | 3 | 5 |
 | Decisions | 4 | 15 |
 | Sources | 10 | 50 |
+| Patterns | 6 | 10 |
 
 ## Concepts
 
@@ -32,6 +33,25 @@ Durable topic pages — the load-bearing ideas behind how this project runs.
   tool in David's stack for agent access.
 - [Second Brain Workflow](concepts/second-brain-workflow.md) — how this vault itself is
   governed: caps, priority order, safeguards.
+
+## Patterns
+
+Reusable judgment — not activity — grouped by type. Each page is a merged log of
+dated entries with next-time guidance and memory-worth tracking (`success_uses` /
+`failure_uses`). See `docs/AGENT_RUNBOOK.md` § **High-Value Learning Capture**.
+
+- [Winning Patterns](patterns/winning-patterns.md) — reliable success patterns worth
+  repeating (1 entry: re-verify real state immediately before acting).
+- [Failure Patterns](patterns/failure-patterns.md) — mistakes worth avoiding (1 entry:
+  trusting runbook prose over actual code state when drafting a gate reference).
+- [Constraints](patterns/constraints.md) — durable environment/tool limits (1 entry:
+  GitHub auto-closes a PR when its stacked base branch is deleted on merge).
+- [Recovery Patterns](patterns/recovery-patterns.md) — what worked after something
+  went wrong (1 entry: rebase the orphaned commit onto `main` and reopen as a new PR).
+- [Approval / Orchestration Patterns](patterns/approval-orchestration-patterns.md) —
+  Chief's card/bundling moves (1 entry: bundle same-decision findings into one card).
+- [Research Patterns](patterns/research-patterns.md) — no entry yet; Research hasn't
+  run a real (non-illustrative) workflow in this session.
 
 ## Projects
 
@@ -75,6 +95,13 @@ just a folder pointer) so every note is actually reachable from this page, per t
 
 ## Recent updates
 
+- **2026-07-04** — High-Value Learning Capture: added the policy, six `patterns/`
+  pages, a required learning schema (with confidence + memory-worth tracking), a
+  "Learning capture and promotion" end step on every Agent Workflow, and memory
+  governance rules (active/tentative/deprecated, never silently deleted). Seeded the
+  first 5 real pattern entries (winning, failure, constraint, recovery,
+  approval-orchestration) from real session history; Research patterns page notes
+  honestly that no real Research workflow has run yet.
 - **2026-07-04** — Governance pass: hard caps, priority hierarchy, page-quality rules,
   and three safeguards added to `docs/AGENT_RUNBOOK.md`; one new concept page
   (`second-brain-workflow`) and one source note added; no new PR/Build Log material

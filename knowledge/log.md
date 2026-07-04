@@ -112,3 +112,46 @@ Second Brain vault itself (PR #80) to that same doc, since its own stated scope 
 already-verified fact, per the workflow's own auto-resolvable bucket. Full details in
 the Obsidian Build Log entry "Second Brain vault made the memory layer for dashboard
 workflows."
+
+---
+
+## 2026-07-04 — High-Value Learning Capture added; first pattern entries seeded
+
+- 2026-07-04 — updated — `docs/AGENT_RUNBOOK.md` — added § High-Value Learning
+  Capture (policy, event-log-vs-memory split, six pattern types, required learning
+  schema, memory-worth mechanics, per-agent coverage, retrieval discipline, memory
+  governance); added a Patterns cap (≤10) to Second Brain Starter Pass's scope
+  limits; added a "Learning capture and promotion" end step to all 8 Agent Workflows;
+  carved a narrow exception into "Read freely, write narrowly" so a workflow's own
+  Learning capture step may append to an **existing** `patterns/*.md` page directly
+  (new pattern pages still require a Second Brain Starter Pass).
+- 2026-07-04 — created — `templates/learning-template.md` — the required entry shape.
+- 2026-07-04 — created — `patterns/winning-patterns.md` — 1 entry: re-verify real
+  state immediately before acting, not just at discovery time. Confidence: high.
+  Memory worth: success_uses 0, failure_uses 0 (counters start fresh per policy).
+- 2026-07-04 — created — `patterns/failure-patterns.md` — 1 entry: trusting runbook
+  prose over actual code state when drafting a gate reference (the
+  `APPROVAL_GATES.build[3]` out-of-bounds bug on PR #78, caught before shipping).
+  Confidence: medium. Review horizon: review after `agent-runbook-adoption` resolves.
+- 2026-07-04 — created — `patterns/constraints.md` — 1 entry: GitHub auto-closes a PR
+  when its stacked base branch is deleted on merge (PR #65, discovered via PR #64's
+  merge). Confidence: high.
+- 2026-07-04 — created — `patterns/recovery-patterns.md` — 1 entry: rebase the
+  orphaned commit onto `main` and reopen as a new PR (PR #65 → #66). Confidence: high.
+- 2026-07-04 — created — `patterns/approval-orchestration-patterns.md` — 1 entry:
+  bundle same-decision findings into one `ApprovalCard` (validated at PRs #75/#76/#77
+  and the 13-PR stale-cleanup batch). Confidence: high.
+- 2026-07-04 — created — `patterns/research-patterns.md` — **0 entries**, honestly
+  noted: no real (non-illustrative) Research workflow has run in this session yet, so
+  no real learning exists to seed. Left empty rather than fabricated.
+- 2026-07-04 — updated — `index.md` — added a "Patterns" section, a Patterns row to
+  the vault-size table, and this pass to Recent updates.
+- 2026-07-04 — updated — `README.md` — added `patterns/` to the folder-layout table
+  and a pointer to § High-Value Learning Capture.
+- **Counts after this pass:** concepts 6/10, projects 3/5, decisions 4/15,
+  sources 10/50, **patterns 6/10** (new category). No caps hit or approached.
+- **Note on this pass's own nature:** this is a retrospective seeding pass across
+  real session history (PRs #64–#79 and the surrounding Build Log), not a single
+  narrow workflow invocation — each entry names its actual originating
+  workflow/moment precisely in its `Workflow:` field rather than being force-fit
+  under one label.

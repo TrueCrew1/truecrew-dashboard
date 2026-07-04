@@ -240,6 +240,7 @@ notes and/or cards.
   - **0. Second Brain check** — read `knowledge/index.md`, `knowledge/projects/truecrew-dashboard.md`, `knowledge/concepts/dashboard-maintenance.md`, and any `knowledge/decisions/*.md` touching roadmap/priority topics (e.g. `agent-runbook-adoption.md` if the runbook itself is in flux). Summarize existing decisions, open questions, and applicable rules — this is a recall step, not a fresh investigation.
   - **1.** Read the Build Log and current roadmap doc (`Chief/Approvals Roadmap.md`, `01_DASHBOARD/Current Priority List.md`); check what's shipped since the last pass **against the Second Brain summary**, not from scratch — don't repropose or re-flag something the vault already shows as decided, shipped, or already pending elsewhere (e.g. an open PR/card).
   - **2.** Draft updated slice/priority notes.
+  - **3. Learning capture and promotion** — ask: what worked well enough to repeat, what failed clearly enough to avoid, what constraint did this surface, what recovery (if any) worked? If high-value (see High-Value Learning Capture), append a dated entry to the matching `knowledge/patterns/*.md` page and log the promotion in `knowledge/log.md`; if not, the event log entry from step 1's logging is enough — don't force a pattern page update.
 - **Agent owner:** Planner.
 - **Good output:** one short planning note (Obsidian) **plus 1–3 `ApprovalCard`s at most** — only for roadmap changes that genuinely need the operator's judgment.
 - **Auto-resolvable (log only, no card):** slice/priority notes refreshed within an existing tier; re-confirming a phase's status is unchanged; minor wording fixes to plan docs.
@@ -253,6 +254,7 @@ notes and/or cards.
   - **1.** Audit layout/UX, code structure, performance, and dead code, same categories as the prior pass; pick up findings not already tracked as deferred/open in the vault, or explicitly revisit a deferred one if it's now in scope — don't rediscover what's already catalogued.
   - **2.** Implement 2–3 safe, small, independently-verified fixes as separate branches/PRs — no direct push to `main`, no unrelated GitHub cleanup, same guardrails as the July 2026 pass.
   - **3.** Bundle same-decision fixes into one `ApprovalCard` per Approval Load; PR descriptions and the card both name which vault concept/decision pages they follow or extend (e.g. "follows `dashboard-maintenance.md`; extends the deferred-items list in `dashboard-audit-july-2026.md`").
+  - **4. Learning capture and promotion** — ask: what refactor pattern proved safe enough to repeat, what code-change pattern turned out risky, what constraint (permission, tool, environment) did this pass hit, what recovery worked if something broke? High-value findings get a dated entry on `patterns/winning-patterns.md`, `patterns/failure-patterns.md`, `patterns/constraints.md`, or `patterns/recovery-patterns.md` as applicable, plus a `knowledge/log.md` line; everything else stays in the Build Log/PR record only.
 - **Agent owner:** Build (audit + fixes), Chief (bundling + card).
 - **Good output:** 2–3 small PRs **plus at most 1 bundled `ApprovalCard`** for the batch — matches Build's normal 0–3 card cap.
 - **Auto-resolvable (log only, no card):** the audit itself; any finding judged too large/risky for this pass (logged as deferred, same as the prior pass's excluded items).
@@ -264,6 +266,7 @@ notes and/or cards.
 - **Steps:**
   - **0. Second Brain check** — read `knowledge/index.md`, `knowledge/concepts/dashboard-maintenance.md`, `knowledge/projects/truecrew-dashboard.md`, and any `knowledge/decisions/*.md` touching open PRs' topics (e.g. `auth-fix-secret-rotation.md`, `vercel-preview-secret-scope.md`). Summarize what's already known and already tracked before scanning.
   - **1.** `gh pr list --state open`; scan for duplicates, stale branches, or PRs blocked on an unmet precondition, cross-checked against the Second Brain summary — e.g. don't re-flag PR #58 as a fresh duplicate-PR problem when the vault already tracks its rotation-confirmation blocker as a pending decision. Do not edit code or merge/close anything directly.
+  - **2. Learning capture and promotion** — ask: did the Second Brain check prevent re-flagging something already known (a winning pattern worth repeating)? Did any PR/branch situation reveal a durable constraint? High-value findings get a dated entry on the matching `patterns/*.md` page plus a `knowledge/log.md` line; routine scans with nothing new stay in the Build Log only.
 - **Agent owner:** Build.
 - **Good output:** one repo-health summary **plus 0–3 `ApprovalCard`s at most** — only for changes that actually require clearance.
 - **Auto-resolvable (log only, no card):** lint/format-only fixes on a branch that hasn't merged yet; informational stale-branch or duplicate-PR flags with nothing to decide yet; routine Build Log updates.
@@ -272,7 +275,10 @@ notes and/or cards.
 
 ### Weekly Research Scan
 - **Purpose:** stay current on tools/integrations relevant to True Crew without committing to any of them.
-- **Steps:** compare at least two options against the current stack (per `CLAUDE.md`'s tool routing and `package.json`); note cost, maintenance burden, and fit; write up facts vs. guesses per the `truecrew-research` skill.
+- **Steps:**
+  - **0. Second Brain check** — read `knowledge/index.md`, `knowledge/patterns/research-patterns.md` (if it has entries yet), and any `knowledge/concepts/`/`knowledge/decisions/` pages on the domain being scanned (e.g. `tool-catalog.md`). Don't re-run a comparison the vault already shows was done and rejected/adopted.
+  - **1.** Compare at least two options against the current stack (per `CLAUDE.md`'s tool routing and `package.json`); note cost, maintenance burden, and fit; write up facts vs. guesses per the `truecrew-research` skill.
+  - **2. Learning capture and promotion** — ask: which search/query approach or source turned out trustworthy vs. noisy, which synthesis approach produced a genuinely useful comparison, which research path was a dead end not worth repeating? High-value findings get a dated entry on `patterns/research-patterns.md` plus a `knowledge/log.md` line; a routine scan that confirms nothing new stays logged, not promoted.
 - **Agent owner:** Research.
 - **Good output:** one 1-page comparison note **plus at most 1 `ApprovalCard`** — only if the scan concludes with an actual adopt/drop recommendation.
 - **Auto-resolvable (log only, no card):** cataloging options; cost/maintenance-burden comparisons; anything that stops at "here's what exists," not "we should switch."
@@ -281,7 +287,9 @@ notes and/or cards.
 
 ### Weekly Content Tidy
 - **Purpose:** keep internal docs, Agent Logs, and approval notes readable — not a publishing pass.
-- **Steps:** review the week's Build Log/Agent Log entries and recent approval card summaries; consolidate, fix inconsistent terms, remove stale TODOs; draft cleaner versions.
+- **Steps:**
+  - **1.** Review the week's Build Log/Agent Log entries and recent approval card summaries; consolidate, fix inconsistent terms, remove stale TODOs; draft cleaner versions.
+  - **2. Learning capture and promotion** — ask: which knowledge-organization or writing pattern actually improved clarity this pass, worth repeating on the next tidy? High-value findings get a dated entry on `patterns/winning-patterns.md` (tagged Content) plus a `knowledge/log.md` line; routine tidying stays in the Build Log only.
 - **Agent owner:** Content.
 - **Good output:** cleaned notes/docs **plus at most 1 bundled `ApprovalCard`** for internal items that need sign-off. External-facing findings are exempt from this cap — see "External copy — no surprises": each one gets its own single-issue card, never folded into the ≤1 internal card or capped alongside it.
 - **Auto-resolvable (log only, no card):** internal doc cleanup; fixing typos/broken links in internal notes; consolidating duplicate internal notes; standardizing terminology across logs.
@@ -290,7 +298,7 @@ notes and/or cards.
 
 ### Chief Weekly Digest
 - **Purpose:** give the operator one summary of the week's approval activity instead of requiring them to scroll the Audit log.
-- **Steps:** summarize cards resolved this week (approved/sent back/rejected), list what's still pending, and flag anything the stale-pending badge has already caught. When summarizing dashboard-related activity, include pointers (by name/link) to any `knowledge/` concept/project/decision pages created or updated this week, and note any vault change that affects how the dashboard should be thought about going forward — reference the page, never restate or reanalyze its content in the digest itself.
+- **Steps:** summarize cards resolved this week (approved/sent back/rejected), list what's still pending, and flag anything the stale-pending badge has already caught. When summarizing dashboard-related activity, include pointers (by name/link) to any `knowledge/` concept/project/decision pages created or updated this week, and note any vault change that affects how the dashboard should be thought about going forward — reference the page, never restate or reanalyze its content in the digest itself. **Learning capture and promotion:** ask whether this week's card structures or orchestration moves (bundling, deferral, escalation) revealed anything worth repeating or avoiding; high-value findings get a dated entry on `patterns/approval-orchestration-patterns.md` plus a `knowledge/log.md` line — most weeks, this stays a reporting-only pass with nothing new to promote.
 - **Agent owner:** Chief.
 - **Good output:** one digest note. No cards of its own — see **Approval Load** below for how Chief handles a backlog of pending cards surfaced by other workflows.
 - **Approval gate:** none — this is reporting, not an action; nothing here changes state.
@@ -313,6 +321,7 @@ notes and/or cards.
   - Genuine decision needed → **one** high-impact `ApprovalCard` explaining the conflict/alignment across the agents involved, with a small menu of options (e.g. "follow Research and update roadmap + code," "keep the existing roadmap and close the PR," "ask for a combined revised plan"). Treated as one major decision, never split into a bundle of smaller items.
   - Minor overlap, no real decision needed → log it in the Build Log and surface it via the next **Chief Weekly Digest**, not as a card.
   - If an overlap this pass finds was **already surfaced by an earlier workflow's card** (e.g. a Build Health Check already caught a Planner/Build conflict), don't create a duplicate card — reference the existing one. Approval Load's "don't create redundant cards" discipline applies here too.
+- **Learning capture and promotion:** ask whether this pass's cross-agent detection method (what inputs, what correlation logic) worked well enough to repeat, or missed something it should have caught. High-value findings get a dated entry on `patterns/approval-orchestration-patterns.md` plus a `knowledge/log.md` line.
 - **Gate:** none for detection itself; whatever the correlated finding touches (roadmap, code, external copy) still goes through that agent's normal gate.
 - **Logging:** every pass writes a Build Log entry with the number of overlaps found, the number of high-impact cards created, and any items deferred to the digest, plus a `knowledge/log.md` recall line for the Second Brain check.
 
@@ -323,9 +332,10 @@ notes and/or cards.
 - **Steps:**
   - **A. Collect inputs** — the latest Build Log entries since the last pass; current Agent Runbook sections relevant to what happened; recent important PRs; recent `ApprovalCard` outcomes (approved/declined/pending); notable summaries (a dashboard audit, a Vercel status check, an Approval Load rule change).
   - **B. Ingest** — for each real artifact, create a `sources/` note (or update an existing one — search first, per Knowledge Maintenance below) capturing what it actually said; create or update the relevant `projects/` page(s) with what changed.
-  - **C. Synthesize** — fold durable ideas into `concepts/` pages (established facts vs. open questions, kept separate); create or update a `decisions/` page for anything that was, or needs to be, decided, with status marked `approved`/`pending`/`declined`.
+  - **C. Synthesize** — fold durable ideas into `concepts/` pages (established facts vs. open questions, kept separate); create or update a `decisions/` page for anything that was, or needs to be, decided, with status marked `approved`/`pending`/`declined`; create a **new** `patterns/*.md` page only if genuinely warranted (see High-Value Learning Capture below) — most pattern-page maintenance happens incrementally via each workflow's own Learning capture step, not here.
   - **D. Index and log** — refresh `knowledge/index.md` so new/changed pages are actually reachable; append one line per change to `knowledge/log.md`.
   - **E. Report** — a short summary back to David: what was added/updated, nothing else. No raw chat dump, no full page contents pasted into the conversation — the vault itself is the artifact.
+  - **F. Learning capture and promotion (meta)** — ask: did this pass's own ingest/synthesize process reveal a durable pattern about *how to run a Second Brain Starter Pass well* (e.g. a source type that's consistently high- or low-value, a merge-vs-split judgment call that recurred)? If so, that's a rare but valid `patterns/*.md` entry about the vault-maintenance process itself, not about dashboard work — most passes won't produce one.
 - **Good output:** updated/new pages under `knowledge/`, an index refresh, and a log append — **no cards** unless the gate above is actually hit.
 - **Auto-resolvable (log only, no card):** everything in the normal case — new source notes, concept/project/decision page updates, terminology cleanup, re-indexing.
 - **Needs approval:** a page that would put external-facing copy in the vault (redirect it to Content's normal external-copy path instead — it doesn't belong in `knowledge/` at all); a rename/removal/schema change to the vault's top-level structure.
@@ -341,8 +351,10 @@ dashboard workflows below are where existing knowledge gets *recalled* before ac
 **Scope limits (first month).** The vault is new and the failure mode to actively guard
 against is sprawl, not thinness. For the vault's first month:
 - **Hard caps, not soft targets:** Concepts ≤10, Projects ≤5, Decisions ≤15,
-  Sources ≤50. A pass that would exceed a cap does not exceed it — see the deferral
-  rule below instead.
+  Sources ≤50, **Patterns ≤10** (6 pattern types expected in steady state — one page
+  each; the extra headroom is for a genuinely distinct sub-type, not routine growth,
+  since entries merge into existing pattern pages by default). A pass that would
+  exceed a cap does not exceed it — see the deferral rule below instead.
 - **When a new page would exceed its cap:** prefer updating an existing page first
   (per Knowledge Maintenance's "prefer updating over duplicating"). If updating would
   overload or confuse that page, log the candidate page idea as a line in
@@ -404,12 +416,146 @@ optional nicety.
   already knows going in — it never changes what an agent is allowed to do without a
   cleared card.
 - **Read freely, write narrowly.** Any agent may read `knowledge/` at any time, for any
-  reason. Only the **Second Brain Starter Pass** creates or updates vault pages, under
-  its own caps and rules (see above and Knowledge Maintenance below). A dashboard
-  workflow's Second Brain check is read-only — if it notices something worth capturing
-  that isn't in the vault yet, it logs the observation (Build Log and/or a
-  `knowledge/log.md` note) and leaves the actual page-creation decision to the next
-  Second Brain Starter Pass, rather than writing a page itself mid-task.
+  reason. Only the **Second Brain Starter Pass** creates or updates `concepts/`,
+  `projects/`, `decisions/`, or `sources/` pages, or creates a **new**
+  `knowledge/patterns/*.md` page, under its own caps and rules (see above and
+  Knowledge Maintenance below). **One narrow exception:** a workflow's own **Learning
+  capture and promotion** step (see High-Value Learning Capture below) may append a
+  new dated entry directly to an **existing** `knowledge/patterns/*.md` page — nothing
+  else. A dashboard workflow's Second Brain check itself is still read-only; if it
+  notices something worth capturing that isn't a high-value learning and isn't in the
+  vault yet, it logs the observation and leaves the actual page-creation decision to
+  the next Second Brain Starter Pass.
+
+---
+
+## High-Value Learning Capture
+
+### Policy
+
+Not every event deserves durable memory. Durable memory should only be created or
+updated when it is likely to improve future agent performance — the Second Brain is
+meant to become a compounding intelligence system, not a noisy archive.
+
+A learning is **high-value** if it does one or more of the following:
+- prevents a repeated failure,
+- identifies a reliable success pattern,
+- reveals a durable constraint or permission limit,
+- improves research quality or source selection,
+- improves dashboard/build/approval workflow quality,
+- sharpens orchestration between agents,
+- clarifies a rule or decision that future work depends on.
+
+If a log entry does not improve future behavior, it stays in the event log only — it
+does not become durable memory. Most events are exactly this: routine, not wrong, not
+worth a page.
+
+### Two layers: event logs vs. reusable memory
+
+- **Event logs** (Build Log, `knowledge/log.md`) — chronological records of what
+  happened. Broad, cheap to write, not curated for reuse.
+- **Reusable memory** (`knowledge/concepts/`, `knowledge/projects/`, `knowledge/decisions/`,
+  and now `knowledge/patterns/`) — curated, durable, meant to change future behavior.
+
+**Log broadly, remember selectively.** Agents may log many events, but only high-value
+lessons get promoted into durable memory. Durable lessons are *distilled* from logs —
+summarized judgment, not the raw log text copied wholesale.
+
+### Pattern types (`knowledge/patterns/`)
+
+High-value learnings are grouped into six pages, one per pattern type — not one page
+per learning:
+- `patterns/winning-patterns.md` — reliable success patterns worth repeating.
+- `patterns/failure-patterns.md` — mistakes worth avoiding, and why.
+- `patterns/constraints.md` — durable environment/tool/permission limits (e.g. "GitHub
+  auto-closes a PR when its stacked base branch is deleted on merge").
+- `patterns/recovery-patterns.md` — what worked to recover after something went wrong.
+- `patterns/approval-orchestration-patterns.md` — Chief's card structures, bundling
+  moves, digest patterns that worked.
+- `patterns/research-patterns.md` — Research's query/source/synthesis patterns.
+
+**Merge into existing pages whenever possible.** A new learning is a new dated entry
+appended to the matching pattern-type page, not a new file. A new pattern-type page is
+only created via a Second Brain Starter Pass, and only if an existing page has become
+genuinely too broad to hold a new, materially different pattern type — not as the
+default move.
+
+### Required learning entry schema
+
+Every durable learning entry, regardless of pattern type, uses this shape:
+
+```
+- **Pattern type:** Winning / Failure / Constraint / Recovery / Approval-Orchestration / Research
+- **Agent:** Planner / Build / Research / Content / Chief
+- **Workflow:** which workflow or task this came from
+- **Context:** what was happening
+- **What happened:** concrete, specific description
+- **Outcome:** success / partial / failure
+- **Why this matters:** the reusable insight, not just the anecdote
+- **Next-time guidance:**
+  - Repeat when: ...
+  - Avoid when: ...
+  - Check first: ...
+- **Confidence:** high / medium / low
+- **Review horizon:** stable / review in 30 days / review after related PR/decision merges
+- **Status:** active / tentative / deprecated (see Memory Governance below)
+- **Memory worth:** success_uses: 0, failure_uses: 0
+```
+
+A `templates/learning-template.md` carries this shape for agents to copy from.
+
+### Memory worth
+
+- Every durable memory starts at `success_uses: 0, failure_uses: 0` — there is no
+  retroactive backfilling from history that predates this system, even when a pattern
+  is seeded from real historical evidence (that evidence informs the initial
+  **Confidence** rating instead, stated explicitly in the entry).
+- When a future workflow's Second Brain check or Learning capture step actually
+  **uses** a memory (follows its guidance) and the run goes well, increment
+  `success_uses` on that entry by 1.
+- When a future workflow uses a memory and the run goes poorly *because* the guidance
+  was wrong, stale, or misapplied, increment `failure_uses` by 1.
+- A memory that repeatedly correlates with poor outcomes, or is clearly outdated, gets
+  marked for review or deprecation (see Memory Governance) — it does not silently keep
+  accumulating trust.
+
+### Coverage: every agent contributes
+
+- **Research:** useful search/query patterns; trustworthy vs. noisy sources; synthesis
+  approaches that produced good hand-offs; failed research paths not worth repeating
+  blindly.
+- **Build:** safe refactor patterns; risky code-change patterns; review/PR strategies
+  that worked well.
+- **Planner:** slicing/bundling/prioritization patterns.
+- **Chief:** approval-card structures, orchestration moves, digest patterns.
+- **Content:** knowledge-organization and writing patterns that improve clarity.
+
+### Retrieval discipline
+
+Before attempting similar work, agents check — as part of the workflow's existing
+Second Brain check (step 0), not as a separate pass:
+- relevant `concepts/` pages,
+- relevant `decisions/` pages,
+- relevant `patterns/` pages (winning, failure, constraint, recovery,
+  approval-orchestration, research, as applicable to the work),
+
+and prefer a pattern with real, tracked memory worth (more `success_uses` than
+`failure_uses`, `status: active`) over one that's low-worth, `tentative`, or
+`deprecated`. A deprecated or low-worth pattern is still readable context, not a
+recommendation to follow.
+
+### Memory Governance
+
+- **Memories are not truth forever.** They must be revisable when the environment
+  changes, the repo changes, permissions change, tools improve, or a previously-failed
+  approach later becomes viable.
+- **Periodic review** (monthly, or whenever a Second Brain Starter Pass is run and
+  notices a stale/contradicted entry): identify stale, low-value, or contradicted
+  memories and mark each one's **Status** as `active`, `tentative` (evidence is mixed
+  or aging), or `deprecated` (no longer trusted).
+- **Never delete historical memory silently.** Deprecate with a short note explaining
+  why (what changed, what superseded it) instead of removing the entry — the vault's
+  own history of being wrong is itself useful context.
 
 ---
 
