@@ -10,6 +10,7 @@ import {
   TableScroll,
   TableText,
 } from "@/components/ui";
+import { ApprovalAlertsPanel } from "@/components/chief/ApprovalAlertsPanel";
 import { PlatformHealthCard } from "@/components/monitor/PlatformHealthCard";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
@@ -177,6 +178,8 @@ export function MonitorPage() {
             </TableScroll>
           )}
         </Panel>
+
+        <ApprovalAlertsPanel />
 
         <Panel title={filterLabel ? `Incidents · ${filterLabel}` : "Open incidents"}>
           {data.incidents.length === 0 ? (
