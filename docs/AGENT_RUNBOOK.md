@@ -258,6 +258,25 @@ notes and/or cards.
 - **Approval gate:** none — this is reporting, not an action; nothing here changes state.
 - **Logging:** Build Log entry with the digest, so it's part of the same record as everything else.
 
+### Research–Planner–Build Correlation Pass
+- **Purpose:** catch overlaps where a Research recommendation, a Planner roadmap item, and Build's actual code/PRs disagree or duplicate effort on the same capability — before the operator discovers the conflict after the fact.
+- **Owner:** Chief.
+- **Inputs:**
+  - Research: recent adopt/drop or tool/library/service recommendations; open `ResearchApprovalRequest`s.
+  - Planner: roadmap slices/phases touching the same domain (auth, dashboard, agents, etc.); any Planner-origin PRs.
+  - Build: open PRs/branches that implement, conflict with, or move away from that same domain.
+- **Detection steps:**
+  - For each real Research recommendation, check whether Planner's roadmap already plans to adopt or avoid that tool/service, and whether any open Build PR implements it, conflicts with it, or takes a different direction.
+  - Identify correlated pairs or triples — e.g. "Research: adopt Tool X" ↔ "Planner: phase removing Tool X" ↔ "Build: PR refactoring away from Tool X." A pair (just two of the three agents) is still a valid, reportable correlation — a full triple isn't required.
+  - Illustrative (not-yet-real) Research examples are excluded from correlation — only real recommendations count. Don't manufacture a Research finding just to complete a triple.
+- **Output:** a short correlation note listing each overlap found, which agents contributed to it, and why it matters (impact on roadmap, code, or external comms).
+- **Approval behavior:**
+  - Genuine decision needed → **one** high-impact `ApprovalCard` explaining the conflict/alignment across the agents involved, with a small menu of options (e.g. "follow Research and update roadmap + code," "keep the existing roadmap and close the PR," "ask for a combined revised plan"). Treated as one major decision, never split into a bundle of smaller items.
+  - Minor overlap, no real decision needed → log it in the Build Log and surface it via the next **Chief Weekly Digest**, not as a card.
+  - If an overlap this pass finds was **already surfaced by an earlier workflow's card** (e.g. a Build Health Check already caught a Planner/Build conflict), don't create a duplicate card — reference the existing one. Approval Load's "don't create redundant cards" discipline applies here too.
+- **Gate:** none for detection itself; whatever the correlated finding touches (roadmap, code, external copy) still goes through that agent's normal gate.
+- **Logging:** every pass writes a Build Log entry with the number of overlaps found, the number of high-impact cards created, and any items deferred to the digest.
+
 **How Chief handles it, every time:** whichever workflow ran, any `*ApprovalRequest` it produced goes through the usual `createApprovalCardFrom*Request()` path and shows up in Chief → Approvals like any other card — a workflow is just another way a request gets created, not a separate approval path.
 
 ---
