@@ -69,6 +69,44 @@ human-only.
 
 ---
 
+## Scope Guardrail
+
+Companion rule to Chief Intake: identifying the active Priority/Task isn't enough on
+its own — Chief also has to stay inside it once identified.
+
+**Chief may not, on its own initiative:**
+- invent new tool families or subsystems (a new agent capability, a new integration,
+  a new vault layer/folder, or similar that wasn't asked for),
+- start a lower-priority project while a higher one is open,
+- or change which Priority/Task is active.
+
+**Unless one of:**
+- `knowledge/MEMORY.md` **and** `01_DASHBOARD/Current Priority List.md` both already
+  explicitly mark a priority change — i.e. the record reflects a real, completed
+  reprioritization, not something Chief infers or decides on its own, or
+- David explicitly requests a reprioritization in the conversation.
+
+**Any good idea that surfaces but is out of scope right now** — a new feature, a new
+tool integration, a nice-to-have refactor unrelated to the active Priority — gets
+logged, not executed:
+- Note it in the Build Log (or `knowledge/log.md` if it concerns the vault itself), and
+- Add a one-line entry to the **Parking Lot** (`01_DASHBOARD/Parking Lot.md`): what
+  the idea is, why it's out of scope right now, and what it would take to promote it
+  (a priority change, per the rule above).
+
+The Parking Lot is a holding area, not a backlog to work through — its job is making
+sure a good idea isn't lost or silently dropped, and isn't executed just because it
+came up mid-conversation.
+
+**This rule applies to Chief's own governance work too.** Adding a rule like this one
+to the runbook, when David asks for it directly, is following an explicit
+instruction — not an exception that needs separate justification. But work Chief
+*proposes on its own* (a new workflow, a new vault section, a new tool integration)
+still needs to trace back to the active Priority/Task, or get parked like anything
+else.
+
+---
+
 ## Planner Agent
 
 **Purpose:** Slice features, roadmap, and phases. Never writes code or migrations.
