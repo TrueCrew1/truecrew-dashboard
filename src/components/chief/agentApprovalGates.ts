@@ -185,6 +185,56 @@ export const BUILD_REQUEST_DUPLICATE_AUTH_FIX: BuildApprovalRequest = {
   createdAt: "2026-07-04T07:20:01.000Z",
 };
 
+/**
+ * Real, not illustrative — follow-up from the Build ↔ Vercel status check
+ * (2026-07-04): 43 "INTERNAL_API_SECRET is not configured" runtime errors
+ * over 7 days (19 users) traced to PR #59's Preview deployment, not
+ * production — production deploys from PR #66/#67/#68 show zero
+ * corresponding errors. Likely cause: the secret is scoped to Production
+ * only in Vercel's env var settings, so every Preview build's `/api/*`
+ * routes fail auth by design, not by accident.
+ *
+ * Precondition checked before opening this card: PR #57 is now closed
+ * (confirmed via `gh pr view 57` — state CLOSED) and PR #58 remains open/
+ * held (state OPEN, mergeable, CI green) — a valid "resolved" state per
+ * this decision's own framing, since #58 being held rather than merged
+ * doesn't change anything about Preview-scope behavior either way. This
+ * card is scoped strictly to Preview secret access, not to #57/#58's
+ * trim-fix/rotation question.
+ *
+ * Recommendation basis: this repo's own established testing practice uses
+ * mock mode (`isLiveApiEnabled() === false`) for all local/preview
+ * verification — every browser check in this entire session used the
+ * mock-mode dev server, never a live-API preview deployment. There's no
+ * demonstrated need for Preview builds to hit authenticated live routes.
+ * Adding a production secret to every Preview deployment (spun up from any
+ * branch, including exploratory ones) would expand secret exposure for no
+ * proven benefit — the safer, least-privilege default is to leave Preview
+ * unauthenticated and document why, so future Build Health Checks don't
+ * re-flag the same expected errors as a new finding.
+ */
+export const BUILD_REQUEST_VERCEL_PREVIEW_SECRET_SCOPE: BuildApprovalRequest = {
+  id: "apr-build-vercel-preview-secret-scope",
+  // Note: this matches the runbook's documented Build gate "Any work
+  // affecting security/auth or external APIs" — not yet a 4th indexed
+  // entry in APPROVAL_GATES.build below (still 3 items on main as of this
+  // card); using the literal string rather than an out-of-bounds index.
+  gate: "Any work affecting security/auth or external APIs",
+  summary:
+    "43 preview-only auth rejections (19 users) on PR #59's Vercel deployment over the last 7 days — production is clean (PR #66/#67/#68 deploys show zero corresponding errors). Likely cause: INTERNAL_API_SECRET is scoped to Production only in Vercel, so Preview builds' /api/* routes reject by design. This is a small, non-emergency, preview-only decision — no production impact either way.",
+  riskLevel: "low",
+  testsOrChecksDone: [
+    { label: "Confirmed 43 errors trace to PR #59's Preview deployment, not production", status: "pass" },
+    { label: "Confirmed zero corresponding errors on recent production deploys (PR #66/#67/#68)", status: "pass" },
+    { label: "Confirmed this repo's established testing practice uses mock mode, not live-API preview access", status: "pass" },
+    { label: "Direct read of Vercel env-var Preview/Production scoping (names only, not values)", status: "pending" },
+  ],
+  requestedAction:
+    "Choose one: (a) add INTERNAL_API_SECRET to Preview scope in Vercel so previews behave like production; (b) leave as-is, no runbook change; (c) leave as-is AND document in the runbook that these preview auth errors are expected/known noise, not an incident. Recommend (c) — least-privilege (don't expand secret exposure to every preview branch without a proven need) plus prevents future Build Health Checks from re-flagging the same expected errors as new.",
+  filesOrAreas: ["Vercel project env vars (Preview scope)", "docs/AGENT_RUNBOOK.md (if (c) is chosen)"],
+  createdAt: "2026-07-04T18:05:18.000Z",
+};
+
 export const EXAMPLE_RESEARCH_REQUEST: ResearchApprovalRequest = {
   id: "apr-research-example-notification-vendor",
   gate: APPROVAL_GATES.research[1],
@@ -218,6 +268,7 @@ export const EXAMPLE_CONTENT_REQUEST: ContentApprovalRequest = {
 export const AGENT_APPROVAL_CARDS: ApprovalCard[] = [
   createApprovalCardFromPlannerRequest(EXAMPLE_PLANNER_REQUEST),
   createApprovalCardFromBuildRequest(BUILD_REQUEST_DUPLICATE_AUTH_FIX),
+  createApprovalCardFromBuildRequest(BUILD_REQUEST_VERCEL_PREVIEW_SECRET_SCOPE),
   createApprovalCardFromResearchRequest(EXAMPLE_RESEARCH_REQUEST),
   createApprovalCardFromContentRequest(EXAMPLE_CONTENT_REQUEST),
 ];
