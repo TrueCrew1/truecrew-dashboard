@@ -129,6 +129,16 @@ optional `title` override — through `createApprovalCardFromBuildRequest()`. Li
 `testsOrChecksDone`, `requestedAction`, `audience` (`"client" | "public"`), `createdAt` — through
 `createApprovalCardFromContentRequest()`.
 
+**External copy — no surprises.** Any change to external-facing copy (client-visible, public,
+marketing, product docs, outbound emails) must:
+- Always produce its own single-issue `ContentApprovalRequest` — one external change, one request.
+- Flow into a single-issue `ApprovalCard` — never bundled with anything else, internal or external.
+- Explicitly name the external surface (page, doc, email, campaign) and the proposed text change
+  in the request's `summary`, not left implicit.
+
+Internal-only changes (notes, runbooks, internal tickets) are not held to this — they may be
+bundled per the **Approval Load** rules like any other agent's internal work.
+
 ---
 
 ## Chief
@@ -235,10 +245,10 @@ notes and/or cards.
 - **Purpose:** keep internal docs, Agent Logs, and approval notes readable — not a publishing pass.
 - **Steps:** review the week's Build Log/Agent Log entries and recent approval card summaries; consolidate, fix inconsistent terms, remove stale TODOs; draft cleaner versions.
 - **Agent owner:** Content.
-- **Good output:** cleaned notes/docs **plus at most 1 `ApprovalCard`** — only if an external-facing copy change actually needs sign-off.
+- **Good output:** cleaned notes/docs **plus at most 1 bundled `ApprovalCard`** for internal items that need sign-off. External-facing findings are exempt from this cap — see "External copy — no surprises": each one gets its own single-issue card, never folded into the ≤1 internal card or capped alongside it.
 - **Auto-resolvable (log only, no card):** internal doc cleanup; fixing typos/broken links in internal notes; consolidating duplicate internal notes; standardizing terminology across logs.
-- **Needs approval:** any copy that ships to clients or the public; legal/terms/privacy/support-policy wording; critical UI wording.
-- **Logging:** Build Log entry noting what was tidied and where.
+- **Needs approval:** any copy that ships to clients or the public (own single-issue card, always); legal/terms/privacy/support-policy wording (same); critical UI wording (same).
+- **Logging:** Build Log entry noting what was tidied, and confirming no external-facing item was bundled.
 
 ### Chief Weekly Digest
 - **Purpose:** give the operator one summary of the week's approval activity instead of requiring them to scroll the Audit log.
@@ -266,19 +276,22 @@ turns every finding into a card has failed at this even if every card is individ
 
 **When Chief bundles instead of creating multiple cards:**
 - Multiple findings from the *same workflow run*, on the *same underlying thing* (e.g. three
-  minor wording tweaks on one page, two related migrations in one PR), become **one card** with
-  one checklist item per finding — not one card each.
+  minor wording tweaks across internal docs, two related migrations in one PR), become **one
+  card** with one checklist item per finding — not one card each.
 - Bundle only when the items share a recommended decision. If one finding is "approve" and
   another from the same batch is genuinely "needs changes," split them — don't let a bundle hide a
   real disagreement between items.
+- **External-facing copy is never eligible for bundling, full stop** — see "External copy — no
+  surprises" below. This overrides the general bundling rule; it is not a case-by-case judgment.
 
 **Priorities & Load rule — when a workflow surfaces more candidates than the cap:**
 1. Rank every candidate impact: **high** (production, security/auth, external comms, money) /
    **medium** (internal-but-structural, e.g. a roadmap tier change) / **low** (cosmetic, narrow
    blast radius).
 2. Surface **high**-impact items immediately, each as its own clear card.
-3. **Bundle** same-decision medium/low items into a single batched card ("3 minor content fixes
-   for the pricing page") rather than surfacing them individually.
+3. **Bundle** same-decision medium/low *internal* items into a single batched card (e.g. "3 minor
+   internal doc corrections") rather than surfacing them individually. External copy is excluded
+   from this step regardless of impact level — see below.
 4. If even bundled, low-impact items would pile up faster than David can reasonably review them,
    **defer** — log them and roll them into the next Chief Weekly Digest instead of creating cards
    now. Deferring is a logging decision, not a silent drop: it must still be visible in the Build
@@ -288,6 +301,17 @@ turns every finding into a card has failed at this even if every card is individ
 real risk (e.g. two unrelated migrations, or a merge decision next to a content decision) stays
 as separate cards — bundling is for reducing noise from *related, same-decision* items, not for
 hiding unrelated decisions inside each other.
+
+**External copy — no surprises (Chief's enforcement side).** This is the corresponding half of
+Content's rule above:
+- No bundled card may ever contain an external-facing copy change — not as the whole card, not as
+  one checklist line inside a larger bundle.
+- If an agent proposes a bundle that includes an external item alongside internal ones, Chief
+  splits the external item out into its own single-issue card *before* presenting anything to
+  David — this happens during card creation, not as a follow-up correction.
+- The Chief Weekly Digest may summarize external-facing work only by referencing the specific
+  cards David already approved (by title/ID) — it never introduces new external-facing text of
+  its own, even in summary form.
 
 **Safety is unaffected by any of this:** bundling and deferring change how many cards David sees
 and when, never whether a gate-hit action gets a cleared card before it happens. Every gate in
