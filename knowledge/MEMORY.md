@@ -9,6 +9,12 @@ acting).
 
 ## Active priorities
 
+**This section is vault-internal decisions, not the dashboard's actual operator
+priority.** Per the Chief Intake Rule (`docs/AGENT_RUNBOOK.md`), the real active
+Priority and Current Task live in Obsidian — `01_DASHBOARD/Current Priority List.md`
+and the active-task doc — and must be read separately, every time, before planning or
+execution. Don't treat this list as a substitute for that check.
+
 - [decisions/agent-runbook-adoption](decisions/agent-runbook-adoption.md) — the
   Agent Runbook itself is unmerged and has two versions in flight; check before citing
   a runbook section as "settled, merged policy."

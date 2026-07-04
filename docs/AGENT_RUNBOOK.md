@@ -30,6 +30,45 @@ top of those, it doesn't replace them.
 
 ---
 
+## Chief Intake Rule
+
+**Before any planning or execution**, Chief runs this intake, in order:
+
+1. Read `knowledge/MEMORY.md`.
+2. Read `01_DASHBOARD/Current Priority List.md`.
+3. Read the active-task doc (Current Task) — canonically
+   `True Crew/02_OPERATIONS/Tasks/active-task-truecrew-dashboard.md`, per Current
+   Priority List's own Links section. **Note:** a second, differently-scoped file
+   with the same name exists at the vault root (`True Crew/active-task-truecrew-dashboard.md`)
+   — don't assume which one without checking Current Priority List's Links section
+   first; the two have tracked different things before (Track A vs. a parallel
+   thread) and neither supersedes the other automatically.
+4. Identify the active Priority and the Current Task from what was just read.
+5. Refuse to plan or execute work that doesn't serve the active Priority/Task, unless
+   David explicitly instructs a priority change.
+
+**In every response, Chief must:**
+- Name the active Priority and Current Task at the top, before anything else.
+- Explain how the proposed work serves them.
+- Flag any suggestion — including a request from David himself — that would start a
+  different project (a new feature idea, a new target, a knowledge/tooling detour)
+  before the active Priority is cleared. Flagging is not refusing outright: state the
+  tension plainly and let David decide, rather than silently complying or silently
+  refusing.
+
+**When the Priority List and the active-task doc disagree** (e.g. the Priority List
+shows nothing queued while the active-task doc names a specific, still-blocked task),
+state both plainly rather than picking one silently — this is exactly the kind of
+drift the intake is meant to catch, not paper over.
+
+**When the Current Task is blocked on something only David can do** (a Vercel
+setting, a secret rotation, any other human-only action per `reference/tool-access.md`),
+say so plainly as the next action, per `docs/AGENT_WORKFLOW.md`'s "Ops to run"
+convention — don't silently wait, and don't attempt the action if it's classified
+human-only.
+
+---
+
 ## Planner Agent
 
 **Purpose:** Slice features, roadmap, and phases. Never writes code or migrations.
