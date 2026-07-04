@@ -47,13 +47,16 @@ export interface ApprovalChecklistItem {
 export type ApprovalRecommendedDecision = "approve" | "hold" | "needs_changes";
 
 /**
- * Where a proposal originated. Only "ops_change" (live operational signals,
- * via deriveApprovalCandidates) and "pr" (see chiefApprovalCardMocks.ts, demo
- * data only) are populated today. Extension point: add a real source (e.g.
- * "github_pr" backed by the GitHub API, or "agent_job" backed by a real
- * agent job queue) as those integrations come online.
+ * Where a proposal originated. Populated today: "ops_change" (live
+ * operational signals, via deriveApprovalCandidates), "pr" (see
+ * chiefApprovalCardMocks.ts, demo data only), and "repo_change" (see
+ * repoChangeApprovals.ts — a real pending local repo change, not demo data).
+ * "agent_build" is reserved, not yet wired to any source. Extension point:
+ * add a real source (e.g. "github_pr" backed by the GitHub API, or
+ * "agent_job" backed by a real agent job queue) as those integrations come
+ * online.
  */
-export type ApprovalSource = "pr" | "agent_build" | "ops_change";
+export type ApprovalSource = "pr" | "agent_build" | "ops_change" | "repo_change";
 
 export interface ApprovalProposal {
   id: string;
