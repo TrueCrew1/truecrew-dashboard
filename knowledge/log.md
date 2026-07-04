@@ -228,3 +228,24 @@ playbooks. Full reasoning in the Obsidian Build Log entry of the same name.
   `confidence`/`last_reviewed`; concept template restructured to the playbook shape.
 - **Counts after this pass:** concepts 6/10, projects 3/5, decisions 4/15,
   sources 10/50, **lessons 5/20**, **reference 2/10**. No caps hit or approached.
+
+---
+
+## 2026-07-04 — Chief Intake Rule added; MEMORY.md clarified
+
+- 2026-07-04 — updated — `docs/AGENT_RUNBOOK.md` — new § **Chief Intake Rule**:
+  before any planning/execution, read `knowledge/MEMORY.md`,
+  `01_DASHBOARD/Current Priority List.md`, and the active-task doc; name the active
+  Priority and Current Task at the top of every response; refuse off-priority work
+  without explicit direction; state plainly (don't silently pick) when the Priority
+  List and active-task doc disagree.
+- 2026-07-04 — updated — `MEMORY.md` — added a clarifying note that its own "Active
+  priorities" section is vault-internal decisions, not a substitute for reading the
+  real dashboard Priority List/active-task doc in Obsidian.
+- **Real finding from running this intake for the first time:** `Current Priority
+  List.md` shows no Track A priority queued ("awaiting next assignment"), while
+  `active-task-truecrew-dashboard.md` still names **Slice 2 — Supabase Health
+  Monitor** (PR #59) as the Current Task, blocked on a Vercel Deployment Protection
+  setting. Also surfaced: recent Second Brain vault work (this and prior passes)
+  serves neither document — flagged explicitly per the new rule rather than left
+  implicit.
