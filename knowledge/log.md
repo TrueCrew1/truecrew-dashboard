@@ -263,3 +263,20 @@ playbooks. Full reasoning in the Obsidian Build Log entry of the same name.
   Slice 2 as current were both correct, at different altitudes — Priority 1
   (Dashboard) is active; Slice 2 is its Current Task; no *Track A* item happens to be
   queued within it right now.
+
+---
+
+## 2026-07-04 — Tool Catalog cross-referenced (docs/TOOL_CATALOG.md is now authoritative)
+
+- 2026-07-04 — updated — `concepts/tool-catalog.md` — added a pointer to the new
+  `docs/TOOL_CATALOG.md` (repo `docs/`, not this vault) as the single
+  stable, schema-driven, appendable tool record; this concept page's reasoning and
+  the runbook's Tool Catalog sections feed it, they don't duplicate it.
+- 2026-07-04 — updated — `reference/tool-access.md` — same pointer; noted that if
+  the two ever disagree, `docs/TOOL_CATALOG.md` wins (it's the more granular,
+  more frequently updated record).
+- Flagged, per Chief Intake/Scope Guardrail before this work started: the broader
+  Tool System request (catalog + live Tool Launcher UI + a new Reliability agent)
+  didn't unblock the active Current Task (Slice 2). David chose to do the
+  governance/docs groundwork now and hold the live UI build until Slice 2 unblocks —
+  this entry covers only the groundwork; no dashboard UI code changed.
