@@ -1,6 +1,7 @@
 import { ApprovalSectionShell } from "./approvalWrappers";
 import {
   APPROVAL_RECENT_DECISION_HOURS,
+  APPROVAL_STALE_PENDING_HOURS,
   APPROVAL_STATUS_FILTER_LABEL,
   type ApprovalStatusFilter,
   type ApprovalStatusSummary,
@@ -79,6 +80,16 @@ export function ApprovalStatusDashboard({
             .join(" ");
 
           const label = APPROVAL_STATUS_FILTER_LABEL[metric.key];
+          const labelNode = (
+            <span className="chief-brief-metric-label">
+              {label}
+              {metric.key === "pending" && summary.stalePending > 0 ? (
+                <span className="badge-red chief-approval-stale-badge">
+                  {summary.stalePending} stale
+                </span>
+              ) : null}
+            </span>
+          );
 
           if (onFilterSelect && metric.count > 0) {
             return (
@@ -90,7 +101,7 @@ export function ApprovalStatusDashboard({
                 onClick={() => onFilterSelect(isActive ? "all" : metric.key)}
               >
                 <span className="chief-brief-metric-count">{metric.count}</span>
-                <span className="chief-brief-metric-label">{label}</span>
+                {labelNode}
               </button>
             );
           }
@@ -102,14 +113,17 @@ export function ApprovalStatusDashboard({
               aria-disabled="true"
             >
               <span className="chief-brief-metric-count">{metric.count}</span>
-              <span className="chief-brief-metric-label">{label}</span>
+              {labelNode}
             </div>
           );
         })}
       </div>
 
-      {(summary.recentDecisions > 0 || (onFilterSelect && summary.total > 0)) ? (
+      {(summary.stalePending > 0 || summary.recentDecisions > 0 || (onFilterSelect && summary.total > 0)) ? (
         <p className="chief-approval-status-footnote">
+          {summary.stalePending > 0
+            ? `Stale = pending more than ${APPROVAL_STALE_PENDING_HOURS} hours. `
+            : null}
           {summary.recentDecisions > 0
             ? `Recent = decided in the last ${APPROVAL_RECENT_DECISION_HOURS} hours. `
             : null}

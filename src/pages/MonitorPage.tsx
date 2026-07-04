@@ -10,8 +10,12 @@ import {
   TableScroll,
   TableText,
 } from "@/components/ui";
+import { ApprovalAlertsPanel } from "@/components/chief/ApprovalAlertsPanel";
+import { PlatformHealthCard } from "@/components/monitor/PlatformHealthCard";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
+import { isLiveApiEnabled } from "@/lib/api/client";
+import { useMonitorHealth } from "@/hooks/useMonitorHealth";
 import {
   filterIncidentsByShiftParam,
   SHIFT_FILTER_LABELS,
@@ -24,11 +28,23 @@ const statusVariant = (status: string) => {
   return "steel" as const;
 };
 
+function formatTimeAgo(iso: string): string {
+  if (!iso) return "—";
+  const diff = Date.now() - new Date(iso).getTime();
+  const hours = Math.floor(diff / 3600000);
+  if (hours < 1) return "just now";
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
 export function MonitorPage() {
   const { selectedEntityId, setSelectedEntityId } = useSelection();
   const { data } = useData();
   const [searchParams] = useSearchParams();
   const filter = searchParams.get("filter");
+  const health = useMonitorHealth();
+  const liveApiEnabled = isLiveApiEnabled();
 
   const filteredIncidents = useMemo(
     () => filterIncidentsByShiftParam(data.incidents, filter),
@@ -36,6 +52,32 @@ export function MonitorPage() {
   );
 
   const filterLabel = filter === "active-incidents" ? SHIFT_FILTER_LABELS["active-incidents"] : null;
+
+  // Vercel card state
+  const vercelLoading = health.vercel.loading;
+  const vercelError = health.vercel.error;
+  const vercelData = health.vercel.data;
+  const vercelStatus = vercelError ? "down" : vercelData?.latest?.state ?? "unknown";
+  const vercelMetrics = vercelData?.ok
+    ? [
+        { label: "Latest deploy", value: vercelStatus },
+        { label: "Deployed", value: formatTimeAgo(vercelData.latest?.createdAt ?? "") },
+        { label: "Recent count", value: vercelData.recent.length },
+      ]
+    : [];
+
+  // Supabase card state
+  const supabaseLoading = health.supabase.loading;
+  const supabaseError = health.supabase.error;
+  const supabaseData = health.supabase.data;
+  const supabaseStatus = supabaseData?.db_reachable ? "healthy" : "down";
+  const supabaseMetrics = supabaseData?.ok
+    ? [
+        { label: "DB reachable", value: supabaseData.db_reachable ? "Yes" : "No" },
+        { label: "Connections", value: supabaseData.connection_count ?? 0 },
+        { label: "Active", value: supabaseData.active_connections ?? 0 },
+      ]
+    : [];
 
   return (
     <>
@@ -53,6 +95,25 @@ export function MonitorPage() {
           </Link>
         </div>
       ) : null}
+
+      <div className="grid-2">
+        <PlatformHealthCard
+          title="Vercel"
+          status={vercelStatus}
+          metrics={vercelMetrics}
+          loading={vercelLoading}
+          error={vercelError}
+          mockMode={!liveApiEnabled}
+        />
+        <PlatformHealthCard
+          title="Supabase"
+          status={supabaseStatus}
+          metrics={supabaseMetrics}
+          loading={supabaseLoading}
+          error={supabaseError}
+          mockMode={!liveApiEnabled}
+        />
+      </div>
 
       <div className="page-stack">
         <Panel title="Service catalog">
@@ -117,6 +178,8 @@ export function MonitorPage() {
             </TableScroll>
           )}
         </Panel>
+
+        <ApprovalAlertsPanel />
 
         <Panel title={filterLabel ? `Incidents · ${filterLabel}` : "Open incidents"}>
           {data.incidents.length === 0 ? (
