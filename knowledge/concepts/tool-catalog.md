@@ -30,6 +30,11 @@ the catalog's classifications by hand.
 - Full classification lives in `docs/AGENT_RUNBOOK.md` § Tool Catalog / § External
   Services Tool Catalog; the fast-lookup version is `reference/tool-access.md` — use
   that during a real run instead of re-deriving from the narrative.
+- **`docs/TOOL_CATALOG.md`** (repo `docs/`) is now the single stable, schema-driven,
+  appendable record every future integration (including a Tool Launcher UI) reads
+  from — one block per tool (`id`, `name`, `category`, `owner_agent`, `access_type`,
+  `interface`, `launch_target`, `model_type`, `approval_required`, `notes`). New
+  tools get a new block there, not a new hardcoded UI entry.
 - Top priority candidates for real integration (ranked by proven/low-risk): GitHub
   PRs/CI, Obsidian Build Log, repo docs, Sentry (read-only, not yet used), Vercel
   deploy status (read-only, exercised for real — see `concepts/vercel-status-checks.md`).

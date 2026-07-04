@@ -13,7 +13,10 @@ related_prs: [71]
 Stable lookup table — who may touch what, and how. Distilled from
 `docs/AGENT_RUNBOOK.md` § Tool Catalog / External Services Tool Catalog and
 `concepts/tool-catalog.md` (read those for the reasoning; this page is for a fast
-lookup during a real run, not narrative).
+lookup during a real run, not narrative). **`docs/TOOL_CATALOG.md`** (repo root
+`docs/`, not this vault) is now the single stable, schema-driven, appendable record
+of every tool — this page's table is a human-readable summary of it, not a second
+source of truth. If the two ever disagree, `docs/TOOL_CATALOG.md` wins.
 
 **Access levels:** READ-ONLY (look, never change) · PROPOSE-ONLY (draft, human
 executes) · EXECUTE-WITH-APPROVAL (agent executes, only after a cleared card).
@@ -42,3 +45,5 @@ explicitly classified in `docs/AGENT_RUNBOOK.md` § Tool Catalog.
 - Concept: [tool-catalog](../concepts/tool-catalog.md) (the full reasoning and
   External Services table)
 - Runbook: `docs/AGENT_RUNBOOK.md` § Tool Catalog, § External Services Tool Catalog
+- Authoritative record: `docs/TOOL_CATALOG.md` (repo `docs/`) — one appendable block
+  per tool, the source a future Tool Launcher UI reads from

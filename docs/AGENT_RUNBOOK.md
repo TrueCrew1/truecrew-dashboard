@@ -10,6 +10,14 @@ turns into an `ApprovalCard` in the Chief → Approvals panel. The operator deci
 those cards — never through a direct ask from an agent. Give this file to a new agent session
 as-is; it's the operating contract, not background reading.
 
+**Reliability** is a sixth, **reserved** role — named in `docs/TOOL_CATALOG.md` as the
+future owner of health/fallback-chain monitoring, but not yet wired into
+`agentApprovalGates.ts`, not yet gated, and not yet an active participant in any
+workflow. Treat it the same way `chiefApprovalUrgency.ts` was treated for Phase 4:
+real and intentional, not aimless — but a future capability, not a current one. Don't
+build out Reliability's gates/workflows preemptively; that's its own scoped task when
+it's actually activated.
+
 See [docs/AGENT_WORKFLOW.md](AGENT_WORKFLOW.md) and
 [.claude/project-rules.md](../.claude/project-rules.md) for the underlying repo conventions
 (scoped changes, no invented features, industrial tone) — this runbook adds approval routing on
@@ -240,6 +248,15 @@ independent of it.
 ## Research Agent
 
 **Purpose:** Gather tools, patterns, vendors, and trade-offs. Never adopts anything unilaterally.
+
+**Iterative by default.** Research runs this loop, not a single pass: **plan** (what's
+actually being asked) → **gather** (real sources, not memory) → **critique** (poke
+holes in the first pass — what's weak, unverified, or one-sided) → **gap-fill**
+(chase down what critique surfaced) → **synthesize** (one clear answer, not a raw
+dump) → **verify** (check the synthesis against the sources one more time before
+handing it off). Single-pass is allowed only for trivial lookups (a fact with one
+obvious answer, not a comparison or a recommendation) — if it's worth a
+`ResearchApprovalRequest`, it's worth the full loop.
 
 **Allowed without approval:**
 - Internal-only research notes
@@ -842,6 +859,16 @@ planning and governance only — **no agent has been wired into any tool listed 
 AGENT-ELIGIBLE**; classification is a prerequisite for wiring one up later, not a grant of access.
 Default is least privilege: if a tool's real use is unconfirmed or its blast radius is unclear, it
 defaults to **HUMAN-ONLY**.
+
+**[docs/TOOL_CATALOG.md](TOOL_CATALOG.md) is now the single stable, appendable record** —
+one row per tool, fixed schema (`id`, `name`, `category`, `owner_agent`, `access_type`,
+`interface`, `launch_target`, `model_type`, `approval_required`, `notes`). The two
+tables below (this section and External Services Tool Catalog) are the *reasoning*
+behind those classifications and the input a future Tool Launcher UI will read from
+`docs/TOOL_CATALOG.md`, not `docs/TOOL_CATALOG.md`, directly — new tools get a new row
+there, not a new hardcoded entry in UI logic. Keep both in sync: a classification
+change updates the table it's reasoned in here **and** the row in
+`docs/TOOL_CATALOG.md`.
 
 **Access levels:**
 - **READ-ONLY** — agent may look, never change.
