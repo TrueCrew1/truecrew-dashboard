@@ -414,3 +414,41 @@ Ranked by how proven/low-risk they already are, not alphabetically:
 3. **Repo docs (`docs/*.md`, `README.md`)** — owner **Content** (with Build for technical docs) — `PROPOSE-ONLY` via PR, single-issue cards for anything public-facing. Already proven (the README tagline card).
 4. **Sentry (read-only)** — owner **Build** or **Research** — `READ-ONLY`. New, low-risk, and pairs naturally with the Daily Build Health Check for real incident correlation instead of just PR hygiene.
 5. **Vercel deploy status/preview URLs (read-only)** — owner **Build** — `READ-ONLY`. Mostly already happening ad hoc (`gh pr checks`); formalize as an explicit, bounded read-only integration rather than production/env-var access.
+
+---
+
+## External Services Tool Catalog
+
+David's actual AI/dev tool stack (per `CLAUDE.md`'s tool routing), classified the same way as
+the Tool Catalog above. Same rule applies: **nothing here is wired to any agent** — this is
+governance only. Nearly all of these (Claude Pro, Perplexity Pro, the free LLMs, Copilot) are
+**consumer chat subscriptions, not programmatic APIs** — there is no agent-callable integration
+for them today regardless of classification. "AGENT-ELIGIBLE" below means "fine in principle as a
+drafting/research input if API access is ever added," not "currently wireable." Vercel, Supabase,
+and Cursor are the exceptions — Vercel/Supabase already have real CLI/API surfaces this repo uses,
+and Cursor has real evidenced use in this repo's own PR history (many `cursor/*` branches).
+
+| Service | What it is / likely use | Classification | Suggested agent(s) | Access level |
+|---|---|---|---|---|
+| **Claude Pro** | Consumer chat (claude.ai), separate from Claude Code (this CLI); likely ad-hoc reasoning/drafting outside repo-scale work. | AGENT-ELIGIBLE (in principle) | Research, Content | PROPOSE-ONLY — no agent-callable API today; would need separate Anthropic API credentials |
+| **Perplexity Pro** | Live web-search LLM; per `CLAUDE.md`, David's tool for research/current-events questions. | AGENT-ELIGIBLE (in principle) | Research | PROPOSE-ONLY — research notes/citations only, no execution; same no-API-today caveat |
+| **Cursor Pro / VS Cursor** | AI-assisted code editor; real, evidenced use in this repo (many historical `cursor/*` PR branches). | AGENT-ELIGIBLE | Build | PROPOSE-ONLY — suggests diffs/PR content; merge/close always goes through Build's existing gate regardless of which tool authored the change |
+| **Vercel** | Hosting/deploy platform; already deeply used this session (deploy status, preview URLs, CI checks). | AGENT-ELIGIBLE | Build | READ-ONLY for deploy status/preview URLs (already effectively how it's used); PROPOSE-ONLY for config changes; `EXECUTE-WITH-APPROVAL` only if a future explicit deploy gate is added to this runbook — not defined yet |
+| **Supabase** | Postgres DB + migrations; real, extensively used this session (e.g. `chief_approval_decisions`). | AGENT-ELIGIBLE | Build | READ-ONLY for schema/status; PROPOSE-ONLY for migrations — already covered by Build's existing "database or schema migration" gate |
+| **free ChatGPT** | Per `CLAUDE.md`: manual overflow chat when Claude credits are low, or a quick second opinion. | AGENT-ELIGIBLE (in principle) | Research, Content | PROPOSE-ONLY — same no-API-today caveat |
+| **free Kimi** | Same category as ChatGPT — manual overflow/second-opinion chat. | AGENT-ELIGIBLE (in principle) | Research, Content | PROPOSE-ONLY — same caveat |
+| **free DeepSeek** | Same category — manual overflow/second-opinion chat. | AGENT-ELIGIBLE (in principle) | Research, Content | PROPOSE-ONLY — same caveat |
+| **free Gemini** | Per `CLAUDE.md`: large-context or multimodal tasks. | AGENT-ELIGIBLE (in principle) | Research, Content | PROPOSE-ONLY — same caveat |
+| **free Copilot** | Per `CLAUDE.md`, explicitly: "only if already surfaced inside Office/Windows tools; **not wired into this dev environment**." | **HUMAN-ONLY** | — | — |
+
+Note on Copilot: unlike Cursor, `CLAUDE.md` explicitly states Copilot isn't part of this repo's
+active coding workflow — classified HUMAN-ONLY on that basis (least privilege + not currently
+relevant), not bundled in with Cursor just because both are "IDE coding assistants."
+
+### Priority candidates from this list (3–5)
+
+1. **Build ↔ Vercel, READ-ONLY** — deploy status/preview URLs. Gate: none needed for reading; any config or production change stays HUMAN-ONLY until a deploy-specific gate is written.
+2. **Build ↔ Supabase, READ-ONLY (schema) / PROPOSE-ONLY (migrations)** — already Build's existing "database or schema migration" gate covers this; no new rule needed, just formalize the tool as in-scope.
+3. **Build ↔ Cursor, PROPOSE-ONLY** — Cursor drafts a diff/PR; the existing Build gate ("code change merging to main") governs whether it merges, same as any other PR regardless of authorship tool.
+4. **Research ↔ Perplexity Pro, PROPOSE-ONLY** — once API access exists: Research uses it for live web research, output is always a note or a `ResearchApprovalRequest`, never an executed action.
+5. **Research/Content ↔ a model-provider API (Claude/Gemini), PROPOSE-ONLY** — once real API credentials are provisioned (separate from the consumer subscriptions above): drafting only, routed through the normal `ResearchApprovalRequest`/`ContentApprovalRequest` path like any other agent output.
