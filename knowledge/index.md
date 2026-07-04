@@ -18,7 +18,7 @@ for the full rule set.
 | Decisions | 4 | 15 |
 | Sources | 10 | 50 |
 | Lessons | 5 | 20 |
-| Reference | 3 | 10 |
+| Reference | 4 | 10 |
 
 ## Concepts
 
@@ -97,6 +97,9 @@ Stable lookup pages — no narrative, just facts for a fast check during a real 
 - [Repair Playbook](reference/repair-playbook.md) — real degraded/blocked
   conditions: symptoms, detection signal, fix/workaround, when to retry the
   primary. Feeds the Reliability Agent's repair memory (still reserved).
+- [Tool Fallback Chains](reference/tool-fallbacks.md) — ~10 critical tools' primary
+  → fallback → degraded-path routing. Check before relying on a tool marked
+  `DEGRADED`/`BLOCKED` in `docs/TOOL_CATALOG.md`.
 
 ## Sources
 

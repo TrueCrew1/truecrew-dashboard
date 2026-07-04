@@ -195,6 +195,8 @@ new report format like Chief Intake's template above.
   decision elsewhere (e.g. via an open PR/card).
 - Risks and trade-offs are listed, not just the upside
 - Scoped against actual Build capacity, not aspirational
+- **Reliability-aware:** don't schedule a slice against a `BLOCKED` tool dependency
+  without noting it — see § Reliability Agent, `docs/TOOL_CATALOG.md`.
 
 **Approval request → card:** create a `PlannerApprovalRequest` — `gate`, `summary`, `riskLevel`,
 `testsOrChecksDone`, `requestedAction`, `affectedPhases`, `createdAt` — through
@@ -235,6 +237,9 @@ say explicitly whether the request extends, revises, or is independent of it.
 - **Meets the Global Standard** (see § Global Standard — Premium SaaS Quality Bar):
   architecture, security, accessibility, performance, and operational reliability
   considered, not just "does it pass `npm run qa`."
+- **Reliability-aware:** before relying on GitHub/Vercel/Supabase/Cursor for this
+  task, check `docs/TOOL_CATALOG.md`'s `health_state`; use the fallback in
+  `knowledge/reference/tool-fallbacks.md` if `BLOCKED`, note it if `DEGRADED`.
 
 **Approval request → card:** create a `BuildApprovalRequest` — `gate` (`BuildApprovalGate`),
 `summary`, `riskLevel`, `testsOrChecksDone`, `requestedAction`, `filesOrAreas`, `createdAt`,
@@ -271,6 +276,10 @@ obvious answer, not a comparison or a recommendation) — if it's worth a
 - At least two options compared, not a single default
 - Clear rationale and impact on True Crew specifically (not generic pros/cons)
 - Claims checked against actual docs, not memory — cite what was checked in `testsOrChecksDone`
+- **Reliability-aware:** check `knowledge/reference/tool-fallbacks.md` before
+  relying on Perplexity/Claude Pro/etc.; if a fallback was used because the primary
+  was `DEGRADED`/`BLOCKED`, say so in the output — don't present a fallback result
+  as if it came from the primary.
 
 **Approval request → card:** create a `ResearchApprovalRequest` — `gate`, `summary`, `riskLevel`,
 `testsOrChecksDone`, `requestedAction`, `alternativesConsidered`, `createdAt` — through
@@ -294,6 +303,8 @@ obvious answer, not a comparison or a recommendation) — if it's worth a
   generic-SaaS phrasing, no placeholder copy)
 - Links to context or prior copy included
 - No unverified feature/product claim in the draft — only describe what's actually shipped
+- **Reliability-aware:** same as Research — check `knowledge/reference/tool-fallbacks.md`
+  before relying on a drafting tool, and disclose if a fallback was used.
 
 **Approval request → card:** create a `ContentApprovalRequest` — `gate`, `summary`, `riskLevel`,
 `testsOrChecksDone`, `requestedAction`, `audience` (`"client" | "public"`), `createdAt` — through
@@ -393,6 +404,13 @@ Four states, applied per tool/surface in `docs/TOOL_CATALOG.md`:
 - **Treat `DEGRADED` as a warning, not a stop** — proceeding is fine, but say so:
   note the known issue in whatever gets produced (a PR description, a card, a
   summary), don't present output as if the tool were fully healthy.
+- **Use the next approved fallback, not an improvised one** — when a tool is
+  `BLOCKED`/`DEGRADED` and `knowledge/reference/tool-fallbacks.md` names a fallback
+  chain, use the documented next step (first fallback, then second/manual) — don't
+  substitute an untested tool of your own choosing.
+- **Return to the primary once it's marked `HEALTHY` again** — don't keep using a
+  fallback out of habit after the primary recovers; check state before defaulting
+  to whatever was used last time.
 - **Never `PROBING` unless designated** — only Reliability (or an agent Reliability
   has explicitly designated for a specific probe) attempts a recovery check on a
   `DEGRADED`/`BLOCKED` tool. No agent retries "just to see" on its own initiative —
@@ -453,6 +471,9 @@ operator's decision.
   `knowledge/concepts/` — if so, the resulting `ApprovalCard` links to that page and states
   whether it extends, revises, or is independent of it, so David doesn't have to re-derive
   context the vault already holds.
+- **Reliability-aware:** if the request depended on a tool `docs/TOOL_CATALOG.md`
+  marks `DEGRADED`/`BLOCKED`, confirm the agent used the documented fallback (or
+  disclosed the degradation) rather than silently proceeding on a known-bad tool.
 
 **Rules:**
 - Never bypass or dilute an approval gate — every action in each agent's "Requires Chief approval"
@@ -506,6 +527,7 @@ notes and/or cards.
 - **Purpose:** refresh slice and priority notes against current dashboard state and shipped work.
 - **Steps:**
   - **0a/0b. Second Brain check** — read `knowledge/MEMORY.md` first, then open only what it points to that's relevant here: `knowledge/projects/truecrew-dashboard.md`, `knowledge/concepts/dashboard-maintenance.md`, and any `knowledge/decisions/*.md` touching roadmap/priority topics (e.g. `agent-runbook-adoption.md` if the runbook itself is in flux). Summarize existing decisions, open questions, and applicable rules — this is a recall step, not a fresh investigation.
+  - **0d. Tool health check** — before scheduling work that depends on a specific tool, check its `health_state` in `docs/TOOL_CATALOG.md`; don't schedule a slice against a `BLOCKED` dependency without noting the fallback or the block.
   - **1.** Read the Build Log and current roadmap doc (`Chief/Approvals Roadmap.md`, `01_DASHBOARD/Current Priority List.md`); check what's shipped since the last pass **against the Second Brain summary**, not from scratch — don't repropose or re-flag something the vault already shows as decided, shipped, or already pending elsewhere (e.g. an open PR/card).
   - **2.** Draft updated slice/priority notes.
   - **3. Learning capture and promotion** — ask: what worked well enough to repeat, what failed clearly enough to avoid, what constraint did this surface, what recovery (if any) worked? If high-value (see Lessons), create or update the relevant `knowledge/lessons/*.md` file and log the promotion in `knowledge/log.md`; if not, the event log entry from step 1's logging is enough — don't force a lesson.
@@ -519,6 +541,7 @@ notes and/or cards.
 - **Purpose:** periodically audit the dashboard's UI/UX/code structure for small, safe, no-behavior-change fixes — the pattern proven by the July 2026 audit (PRs #75/#76/#77) — without letting it become an unbounded refactor.
 - **Steps:**
   - **0a/0b. Second Brain check** — read `knowledge/MEMORY.md` first, then `knowledge/concepts/dashboard-maintenance.md`, `knowledge/projects/dashboard-audit-july-2026.md`, `knowledge/projects/truecrew-dashboard.md`, and `knowledge/decisions/dashboard-maintenance-bundle.md`. Confirm what's already fixed vs. still open (e.g. the mobile Chief-panel/sidebar overlap, `chiefLiveContext.ts`/`ChiefPanel.tsx` size, spacing tokens — deliberately deferred by the prior pass) before auditing anything new.
+  - **0d. Tool health check** — check `docs/TOOL_CATALOG.md`/`knowledge/reference/tool-fallbacks.md` for any tool this pass depends on (e.g. GitHub, Vercel) before relying on it; use the documented fallback if `BLOCKED`, note it if `DEGRADED`.
   - **1.** Audit layout/UX, code structure, performance, and dead code, same categories as the prior pass; pick up findings not already tracked as deferred/open in the vault, or explicitly revisit a deferred one if it's now in scope — don't rediscover what's already catalogued.
   - **2.** Implement 2–3 safe, small, independently-verified fixes as separate branches/PRs — no direct push to `main`, no unrelated GitHub cleanup, same guardrails as the July 2026 pass.
   - **3.** Bundle same-decision fixes into one `ApprovalCard` per Approval Load; PR descriptions and the card both name which vault concept/decision pages they follow or extend (e.g. "follows `dashboard-maintenance.md`; extends the deferred-items list in `dashboard-audit-july-2026.md`").
@@ -533,6 +556,11 @@ notes and/or cards.
 - **Purpose:** catch stale, duplicate, or drifting PRs/branches before they pile up (the #57/#58 pattern).
 - **Steps:**
   - **0a/0b. Second Brain check** — read `knowledge/MEMORY.md` first, then `knowledge/concepts/dashboard-maintenance.md`, `knowledge/projects/truecrew-dashboard.md`, and any `knowledge/decisions/*.md` touching open PRs' topics (e.g. `auth-fix-secret-rotation.md`, `vercel-preview-secret-scope.md`). Summarize what's already known and already tracked before scanning.
+  - **0d. Tool health check** — GitHub is this workflow's primary tool; check its
+    `health_state` in `docs/TOOL_CATALOG.md` before scanning. If `BLOCKED`, use the
+    fallback in `knowledge/reference/tool-fallbacks.md` (plain `git`) for anything
+    that doesn't need the API/CLI, and don't attempt PR-specific actions until it
+    clears.
   - **1.** `gh pr list --state open`; scan for duplicates, stale branches, or PRs blocked on an unmet precondition, cross-checked against the Second Brain summary — e.g. don't re-flag PR #58 as a fresh duplicate-PR problem when the vault already tracks its rotation-confirmation blocker as a pending decision. Do not edit code or merge/close anything directly.
   - **2. Learning capture and promotion** — ask: did the Second Brain check prevent re-flagging something already known (a success pattern worth repeating)? Did any PR/branch situation reveal a durable constraint? High-value findings get a new or updated `knowledge/lessons/*.md` file plus a `knowledge/log.md` line; routine scans with nothing new stay in the Build Log only.
 - **Agent owner:** Build.
@@ -545,6 +573,10 @@ notes and/or cards.
 - **Purpose:** stay current on tools/integrations relevant to True Crew without committing to any of them.
 - **Steps:**
   - **0a/0b. Second Brain check** — read `knowledge/MEMORY.md` first, then any existing `knowledge/lessons/*.md` files tagged `research-pattern` and `knowledge/concepts/`/`knowledge/decisions/` pages on the domain being scanned (e.g. `tool-catalog.md`). Don't re-run a comparison the vault already shows was done and rejected/adopted.
+  - **0d. Tool health check** — before relying on Perplexity/Claude Pro/etc. for this
+    scan, check `knowledge/reference/tool-fallbacks.md`; if the primary is
+    `DEGRADED`/`BLOCKED`, use the documented fallback and say so in the comparison
+    output, don't present it as if the primary tool was used.
   - **1.** Compare at least two options against the current stack (per `CLAUDE.md`'s tool routing and `package.json`); note cost, maintenance burden, and fit; write up facts vs. guesses per the `truecrew-research` skill.
   - **2. Learning capture and promotion** — ask: which search/query approach or source turned out trustworthy vs. noisy, which synthesis approach produced a genuinely useful comparison, which research path was a dead end not worth repeating? High-value findings get a new or updated `knowledge/lessons/*.md` file (category `research-pattern`) plus a `knowledge/log.md` line; a routine scan that confirms nothing new stays logged, not promoted.
 - **Agent owner:** Research.
@@ -577,6 +609,10 @@ notes and/or cards.
 - **Purpose:** catch overlaps where a Research recommendation, a Planner roadmap item, and Build's actual code/PRs disagree or duplicate effort on the same capability — before the operator discovers the conflict after the fact.
 - **Owner:** Chief.
 - **Step 0a/0b — Second Brain check:** read `knowledge/MEMORY.md` first, then `knowledge/concepts/approval-load.md`, `knowledge/concepts/tool-catalog.md`, `knowledge/projects/truecrew-dashboard.md`, and any `knowledge/decisions/*.md` on the domain being correlated (auth, Vercel/Supabase, tooling). Summarize existing decisions and open questions so a correlation already resolved or already tracked in the vault isn't flagged as new.
+- **Step 0d — Tool health check:** any tool this pass needs to cross-reference PRs,
+  roadmap docs, or research recommendations (GitHub, Obsidian) — check its
+  `health_state` first; a `BLOCKED` input tool means the correlation is incomplete,
+  not wrong — say so rather than presenting a partial scan as exhaustive.
 - **Inputs:**
   - Research: recent adopt/drop or tool/library/service recommendations; open `ResearchApprovalRequest`s.
   - Planner: roadmap slices/phases touching the same domain (auth, dashboard, agents, etc.); any Planner-origin PRs.
