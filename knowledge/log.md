@@ -280,3 +280,24 @@ playbooks. Full reasoning in the Obsidian Build Log entry of the same name.
   didn't unblock the active Current Task (Slice 2). David chose to do the
   governance/docs groundwork now and hold the live UI build until Slice 2 unblocks —
   this entry covers only the groundwork; no dashboard UI code changed.
+
+---
+
+## 2026-07-04 — Reliability Agent fully defined (reserved) + Repair Playbook created
+
+- 2026-07-04 — updated — `docs/AGENT_RUNBOOK.md` — § Reliability Agent added in full
+  (purpose, responsibilities, boundaries, ownership under Chief, four health states
+  with transition rules, required cross-agent behavior, event format). Still
+  reserved — no code/gate/workflow wiring.
+- 2026-07-04 — created — `reference/repair-playbook.md` — compact repair-memory
+  schema, seeded with 3 real entries: Vercel Preview `INTERNAL_API_SECRET` gap
+  (active, pending decision), internal-auth 401s blocked on secret rotation
+  (active, pending David's confirmation), `chiefApprovalUrgency.ts`
+  reserved-but-unused (active, intentional — not an incident).
+- 2026-07-04 — updated — `MEMORY.md`, `index.md`, `reference/tool-access.md` —
+  cross-linked the new repair-playbook page; vault-size table updated
+  (Reference 2/10 → 3/10).
+- **Counts after this pass:** concepts 6/10, projects 3/5, decisions 4/15,
+  sources 10/50, lessons 5/20, **reference 3/10**. No caps hit or approached.
+- No dashboard UI or app code changed — governance/memory only, per the explicit
+  boundary in this task.
