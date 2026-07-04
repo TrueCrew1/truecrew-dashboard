@@ -191,3 +191,50 @@ approval (loosening or tightening a gate), open it as a **Build approval request
 ("Changes to approval-related UX or logic" gate) so the change itself goes through Chief before
 it takes effect — this file is the rulebook, and rulebook changes are exactly the kind of thing
 the rulebook says needs a cleared card.
+
+---
+
+## Agent Workflows
+
+Recurring, on-demand passes each agent runs when asked. None of these run on a timer — the
+operator triggers them by asking Chief. Every workflow follows the same shape: gather inputs, do
+the routine part directly, and route anything gate-worthy through an `*ApprovalRequest` like any
+other agent action. A workflow never merges, deploys, or publishes on its own — it only produces
+notes and/or cards.
+
+### Weekly Planner Pass
+- **Purpose:** refresh slice and priority notes against current dashboard state and shipped work.
+- **Steps:** read the Build Log and current roadmap doc (`Chief/Approvals Roadmap.md`, `01_DASHBOARD/Current Priority List.md`); check what's shipped since the last pass; draft updated slice/priority notes.
+- **Agent owner:** Planner.
+- **Approval gate:** none for routine note refresh (falls under "refine internal plans" — allowed without approval). If the pass concludes a roadmap tier/phase should change, create a `PlannerApprovalRequest` per the Planner gate list.
+- **Logging:** Build Log entry noting what was refreshed and what's unchanged; if a card was created, link it.
+
+### Daily Build Health Check
+- **Purpose:** catch stale, duplicate, or drifting PRs/branches before they pile up (the #57/#58 pattern).
+- **Steps:** `gh pr list --state open`; scan for duplicates, stale branches, or PRs blocked on an unmet precondition; do not edit code or merge/close anything directly.
+- **Agent owner:** Build.
+- **Approval gate:** any actual merge, close, or code change → `BuildApprovalRequest` (per Build's gate list — this is exactly what produced `BUILD_REQUEST_DUPLICATE_AUTH_FIX`). A pure scan with nothing actionable found needs no card.
+- **Logging:** Build Log entry listing what was scanned and what (if anything) surfaced as a card.
+
+### Weekly Research Scan
+- **Purpose:** stay current on tools/integrations relevant to True Crew without committing to any of them.
+- **Steps:** compare at least two options against the current stack (per `CLAUDE.md`'s tool routing and `package.json`); note cost, maintenance burden, and fit; write up facts vs. guesses per the `truecrew-research` skill.
+- **Agent owner:** Research.
+- **Approval gate:** none for a survey/comparison note (allowed without approval). A `ResearchApprovalRequest` is only needed if the scan concludes with a recommendation to actually adopt or drop a tool/vendor.
+- **Logging:** Build Log or Agent Log entry with the comparison and, if applicable, the card link.
+
+### Weekly Content Tidy
+- **Purpose:** keep internal docs, Agent Logs, and approval notes readable — not a publishing pass.
+- **Steps:** review the week's Build Log/Agent Log entries and recent approval card summaries; consolidate, fix inconsistent terms, remove stale TODOs; draft cleaner versions.
+- **Agent owner:** Content.
+- **Approval gate:** none for internal tidying (allowed without approval). If tidying surfaces copy that's actually client- or public-facing, that copy needs its own `ContentApprovalRequest` — the internal cleanup itself does not.
+- **Logging:** Build Log entry noting what was tidied and where.
+
+### Chief Weekly Digest
+- **Purpose:** give the operator one summary of the week's approval activity instead of requiring them to scroll the Audit log.
+- **Steps:** summarize cards resolved this week (approved/sent back/rejected), list what's still pending, and flag anything the stale-pending badge has already caught.
+- **Agent owner:** Chief.
+- **Approval gate:** none — this is reporting, not an action; nothing here changes state.
+- **Logging:** Build Log entry with the digest, so it's part of the same record as everything else.
+
+**How Chief handles it, every time:** whichever workflow ran, any `*ApprovalRequest` it produced goes through the usual `createApprovalCardFrom*Request()` path and shows up in Chief → Approvals like any other card — a workflow is just another way a request gets created, not a separate approval path.
