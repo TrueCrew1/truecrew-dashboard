@@ -249,3 +249,17 @@ playbooks. Full reasoning in the Obsidian Build Log entry of the same name.
   setting. Also surfaced: recent Second Brain vault work (this and prior passes)
   serves neither document — flagged explicitly per the new rule rather than left
   implicit.
+
+---
+
+## 2026-07-04 — Master Priority List wired into MEMORY.md
+
+- 2026-07-04 — updated — `MEMORY.md` — "Active priorities" clarifying note now also
+  points at `True Crew/Master Priority List.md` (top-level, cross-project: Dashboard
+  → Painting App V2 → Targets/Growth), alongside the dashboard-internal Current
+  Priority List and active-task doc.
+- Resolves the tension flagged in the prior Chief Intake entry: the dashboard's own
+  Current Priority List showing "nothing queued" and the active-task doc showing
+  Slice 2 as current were both correct, at different altitudes — Priority 1
+  (Dashboard) is active; Slice 2 is its Current Task; no *Track A* item happens to be
+  queued within it right now.
