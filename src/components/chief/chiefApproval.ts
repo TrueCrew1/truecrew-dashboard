@@ -1,5 +1,5 @@
 import type { Persona } from "@/types";
-import type { ApprovalAction, ApprovalStatus } from "./types";
+import type { ApprovalAction, ApprovalRecommendedDecision, ApprovalSource, ApprovalStatus } from "./types";
 import { formatChiefTimestamp } from "./chiefMock";
 
 export type ApprovalActionPhase = "idle" | "loading" | "success" | "error";
@@ -35,6 +35,36 @@ export const APPROVAL_ACTION_LABEL: Record<ApprovalAction, string> = {
   approved: "Approve",
   rejected: "Reject",
   sent_back: "Send back",
+};
+
+export const APPROVAL_RECOMMENDED_DECISION_LABEL: Record<ApprovalRecommendedDecision, string> = {
+  approve: "Recommend: Approve",
+  hold: "Recommend: Hold",
+  needs_changes: "Recommend: Needs changes",
+};
+
+export const APPROVAL_RECOMMENDED_DECISION_BADGE: Record<ApprovalRecommendedDecision, string> = {
+  approve: "badge-green",
+  hold: "badge-yellow",
+  needs_changes: "badge-red",
+};
+
+export const APPROVAL_SOURCE_LABEL: Record<ApprovalSource, string> = {
+  pr: "PR",
+  agent_build: "Agent Build",
+  ops_change: "Ops change",
+};
+
+export const APPROVAL_SOURCE_BADGE: Record<ApprovalSource, string> = {
+  pr: "badge-blue",
+  agent_build: "badge-orange",
+  ops_change: "badge-steel",
+};
+
+export const APPROVAL_CHECKLIST_STATUS_ICON: Record<"pass" | "fail" | "pending", string> = {
+  pass: "✓",
+  fail: "✗",
+  pending: "○",
 };
 
 export function approvalActionToStatus(action: ApprovalAction): ApprovalAction {
