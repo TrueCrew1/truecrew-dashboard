@@ -17,6 +17,11 @@ those sections classify *into*.
 - `launch_target` — URL or launch point; `not yet confirmed` if unverified rather than
   guessed
 - `model_type` — underlying model family for AI tools; `n/a` otherwise
+- `health_state` — `HEALTHY` / `DEGRADED` / `BLOCKED` / `PROBING`, per
+  `docs/AGENT_RUNBOOK.md` § Reliability Agent. Defaults to `HEALTHY` for every tool —
+  Reliability is still reserved and not actively monitoring; this field is where it
+  will write real state once activated. See `knowledge/reference/tool-fallbacks.md`
+  for the ~10 critical tools' fallback chains.
 - `approval_required` — `yes` / `no`, scoped per access_type if they differ
 - `notes` — one line, cites the runbook section this classification reasons from
 
@@ -36,6 +41,7 @@ enumerate tools in code.
 - interface: cli
 - launch_target: this repo's terminal session
 - model_type: Claude (Sonnet 5 / Opus 4.8 family)
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - approval_required: yes — governed entirely by this runbook's existing gates, not a
   new classification
 - notes: not an external tool to launch; included for completeness since it's the
@@ -49,6 +55,7 @@ enumerate tools in code.
 - interface: web
 - launch_target: https://claude.ai
 - model_type: Claude
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - approval_required: no
 - notes: consumer chat, separate from Claude Code — PROPOSE-ONLY in principle, no
   agent-callable API today. See § External Services Tool Catalog.
@@ -61,6 +68,7 @@ enumerate tools in code.
 - interface: web
 - launch_target: https://chatgpt.com
 - model_type: GPT
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - approval_required: no
 - notes: manual overflow/second-opinion chat, per `CLAUDE.md` tool routing.
 
@@ -72,6 +80,7 @@ enumerate tools in code.
 - interface: web
 - launch_target: https://www.perplexity.ai
 - model_type: Perplexity (web-search LLM)
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - approval_required: no
 - notes: live web/current-events research, per `CLAUDE.md` tool routing.
 
@@ -83,6 +92,7 @@ enumerate tools in code.
 - interface: web
 - launch_target: https://gemini.google.com
 - model_type: Gemini
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - approval_required: no
 - notes: large-context/multimodal tasks, per `CLAUDE.md` tool routing.
 
@@ -94,6 +104,7 @@ enumerate tools in code.
 - interface: web
 - launch_target: not yet confirmed
 - model_type: DeepSeek
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - approval_required: no
 - notes: manual overflow chat when Claude credits are low, per `CLAUDE.md`.
 
@@ -105,6 +116,7 @@ enumerate tools in code.
 - interface: web
 - launch_target: not yet confirmed
 - model_type: Kimi
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - approval_required: no
 - notes: manual overflow chat, per `CLAUDE.md`.
 
@@ -116,6 +128,7 @@ enumerate tools in code.
 - interface: cli / local
 - launch_target: local machine
 - model_type: local open models
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - approval_required: no
 - notes: powers Continue.dev autocomplete per `CLAUDE.md` — not wired to any
   Planner/Build/Research/Content/Chief workflow.
@@ -130,6 +143,7 @@ enumerate tools in code.
 - interface: cli (`gh`) / web
 - launch_target: https://github.com/TrueCrew1/truecrew-dashboard
 - model_type: n/a
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - approval_required: yes (merge/close); no (browsing)
 - notes: EXECUTE-WITH-APPROVAL for merge/close, READ-ONLY for browsing — already
   proven in practice. See § Tool Catalog.
@@ -143,6 +157,7 @@ enumerate tools in code.
 - interface: web / mcp
 - launch_target: https://vercel.com
 - model_type: n/a
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - approval_required: no (read); n/a — human-only (config)
 - notes: deploy-status read access already exercised for real this session. See §
   Tool Catalog, § Dashboards & analytics.
@@ -155,6 +170,7 @@ enumerate tools in code.
 - interface: web / api
 - launch_target: https://supabase.com/dashboard
 - model_type: n/a
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - approval_required: yes (migrations — Build's existing "database or schema
   migration" gate); no (read)
 - notes: console/dashboard (billing, service keys) stays human-only.
@@ -167,6 +183,7 @@ enumerate tools in code.
 - interface: web
 - launch_target: not yet confirmed — not yet connected
 - model_type: n/a
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - approval_required: no
 - notes: new, low-risk, pairs with Daily Build Health Check for real incident
   correlation — not yet in active use.
@@ -179,6 +196,7 @@ enumerate tools in code.
 - interface: desktop-app
 - launch_target: local
 - model_type: n/a (multi-model editor)
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - approval_required: yes — merge/close always goes through Build's normal gate
   regardless of authorship tool
 - notes: real evidenced use in this repo's history (`cursor/*` branches).
@@ -191,6 +209,7 @@ enumerate tools in code.
 - interface: desktop-app
 - launch_target: local
 - model_type: n/a
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - approval_required: no
 - notes: Continue.dev + Ollama autocomplete runs here, per `CLAUDE.md` — not part of
   the agent system.
@@ -205,6 +224,7 @@ enumerate tools in code.
 - interface: filesystem (vault)
 - launch_target: local vault
 - model_type: n/a
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - approval_required: no
 - notes: logging is Chief's own responsibility, no gate — proven every session.
 
@@ -217,6 +237,7 @@ enumerate tools in code.
 - interface: filesystem (vault)
 - launch_target: local vault
 - model_type: n/a
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - approval_required: yes (a genuine change — `PlannerApprovalRequest`); no (routine
   sync)
 - notes: see the Weekly Planner Pass precedent in the Build Log.
@@ -229,6 +250,7 @@ enumerate tools in code.
 - interface: filesystem (repo)
 - launch_target: this repo
 - model_type: n/a
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - approval_required: yes (external-facing docs — single-issue card); no (internal)
 - notes: Content's "external copy — no surprises" rule applies to anything
   public-facing, including a public README.
@@ -241,6 +263,7 @@ enumerate tools in code.
 - interface: in-app
 - launch_target: this app
 - model_type: n/a
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - approval_required: governed by the dashboard's own existing stage-gate logic, not
   a new tool-catalog gate
 - notes: not an external tool — the product's own domain. Included because "tasks"
@@ -254,6 +277,7 @@ enumerate tools in code.
 - interface: web / desktop-app
 - launch_target: not yet confirmed
 - model_type: n/a
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - approval_required: n/a
 - notes: no confirmed agent use case yet — least-privilege default per Global
   Standard, same treatment as Zapier/ticketing in § External SaaS.
@@ -266,6 +290,7 @@ enumerate tools in code.
 - interface: web / app
 - launch_target: not yet confirmed
 - model_type: n/a
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - approval_required: n/a
 - notes: scheduling mistakes are highly visible and affect other people's time — see
   § External SaaS.
@@ -278,6 +303,7 @@ enumerate tools in code.
 - interface: web
 - launch_target: https://mail.google.com
 - model_type: n/a
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - approval_required: n/a
 - notes: interpersonal comms + inbox PII — too sensitive for even read access. See §
   External SaaS.

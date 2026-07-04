@@ -79,3 +79,6 @@ execution. Don't treat this list as a substitute for that check.
 - [reference/repair-playbook](reference/repair-playbook.md) — real degraded/blocked
   conditions and their fixes/workarounds. Check before assuming a tool that's had
   issues before is safe to use.
+- [reference/tool-fallbacks](reference/tool-fallbacks.md) — primary → fallback →
+  degraded-path routing for the ~10 most critical tools. Check before proceeding on
+  a tool marked `DEGRADED`/`BLOCKED`.
