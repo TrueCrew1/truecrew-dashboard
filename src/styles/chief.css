@@ -2550,6 +2550,18 @@ button.chief-brief-metric {
   background: rgba(255, 122, 26, 0.1) !important;
 }
 
+.chief-approval-stale-badge {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 1px 5px;
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+  vertical-align: middle;
+  border-radius: 999px;
+}
+
 .chief-approval-status-footnote {
   margin: 8px 0 0;
   font-size: 10px;
