@@ -49,14 +49,22 @@ export type ApprovalRecommendedDecision = "approve" | "hold" | "needs_changes";
 /**
  * Where a proposal originated. Populated today: "ops_change" (live
  * operational signals, via deriveApprovalCandidates), "pr" (see
- * chiefApprovalCardMocks.ts, demo data only), and "repo_change" (see
- * repoChangeApprovals.ts — a real pending local repo change, not demo data).
- * "agent_build" is reserved, not yet wired to any source. Extension point:
- * add a real source (e.g. "github_pr" backed by the GitHub API, or
- * "agent_job" backed by a real agent job queue) as those integrations come
- * online.
+ * chiefApprovalCardMocks.ts, demo data only), "repo_change" (see
+ * repoChangeApprovals.ts — a real pending local repo change), and the four
+ * agent sources — "planner_agent" / "agent_build" / "research_agent" /
+ * "content_agent" (see agentApprovalGates.ts — each agent's approval
+ * requests mapped to cards; example/mock requests for now, same helper
+ * pattern every agent must use). Extension point: add a real source (e.g.
+ * "github_pr" backed by the GitHub API) as that integration comes online.
  */
-export type ApprovalSource = "pr" | "agent_build" | "ops_change" | "repo_change";
+export type ApprovalSource =
+  | "pr"
+  | "agent_build"
+  | "ops_change"
+  | "repo_change"
+  | "planner_agent"
+  | "research_agent"
+  | "content_agent";
 
 export interface ApprovalProposal {
   id: string;
@@ -86,6 +94,13 @@ export interface ApprovalProposal {
  * a card once it carries a checklist/recommendedDecision/source. Named
  * separately so call sites can express intent (e.g. `ApprovalCard[]` for a
  * list of fully-formed review cards) without a second parallel type.
+ *
+ * Operating rule: this is the ONLY path to the operator's decision. No agent
+ * (Planner, Build, Research, Content, or any future one) messages the
+ * operator directly for approval — each builds its own request shape and
+ * passes it through the matching `createApprovalCardFrom*Request()` helper
+ * in `agentApprovalGates.ts`, which Chief renders here. See that file's
+ * header and `docs/AGENT_WORKFLOW.md` for the full rule.
  */
 export type ApprovalCard = ApprovalProposal;
 
