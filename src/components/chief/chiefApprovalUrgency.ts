@@ -1,3 +1,13 @@
+/**
+ * Reserved for Chief Approvals Roadmap Phase 4 (Alerts & Escalation) — not
+ * currently imported anywhere. The shipped stale-pending badge in
+ * `ApprovalStatusDashboard` (see `approvalStatus.ts`) is a simpler, single-
+ * threshold indicator built for an earlier, smaller slice; it does not use
+ * this three-tier urgency model. Wire this in (or fold the two together)
+ * when Phase 4 is actually scheduled — don't delete casually, but don't
+ * treat it as already-shipped behavior either.
+ */
+
 /** Hours pending before a proposal is considered due soon (no badge below this). */
 export const DUE_SOON_HOURS = 24;
 
