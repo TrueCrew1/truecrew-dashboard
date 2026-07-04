@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
+  formatRelativeTime,
   PageHeader,
   Panel,
   PanelEmpty,
@@ -28,16 +29,6 @@ const statusVariant = (status: string) => {
   return "steel" as const;
 };
 
-function formatTimeAgo(iso: string): string {
-  if (!iso) return "—";
-  const diff = Date.now() - new Date(iso).getTime();
-  const hours = Math.floor(diff / 3600000);
-  if (hours < 1) return "just now";
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-}
-
 export function MonitorPage() {
   const { selectedEntityId, setSelectedEntityId } = useSelection();
   const { data } = useData();
@@ -61,7 +52,7 @@ export function MonitorPage() {
   const vercelMetrics = vercelData?.ok
     ? [
         { label: "Latest deploy", value: vercelStatus },
-        { label: "Deployed", value: formatTimeAgo(vercelData.latest?.createdAt ?? "") },
+        { label: "Deployed", value: formatRelativeTime(vercelData.latest?.createdAt ?? "") },
         { label: "Recent count", value: vercelData.recent.length },
       ]
     : [];
