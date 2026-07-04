@@ -336,3 +336,81 @@ Content's rule above:
 and when, never whether a gate-hit action gets a cleared card before it happens. Every gate in
 every agent's section above still applies in full; this section only governs presentation and
 timing of the resulting cards.
+
+---
+
+## Tool Catalog
+
+First-pass inventory of tools in David's actual stack, classified for agent access. This is
+planning and governance only — **no agent has been wired into any tool listed here as
+AGENT-ELIGIBLE**; classification is a prerequisite for wiring one up later, not a grant of access.
+Default is least privilege: if a tool's real use is unconfirmed or its blast radius is unclear, it
+defaults to **HUMAN-ONLY**.
+
+**Access levels:**
+- **READ-ONLY** — agent may look, never change.
+- **PROPOSE-ONLY** — agent may draft a change; a human executes it even after approval.
+- **EXECUTE-WITH-APPROVAL** — agent may execute the change itself, but only after a cleared
+  `ApprovalCard`.
+
+### Code & repo tools
+
+| Tool | Classification | Suggested agent(s) | Access | Gate / notes |
+|---|---|---|---|---|
+| GitHub (repo, PRs, issues) | AGENT-ELIGIBLE | Build | EXECUTE-WITH-APPROVAL for merge/close; READ-ONLY for browsing | Build's existing gate — any merge/close needs a cleared card. Already proven in practice this session. |
+| CI status (GitHub Actions, Vercel preview checks) | AGENT-ELIGIBLE | Build | READ-ONLY | No gate — checking status is routine, not a change. |
+| GitHub webhook / CI pipeline config | HUMAN-ONLY | — | — | Security-sensitive infra; changing it (not just reading status) is out of scope for now. |
+| GitHub repo/org permissions (collaborators, branch protection) | HUMAN-ONLY | — | — | Access-control surface, not a code or content change. |
+
+### Docs & notes
+
+| Tool | Classification | Suggested agent(s) | Access | Gate / notes |
+|---|---|---|---|---|
+| Obsidian vault — Build Log / Agent Log | AGENT-ELIGIBLE | Chief | READ/WRITE, no gate | Logging is Chief's own responsibility per this runbook, not itself a decision. Already proven in practice every session. |
+| Obsidian vault — roadmap/decision docs (e.g. Approvals Roadmap) | AGENT-ELIGIBLE | Planner, Chief | PROPOSE-ONLY for new decisions; direct edit only for syncing a doc to an already-established fact (see Planner's Weekly Pass precedent) | A genuine roadmap/phase change still needs a `PlannerApprovalRequest` first. |
+| Repo docs (`docs/*.md`, `README.md`) | AGENT-ELIGIBLE | Content, Build | PROPOSE-ONLY via PR; external-facing bits (e.g. README) get their own single-issue card | Content's "external copy — no surprises" rule applies to anything public-facing, including a public README. |
+| Notion | HUMAN-ONLY | — | — | Not authorized in this environment; also redundant with Obsidian as the vault of record — no clear need yet. |
+| Google Drive | HUMAN-ONLY | — | — | Contents/sensitivity not scoped; revisit if a specific, narrow folder becomes relevant. |
+
+### Dashboards & analytics
+
+| Tool | Classification | Suggested agent(s) | Access | Gate / notes |
+|---|---|---|---|---|
+| Vercel — deploy status, preview URLs | AGENT-ELIGIBLE | Build | READ-ONLY | Already effectively checked via `gh pr checks`; formalize as read-only. |
+| Vercel — env vars, production project settings | HUMAN-ONLY | — | — | Secrets and production config; see Auth/Infra below. |
+| Sentry (error tracking) | AGENT-ELIGIBLE | Build, Research | READ-ONLY | Useful for correlating an incident with a Build Health Check finding; no write access needed. |
+| Supabase — schema/migrations (via code) | AGENT-ELIGIBLE | Build | PROPOSE-ONLY | Already covered by Build's existing "database or schema migration" gate. |
+| Supabase — project console/dashboard (billing, service keys) | HUMAN-ONLY | — | — | Infra/secrets surface, not a code change. |
+| Netlify | HUMAN-ONLY | — | — | Deprecated per `README.md` — no reason to wire in inactive infra. |
+
+### External SaaS (tickets, CRM, email, calendar, sites)
+
+| Tool | Classification | Suggested agent(s) | Access | Gate / notes |
+|---|---|---|---|---|
+| Gmail | HUMAN-ONLY | — | — | Interpersonal comms + inbox PII; too sensitive for even read access right now. |
+| Wix (public site, if this is the marketing site) | AGENT-ELIGIBLE | Content | PROPOSE-ONLY | Content's external-copy gate applies directly — draft only, human publishes. |
+| Zapier (cross-app automation) | HUMAN-ONLY | — | — | Deliberately unscoped/broad by design — reconsider only for one specific, narrow Zap at a time, not blanket access. |
+| Ticketing system (generic — none confirmed in use) | HUMAN-ONLY | — | — | Placeholder category; likely contains customer PII and high-stakes responses. |
+| CRM (generic — none confirmed in use) | HUMAN-ONLY | — | — | Same reasoning as ticketing. |
+| Calendar (generic — none confirmed in use) | HUMAN-ONLY | — | — | Scheduling mistakes are highly visible and affect other people's time. |
+| Airtable, Canva, Microsoft 365, QuickNode, Whimsical | HUMAN-ONLY | — | — | Connected but not yet authorized in this environment; no established True Crew use case yet — revisit individually if one emerges. |
+
+### Auth / infra
+
+| Tool | Classification | Suggested agent(s) | Access | Gate / notes |
+|---|---|---|---|---|
+| Secrets stores (`INTERNAL_API_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`, `GITHUB_WEBHOOK_SECRET`, etc.) | HUMAN-ONLY | — | — | Never agent-writable or agent-readable, by design — these are already write-only/redacted in the platforms that hold them. |
+| Deployment environments (Vercel Production project config) | HUMAN-ONLY | — | — | Build already has read-only visibility via deploy status/CI (see Dashboards above) — that's the ceiling for now. |
+| Domain / DNS management | HUMAN-ONLY | — | — | No established agent use case; high blast radius if misconfigured. |
+
+---
+
+## Priority candidates for initial agent integration
+
+Ranked by how proven/low-risk they already are, not alphabetically:
+
+1. **GitHub (PRs/CI)** — owner **Build** — `EXECUTE-WITH-APPROVAL` for merge/close, `READ-ONLY` for status. Already working in practice (PR #57–#74) — formalize it as the first officially-wired tool.
+2. **Obsidian Build Log / Agent Log** — owner **Chief** — `READ/WRITE`, no gate for logging itself. Already working every session — formalize the scope boundary explicitly: Build Log yes, but any actual roadmap/decision-doc edit still needs the normal Planner gate.
+3. **Repo docs (`docs/*.md`, `README.md`)** — owner **Content** (with Build for technical docs) — `PROPOSE-ONLY` via PR, single-issue cards for anything public-facing. Already proven (the README tagline card).
+4. **Sentry (read-only)** — owner **Build** or **Research** — `READ-ONLY`. New, low-risk, and pairs naturally with the Daily Build Health Check for real incident correlation instead of just PR hygiene.
+5. **Vercel deploy status/preview URLs (read-only)** — owner **Build** — `READ-ONLY`. Mostly already happening ad hoc (`gh pr checks`); formalize as an explicit, bounded read-only integration rather than production/env-var access.
