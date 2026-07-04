@@ -49,7 +49,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [updatingTaskIds, setUpdatingTaskIds] = useState<Set<string>>(new Set());
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     if (!isLiveApiEnabled()) {
       setData(mockData);
       setSource("mock");
@@ -71,7 +71,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const updateTaskStage = useCallback(async (taskId: string, stage: WorkflowStage) => {
     let snapshot: MockData | null = null;
@@ -114,7 +114,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     void refresh();
-  }, []);
+  }, [refresh]);
 
   const value = useMemo(
     () => ({
@@ -127,7 +127,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       updateTaskStage,
       isTaskUpdating,
     }),
-    [data, loading, source, error, updateTaskStage, isTaskUpdating],
+    [data, loading, source, error, refresh, updateTaskStage, isTaskUpdating],
   );
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
