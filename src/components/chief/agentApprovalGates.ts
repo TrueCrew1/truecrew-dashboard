@@ -15,7 +15,9 @@ import type {
  * thing that turns a request into an ApprovalCard, and the Chief Approval
  * Panel (ChiefPanel.tsx -> ApprovalBoard.tsx) is the only surface the
  * operator sees approvals on. See docs/AGENT_WORKFLOW.md for the repo-level
- * statement of this rule.
+ * statement of this rule, and docs/AGENT_RUNBOOK.md for the full per-agent
+ * operating contract (scope, allowed-without-approval vs. gated actions,
+ * verification, escalation).
  *
  * Build's request (BUILD_REQUEST_DUPLICATE_AUTH_FIX below) is a real one,
  * grounded in verifiable repo state — not mocked. Planner/Research/Content

@@ -14,6 +14,8 @@ No agent — Planner, Build, Research, Content, or any future one — asks the a
 
 This pass wires the pattern with one example request per agent (illustrative, not live agent output yet) — the pattern is the deliverable, not a full integration.
 
+See [docs/AGENT_RUNBOOK.md](AGENT_RUNBOOK.md) for the full per-agent operating contract (goal/scope, what each of Planner/Build/Research/Content can do without approval vs. what requires a Chief card, verification rules, and escalation/pause rules). Give that file to a new agent session as-is.
+
 ## Roles
 
 | Role | Does | Does not |
