@@ -1,0 +1,9 @@
+{
+  "recommendations": ["anthropic.claude-code", "continue.continue"],
+  "unwantedRecommendations": [
+    "saoudrizwan.claude-dev",
+    "saoudrizwan.cline-nightly",
+    "github.copilot",
+    "github.copilot-chat"
+  ]
+}
