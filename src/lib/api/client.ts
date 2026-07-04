@@ -15,14 +15,8 @@ import type {
   WorkflowStage,
 } from "@/types";
 
-const INTERNAL_KEY = import.meta.env.VITE_INTERNAL_KEY as string | undefined;
-
 function apiFetch(input: string, init: RequestInit = {}): Promise<Response> {
-  const headers = new Headers(init.headers);
-  if (INTERNAL_KEY) {
-    headers.set("x-internal-key", INTERNAL_KEY);
-  }
-  return fetch(input, { ...init, headers });
+  return fetch(input, init);
 }
 
 export function isLiveApiEnabled(): boolean {

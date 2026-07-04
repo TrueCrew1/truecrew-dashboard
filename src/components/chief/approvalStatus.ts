@@ -3,6 +3,9 @@ import type { ApprovalProposal } from "./types";
 /** Hours after decision timestamp to count as a recent decision. */
 export const APPROVAL_RECENT_DECISION_HOURS = 24;
 
+/** Hours a pending proposal can sit before it's flagged as stale. */
+export const APPROVAL_STALE_PENDING_HOURS = 24;
+
 export type ApprovalStatusFilter = "all" | "pending" | "approved" | "returned" | "recent";
 
 export interface ApprovalStatusSummary {
@@ -11,6 +14,7 @@ export interface ApprovalStatusSummary {
   approved: number;
   returned: number;
   recentDecisions: number;
+  stalePending: number;
 }
 
 export const APPROVAL_STATUS_FILTER_LABEL: Record<Exclude<ApprovalStatusFilter, "all">, string> = {
@@ -32,15 +36,28 @@ function isRecentDecision(
   return ageMs >= 0 && ageMs <= recentWindowMs;
 }
 
+function isStalePending(
+  proposal: ApprovalProposal,
+  now: number,
+  staleWindowMs: number,
+): boolean {
+  if (proposal.status !== "pending") return false;
+  const createdMs = new Date(proposal.createdAt).getTime();
+  if (Number.isNaN(createdMs)) return false;
+  return now - createdMs >= staleWindowMs;
+}
+
 export function summarizeApprovalStatus(
   proposals: ApprovalProposal[],
   now: number = Date.now(),
   recentWindowMs: number = APPROVAL_RECENT_DECISION_HOURS * 60 * 60 * 1000,
+  staleWindowMs: number = APPROVAL_STALE_PENDING_HOURS * 60 * 60 * 1000,
 ): ApprovalStatusSummary {
   let pending = 0;
   let approved = 0;
   let returned = 0;
   let recentDecisions = 0;
+  let stalePending = 0;
 
   for (const proposal of proposals) {
     switch (proposal.status) {
@@ -59,6 +76,9 @@ export function summarizeApprovalStatus(
     if (isRecentDecision(proposal, now, recentWindowMs)) {
       recentDecisions += 1;
     }
+    if (isStalePending(proposal, now, staleWindowMs)) {
+      stalePending += 1;
+    }
   }
 
   return {
@@ -67,6 +87,7 @@ export function summarizeApprovalStatus(
     approved,
     returned,
     recentDecisions,
+    stalePending,
   };
 }
 
