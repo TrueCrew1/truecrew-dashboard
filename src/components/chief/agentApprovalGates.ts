@@ -206,10 +206,14 @@ export const BUILD_REQUEST_DUPLICATE_AUTH_FIX: BuildApprovalRequest = {
     { label: "Behavior/risk differences identified (none in code; #58's write-up is more thorough)", status: "pass" },
     { label: "Recommended PR to merge: #58", status: "pass" },
     { label: "Recommended PR to close: #57 (superseded duplicate)", status: "pass" },
-    { label: "Production INTERNAL_API_SECRET rotation confirmed by David", status: "pending" },
+    {
+      label:
+        "Confirm INTERNAL_API_SECRET rotation — only David can check this (Vercel env value, redeploy, /api/health 200)",
+      status: "pending",
+    },
   ],
   requestedAction:
-    "Confirm Production INTERNAL_API_SECRET (and VITE_INTERNAL_KEY) rotation is complete, then merge PR #58 and close PR #57 with a comment noting it's superseded by #58. Do not merge either before rotation is confirmed.",
+    "Approve once secret rotation is confirmed: merge PR #58, then close PR #57 with a comment noting it's superseded by #58. Do not merge either before rotation is confirmed.",
   filesOrAreas: ["lib/auth.ts"],
   createdAt: "2026-07-04T07:20:01.000Z",
 };
