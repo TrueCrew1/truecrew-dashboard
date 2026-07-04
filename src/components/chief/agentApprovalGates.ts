@@ -17,10 +17,12 @@ import type {
  * operator sees approvals on. See docs/AGENT_WORKFLOW.md for the repo-level
  * statement of this rule.
  *
- * This pass wires the pattern with one illustrative example request per
- * agent (clearly marked EXAMPLE_*) — not live agent output. Extension
- * point: replace each EXAMPLE_* constant with a real request object once
- * that agent's workflow actually produces one.
+ * Build's request (BUILD_REQUEST_DUPLICATE_AUTH_FIX below) is a real one,
+ * grounded in verifiable repo state — not mocked. Planner/Research/Content
+ * still use one illustrative example each (clearly marked EXAMPLE_*), not
+ * live agent output yet. Extension point: replace each EXAMPLE_* constant
+ * with a real request object once that agent's workflow actually produces
+ * one, following the same pattern as Build's.
  */
 
 export type AgentRole = "planner" | "build" | "research" | "content";
@@ -141,7 +143,7 @@ export function createApprovalCardFromContentRequest(request: ContentApprovalReq
   return baseCardFields(request, "Content", "content_agent", `Audience: ${request.audience}.`);
 }
 
-// --- Example requests (illustrative mocks, not live agent output) ---------
+// --- Requests: Build is real (below); Planner/Research/Content are illustrative examples ---
 
 export const EXAMPLE_PLANNER_REQUEST: PlannerApprovalRequest = {
   id: "apr-planner-example-phase4",
@@ -159,19 +161,28 @@ export const EXAMPLE_PLANNER_REQUEST: PlannerApprovalRequest = {
   createdAt: "2026-07-04T12:00:00.000Z",
 };
 
-export const EXAMPLE_BUILD_REQUEST: BuildApprovalRequest = {
-  id: "apr-build-example-decided-at-index",
-  gate: APPROVAL_GATES.build[1],
+/**
+ * Real, not illustrative: two open PRs — #57 (build/auth-trim-fix) and #58
+ * (fix/internal-auth-401) — carry a byte-for-byte identical diff to
+ * lib/auth.ts, opened 8 minutes apart (2026-07-03T23:07:40Z and
+ * 2026-07-03T23:15:32Z), both green on CI and mergeable against main.
+ * Verified via `gh pr diff 57` / `gh pr diff 58` (empty `diff` between the
+ * two) and `gh pr view` for CI status. Merging both would double-apply the
+ * same fix; one needs to merge and the other needs to close.
+ */
+export const BUILD_REQUEST_DUPLICATE_AUTH_FIX: BuildApprovalRequest = {
+  id: "apr-build-duplicate-auth-prs",
+  gate: APPROVAL_GATES.build[0],
   summary:
-    "Add a database index on chief_approval_decisions.decided_at to speed up the Approvals audit query as decision volume grows.",
+    "PR #57 (build/auth-trim-fix) and PR #58 (fix/internal-auth-401) both trim the internal API secret/header before comparison in lib/auth.ts — identical diffs, opened 8 minutes apart. Both are green on CI and mergeable.",
   riskLevel: "low",
   testsOrChecksDone: [
-    { label: "Migration reviewed for lock behavior on a small table", status: "pass" },
-    { label: "No application code changes required", status: "pass" },
+    { label: "Confirmed diffs are byte-for-byte identical (lib/auth.ts, +2/-2 each)", status: "pass" },
+    { label: "Both PRs green on CI and mergeable against main", status: "pass" },
   ],
-  requestedAction: "Approve the migration for the next deploy window.",
-  filesOrAreas: ["supabase/migrations/"],
-  createdAt: "2026-07-04T12:05:00.000Z",
+  requestedAction: "Approve merging PR #58 and closing #57 as a duplicate (or vice versa).",
+  filesOrAreas: ["lib/auth.ts"],
+  createdAt: "2026-07-04T07:20:01.000Z",
 };
 
 export const EXAMPLE_RESEARCH_REQUEST: ResearchApprovalRequest = {
@@ -206,7 +217,7 @@ export const EXAMPLE_CONTENT_REQUEST: ContentApprovalRequest = {
 
 export const AGENT_APPROVAL_CARDS: ApprovalCard[] = [
   createApprovalCardFromPlannerRequest(EXAMPLE_PLANNER_REQUEST),
-  createApprovalCardFromBuildRequest(EXAMPLE_BUILD_REQUEST),
+  createApprovalCardFromBuildRequest(BUILD_REQUEST_DUPLICATE_AUTH_FIX),
   createApprovalCardFromResearchRequest(EXAMPLE_RESEARCH_REQUEST),
   createApprovalCardFromContentRequest(EXAMPLE_CONTENT_REQUEST),
 ];
