@@ -14,7 +14,7 @@ No agent — Planner, Build, Research, Content, or any future one — asks the a
 
 This pass wires the pattern with one example request per agent (illustrative, not live agent output yet) — the pattern is the deliverable, not a full integration.
 
-See [docs/AGENT_RUNBOOK.md](AGENT_RUNBOOK.md) for the full per-agent operating contract (goal/scope, what each of Planner/Build/Research/Content can do without approval vs. what requires a Chief card, verification rules, and escalation/pause rules). Give that file to a new agent session as-is.
+**[docs/AGENT_RUNBOOK.md](AGENT_RUNBOOK.md) is the full operating contract for Planner, Build, Research, Content, and Chief** — read it before operating as any of these agents, and give it to a new agent session as-is. It defines, per agent: purpose and scope, what's allowed without approval (routine, reversible work), what requires a Chief approval gate (state-changing, external, or hard-to-revert work — e.g. Build's merges/migrations, Content's client-facing copy), the exact fields each `*ApprovalRequest` needs, and what to verify before asking for approval. It also defines Chief's own responsibilities (turning requests into cards, checking claims rather than trusting them, never auto-merging/deploying/messaging), when an agent must stop and escalate rather than proceed, and how the runbook itself gets changed (a PR, routed through Chief like any other approval-gated change).
 
 ## Roles
 

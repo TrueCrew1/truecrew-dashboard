@@ -50,6 +50,12 @@ const EXAMPLE_COMMANDS = [
 
 type ChiefTab = "command" | "board" | "approvals" | "history";
 
+/**
+ * Chief: the operator's only path to an agent approval decision. Follow
+ * docs/AGENT_RUNBOOK.md § Chief for responsibilities and what to check
+ * before recommending Approve / Send back / Reject — not just the
+ * mechanical risk-level mapping in agentApprovalGates.ts.
+ */
 export function ChiefPanel() {
   const { data, loading, source } = useData();
   const liveContext = useMemo(() => buildChiefLiveContext(data), [data]);

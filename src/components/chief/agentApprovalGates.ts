@@ -15,9 +15,10 @@ import type {
  * thing that turns a request into an ApprovalCard, and the Chief Approval
  * Panel (ChiefPanel.tsx -> ApprovalBoard.tsx) is the only surface the
  * operator sees approvals on. See docs/AGENT_WORKFLOW.md for the repo-level
- * statement of this rule, and docs/AGENT_RUNBOOK.md for the full per-agent
- * operating contract (scope, allowed-without-approval vs. gated actions,
- * verification, escalation).
+ * statement of this rule. Chief itself: follow docs/AGENT_RUNBOOK.md for
+ * gates, verification, and escalation rules — including what Chief must
+ * check before recommending Approve/Send back/Reject, not just the
+ * mechanical risk mapping below.
  *
  * Build's request (BUILD_REQUEST_DUPLICATE_AUTH_FIX below) is a real one,
  * grounded in verifiable repo state — not mocked. Planner/Research/Content
@@ -74,18 +75,26 @@ interface BaseAgentApprovalRequest {
   createdAt: string;
 }
 
+// Operate under docs/AGENT_RUNBOOK.md § Planner Agent: allowed-without-approval vs.
+// approval-required actions, and what to verify before creating this request.
 export interface PlannerApprovalRequest extends BaseAgentApprovalRequest {
   affectedPhases: string[];
 }
 
+// Operate under docs/AGENT_RUNBOOK.md § Build Agent: allowed-without-approval vs.
+// approval-required actions, and what to verify before creating this request.
 export interface BuildApprovalRequest extends BaseAgentApprovalRequest {
   filesOrAreas: string[];
 }
 
+// Operate under docs/AGENT_RUNBOOK.md § Research Agent: allowed-without-approval vs.
+// approval-required actions, and what to verify before creating this request.
 export interface ResearchApprovalRequest extends BaseAgentApprovalRequest {
   alternativesConsidered: string[];
 }
 
+// Operate under docs/AGENT_RUNBOOK.md § Content Agent: allowed-without-approval vs.
+// approval-required actions, and what to verify before creating this request.
 export interface ContentApprovalRequest extends BaseAgentApprovalRequest {
   audience: "client" | "public";
 }
