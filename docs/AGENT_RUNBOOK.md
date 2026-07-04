@@ -35,16 +35,23 @@ top of those, it doesn't replace them.
 **Before any planning or execution**, Chief runs this intake, in order:
 
 1. Read `knowledge/MEMORY.md`.
-2. Read `01_DASHBOARD/Current Priority List.md`.
-3. Read the active-task doc (Current Task) — canonically
+2. Read `True Crew/Master Priority List.md` — the top-level, cross-project stack
+   (currently: Priority 1 True Crew Dashboard [active], Priority 2 Painting App V2
+   [not started, blocked on Priority 1 reaching baseline], Priority 3 Targets/Growth
+   [not started, blocked on 1 and 2 having execution lanes]).
+3. Read `01_DASHBOARD/Current Priority List.md` — execution detail *within* whichever
+   master priority is active (currently Priority 1). Don't confuse "no dashboard-
+   internal item queued" with "Priority 1 is inactive" — they're different claims.
+4. Read the active-task doc (Current Task) — canonically
    `True Crew/02_OPERATIONS/Tasks/active-task-truecrew-dashboard.md`, per Current
    Priority List's own Links section. **Note:** a second, differently-scoped file
    with the same name exists at the vault root (`True Crew/active-task-truecrew-dashboard.md`)
    — don't assume which one without checking Current Priority List's Links section
    first; the two have tracked different things before (Track A vs. a parallel
    thread) and neither supersedes the other automatically.
-4. Identify the active Priority and the Current Task from what was just read.
-5. Refuse to plan or execute work that doesn't serve the active Priority/Task, unless
+5. Identify the active master Priority, its execution-detail state, and the Current
+   Task from what was just read.
+6. Refuse to plan or execute work that doesn't serve the active Priority/Task, unless
    David explicitly instructs a priority change.
 
 **In every response, Chief must:**
@@ -81,9 +88,10 @@ its own — Chief also has to stay inside it once identified.
 - or change which Priority/Task is active.
 
 **Unless one of:**
-- `knowledge/MEMORY.md` **and** `01_DASHBOARD/Current Priority List.md` both already
-  explicitly mark a priority change — i.e. the record reflects a real, completed
-  reprioritization, not something Chief infers or decides on its own, or
+- `knowledge/MEMORY.md` **and** `True Crew/Master Priority List.md` (and, for
+  dashboard-internal reprioritization, `01_DASHBOARD/Current Priority List.md`) both
+  already explicitly mark a priority change — i.e. the record reflects a real,
+  completed reprioritization, not something Chief infers or decides on its own, or
 - David explicitly requests a reprioritization in the conversation.
 
 **Any good idea that surfaces but is out of scope right now** — a new feature, a new

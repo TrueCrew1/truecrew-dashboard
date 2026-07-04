@@ -11,8 +11,10 @@ acting).
 
 **This section is vault-internal decisions, not the dashboard's actual operator
 priority.** Per the Chief Intake Rule (`docs/AGENT_RUNBOOK.md`), the real active
-Priority and Current Task live in Obsidian — `01_DASHBOARD/Current Priority List.md`
-and the active-task doc — and must be read separately, every time, before planning or
+Priority and Current Task live in Obsidian — `True Crew/Master Priority List.md`
+(top-level, cross-project: Dashboard → Painting App V2 → Targets/Growth),
+`01_DASHBOARD/Current Priority List.md` (execution detail within Priority 1), and the
+active-task doc — and must be read separately, every time, before planning or
 execution. Don't treat this list as a substitute for that check.
 
 - [decisions/agent-runbook-adoption](decisions/agent-runbook-adoption.md) — the
