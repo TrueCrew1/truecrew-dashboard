@@ -3,6 +3,19 @@
 Start here. See [README.md](README.md) for what this vault is and how it's meant to be
 used.
 
+## Vault size (at a glance)
+
+First-month hard caps, per `docs/AGENT_RUNBOOK.md` § Second Brain Starter Pass —
+enforced, not aspirational. See [concepts/second-brain-workflow.md](concepts/second-brain-workflow.md)
+for the full rule set.
+
+| Category | Count | Cap |
+|---|---|---|
+| Concepts | 6 | 10 |
+| Projects | 3 | 5 |
+| Decisions | 4 | 15 |
+| Sources | 10 | 50 |
+
 ## Concepts
 
 Durable topic pages — the load-bearing ideas behind how this project runs.
@@ -17,6 +30,8 @@ Durable topic pages — the load-bearing ideas behind how this project runs.
   Build checking real deploy/runtime state.
 - [Tool Catalog](concepts/tool-catalog.md) — governance-level classification of every
   tool in David's stack for agent access.
+- [Second Brain Workflow](concepts/second-brain-workflow.md) — how this vault itself is
+  governed: caps, priority order, safeguards.
 
 ## Projects
 
@@ -43,12 +58,28 @@ One page per meaningful decision, each marked approved / pending / declined.
 
 ## Sources
 
-Raw-artifact notes — see [sources/](sources/) for the full list (PR-by-PR notes for
-#57/#58, #71, #75, #76, #77, #78, #79, plus the Vercel status-check experiment and the
-Approval Load runbook section).
+Raw-artifact notes, one per PR/runbook-section/experiment. Kept as links here (not
+just a folder pointer) so every note is actually reachable from this page, per the
+"no orphaned pages" safeguard.
+
+- [PR #57 vs #58 — duplicate auth-trim fix](sources/pr-57-58-duplicate-auth-fix.md)
+- [PR #71 — Agent Runbook created and installed](sources/pr-71-agent-runbook.md)
+- [PR #75 — KnowledgePage table/empty-state fix](sources/pr-75-knowledgepage-fix.md)
+- [PR #76 — duplicate util + dead export cleanup](sources/pr-76-dead-code-cleanup.md)
+- [PR #77 — DataContext memoization fix](sources/pr-77-datacontext-memo-fix.md)
+- [PR #78 — Vercel Preview secret-scope card](sources/pr-78-vercel-preview-secret-scope-card.md)
+- [PR #79 — dashboard-maintenance bundle ApprovalCard](sources/pr-79-dashboard-maintenance-bundle-card.md)
+- [Build ↔ Vercel read-only status-check experiment](sources/vercel-status-check-experiment.md)
+- [Agent Runbook § Approval Load](sources/approval-load-runbook-section.md)
+- [Second Brain governance rules added](sources/second-brain-governance-rules.md)
 
 ## Recent updates
 
+- **2026-07-04** — Governance pass: hard caps, priority hierarchy, page-quality rules,
+  and three safeguards added to `docs/AGENT_RUNBOOK.md`; one new concept page
+  (`second-brain-workflow`) and one source note added; no new PR/Build Log material
+  had appeared since the initial pass, so nothing else was ingested. See
+  [log.md](log.md) for the line-by-line record.
 - **2026-07-04** — Second Brain Starter Pass (initial): vault created; 9 source notes,
   5 concept pages, 3 project pages, 4 decision pages seeded from real Build Log/PR
-  history. See [log.md](log.md) for the full line-by-line record.
+  history.
