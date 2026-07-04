@@ -55,3 +55,19 @@ This repo already has an approval-first process — don't restate or reinvent it
   an **Ops to run** section.
 - `docs/PR_SUMMARY_TEMPLATE.md` — use this template for every PR description.
 - `docs/OBSIDIAN_LOGGING.md` — how decisions/PRs get logged to the vault after merge.
+
+## Tool routing
+
+The AI/editor tool stack itself is governed at two levels — don't restate either here,
+follow them:
+- **Personal VS Code/editor stack** (Claude Code + Continue.dev on local Ollama, two
+  tools only) — decided and re-confirmed in `~/.claude/CLAUDE.md` (global). **Cline,
+  Cline Nightly, and GitHub Copilot Chat were deliberately removed from this
+  workspace** (twice) as duplicate/accumulated agent tooling — don't suggest
+  reinstalling them "as an option."
+- **Agent-system tool governance** (which of Chief/Planner/Build/Research/Content/
+  Reliability may use which tool, at what access level) — `docs/TOOL_CATALOG.md`
+  (the stable record) and `docs/AGENT_RUNBOOK.md` §§ Tool Catalog, External Services
+  Tool Catalog, Reliability Agent (the reasoning). See also
+  `knowledge/reference/tool-fallbacks.md` for fallback chains and best-use-by-task
+  guidance.

@@ -27,6 +27,33 @@ instead of a fabricated entry.
 (`health_state` field, added this pass) — this page is the routing logic, that file
 is the live (currently all-default) state.
 
+## Tiers
+
+- **Primary premium** — the tool used for the highest-value work by default:
+  Claude Code (coding/repo work), Claude Pro (high-stakes synthesis/reasoning),
+  Perplexity Pro (research).
+- **Preferred fallback** — the first thing to reach for when a primary premium tool
+  is `DEGRADED`/`BLOCKED` or credits are low: free ChatGPT, then free Gemini.
+- **Acceptable low-cost / always-available** — genuinely free, local, no-credit-risk
+  lanes: Continue.dev on local Ollama (editor autocomplete/chat), free
+  DeepSeek/Kimi (last-resort manual overflow).
+- **Launch-only / manual, not yet integrated** — real tools David uses, with zero
+  agent-side integration: VS Code itself, Slack, Calendar, Email.
+- **Removed, not future work** — Cline, Cline Nightly, GitHub Copilot Chat.
+  Deliberately excluded (see `docs/TOOL_CATALOG.md`'s `status: removed` entries) —
+  don't re-propose them as "another option" for this stack.
+
+## Best-use guidance by task type
+
+| Task type | Primary | Fallback |
+|---|---|---|
+| High-stakes synthesis / architecture | Claude Pro / Claude Code | free ChatGPT → free Gemini |
+| Coding and repo edits | Claude Code | Cursor (secondary drafting only — see below) |
+| Research and comparison | Perplexity Pro | free ChatGPT → free Gemini → manual |
+| Critique / second-pass review | A *different* tool than the one that produced the first draft (e.g. Gemini reviewing Claude output) | any other available tier-2 tool |
+| Note filing / Obsidian formatting | Claude Code (Chief's own logging responsibility) | manual by David if the vault is unreachable |
+| Cheap fallback when credits are low | Continue.dev (local Ollama, $0) | free ChatGPT/Gemini/DeepSeek/Kimi (manual) |
+
 ---
 
 ### claude-code
@@ -95,9 +122,10 @@ is the live (currently all-default) state.
 - **known constraints:** every fallback here is a consumer chat subscription with no
   agent-callable API today (per Tool Catalog) — "fallback" currently means David
   manually relaying results, not an automated switch.
-- **when to prefer fallback:** Perplexity unreachable/degraded and the task can't
-  wait — proceed with a fallback but state in the research output which tier was
-  actually used, per Research's existing "cite what was checked" rule.
+- **when to prefer fallback:** Perplexity unreachable/degraded, rate-limited, **or
+  David's Perplexity credits are low** — proceed with a fallback but state in the
+  research output which tier was actually used, per Research's existing "cite what
+  was checked" rule.
 
 ### claude-pro
 - **role:** Research/Content's ad-hoc reasoning/drafting outside repo-scale work
@@ -105,7 +133,22 @@ is the live (currently all-default) state.
 - **fallback chain:** primary Claude Pro (claude.ai) → first fallback free ChatGPT →
   second fallback free Gemini/DeepSeek/Kimi (whichever's available).
 - **known constraints:** same no-agent-API-today caveat as Perplexity.
-- **when to prefer fallback:** same as Perplexity — state which tier was used.
+- **when to prefer fallback:** same as Perplexity — degraded/unreachable **or Claude
+  credits are low** — state which tier was used. **Return to Claude Pro once credits
+  refresh or the primary is confirmed available again** — don't keep defaulting to a
+  free-tier tool out of habit.
+
+### continue-dev
+- **role:** editor-side autocomplete + cheap/routine chat, local Ollama, $0 cost
+- **owner_agent:** — (David's own editor tooling)
+- **fallback chain:** none needed in the usual sense — this *is* the always-available
+  low-cost lane other tools fall back to. If Ollama itself is down locally, David
+  falls back to Claude Code directly for the same task.
+- **known constraints:** local-only; quality is lower than Claude Pro/Claude Code for
+  anything beyond autocomplete/simple chat — not a substitute for repo-scale
+  reasoning, just for cheap/routine work.
+- **when to prefer fallback:** never applicable — this tool exists to *be* the
+  fallback for premium tools when credits are low.
 
 ### cursor
 - **role:** Build's secondary code-drafting tool
@@ -144,15 +187,19 @@ is the live (currently all-default) state.
 
 ## Gaps — intentionally not covered this pass
 
-Tools named in the request but not yet confirmed as part of True Crew's actual
+Tools named in past requests but not yet confirmed as part of True Crew's actual
 stack (no reference in `docs/TOOL_CATALOG.md`, `CLAUDE.md`, or `package.json`):
 PostHog, Resend, Inngest, Drizzle, Zod, Figma, Stripe, QuickBooks, Google Workspace,
-OneDrive. Also not covered: **Copilot** (already classified `HUMAN-ONLY`, explicitly
-not wired into this dev environment per `CLAUDE.md` — no fallback chain needed for a
-tool that's never in the primary position), **VS Code** (David's own editor, not
-agent-critical), **Slack/Calendar/Email** (no confirmed agent use case — see Tool
-Catalog). Add a real entry here (and to `docs/TOOL_CATALOG.md` first) once any of
-these is actually adopted — don't pre-build governance for a tool that isn't in use.
+OneDrive. Also not covered: **VS Code** (David's own editor, not agent-critical),
+**Slack/Calendar/Email** (no confirmed agent use case — see Tool Catalog). Add a
+real entry here (and to `docs/TOOL_CATALOG.md` first) once any of these is actually
+adopted — don't pre-build governance for a tool that isn't in use.
+
+**Deliberately excluded, not a gap:** Cline, Cline Nightly, GitHub Copilot Chat —
+see `docs/TOOL_CATALOG.md`'s `status: removed` entries and `CLAUDE.md` § Tool
+routing. These were twice-cleaned-up duplicate agent tooling as of 2026-07-03; no
+fallback chain is needed for a tool that's deliberately not in the stack. Don't
+reintroduce them without an explicit reprioritization request, per Scope Guardrail.
 
 ## Related
 
