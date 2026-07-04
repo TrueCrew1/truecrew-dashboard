@@ -9,6 +9,7 @@ import {
 } from "@/lib/api/client";
 import { ApprovalBoard } from "./ApprovalBoard";
 import { CommandHistory } from "./CommandHistory";
+import { AGENT_APPROVAL_CARDS } from "./agentApprovalGates";
 import { MOCK_PR_APPROVAL_CARDS } from "./chiefApprovalCardMocks";
 import { REPO_CHANGE_APPROVAL_CARDS } from "./repoChangeApprovals";
 import {
@@ -61,13 +62,18 @@ export function ChiefPanel() {
   const [input, setInput] = useState("");
   const [response, setResponse] = useState<ChiefResponse | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  // Seeded with demo PR cards (chiefApprovalCardMocks.ts) plus the one real,
-  // wired source so far — pending local repo changes (repoChangeApprovals.ts)
-  // — so every approval routes through this one queue. Extension point: a
-  // real GitHub PRs fetch or agent job feed would replace/extend this seed.
+  // Seeded with demo PR cards (chiefApprovalCardMocks.ts), the one real
+  // wired source (pending local repo changes, repoChangeApprovals.ts), and
+  // one example request per agent (agentApprovalGates.ts) — so every
+  // approval, from any source, routes through this one queue. No agent may
+  // surface an approval any other way; see agentApprovalGates.ts's header
+  // and docs/AGENT_WORKFLOW.md for the rule. Extension point: a real GitHub
+  // PRs fetch, agent job feed, or live agent requests would replace/extend
+  // this seed.
   const [commandApprovals, setCommandApprovals] = useState<ApprovalProposal[]>([
     ...MOCK_PR_APPROVAL_CARDS,
     ...REPO_CHANGE_APPROVAL_CARDS,
+    ...AGENT_APPROVAL_CARDS,
   ]);
   const [approvalDecisions, setApprovalDecisions] = useState<Record<string, ApprovalDecision>>(
     {},
