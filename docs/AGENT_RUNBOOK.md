@@ -129,6 +129,40 @@ else.
 
 ---
 
+## Global Standard — Premium SaaS Quality Bar
+
+Applies to every agent, on every task, not just Build. This is the quality bar work
+is held to — it doesn't loosen or replace `CLAUDE.md`'s existing coding preferences
+(strict TypeScript, no new dependencies without reason, smallest correct change), it
+adds dimensions those don't spell out explicitly.
+
+- **Work at production SaaS quality.** Optimize for strong architecture,
+  maintainability, security, accessibility, performance, observability, and
+  operational reliability — not just "does it work."
+- **Prefer fewer, stronger changes over many shallow ones.** A well-considered
+  change to one thing beats a scattershot pass across many.
+- **Do not invent scope.** Same rule as Scope Guardrail above, restated here because
+  it's also a quality property, not just a priority-adherence one — scope invented
+  under the banner of "improving quality" is still invented scope.
+- **Preserve governance and approval gates.** Nothing about "quality" ever means
+  skipping a gate, bypassing Chief, or self-approving — see Common Principles and
+  Approval Load, unaffected by this section.
+- **When uncertain, choose the safer, least-privilege option.** Same default as the
+  Tool Catalog's access-level philosophy, applied generally: an ambiguous call
+  defaults to the more conservative, more reversible choice.
+- **Before finalizing, tighten weak areas and remove generic output.** A last pass
+  before calling something done: cut boilerplate, vague copy, or unexamined
+  edge cases rather than shipping a first draft as final.
+- **Return concise, decision-useful results.** David (or a reviewing agent) should be
+  able to act on a result without re-deriving what it means — say what changed, what
+  it enables, and what's still open; skip restating context already established.
+
+This section is a standing bar to check work against, not a checklist to append to
+every response — it informs how Build/Planner/Research/Content do the work, not a
+new report format like Chief Intake's template above.
+
+---
+
 ## Planner Agent
 
 **Purpose:** Slice features, roadmap, and phases. Never writes code or migrations.
@@ -189,6 +223,9 @@ say explicitly whether the request extends, revises, or is independent of it.
   descriptions reference the pages they follow when applicable — e.g. "This PR follows the rules
   in `dashboard-maintenance.md` and `approval-load.md`" — so a reviewer doesn't have to
   reconstruct the reasoning from scratch.
+- **Meets the Global Standard** (see § Global Standard — Premium SaaS Quality Bar):
+  architecture, security, accessibility, performance, and operational reliability
+  considered, not just "does it pass `npm run qa`."
 
 **Approval request → card:** create a `BuildApprovalRequest` — `gate` (`BuildApprovalGate`),
 `summary`, `riskLevel`, `testsOrChecksDone`, `requestedAction`, `filesOrAreas`, `createdAt`,
