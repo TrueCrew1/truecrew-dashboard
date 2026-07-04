@@ -329,3 +329,34 @@ playbooks. Full reasoning in the Obsidian Build Log entry of the same name.
   sources 10/50, lessons 5/20, **reference 4/10**. No caps hit or approached.
 - No dashboard UI or app code changed — governance/memory only, per the explicit
   boundary in this task.
+
+---
+
+## 2026-07-04 — VS Code/editor tool routing (honored existing stack decision, not reversed)
+
+- 2026-07-04 — updated — `docs/TOOL_CATALOG.md` — added a `status` field to every
+  entry (fully-wired/partially-wired/launch-only/manual/future-integration/removed);
+  added `continue-dev` as its own real AI entry; added `copilot`/`cline`/
+  `cline-nightly` marked `status: removed`, with the 2026-07-03 removal reasoning
+  cited directly in the catalog.
+- 2026-07-04 — updated — `reference/tool-fallbacks.md` — added a Tiers section and
+  a best-use-by-task-type table; tightened `claude-pro`/`perplexity-pro` fallback
+  triggers to name "credits low" explicitly plus a return-to-primary rule; added a
+  `continue-dev` entry as the always-available low-cost lane.
+- 2026-07-04 — updated — `CLAUDE.md` (repo root) — new "Tool routing" section,
+  pointing to the global VS Code stack decision and `docs/TOOL_CATALOG.md` rather
+  than duplicating either.
+- **Real conflict caught and flagged before acting:** the task asked to add support
+  for Cline, Cline Nightly, and Copilot as editor tools. Checked
+  `.vscode/settings.json` (no AI-extension config present) and persistent memory —
+  both confirmed these were deliberately removed from this exact workspace on
+  2026-07-03, twice for Cline. Did not silently reinstate them; flagged the
+  conflict explicitly and honored the existing, more precise decision, per the
+  task's own "unless the repo already documents them more precisely" clause.
+- New `.vscode/extensions.json` — recommends the two decided extensions
+  (`anthropic.claude-code`, `continue.continue`); lists Cline/Cline Nightly/Copilot
+  as `unwantedRecommendations` so the workspace itself encodes the decision.
+- **Did not create** a new `AGENTS.md` — would duplicate `docs/AGENT_RUNBOOK.md` and
+  `docs/AGENT_WORKFLOW.md`, which already serve that purpose in this repo.
+- No dashboard UI or app code changed; no new VS Code extension was actually
+  installed by this pass — governance/docs only.
