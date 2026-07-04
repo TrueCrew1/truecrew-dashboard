@@ -4,6 +4,7 @@ import { fetchChiefApprovalDecisions, isLiveApiEnabled } from "@/lib/api/client"
 import { deriveApprovalAlerts, type ApprovalAlert } from "./approvalAlerts";
 import { subscribeApprovalDecisionRecorded } from "./approvalDecisionEvents";
 import { buildChiefLiveContext, deriveApprovalCandidates } from "./chiefLiveContext";
+import { useCommandApprovals } from "./commandApprovalsStore";
 import type { ApprovalDecision, ApprovalProposal } from "./types";
 
 export interface UseApprovalAlertsResult {
@@ -22,6 +23,8 @@ export function useApprovalAlerts(): UseApprovalAlertsResult {
     () => deriveApprovalCandidates(data, liveContext),
     [data, liveContext],
   );
+  // Same source ChiefPanel writes to — makes command-created proposals visible here too.
+  const commandApprovals = useCommandApprovals();
 
   const [decisions, setDecisions] = useState<Record<string, ApprovalDecision>>({});
   const [loading, setLoading] = useState(liveApi);
@@ -79,9 +82,17 @@ export function useApprovalAlerts(): UseApprovalAlertsResult {
     return subscribeApprovalDecisionRecorded(refreshAlerts);
   }, [liveApi, refreshAlerts]);
 
+  const mergedApprovals = useMemo<ApprovalProposal[]>(() => {
+    const byId = new Map<string, ApprovalProposal>();
+    for (const proposal of [...derivedApprovals, ...commandApprovals]) {
+      byId.set(proposal.id, proposal);
+    }
+    return [...byId.values()];
+  }, [derivedApprovals, commandApprovals]);
+
   const approvals = useMemo<ApprovalProposal[]>(() => {
-    if (!liveApi) return derivedApprovals;
-    return derivedApprovals.map((proposal) => {
+    if (!liveApi) return mergedApprovals;
+    return mergedApprovals.map((proposal) => {
       const decision = decisions[proposal.id];
       if (!decision) return proposal;
       return {
@@ -91,7 +102,7 @@ export function useApprovalAlerts(): UseApprovalAlertsResult {
         decidedBy: decision.actor ?? undefined,
       };
     });
-  }, [derivedApprovals, decisions, liveApi]);
+  }, [mergedApprovals, decisions, liveApi]);
 
   const alerts = useMemo(() => deriveApprovalAlerts(approvals), [approvals]);
 

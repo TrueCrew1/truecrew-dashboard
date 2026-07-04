@@ -9,6 +9,7 @@ import {
 } from "@/lib/api/client";
 import { ApprovalBoard } from "./ApprovalBoard";
 import { notifyApprovalDecisionRecorded } from "./approvalDecisionEvents";
+import { addCommandApproval, useCommandApprovals } from "./commandApprovalsStore";
 import { CommandHistory } from "./CommandHistory";
 import {
   buildApprovalFromResponse,
@@ -60,7 +61,7 @@ export function ChiefPanel() {
   const [input, setInput] = useState("");
   const [response, setResponse] = useState<ChiefResponse | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [commandApprovals, setCommandApprovals] = useState<ApprovalProposal[]>([]);
+  const commandApprovals = useCommandApprovals();
   const [approvalDecisions, setApprovalDecisions] = useState<Record<string, ApprovalDecision>>(
     {},
   );
@@ -276,7 +277,7 @@ export function ChiefPanel() {
 
       const newApproval = buildApprovalFromResponse(command, result);
       if (newApproval) {
-        setCommandApprovals((prev) => [newApproval, ...prev]);
+        addCommandApproval(newApproval);
       }
 
       setIsProcessing(false);
