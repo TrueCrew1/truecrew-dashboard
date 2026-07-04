@@ -10,6 +10,7 @@ import {
   TableScroll,
   TableText,
 } from "@/components/ui";
+import { ApprovalAlertsPanel } from "@/components/chief/ApprovalAlertsPanel";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
 import {
@@ -55,6 +56,8 @@ export function MonitorPage() {
       ) : null}
 
       <div className="page-stack">
+        <ApprovalAlertsPanel />
+
         <Panel title="Service catalog">
           {data.tools.length === 0 ? (
             <PanelEmpty

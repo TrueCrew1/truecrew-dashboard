@@ -8,6 +8,7 @@ import {
   recordChiefApprovalDecision,
 } from "@/lib/api/client";
 import { ApprovalBoard } from "./ApprovalBoard";
+import { notifyApprovalDecisionRecorded } from "./approvalDecisionEvents";
 import { CommandHistory } from "./CommandHistory";
 import {
   buildApprovalFromResponse,
@@ -115,6 +116,7 @@ export function ChiefPanel() {
 
   const applyDecision = useCallback((decision: ApprovalDecision) => {
     setApprovalDecisions((prev) => ({ ...prev, [decision.proposalId]: decision }));
+    notifyApprovalDecisionRecorded();
   }, []);
 
   const approvals = useMemo(() => {
