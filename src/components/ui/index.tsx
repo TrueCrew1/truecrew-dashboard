@@ -384,6 +384,7 @@ export function GateList({
 }
 
 export function formatRelativeTime(isoDate: string): string {
+  if (!isoDate) return "—";
   const diff = Date.now() - new Date(isoDate).getTime();
   const hours = Math.floor(diff / 3600000);
   if (hours < 1) return "just now";

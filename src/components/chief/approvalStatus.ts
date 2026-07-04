@@ -114,10 +114,3 @@ export function filterApprovalsByStatus(
     }
   });
 }
-
-export function toggleApprovalStatusFilter(
-  current: ApprovalStatusFilter,
-  next: Exclude<ApprovalStatusFilter, "all">,
-): ApprovalStatusFilter {
-  return current === next ? "all" : next;
-}
