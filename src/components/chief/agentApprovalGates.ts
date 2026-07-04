@@ -17,12 +17,13 @@ import type {
  * operator sees approvals on. See docs/AGENT_WORKFLOW.md for the repo-level
  * statement of this rule.
  *
- * Build's request (BUILD_REQUEST_DUPLICATE_AUTH_FIX below) is a real one,
- * grounded in verifiable repo state — not mocked. Planner/Research/Content
- * still use one illustrative example each (clearly marked EXAMPLE_*), not
- * live agent output yet. Extension point: replace each EXAMPLE_* constant
- * with a real request object once that agent's workflow actually produces
- * one, following the same pattern as Build's.
+ * Build's request (BUILD_REQUEST_DUPLICATE_AUTH_FIX) and Content's request
+ * (CONTENT_REQUEST_README_TAGLINE, from a real Weekly Content Tidy run) are
+ * real, grounded in verifiable repo state — not mocked. Planner's real
+ * request lands separately (see PR #72). Research still uses one
+ * illustrative example (clearly marked EXAMPLE_*), not live agent output
+ * yet. Extension point: replace it with a real request object once
+ * Research's workflow actually produces one, following the same pattern.
  */
 
 export type AgentRole = "planner" | "build" | "research" | "content";
@@ -200,24 +201,39 @@ export const EXAMPLE_RESEARCH_REQUEST: ResearchApprovalRequest = {
   createdAt: "2026-07-04T12:10:00.000Z",
 };
 
-export const EXAMPLE_CONTENT_REQUEST: ContentApprovalRequest = {
-  id: "apr-content-example-homepage-hero",
+/**
+ * Real, not illustrative — Weekly Content Tidy, "no surprises" proof run
+ * (2026-07-04):
+ *
+ * README.md's one-line description (line 3) reads "Premium desktop command
+ * center for running business operations end-to-end." "Premium" is
+ * marketing-flavored language that drifts from the plain/industrial tone
+ * rule in CLAUDE.md ("no marketing fluff, no startup-generic phrasing").
+ * This is public-facing — the first text anyone sees viewing this repo on
+ * GitHub — so per the runbook's "External copy — no surprises" rule, it
+ * gets its own single-issue card, never bundled with this same pass's
+ * internal findings (terminology/link checks — see Build Log, all found
+ * clean, nothing to bundle).
+ */
+export const CONTENT_REQUEST_README_TAGLINE: ContentApprovalRequest = {
+  id: "apr-content-readme-tagline",
   gate: APPROVAL_GATES.content[0],
   summary:
-    'Draft homepage hero copy update describing the new Chief Approval Panel feature for prospective customers.',
+    'README.md\'s top-line description reads "Premium desktop command center for running business operations end-to-end" — "Premium" is marketing-flavored language that drifts from the plain/industrial tone this project is meant to have. Proposed: "Desktop command center for running business operations."',
   riskLevel: "low",
   testsOrChecksDone: [
-    { label: "Reviewed against product tone guidance (industrial, plain, practical)", status: "pass" },
-    { label: "No unverified feature claims beyond what's shipped", status: "pass" },
+    { label: "Confirmed current README.md wording (line 3)", status: "pass" },
+    { label: "Checked against CLAUDE.md's tone rule (industrial, plain, practical, no marketing fluff)", status: "pass" },
+    { label: "Confirmed this is public-facing (first text shown on the repo's GitHub page)", status: "pass" },
   ],
-  requestedAction: "Approve copy for publish, or send back with edits.",
+  requestedAction: "Approve replacing the README tagline with the plain version, or send back with different wording.",
   audience: "public",
-  createdAt: "2026-07-04T12:15:00.000Z",
+  createdAt: "2026-07-04T17:24:38.000Z",
 };
 
 export const AGENT_APPROVAL_CARDS: ApprovalCard[] = [
   createApprovalCardFromPlannerRequest(EXAMPLE_PLANNER_REQUEST),
   createApprovalCardFromBuildRequest(BUILD_REQUEST_DUPLICATE_AUTH_FIX),
   createApprovalCardFromResearchRequest(EXAMPLE_RESEARCH_REQUEST),
-  createApprovalCardFromContentRequest(EXAMPLE_CONTENT_REQUEST),
+  createApprovalCardFromContentRequest(CONTENT_REQUEST_README_TAGLINE),
 ];
