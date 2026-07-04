@@ -17,12 +17,13 @@ import type {
  * operator sees approvals on. See docs/AGENT_WORKFLOW.md for the repo-level
  * statement of this rule.
  *
- * Build's request (BUILD_REQUEST_DUPLICATE_AUTH_FIX below) is a real one,
- * grounded in verifiable repo state — not mocked. Planner/Research/Content
+ * Build's request (BUILD_REQUEST_DUPLICATE_AUTH_FIX) and Planner's request
+ * (PLANNER_REQUEST_START_PHASE_4, from the first real Weekly Planner Pass)
+ * are real, grounded in verifiable repo state — not mocked. Research/Content
  * still use one illustrative example each (clearly marked EXAMPLE_*), not
  * live agent output yet. Extension point: replace each EXAMPLE_* constant
  * with a real request object once that agent's workflow actually produces
- * one, following the same pattern as Build's.
+ * one, following the same pattern.
  */
 
 export type AgentRole = "planner" | "build" | "research" | "content";
@@ -143,22 +144,41 @@ export function createApprovalCardFromContentRequest(request: ContentApprovalReq
   return baseCardFields(request, "Content", "content_agent", `Audience: ${request.audience}.`);
 }
 
-// --- Requests: Build is real (below); Planner/Research/Content are illustrative examples ---
+// --- Requests: Build and Planner are real (below); Research/Content are illustrative examples ---
 
-export const EXAMPLE_PLANNER_REQUEST: PlannerApprovalRequest = {
-  id: "apr-planner-example-phase4",
+/**
+ * Real, not illustrative — Weekly Planner Pass (2026-07-04):
+ *
+ * Chief Approvals Roadmap Phase 3 (Persistence & Audit Trail) was found fully
+ * shipped during this pass — verified against live code, not assumed:
+ * `chief_approval_decisions` table (migration `20260630000001_chief_approval_decisions.sql`),
+ * `lib/supabase/queries.ts`, `api/chief/approvals/index.ts` (GET/POST + 409 on
+ * already-decided), and `ChiefPanel.tsx` (hydrates on load, handles
+ * `ChiefApprovalConflictError`) all match Phase 3's scope exactly. The roadmap
+ * doc was the last place still marking it "Next" — corrected as a routine
+ * refresh (Chief/Approvals Roadmap.md), no approval needed for that part.
+ *
+ * That makes Phase 4 (Alerts & Escalation) the genuine next open item — it
+ * has a scope-lock ready but hasn't been started (`chiefApprovalUrgency.ts`
+ * still has zero importers). Whether to actually start it now is a real
+ * scope/sequencing decision, not a documentation fix — hence this card.
+ */
+export const PLANNER_REQUEST_START_PHASE_4: PlannerApprovalRequest = {
+  id: "apr-planner-start-phase4",
   gate: APPROVAL_GATES.planner[1],
   summary:
-    "Propose starting Chief Approvals Roadmap Phase 4 (Alerts & Escalation) — urgency buckets and inline tags on pending approvals.",
+    "Phase 3 (Persistence & Audit Trail) is confirmed shipped end-to-end — Phase 4 (Alerts & Escalation) is now the genuine next open item, not yet started. It has a ready scope-lock (wire the existing chiefApprovalUrgency.ts getUrgency() into ChiefBoard/ApprovalBoard for an overdue badge) but zero importers of that helper today.",
   riskLevel: "medium",
   testsOrChecksDone: [
-    { label: "Reviewed against reserved chiefApprovalUrgency.ts helper", status: "pass" },
-    { label: "Scoped against shipped stale-badge slice to avoid overlap", status: "pass" },
-    { label: "Effort estimate for scheduling", status: "pending" },
+    { label: "Confirmed Phase 3 fully shipped before proposing Phase 4 as next", status: "pass" },
+    { label: "Confirmed chiefApprovalUrgency.ts still has zero importers (not started)", status: "pass" },
+    { label: "Reconciliation with shipped stale-badge slice (different thresholds) flagged, not resolved", status: "pending" },
+    { label: "Effort/capacity estimate for this slice", status: "pending" },
   ],
-  requestedAction: "Approve starting Phase 4 planning, or hold until Phase 3 (Persistence) ships.",
+  requestedAction:
+    "Approve starting Phase 4 now (wire getUrgency() into ChiefBoard/ApprovalBoard per the existing scope-lock), or hold and leave it queued. Alternative: reconcile chiefApprovalUrgency.ts's two-tier model with the shipped single-threshold stale badge first, before wiring anything in.",
   affectedPhases: ["Phase 4 — Alerts & Escalation"],
-  createdAt: "2026-07-04T12:00:00.000Z",
+  createdAt: "2026-07-04T07:55:54.000Z",
 };
 
 /**
@@ -216,7 +236,7 @@ export const EXAMPLE_CONTENT_REQUEST: ContentApprovalRequest = {
 };
 
 export const AGENT_APPROVAL_CARDS: ApprovalCard[] = [
-  createApprovalCardFromPlannerRequest(EXAMPLE_PLANNER_REQUEST),
+  createApprovalCardFromPlannerRequest(PLANNER_REQUEST_START_PHASE_4),
   createApprovalCardFromBuildRequest(BUILD_REQUEST_DUPLICATE_AUTH_FIX),
   createApprovalCardFromResearchRequest(EXAMPLE_RESEARCH_REQUEST),
   createApprovalCardFromContentRequest(EXAMPLE_CONTENT_REQUEST),
