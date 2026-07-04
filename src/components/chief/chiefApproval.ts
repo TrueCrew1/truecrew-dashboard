@@ -51,9 +51,12 @@ export const APPROVAL_RECOMMENDED_DECISION_BADGE: Record<ApprovalRecommendedDeci
 
 export const APPROVAL_SOURCE_LABEL: Record<ApprovalSource, string> = {
   pr: "PR",
-  agent_build: "Agent Build",
+  agent_build: "Build",
   ops_change: "Ops change",
   repo_change: "Repo",
+  planner_agent: "Planner",
+  research_agent: "Research",
+  content_agent: "Content",
 };
 
 export const APPROVAL_SOURCE_BADGE: Record<ApprovalSource, string> = {
@@ -61,6 +64,9 @@ export const APPROVAL_SOURCE_BADGE: Record<ApprovalSource, string> = {
   agent_build: "badge-orange",
   ops_change: "badge-steel",
   repo_change: "badge-orange",
+  planner_agent: "badge-blue",
+  research_agent: "badge-steel",
+  content_agent: "badge-orange",
 };
 
 export const APPROVAL_CHECKLIST_STATUS_ICON: Record<"pass" | "fail" | "pending", string> = {
