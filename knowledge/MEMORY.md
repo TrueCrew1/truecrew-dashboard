@@ -76,3 +76,6 @@ execution. Don't treat this list as a substitute for that check.
   which tool, what access level, what gate.
 - [reference/workflow-entry-points](reference/workflow-entry-points.md) — every Agent
   Workflow, its trigger phrase, owner, and gate, at a glance.
+- [reference/repair-playbook](reference/repair-playbook.md) — real degraded/blocked
+  conditions and their fixes/workarounds. Check before assuming a tool that's had
+  issues before is safe to use.

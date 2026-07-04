@@ -18,7 +18,7 @@ for the full rule set.
 | Decisions | 4 | 15 |
 | Sources | 10 | 50 |
 | Lessons | 5 | 20 |
-| Reference | 2 | 10 |
+| Reference | 3 | 10 |
 
 ## Concepts
 
@@ -94,6 +94,9 @@ Stable lookup pages — no narrative, just facts for a fast check during a real 
   what access level, what gate.
 - [Workflow Entry Points](reference/workflow-entry-points.md) — every Agent Workflow,
   trigger phrase, owner, gate.
+- [Repair Playbook](reference/repair-playbook.md) — real degraded/blocked
+  conditions: symptoms, detection signal, fix/workaround, when to retry the
+  primary. Feeds the Reliability Agent's repair memory (still reserved).
 
 ## Sources
 
@@ -114,6 +117,15 @@ just a folder pointer) so every note is actually reachable from this page, per t
 
 ## Recent updates
 
+- **2026-07-04** — Reliability Agent fully defined (still reserved, not activated):
+  `docs/AGENT_RUNBOOK.md` § Reliability Agent (purpose, responsibilities,
+  boundaries, ownership under Chief), four health states (HEALTHY/DEGRADED/
+  BLOCKED/PROBING) with transition rules, required cross-agent behavior, and a
+  degradation/recovery/fallback event format. New
+  [reference/repair-playbook.md](reference/repair-playbook.md), seeded with 3 real
+  conditions (Vercel Preview secret gap, internal-auth 401s blocked on secret
+  rotation, `chiefApprovalUrgency.ts` reserved-but-unused). No live automation, no
+  dashboard UI, no code wiring — governance/memory only.
 - **2026-07-04** — Layered-memory upgrade: added `MEMORY.md` (always-checked-first
   index), `reference/` (2 pages), and `lessons/` (superseding the earlier `patterns/`
   folder — 5 real lessons migrated to the new one-file-per-lesson schema). Normalized

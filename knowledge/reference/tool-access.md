@@ -47,3 +47,5 @@ explicitly classified in `docs/AGENT_RUNBOOK.md` § Tool Catalog.
 - Runbook: `docs/AGENT_RUNBOOK.md` § Tool Catalog, § External Services Tool Catalog
 - Authoritative record: `docs/TOOL_CATALOG.md` (repo `docs/`) — one appendable block
   per tool, the source a future Tool Launcher UI reads from
+- Reference: [repair-playbook](repair-playbook.md) — real degraded/blocked
+  conditions for these tools, and what actually fixed or worked around them

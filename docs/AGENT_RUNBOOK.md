@@ -10,13 +10,14 @@ turns into an `ApprovalCard` in the Chief → Approvals panel. The operator deci
 those cards — never through a direct ask from an agent. Give this file to a new agent session
 as-is; it's the operating contract, not background reading.
 
-**Reliability** is a sixth, **reserved** role — named in `docs/TOOL_CATALOG.md` as the
-future owner of health/fallback-chain monitoring, but not yet wired into
-`agentApprovalGates.ts`, not yet gated, and not yet an active participant in any
-workflow. Treat it the same way `chiefApprovalUrgency.ts` was treated for Phase 4:
-real and intentional, not aimless — but a future capability, not a current one. Don't
-build out Reliability's gates/workflows preemptively; that's its own scoped task when
-it's actually activated.
+**Reliability** is a sixth role, fully defined in § Reliability Agent below (purpose,
+responsibilities, health states, required cross-agent behavior, repair memory) —
+but still **reserved**: not yet wired into `agentApprovalGates.ts`, not yet gated,
+and not yet an active participant in any workflow. Treat it the same way
+`chiefApprovalUrgency.ts` was treated for Phase 4: the definition is real and
+intentional, not aimless — but activation (code, gates, a live workflow) is its own
+separate, explicitly-approved task, not something this definition triggers on its
+own.
 
 See [docs/AGENT_WORKFLOW.md](AGENT_WORKFLOW.md) and
 [.claude/project-rules.md](../.claude/project-rules.md) for the underlying repo conventions
@@ -307,6 +308,120 @@ marketing, product docs, outbound emails) must:
 
 Internal-only changes (notes, runbooks, internal tickets) are not held to this — they may be
 bundled per the **Approval Load** rules like any other agent's internal work.
+
+---
+
+## Reliability Agent
+
+**Status: reserved.** Fully defined here so activation is a small, well-scoped step
+later, not a design exercise done under pressure — but nothing in this section wires
+Reliability into code, gates, or a live workflow today. See Overview.
+
+**Purpose:** Track the real, observed health of tools and dashboard surfaces (per
+`docs/TOOL_CATALOG.md`); stop other agents from repeatedly hitting something known
+broken; route them to an approved fallback when one exists; signal when a primary is
+safe to use again; and capture what a real repair looked like so the next recovery
+is faster.
+
+**Responsibilities (once activated):**
+- Maintain the health state (see Health States below) of each tool/surface in
+  `docs/TOOL_CATALOG.md`, grounded in real, observed signals — not assumption.
+- Maintain `knowledge/reference/repair-playbook.md` — one entry per real
+  degraded/blocked condition worth remembering.
+- Answer "is this safe to use" for any agent that checks, honestly — including
+  "I don't know, it hasn't been checked recently."
+
+**Boundaries — Reliability does NOT:**
+- Take autonomous fix actions. Reliability observes, records, and recommends; a
+  repair action still goes through the owning agent's normal gate (Build's merge
+  gate, etc.) like any other change.
+- Bypass or soften any existing approval gate. A tool moving to `HEALTHY` doesn't
+  auto-clear a pending `ApprovalCard` — those are independent.
+- Build or maintain broad dashboard UI. A small existing surface may get a
+  placeholder/note if one already needs it; Reliability does not justify a new UI
+  build on its own.
+- Probe a `BLOCKED` or `DEGRADED` tool routinely or by default — see PROBING below.
+
+**Ownership model:** Reliability is a peer agent under Chief, same as
+Planner/Build/Research/Content — it proposes state changes and repair notes, Chief
+is still the only path to any approval-gated action, and every other agent's own
+gates (Build's merge gate, Content's external-copy rule, etc.) are unaffected by
+anything Reliability observes.
+
+### Health States
+
+Four states, applied per tool/surface in `docs/TOOL_CATALOG.md`:
+
+- **HEALTHY** — verified working via its normal real-use path recently enough to
+  trust. Safe for any agent to use without extra caution.
+- **DEGRADED** — partially working: known errors in some paths, inconsistent
+  results, or a documented unresolved issue, but the core function still works for
+  at least some real use. Usable with caution — see Required Agent Behavior below.
+- **BLOCKED** — known non-functional for its primary purpose, or gated on an unmet
+  precondition (a human action, a secret rotation, a config change) that makes safe
+  use impossible right now. Must not be used for the blocked purpose.
+- **PROBING** — a deliberate, scoped, read-only or explicitly-reversible check of
+  whether a `DEGRADED`/`BLOCKED` tool has recovered. Not routine use — a distinct,
+  logged action, not a side effect of someone just trying the tool again.
+
+**Transition guidance:**
+- `HEALTHY` → `DEGRADED`: a real, observed error or inconsistency (an actual failed
+  request, an actual runtime error count) — never a hypothesis or "might be an
+  issue."
+- `DEGRADED` → `BLOCKED`: the issue affects the tool's core function, or a stated
+  precondition makes any safe use impossible (e.g. an unconfirmed secret rotation).
+- `BLOCKED`/`DEGRADED` → `PROBING`: only when there's a real reason to believe
+  conditions changed (David confirms an action was taken, a deploy happened, a
+  stated wait period passed) — never a routine retry by whichever agent happens to
+  need the tool.
+- `PROBING` → `HEALTHY`: only after a real, successful check via the tool's actual
+  normal-use path — not just "the probe didn't throw." Log it as a recovery event.
+- `PROBING` → back to `DEGRADED`/`BLOCKED`: if the probe fails, stay in the prior
+  state and log the failed probe — don't let optimism creep the state forward.
+
+### Required Agent Behavior (Chief, Planner, Build, Research, Content)
+
+- **Check health before critical tool use** — anything gated
+  `EXECUTE-WITH-APPROVAL`, anything production-impacting, or anything
+  `docs/TOOL_CATALOG.md` marks as previously `DEGRADED`/`BLOCKED` — check its current
+  state first (once Reliability is active; until then, check `docs/TOOL_CATALOG.md`
+  and `knowledge/reference/repair-playbook.md` directly, same information, no agent
+  behind it yet).
+- **Obey `BLOCKED`** — do not use a blocked tool for its blocked purpose. Route to
+  the documented fallback if one exists; if none exists, escalate to Chief rather
+  than working around it.
+- **Treat `DEGRADED` as a warning, not a stop** — proceeding is fine, but say so:
+  note the known issue in whatever gets produced (a PR description, a card, a
+  summary), don't present output as if the tool were fully healthy.
+- **Never `PROBING` unless designated** — only Reliability (or an agent Reliability
+  has explicitly designated for a specific probe) attempts a recovery check on a
+  `DEGRADED`/`BLOCKED` tool. No agent retries "just to see" on its own initiative —
+  that's exactly the repeated-bad-tool-use this role exists to prevent.
+
+### Repair Memory
+
+`knowledge/reference/repair-playbook.md` — one compact entry per real
+degraded/blocked condition worth remembering, using this schema: `title`, `status`,
+`system_or_tool`, `symptoms`, `detection_signal`, `likely_causes`,
+`failed_attempts`, `successful_fix_or_workaround`, `fallback_used`,
+`when_to_use_fallback`, `when_to_retry_primary`, `confidence`, `related_pages`,
+`related_prs`.
+
+**Event format**, for degradation/recovery/fallback events:
+
+```
+{{date}} — {{DEGRADATION | RECOVERY | FALLBACK}} — {{system_or_tool}} — {{state change, e.g. HEALTHY→DEGRADED}} — {{one-line detection signal}} — {{link to repair-playbook entry, if one exists}}
+```
+
+**Where events get written:**
+- **Build Log** — when the event is operationally relevant (affected real work, a
+  real PR, or production).
+- **`knowledge/log.md`** — always, for any Reliability-observed event, regardless of
+  whether it also hit the Build Log.
+- **A durable `repair-playbook.md` entry** — only when the lesson would change
+  future behavior (prevents a repeated failure, reveals a durable constraint,
+  documents a real recovery) — same high-value bar as § Lessons. A one-off blip that
+  resolved itself with no reusable insight stays in the event log only.
 
 ---
 
