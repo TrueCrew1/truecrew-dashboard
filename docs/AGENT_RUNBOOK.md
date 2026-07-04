@@ -143,6 +143,8 @@ operator's decision.
   placeholder.
 - Present only a clear decision to David: Approve / Send back / Reject — with the recommendation
   visible up front.
+- Filter, bundle, and prioritize before a card ever appears — see **Approval Load** below. Chief's
+  job is to reduce how many decisions David has to make, not just route every request through.
 - Log outcomes in the Build Log / Agent Log.
 
 **What Chief checks before recommending anything** (beyond the mechanical risk mapping —
@@ -206,35 +208,88 @@ notes and/or cards.
 - **Purpose:** refresh slice and priority notes against current dashboard state and shipped work.
 - **Steps:** read the Build Log and current roadmap doc (`Chief/Approvals Roadmap.md`, `01_DASHBOARD/Current Priority List.md`); check what's shipped since the last pass; draft updated slice/priority notes.
 - **Agent owner:** Planner.
-- **Approval gate:** none for routine note refresh (falls under "refine internal plans" — allowed without approval). If the pass concludes a roadmap tier/phase should change, create a `PlannerApprovalRequest` per the Planner gate list.
+- **Good output:** one short planning note (Obsidian) **plus 1–3 `ApprovalCard`s at most** — only for roadmap changes that genuinely need the operator's judgment.
+- **Auto-resolvable (log only, no card):** slice/priority notes refreshed within an existing tier; re-confirming a phase's status is unchanged; minor wording fixes to plan docs.
+- **Needs approval:** changing which tier a feature/phase sits in; adding or removing a major feature or phase; anything altering an operating-model constraint.
 - **Logging:** Build Log entry noting what was refreshed and what's unchanged; if a card was created, link it.
 
 ### Daily Build Health Check
 - **Purpose:** catch stale, duplicate, or drifting PRs/branches before they pile up (the #57/#58 pattern).
 - **Steps:** `gh pr list --state open`; scan for duplicates, stale branches, or PRs blocked on an unmet precondition; do not edit code or merge/close anything directly.
 - **Agent owner:** Build.
-- **Approval gate:** any actual merge, close, or code change → `BuildApprovalRequest` (per Build's gate list — this is exactly what produced `BUILD_REQUEST_DUPLICATE_AUTH_FIX`). A pure scan with nothing actionable found needs no card.
+- **Good output:** one repo-health summary **plus 0–3 `ApprovalCard`s at most** — only for changes that actually require clearance.
+- **Auto-resolvable (log only, no card):** lint/format-only fixes on a branch that hasn't merged yet; informational stale-branch or duplicate-PR flags with nothing to decide yet; routine Build Log updates.
+- **Needs approval:** merging or closing any PR; any migration or schema change; any security/auth or external-API change; any production-impacting refactor.
 - **Logging:** Build Log entry listing what was scanned and what (if anything) surfaced as a card.
 
 ### Weekly Research Scan
 - **Purpose:** stay current on tools/integrations relevant to True Crew without committing to any of them.
 - **Steps:** compare at least two options against the current stack (per `CLAUDE.md`'s tool routing and `package.json`); note cost, maintenance burden, and fit; write up facts vs. guesses per the `truecrew-research` skill.
 - **Agent owner:** Research.
-- **Approval gate:** none for a survey/comparison note (allowed without approval). A `ResearchApprovalRequest` is only needed if the scan concludes with a recommendation to actually adopt or drop a tool/vendor.
+- **Good output:** one 1-page comparison note **plus at most 1 `ApprovalCard`** — only if the scan concludes with an actual adopt/drop recommendation.
+- **Auto-resolvable (log only, no card):** cataloging options; cost/maintenance-burden comparisons; anything that stops at "here's what exists," not "we should switch."
+- **Needs approval:** recommending adoption or removal of a tool or vendor; recommending a stack change that would affect Build or production.
 - **Logging:** Build Log or Agent Log entry with the comparison and, if applicable, the card link.
 
 ### Weekly Content Tidy
 - **Purpose:** keep internal docs, Agent Logs, and approval notes readable — not a publishing pass.
 - **Steps:** review the week's Build Log/Agent Log entries and recent approval card summaries; consolidate, fix inconsistent terms, remove stale TODOs; draft cleaner versions.
 - **Agent owner:** Content.
-- **Approval gate:** none for internal tidying (allowed without approval). If tidying surfaces copy that's actually client- or public-facing, that copy needs its own `ContentApprovalRequest` — the internal cleanup itself does not.
+- **Good output:** cleaned notes/docs **plus at most 1 `ApprovalCard`** — only if an external-facing copy change actually needs sign-off.
+- **Auto-resolvable (log only, no card):** internal doc cleanup; fixing typos/broken links in internal notes; consolidating duplicate internal notes; standardizing terminology across logs.
+- **Needs approval:** any copy that ships to clients or the public; legal/terms/privacy/support-policy wording; critical UI wording.
 - **Logging:** Build Log entry noting what was tidied and where.
 
 ### Chief Weekly Digest
 - **Purpose:** give the operator one summary of the week's approval activity instead of requiring them to scroll the Audit log.
 - **Steps:** summarize cards resolved this week (approved/sent back/rejected), list what's still pending, and flag anything the stale-pending badge has already caught.
 - **Agent owner:** Chief.
+- **Good output:** one digest note. No cards of its own — see **Approval Load** below for how Chief handles a backlog of pending cards surfaced by other workflows.
 - **Approval gate:** none — this is reporting, not an action; nothing here changes state.
 - **Logging:** Build Log entry with the digest, so it's part of the same record as everything else.
 
 **How Chief handles it, every time:** whichever workflow ran, any `*ApprovalRequest` it produced goes through the usual `createApprovalCardFrom*Request()` path and shows up in Chief → Approvals like any other card — a workflow is just another way a request gets created, not a separate approval path.
+
+---
+
+## Approval Load
+
+The point of a workflow is to make David's approval queue *shorter*, not longer. A workflow that
+turns every finding into a card has failed at this even if every card is individually correct.
+
+**Minimizing count at the source:**
+- Every workflow's "Auto-resolvable (log only, no card)" list above is the default path. A card is
+  the exception, not the output format — if a finding doesn't clearly hit a gate, it gets logged
+  and the agent moves on, it does not get escalated "just in case."
+- Each workflow has a hard cap on cards per run (Planner 1–3, Build 0–3, Research ≤1, Content ≤1).
+  Hitting the cap is a signal to bundle or defer, not to ask for an exception.
+
+**When Chief bundles instead of creating multiple cards:**
+- Multiple findings from the *same workflow run*, on the *same underlying thing* (e.g. three
+  minor wording tweaks on one page, two related migrations in one PR), become **one card** with
+  one checklist item per finding — not one card each.
+- Bundle only when the items share a recommended decision. If one finding is "approve" and
+  another from the same batch is genuinely "needs changes," split them — don't let a bundle hide a
+  real disagreement between items.
+
+**Priorities & Load rule — when a workflow surfaces more candidates than the cap:**
+1. Rank every candidate impact: **high** (production, security/auth, external comms, money) /
+   **medium** (internal-but-structural, e.g. a roadmap tier change) / **low** (cosmetic, narrow
+   blast radius).
+2. Surface **high**-impact items immediately, each as its own clear card.
+3. **Bundle** same-decision medium/low items into a single batched card ("3 minor content fixes
+   for the pricing page") rather than surfacing them individually.
+4. If even bundled, low-impact items would pile up faster than David can reasonably review them,
+   **defer** — log them and roll them into the next Chief Weekly Digest instead of creating cards
+   now. Deferring is a logging decision, not a silent drop: it must still be visible in the Build
+   Log/digest, just not as a pending card today.
+
+**What never gets bundled or deferred:** anything that's already a distinct gate hit with its own
+real risk (e.g. two unrelated migrations, or a merge decision next to a content decision) stays
+as separate cards — bundling is for reducing noise from *related, same-decision* items, not for
+hiding unrelated decisions inside each other.
+
+**Safety is unaffected by any of this:** bundling and deferring change how many cards David sees
+and when, never whether a gate-hit action gets a cleared card before it happens. Every gate in
+every agent's section above still applies in full; this section only governs presentation and
+timing of the resulting cards.
