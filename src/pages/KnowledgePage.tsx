@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { PageHeader, Panel } from "@/components/ui";
+import { PageHeader, Panel, PanelEmpty, TableScroll } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import {
   fetchObsidianNotes,
@@ -132,28 +132,40 @@ export function KnowledgePage() {
 
       <div className="grid-2">
         <Panel title="Prompt library">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Prompt</th>
-                <th>Category</th>
-                <th>Version</th>
-                <th>Workflows</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.prompts.map((prompt) => (
-                <tr key={prompt.id}>
-                  <td>{prompt.title}</td>
-                  <td>{prompt.category}</td>
-                  <td className="mono">{prompt.version}</td>
-                  <td style={{ color: "var(--steel-dim)" }}>
-                    {prompt.linkedWorkflowTypes.join(", ")}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {data.prompts.length === 0 ? (
+            <PanelEmpty
+              emptyKey="knowledge-prompts"
+              title="No prompts yet"
+              description="Prompts appear here once they're added to the shared library."
+            />
+          ) : (
+            <TableScroll
+              label="Prompt library table; scroll horizontally on smaller screens to view version and workflow columns."
+            >
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Prompt</th>
+                    <th scope="col">Category</th>
+                    <th scope="col">Version</th>
+                    <th scope="col">Workflows</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.prompts.map((prompt) => (
+                    <tr key={prompt.id}>
+                      <td>{prompt.title}</td>
+                      <td>{prompt.category}</td>
+                      <td className="mono">{prompt.version}</td>
+                      <td style={{ color: "var(--steel-dim)" }}>
+                        {prompt.linkedWorkflowTypes.join(", ")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </TableScroll>
+          )}
         </Panel>
 
         <Panel
@@ -162,28 +174,46 @@ export function KnowledgePage() {
             <VaultStatusLabel status={vaultStatus} vaultCount={obsidianNotes.length} />
           }
         >
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Note</th>
-                <th>Type</th>
-                <th>Path</th>
-                <th>Source</th>
-              </tr>
-            </thead>
-            <tbody>
-              {knowledgeEntries.map((entry) => (
-                <tr key={`${entry.source}:${entry.id}`}>
-                  <td>{entry.title}</td>
-                  <td>{entry.type}</td>
-                  <td className="mono">{entry.obsidianPath}</td>
-                  <td>
-                    <SourceBadge source={entry.source} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {knowledgeEntries.length === 0 ? (
+            <PanelEmpty
+              emptyKey="knowledge-entries"
+              title="No knowledge entries"
+              description={
+                vaultStatus === "unreachable"
+                  ? "Obsidian vault is unreachable — entries will appear once it's back online."
+                  : vaultStatus === "unconfigured"
+                    ? "Obsidian vault isn't configured yet — entries will appear once it's connected."
+                    : "Entries appear here once notes are added to Supabase or synced from Obsidian."
+              }
+            />
+          ) : (
+            <TableScroll
+              label="Knowledge entries table; scroll horizontally on smaller screens to view path and source columns."
+            >
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Note</th>
+                    <th scope="col">Type</th>
+                    <th scope="col">Path</th>
+                    <th scope="col">Source</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {knowledgeEntries.map((entry) => (
+                    <tr key={`${entry.source}:${entry.id}`}>
+                      <td>{entry.title}</td>
+                      <td>{entry.type}</td>
+                      <td className="mono">{entry.obsidianPath}</td>
+                      <td>
+                        <SourceBadge source={entry.source} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </TableScroll>
+          )}
         </Panel>
       </div>
     </>
