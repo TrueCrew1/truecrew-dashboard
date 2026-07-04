@@ -1,7 +1,9 @@
 ---
 title: Second Brain Workflow (vault governance)
 type: concept
-status: established
+status: active
+confidence: medium
+last_reviewed: 2026-07-04
 created: 2026-07-04
 updated: 2026-07-04
 related_pages: [chief-approvals, approval-load, second-brain-setup]
@@ -15,46 +17,53 @@ related_cards: []
 
 The Second Brain Starter Pass is how `knowledge/` gets maintained — Chief coordinates
 Research and Content to turn real work artifacts into durable pages, with Build as a
-source-only provider. For its first month, the workflow runs under explicit caps and a
-priority filter designed to keep the vault small and high-signal rather than let it
-sprawl into an unmaintained wiki. Full rules live in `docs/AGENT_RUNBOOK.md` §
-**Second Brain Starter Pass** and § **Knowledge Maintenance** — this page is a
-pointer/summary, not a restatement of the full text.
+source-only provider. The vault is layered (memory index, event logs, raw capture,
+durable knowledge, lessons, reference — see `docs/AGENT_RUNBOOK.md` § Memory
+Architecture) and runs under explicit caps and a priority filter designed to keep it
+small and high-signal. Full rules live in `docs/AGENT_RUNBOOK.md` §§ Second Brain
+Starter Pass, Memory Architecture, Lessons, Knowledge Maintenance, Memory Governance —
+this page is a pointer/summary, not a restatement.
 
-## Established facts
+## What works
 
-- **Hard caps (first month):** concepts ≤10, projects ≤5, decisions ≤15, sources ≤50.
-  A candidate page that would exceed its cap gets logged as a deferred idea in
-  `knowledge/log.md` instead of created.
+- **Hard caps (first month):** concepts ≤10, projects ≤5, decisions ≤15, sources ≤50,
+  lessons ≤20, reference ≤10. A candidate that would exceed its cap gets logged as a
+  deferred idea in `knowledge/log.md` instead of created.
+- **Retrieval order:** `MEMORY.md` first (0a), open only the relevant linked pages
+  (0b), summarize before acting (0c) — never load the whole vault by default.
 - **Priority order for what earns a page**, highest first: active projects/live
-  systems (dashboard, Chief → Approvals, the Agent Runbook) → durable rules/patterns
-  (Approval Load, bundling, correlation passes, this workflow itself) → significant
-  ongoing decisions (auth rotation, tool-catalog classifications, Vercel/Supabase
-  gating) → ephemeral details (lowest — default is no page).
+  systems → durable rules/patterns → significant ongoing decisions → ephemeral
+  details (lowest, default is no page).
 - **The 3–6 month test:** a page only gets created if the honest answer to "will I
-  care about this 3–6 months from now?" is yes.
-- **Run triggers (first month):** notable dashboard/governance work, or an explicit
-  ask from David — never a timer. Between passes, agents read the vault freely;
-  writes happen only inside a pass.
-- **Three named safeguards:** no orphaned pages (everything reachable from
-  `index.md`); no duplicate topics (merge, or log the alternative framing instead of
-  creating a near-duplicate); no uncontrolled renaming (titles are stable; a rename
-  is logged explicitly).
-- **Page quality:** short and structured (1–2 paragraphs + a few bullets + links out);
-  point to `sources/` notes rather than duplicating their text; established facts,
-  assumptions, and open questions kept visibly separate.
+  care 3–6 months from now?" is yes.
+- **Lessons vs. concept pages:** a genuinely behavior-changing insight becomes a
+  `lessons/*.md` file; a durable-but-descriptive one becomes/extends a `concepts/`
+  page. See `docs/AGENT_RUNBOOK.md` § Lessons.
+- **Three named safeguards:** no orphaned pages (reachable from `MEMORY.md` or
+  `index.md`), no duplicate topics, no uncontrolled renaming.
+- **Memory Review Pass** (new workflow) reviews status markers
+  (active/tentative/deprecated) and merges overlapping pages, explicit-request only.
 
-## Open questions / inference
+## What to check first
 
-- These are first-month rules by design — whether the caps (10/5/15/50) are the right
-  long-term numbers, or need revisiting once the vault has real usage history, is
-  explicitly not decided yet.
-- No case has yet arisen where a genuinely high-priority topic was blocked purely by a
-  cap (all caps have wide headroom as of this pass) — the deferral mechanic is
-  documented but not yet stress-tested in practice.
+- `knowledge/log.md` for the most recent Second Brain pass's deferred-idea list
+  before proposing a new page on a similar topic.
+- The relevant cap (concepts/projects/decisions/sources/lessons/reference) before
+  creating a new page — if it's at or near cap, prefer updating an existing page.
+
+## Open questions
+
+- These are first-month rules by design — whether the caps are the right long-term
+  numbers, or need revisiting once the vault has more usage history, isn't decided.
+- No case has yet arisen where a genuinely high-priority topic was blocked purely by
+  a cap (all caps have wide headroom as of this pass) — the deferral mechanic is
+  documented but not yet stress-tested.
+- The Memory Review Pass hasn't been run for real yet — nothing in the vault is old
+  enough to genuinely need it.
 
 ## Related
 
-- Pages: [chief-approvals](chief-approvals.md), [approval-load](approval-load.md), [second-brain-setup](../projects/second-brain-setup.md)
-- PRs: #80
 - Decisions: none — this is a rule set, not a one-time decision
+- Sources: [second-brain-governance-rules](../sources/second-brain-governance-rules.md)
+- Lessons: none yet — see the Second Brain Starter Pass's own meta-learning step
+  (Step F) for where one would come from

@@ -155,3 +155,76 @@ workflows."
   narrow workflow invocation — each entry names its actual originating
   workflow/moment precisely in its `Workflow:` field rather than being force-fit
   under one label.
+
+---
+
+## 2026-07-04 — Layered-memory upgrade: MEMORY.md, lessons/, reference/, playbook pages
+
+Supersedes the `patterns/` design from the previous pass with a leaner,
+one-file-per-lesson model, adds a top-level always-checked-first index, adds a
+`reference/` layer, and normalizes the 6 high-value concept pages into compact
+playbooks. Full reasoning in the Obsidian Build Log entry of the same name.
+
+- 2026-07-04 — created — `MEMORY.md` — small, curated, always-checked-first index
+  (active priorities, core concepts, current projects, active decisions, high-value
+  lessons, stable references — one line each).
+- 2026-07-04 — **removed** — `patterns/winning-patterns.md`,
+  `patterns/failure-patterns.md`, `patterns/constraints.md`,
+  `patterns/recovery-patterns.md`, `patterns/approval-orchestration-patterns.md`,
+  `patterns/research-patterns.md`, `templates/learning-template.md` — deliberately
+  superseded, not silently dropped: content migrated to individual `lessons/*.md`
+  files under the new schema (see below).
+- 2026-07-04 — created — `lessons/reverify-state-before-acting.md` (success-pattern,
+  confidence high) — migrated from `patterns/winning-patterns.md`.
+- 2026-07-04 — created — `lessons/check-code-not-runbook-prose.md` (failure-pattern,
+  confidence medium) — migrated from `patterns/failure-patterns.md`.
+- 2026-07-04 — created — `lessons/github-stacked-branch-autoclose.md` (constraint,
+  confidence high) — migrated from `patterns/constraints.md`.
+- 2026-07-04 — created — `lessons/rebase-and-reopen-recovery.md` (recovery-pattern,
+  confidence high) — migrated from `patterns/recovery-patterns.md`.
+- 2026-07-04 — created — `lessons/bundle-same-decision-cards.md`
+  (orchestration-pattern, confidence high) — migrated from
+  `patterns/approval-orchestration-patterns.md`.
+- 2026-07-04 — created — `templates/lesson-template.md` — the new lesson schema
+  (title, status, confidence, source_workflow, source_agent, category, rule, why,
+  apply_when, avoid_when, check_first, related_pages, related_prs, last_reviewed).
+- 2026-07-04 — created — `reference/tool-access.md` — stable lookup table, distilled
+  from `concepts/tool-catalog.md` and the runbook's Tool Catalog sections.
+- 2026-07-04 — created — `reference/workflow-entry-points.md` — every Agent Workflow,
+  trigger phrase, owner, gate, at a glance (includes the new Memory Review Pass).
+- 2026-07-04 — updated — all 6 `concepts/` pages (`chief-approvals`, `approval-load`,
+  `dashboard-maintenance`, `vercel-status-checks`, `tool-catalog`,
+  `second-brain-workflow`) — normalized into the playbook structure (Summary / What
+  works / What to check first / Open questions / Related), added `confidence` and
+  `last_reviewed` front-matter fields, `status` standardized to
+  active/tentative/deprecated vocabulary. `tool-catalog` marked `tentative`
+  (first-pass, not yet through a Memory Review); the other 5 marked `active`.
+- 2026-07-04 — updated — all 3 `projects/` pages — added `confidence` and
+  `last_reviewed` fields; `dashboard-audit-july-2026`'s `status` value normalized
+  from `mostly-complete` to `active` (memory-trust axis, not project-lifecycle
+  phase — the project's completion status stays described in its own "Current
+  status" prose).
+- 2026-07-04 — updated — all 4 `decisions/` pages — added `confidence` and
+  `last_reviewed` fields; `status` (approved/pending/declined, the decision-outcome
+  axis) left unchanged, since it's a different axis from memory trust.
+- 2026-07-04 — updated — `docs/AGENT_RUNBOOK.md` — new § Memory Architecture (5
+  layers, MEMORY.md's role, the 0a/0b/0c retrieval order); § Lessons replacing §
+  High-Value Learning Capture's pattern-page mechanics; § Memory Governance
+  trimmed and pointed at the new Memory Review Pass workflow; new **Memory Review
+  Pass** workflow added to Agent Workflows; every dashboard/knowledge-changing
+  workflow's Second Brain check updated to read `MEMORY.md` first; Second Brain
+  Usage strengthened with a hard citation requirement (name the exact pages
+  consulted; name the page a "follows an existing pattern" claim refers to);
+  Knowledge Maintenance gained "Required front-matter fields" and "Playbook pages"
+  subsections; caps updated (Lessons ≤20, Reference ≤10, replacing Patterns ≤10).
+- 2026-07-04 — updated — `knowledge/README.md` — rewritten around the five-layer
+  model and `MEMORY.md` as the entry point.
+- 2026-07-04 — updated — `knowledge/index.md` — MEMORY.md pointer added; "Patterns"
+  section replaced with "Lessons"; new "Reference" section; vault-size table updated
+  (Lessons 5/20, Reference 2/10); status/confidence shown inline for concepts,
+  projects, and decisions.
+- 2026-07-04 — updated — `templates/concept-template.md`,
+  `templates/project-template.md`, `templates/decision-template.md` — added
+  `confidence`/`last_reviewed`; concept template restructured to the playbook shape.
+- **Counts after this pass:** concepts 6/10, projects 3/5, decisions 4/15,
+  sources 10/50, **lessons 5/20**, **reference 2/10**. No caps hit or approached.

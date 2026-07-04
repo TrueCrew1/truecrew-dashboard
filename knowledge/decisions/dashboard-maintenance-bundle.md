@@ -2,6 +2,8 @@
 title: Dashboard maintenance bundle — approve PRs #75/#76/#77
 type: decision
 status: approved
+confidence: high
+last_reviewed: 2026-07-04
 created: 2026-07-04
 updated: 2026-07-04
 related_pages: [dashboard-maintenance, dashboard-audit-july-2026, approval-load]

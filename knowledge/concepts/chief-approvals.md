@@ -1,7 +1,9 @@
 ---
 title: Chief Approvals (the approval routing model)
 type: concept
-status: established
+status: active
+confidence: high
+last_reviewed: 2026-07-04
 created: 2026-07-04
 updated: 2026-07-04
 related_pages: [approval-load, tool-catalog]
@@ -19,43 +21,47 @@ becomes a typed `*ApprovalRequest` object, mapped through a
 `createApprovalCardFrom*Request()` helper into an `ApprovalCard`, rendered in the Chief
 Approval Panel (Chief → Approvals tab). David only ever decides through cards there.
 
-## Established facts
+## What works
 
 - Core module: `src/components/chief/agentApprovalGates.ts`. `AgentRole` =
   `"planner" | "build" | "research" | "content"`. `APPROVAL_GATES` lists which actions
-  per agent require a card; anything not listed is routine enough for the agent to just
-  do.
+  per agent require a card; anything not listed is routine enough for the agent to
+  just do.
 - `riskLevel` (`low`/`medium`/`high`) maps mechanically to `recommendedDecision`
   (`approve`/`hold`/`needs_changes`) via `RISK_TO_RECOMMENDATION` — but Chief overrides
   this when a stated precondition is unmet (see the PR #57/#58 auth card: code risk is
-  low, but recommendation is "hold" because secret-rotation confirmation is missing —
-  `sources/pr-57-58-duplicate-auth-fix.md`).
+  low, but recommendation is "hold" because secret-rotation confirmation is missing).
 - Approve/Send back/Reject only ever update in-memory card state and the Chief Audit
   log — Chief never auto-merges, auto-deploys, or auto-messages externally from a card
-  action. Real automation of those actions is a documented extension point, not current
-  behavior.
-- Real (non-illustrative) approval sources proven this session: a repo-change card
-  (the decision-reason feature WIP), the Build agent's duplicate-auth-PR card, the
-  Vercel Preview secret-scope card (#78), and the dashboard-maintenance bundle (#79).
-  Planner, Research, and Content still run on illustrative `EXAMPLE_*` requests on
-  `main` as of this note — their real-request PRs (#72, README-tagline #74) are
-  unmerged.
+  action.
+- Real (non-illustrative) approval sources proven this session: a repo-change card,
+  the Build agent's duplicate-auth-PR card, the Vercel Preview secret-scope card
+  (#78), and the dashboard-maintenance bundle (#79). Planner, Research, and Content
+  still run on illustrative `EXAMPLE_*` requests on `main` as of this note.
 - Every gate in every agent's section of `docs/AGENT_RUNBOOK.md` applies in full
-  regardless of Approval Load bundling/deferral — bundling changes presentation timing,
-  never whether a gate-hit action needs a cleared card first.
+  regardless of Approval Load bundling/deferral — bundling changes presentation
+  timing, never whether a gate-hit action needs a cleared card first.
 
-## Open questions / inference
+## What to check first
+
+- `reference/tool-access.md` for which agent may use which tool before proposing a
+  gated action involving an external system.
+- Whether a stated precondition is unmet before recommending "approve" on risk level
+  alone — see `decisions/auth-fix-secret-rotation.md` for the canonical example.
+- `sources/pr-57-58-duplicate-auth-fix.md` as the template for how to reason about a
+  precondition-blocked, otherwise-low-risk request.
+
+## Open questions
 
 - `docs/AGENT_RUNBOOK.md` — the document that fully specifies this model — is still
-  unmerged (PR #71, and now stale relative to `main`; see
-  `decisions/agent-runbook-adoption.md`). The model is real and actively used in
-  practice, but its documentation isn't yet the merged source of truth.
-- `APPROVAL_GATES.build` on `main` currently has 3 entries; the runbook (and PR #69,
-  also unmerged) documents a 4th ("Changes to approval-related UX or logic"). Code and
-  doc are known to be out of sync — flagged, not yet reconciled.
+  unmerged (see `decisions/agent-runbook-adoption.md`). The model is real and actively
+  used in practice, but its documentation isn't yet the merged source of truth.
+- `APPROVAL_GATES.build` on `main` currently has 3 entries; the runbook documents a
+  4th ("Changes to approval-related UX or logic"). Code and doc are known to be out
+  of sync — see `lessons/check-code-not-runbook-prose.md`.
 
 ## Related
 
-- Pages: [approval-load](approval-load.md), [tool-catalog](tool-catalog.md)
-- PRs: #64, #66, #67, #68, #71
-- Decisions: [agent-runbook-adoption](../decisions/agent-runbook-adoption.md)
+- Decisions: [agent-runbook-adoption](../decisions/agent-runbook-adoption.md), [auth-fix-secret-rotation](../decisions/auth-fix-secret-rotation.md)
+- Sources: [pr-57-58-duplicate-auth-fix](../sources/pr-57-58-duplicate-auth-fix.md)
+- Lessons: [check-code-not-runbook-prose](../lessons/check-code-not-runbook-prose.md)

@@ -2,6 +2,8 @@
 title: Should INTERNAL_API_SECRET be added to Vercel's Preview scope?
 type: decision
 status: pending
+confidence: medium
+last_reviewed: 2026-07-04
 created: 2026-07-04
 updated: 2026-07-04
 related_pages: [vercel-status-checks, tool-catalog]

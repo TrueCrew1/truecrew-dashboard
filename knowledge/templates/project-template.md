@@ -2,6 +2,8 @@
 title: 
 type: project
 status: active
+confidence: medium
+last_reviewed: 
 created: 
 updated: 
 related_pages: []

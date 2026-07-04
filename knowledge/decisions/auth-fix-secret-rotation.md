@@ -2,6 +2,8 @@
 title: PR #58 auth fix — blocked on secret-rotation confirmation
 type: decision
 status: pending
+confidence: high
+last_reviewed: 2026-07-04
 created: 2026-07-04
 updated: 2026-07-04
 related_pages: [chief-approvals]
