@@ -301,3 +301,31 @@ playbooks. Full reasoning in the Obsidian Build Log entry of the same name.
   sources 10/50, lessons 5/20, **reference 3/10**. No caps hit or approached.
 - No dashboard UI or app code changed — governance/memory only, per the explicit
   boundary in this task.
+
+---
+
+## 2026-07-04 — Tool fallback chains added; reliability-aware agent behavior wired in
+
+- 2026-07-04 — updated — `docs/TOOL_CATALOG.md` — added `health_state` field to all
+  21 entries (default `HEALTHY`).
+- 2026-07-04 — created — `reference/tool-fallbacks.md` — fallback chains for 10
+  critical, real tools (claude-code, github, vercel, supabase, obsidian-buildlog,
+  perplexity-pro, claude-pro, cursor, sentry, free-tier AI overflow group).
+  Supabase's chain documents an already-shipped app-level fallback
+  (`mergeWithMockFallback`/mock mode), not a proposed new one.
+- **Deliberately not created:** fallback entries for PostHog, Resend, Inngest,
+  Drizzle, Zod, Figma, Stripe, QuickBooks, Google Workspace, OneDrive — none are
+  confirmed in `docs/TOOL_CATALOG.md`, `CLAUDE.md`, or `package.json`. Logged as
+  gaps in `tool-fallbacks.md` rather than fabricated.
+- 2026-07-04 — updated — `MEMORY.md`, `index.md` — cross-linked `tool-fallbacks.md`;
+  vault-size table updated (Reference 3/10 → 4/10).
+- 2026-07-04 — updated — `docs/AGENT_RUNBOOK.md` — Required Agent Behavior gains
+  "use the next approved fallback" and "return to primary once HEALTHY"; each
+  agent's own verification checklist gets a one-line reliability-aware
+  cross-reference; 5 workflows (Weekly Planner Pass, Dashboard Maintenance Pass,
+  Daily Build Health Check, Weekly Research Scan, Correlation Pass) gain a compact
+  "Tool health check" step.
+- **Counts after this pass:** concepts 6/10, projects 3/5, decisions 4/15,
+  sources 10/50, lessons 5/20, **reference 4/10**. No caps hit or approached.
+- No dashboard UI or app code changed — governance/memory only, per the explicit
+  boundary in this task.
