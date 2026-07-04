@@ -244,6 +244,13 @@ export const BUILD_REQUEST_PHASE4_PR_CONFLICT: BuildApprovalRequest = {
  * confident "close as superseded" recommendation, so bundling them in would
  * misrepresent the analysis — deferred to the next Chief Weekly Digest queue
  * instead of forced into this card or given their own cards past the cap.
+ *
+ * RESOLVED (2026-07-04): approved in full via the Chief → Approvals bundled-
+ * card walkthrough. All 15 PRs closed on GitHub with an explanatory comment
+ * each (#23,24,25,26,27,28,30,33,34,36,37,42,43 as superseded; #29 and #38
+ * as duplicates, keeping #32 and #39 per the default). See Build Log for
+ * the full outcome. Removed from AGENT_APPROVAL_CARDS below — kept here,
+ * not deleted, as the record of what was decided and why.
  */
 export const BUILD_REQUEST_STALE_PR_CLEANUP: BuildApprovalRequest = {
   id: "apr-build-stale-pr-cleanup-batch",
@@ -297,7 +304,8 @@ export const AGENT_APPROVAL_CARDS: ApprovalCard[] = [
   createApprovalCardFromPlannerRequest(EXAMPLE_PLANNER_REQUEST),
   createApprovalCardFromBuildRequest(BUILD_REQUEST_DUPLICATE_AUTH_FIX),
   createApprovalCardFromBuildRequest(BUILD_REQUEST_PHASE4_PR_CONFLICT),
-  createApprovalCardFromBuildRequest(BUILD_REQUEST_STALE_PR_CLEANUP),
+  // BUILD_REQUEST_STALE_PR_CLEANUP intentionally omitted — resolved (see its
+  // comment above and the Build Log); no longer pending.
   createApprovalCardFromResearchRequest(EXAMPLE_RESEARCH_REQUEST),
   createApprovalCardFromContentRequest(EXAMPLE_CONTENT_REQUEST),
 ];
