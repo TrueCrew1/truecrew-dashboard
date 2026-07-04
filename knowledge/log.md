@@ -71,3 +71,44 @@ pass, so this run added rules rather than ingesting new material.
   again as a candidate for a future pass, not created now.
 - **Counts after this pass:** concepts 6/10, projects 3/5, decisions 4/15,
   sources 10/50. No caps were hit or approached.
+
+---
+
+## 2026-07-04 — Vault-first amendment + first recall-driven workflow run
+
+- 2026-07-04 — updated — `docs/AGENT_RUNBOOK.md` — added a mandatory "Second Brain
+  check" (step 0) to every dashboard-touching workflow (Weekly Planner Pass, the new
+  Dashboard Maintenance Pass, Daily Build Health Check, Research–Planner–Build
+  Correlation Pass); added vault-pointer step to Chief Weekly Digest; added
+  vault-aware rules to Planner/Build/Chief; added a new "Second Brain Usage" section
+  stating the vault-first rule. No `knowledge/` page created or modified by this
+  edit itself — this is a runbook-process change, logged here since it governs how
+  agents use this vault.
+
+### Vault recall (this run)
+
+**Workflow:** Weekly Planner Pass, run immediately after the amendment above, to prove
+the pattern rather than just document it.
+
+**Pages consulted:**
+- `index.md`
+- `projects/truecrew-dashboard.md`
+- `concepts/dashboard-maintenance.md`
+- `decisions/agent-runbook-adoption.md` (pending)
+- `decisions/dashboard-maintenance-bundle.md` (**approved** — PRs #75/#76/#77 merged)
+- `decisions/vercel-preview-secret-scope.md` (pending)
+- `decisions/auth-fix-secret-rotation.md` (pending)
+
+**How it shaped the run:** recalling `dashboard-maintenance-bundle.md` surfaced that
+PR #75 already fixed the table/empty-state half of "Knowledge-page polish" — a gap
+the Obsidian `Current Priority List.md` still listed as fully open (note dated
+2026-07-02, predates PR #75). Corrected that doc directly, citing PR #75 and this
+vault page, rather than re-deriving the state from scratch or leaving the stale note
+as-is. Also avoided a miss the other direction: did **not** add anything about the
+Second Brain vault itself (PR #80) to that same doc, since its own stated scope rule
+("NOT knowledge system") excludes it — confirmed by reading the doc, not assumed.
+
+**Outcome:** no new `ApprovalCard` — a routine documentation sync against an
+already-verified fact, per the workflow's own auto-resolvable bucket. Full details in
+the Obsidian Build Log entry "Second Brain vault made the memory layer for dashboard
+workflows."
