@@ -48,8 +48,10 @@ already exist, not by a diary someone has to keep.
 | `concepts/` | Durable topic pages — the load-bearing ideas of this project (e.g. Approval Load, Chief Approvals). |
 | `projects/` | Pages for active efforts (e.g. the dashboard itself, a specific audit). |
 | `decisions/` | One page per meaningful decision — what was decided, why, alternatives, and current status (approved / pending / declined). |
+| `patterns/` | Reusable judgment, not activity — six pages (winning, failure, constraint, recovery, approval/orchestration, research), each a merged log of dated learning entries with next-time guidance and memory-worth tracking. See `docs/AGENT_RUNBOOK.md` § **High-Value Learning Capture**. |
 | `templates/` | Copy one of these to start a new page in the right shape. |
 
 See `docs/AGENT_RUNBOOK.md` § **Second Brain Starter Pass** for the full workflow that
-keeps this vault current, and § **Knowledge maintenance** for the operating rules
-agents follow when writing here.
+keeps this vault current, § **Knowledge maintenance** for the operating rules agents
+follow when writing here, and § **High-Value Learning Capture** for what turns a
+one-off event into durable, reusable memory.
