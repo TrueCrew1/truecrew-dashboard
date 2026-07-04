@@ -37,6 +37,24 @@ export interface SpecialistContribution {
   contribution: string;
 }
 
+export type ApprovalChecklistStatus = "pass" | "fail" | "pending";
+
+export interface ApprovalChecklistItem {
+  label: string;
+  status: ApprovalChecklistStatus;
+}
+
+export type ApprovalRecommendedDecision = "approve" | "hold" | "needs_changes";
+
+/**
+ * Where a proposal originated. Only "ops_change" (live operational signals,
+ * via deriveApprovalCandidates) and "pr" (see chiefApprovalCardMocks.ts, demo
+ * data only) are populated today. Extension point: add a real source (e.g.
+ * "github_pr" backed by the GitHub API, or "agent_job" backed by a real
+ * agent job queue) as those integrations come online.
+ */
+export type ApprovalSource = "pr" | "agent_build" | "ops_change";
+
 export interface ApprovalProposal {
   id: string;
   title: string;
@@ -45,13 +63,28 @@ export interface ApprovalProposal {
   riskNote: string;
   status: ApprovalStatus;
   createdAt: string;
+  updatedAt?: string;
   specialist?: Exclude<ChiefSpecialist, "Chief">;
   category?: ApprovalCategory;
   routeTo?: string;
   routeLabel?: string;
   decidedAt?: string;
   decidedBy?: Persona;
+  /** Structured review checklist — optional; renders only when present. */
+  checklist?: ApprovalChecklistItem[];
+  /** Chief's suggested call, distinct from the operator's actual decision (`status`). */
+  recommendedDecision?: ApprovalRecommendedDecision;
+  source?: ApprovalSource;
 }
+
+/**
+ * The "approval card" concept the Chief Approval Panel renders is the same
+ * shape as ApprovalProposal — every proposal Chief routes to the operator IS
+ * a card once it carries a checklist/recommendedDecision/source. Named
+ * separately so call sites can express intent (e.g. `ApprovalCard[]` for a
+ * list of fully-formed review cards) without a second parallel type.
+ */
+export type ApprovalCard = ApprovalProposal;
 
 export interface CommandHistoryEntry {
   id: string;

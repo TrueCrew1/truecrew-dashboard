@@ -1090,6 +1090,43 @@ button.chief-brief-metric {
   line-height: 1.55;
 }
 
+.chief-approval-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.chief-approval-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chief-approval-checklist-item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text);
+  line-height: 1.45;
+}
+
+.chief-approval-checklist-item--pass {
+  color: var(--green);
+}
+
+.chief-approval-checklist-item--fail {
+  color: var(--red);
+}
+
+.chief-approval-checklist-item--pending {
+  color: var(--steel-dim);
+}
+
 .chief-approval-card-details {
   display: flex;
   flex-direction: column;
