@@ -65,6 +65,8 @@ interface BaseAgentApprovalRequest {
   id: string;
   /** Must be one of this agent's APPROVAL_GATES entries. */
   gate: string;
+  /** Optional override for the card title; defaults to "{Agent}: {gate}" when absent. */
+  title?: string;
   summary: string;
   riskLevel: AgentApprovalRiskLevel;
   testsOrChecksDone: ApprovalChecklistItem[];
@@ -96,7 +98,7 @@ function baseCardFields(
 ): ApprovalCard {
   return {
     id: request.id,
-    title: `${titlePrefix}: ${request.gate}`,
+    title: request.title ?? `${titlePrefix}: ${request.gate}`,
     summary: request.summary,
     recommendedAction: request.requestedAction,
     riskNote: `Risk level: ${request.riskLevel}. ${extraRiskNote}`,
@@ -162,25 +164,52 @@ export const EXAMPLE_PLANNER_REQUEST: PlannerApprovalRequest = {
 };
 
 /**
- * Real, not illustrative: two open PRs — #57 (build/auth-trim-fix) and #58
- * (fix/internal-auth-401) — carry a byte-for-byte identical diff to
- * lib/auth.ts, opened 8 minutes apart (2026-07-03T23:07:40Z and
- * 2026-07-03T23:15:32Z), both green on CI and mergeable against main.
- * Verified via `gh pr diff 57` / `gh pr diff 58` (empty `diff` between the
- * two) and `gh pr view` for CI status. Merging both would double-apply the
- * same fix; one needs to merge and the other needs to close.
+ * Real, not illustrative — full analysis (2026-07-04):
+ *
+ * PR #57 (build/auth-trim-fix, opened 2026-07-03T23:07:40Z) and PR #58
+ * (fix/internal-auth-401, opened 2026-07-03T23:15:32Z, 8 min later) carry a
+ * byte-for-byte identical commit to lib/auth.ts — confirmed via
+ * `diff <(gh pr diff 57) <(gh pr diff 58)` (empty output). Both trim
+ * `INTERNAL_API_SECRET` and the `x-internal-key` header before the
+ * timing-safe comparison in `requireInternalAuth()`, fixing false 401s
+ * caused by a trailing newline a piped `echo` left in the rotated secret.
+ * Both are green on CI and mergeable against main (verified via `gh pr
+ * view`); neither has any human review or comment beyond the Vercel preview
+ * bot (verified via `gh pr view --json comments,reviews`).
+ *
+ * PR #58's own body is more thorough: it names 4 additional affected routes
+ * beyond #57's /api/health and /api/data (api/obsidian/notes.ts,
+ * api/chief/approvals/index.ts, api/tasks/[id].ts, api/tasks/index.ts) and
+ * explicitly documents having checked for other defects (header
+ * name/case, env var names, no VERCEL_ENV/NODE_ENV-conditional bypass).
+ * It also self-identifies as the duplicate needing reconciliation. On that
+ * basis: recommend merging #58, closing #57 as superseded.
+ *
+ * Real blocker, not resolved: both PR bodies explicitly gate on "David
+ * confirms Production secret rotation is complete" before merge — that
+ * confirmation is not on record anywhere (no PR comment, no Build Log
+ * entry), and lib/auth.ts on main still lacks the trim fix. This is a
+ * genuine precondition, not a formality — recommending "hold" rather than
+ * an unconditional "approve" so this doesn't get missed.
  */
 export const BUILD_REQUEST_DUPLICATE_AUTH_FIX: BuildApprovalRequest = {
   id: "apr-build-duplicate-auth-prs",
   gate: APPROVAL_GATES.build[0],
+  title: "Duplicate auth fixes — choose PR #57 or #58",
   summary:
-    "PR #57 (build/auth-trim-fix) and PR #58 (fix/internal-auth-401) both trim the internal API secret/header before comparison in lib/auth.ts — identical diffs, opened 8 minutes apart. Both are green on CI and mergeable.",
-  riskLevel: "low",
+    "PR #57 and PR #58 carry a byte-for-byte identical fix to lib/auth.ts (trim the secret and header before comparison, closing a false-401 from a rotated secret's trailing newline). PR #58's write-up is more thorough (names 4 more affected routes, verifies no other defect) and already self-flags as the duplicate — recommend merging #58, closing #57. Neither should merge until Production secret rotation is confirmed; that confirmation is not yet on record.",
+  riskLevel: "medium",
   testsOrChecksDone: [
-    { label: "Confirmed diffs are byte-for-byte identical (lib/auth.ts, +2/-2 each)", status: "pass" },
-    { label: "Both PRs green on CI and mergeable against main", status: "pass" },
+    { label: "Both PRs inspected (diff, metadata, comments)", status: "pass" },
+    { label: "Diffs confirmed byte-for-byte identical (lib/auth.ts, +2/-2 each)", status: "pass" },
+    { label: "CI/build status for each PR (both green, mergeable)", status: "pass" },
+    { label: "Behavior/risk differences identified (none in code; #58's write-up is more thorough)", status: "pass" },
+    { label: "Recommended PR to merge: #58", status: "pass" },
+    { label: "Recommended PR to close: #57 (superseded duplicate)", status: "pass" },
+    { label: "Production INTERNAL_API_SECRET rotation confirmed by David", status: "pending" },
   ],
-  requestedAction: "Approve merging PR #58 and closing #57 as a duplicate (or vice versa).",
+  requestedAction:
+    "Confirm Production INTERNAL_API_SECRET (and VITE_INTERNAL_KEY) rotation is complete, then merge PR #58 and close PR #57 with a comment noting it's superseded by #58. Do not merge either before rotation is confirmed.",
   filesOrAreas: ["lib/auth.ts"],
   createdAt: "2026-07-04T07:20:01.000Z",
 };
