@@ -58,6 +58,37 @@ pass, so this run added rules rather than ingesting new material.
   for the vault's own governance (tier-2 priority: "Second Brain workflow itself").
 - 2026-07-04 — updated — `projects/second-brain-setup.md` — new milestone entry,
   updated open items and current-count headroom.
+
+---
+
+## 2026-07-04 — Knowledge base refresh + free-tool research pass
+
+Triggered by explicit request (global-standard knowledge-base + free-tool-fallback
+task). No new pages created — all updates to existing pages, per "prefer updating
+over duplicating." Two governance tensions flagged and resolved before acting (see
+plan): Copilot's free-tier facts are documented for reference only, its `removed`
+status is unchanged; Slice 2 gets a factual pointer, not a live tracker, since real
+priority state stays in Obsidian per `MEMORY.md`'s existing disclaimer.
+
+- 2026-07-04 — updated — `knowledge/projects/truecrew-dashboard.md` — added a Slice 2
+  (Supabase Health Monitor, PR #59 / Vercel Deployment Protection blocker) pointer
+  under Open items.
+- 2026-07-04 — updated — `docs/TOOL_CATALOG.md` — added real, cited 2026 free-tier
+  quotas/limits to `chatgpt-free`, `gemini-free`, `deepseek-free`, `kimi-free`
+  (also filled in `launch_target` for the latter two, previously "not yet
+  confirmed"); added Copilot free-tier facts to the existing `copilot` block's
+  `notes` (status stays `removed` — reference only, not a reinstall proposal); added
+  a non-binding Qwen3-Coder research note to `ollama-local`'s `notes` (no config
+  change).
+- 2026-07-04 — updated — `knowledge/reference/tool-fallbacks.md` — added a new
+  "Credit-low mode — quick playbook" section (decision-tree table) and a researched
+  free-tier-limits table under the free-tier AI overflow chain section, both citing
+  real sources fetched this pass.
+- 2026-07-04 — updated — `knowledge/index.md` — new "Recent updates" entry
+  summarizing this pass.
+- 2026-07-04 — reviewed, no change — `knowledge/MEMORY.md`,
+  `knowledge/concepts/tool-catalog.md`, `knowledge/reference/tool-access.md` — access
+  levels and the curated "check-first" index aren't affected by this pass.
 - 2026-07-04 — updated — `index.md` — added a "Vault size (at a glance)" table,
   linked the new concept page, and converted the Sources section from a folder
   pointer into direct links to all 10 source notes (closing a "no orphaned pages"

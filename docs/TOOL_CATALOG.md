@@ -81,7 +81,11 @@ enumerate tools in code.
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: manual
 - approval_required: no
-- notes: manual overflow/second-opinion chat, per `CLAUDE.md` tool routing.
+- notes: manual overflow/second-opinion chat, per `CLAUDE.md` tool routing. Free-tier
+  quota (researched 2026-07-04): roughly 10 messages per 5-hour rolling window on the
+  current flagship model before falling back to a smaller model; no fixed daily cap,
+  limit resets on a rolling basis. Fine for a quick second opinion, not for sustained
+  drafting. Source: [OpenAI Help Center — ChatGPT Free Tier FAQ](https://help.openai.com/en/articles/9275245-chatgpt-free-tier-faq).
 
 ### perplexity-pro
 - name: Perplexity Pro
@@ -107,7 +111,15 @@ enumerate tools in code.
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: manual
 - approval_required: no
-- notes: large-context/multimodal tasks, per `CLAUDE.md` tool routing.
+- notes: large-context/multimodal tasks, per `CLAUDE.md` tool routing. Free-tier quota
+  (researched 2026-07-04): the consumer Gemini app is a separate contract from the
+  Gemini API — Google AI Studio itself is free to browse with no subscription; a
+  free API key (also from AI Studio) gets roughly 1,500 requests/day and up to 1M
+  tokens/minute on Gemini 2.5 Flash (RPM 15; Flash-Lite RPM 30), while Gemini 2.5 Pro
+  is capped much lower on free tier (~50 req/day) and Google moved Pro to paid-only
+  API access as of April 2026. Rate limits are per-project, not per-key — extra keys
+  don't add quota. Source: [Gemini API rate limits](https://ai.google.dev/gemini-api/docs/rate-limits),
+  [Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing).
 
 ### deepseek-free
 - name: free DeepSeek
@@ -115,12 +127,20 @@ enumerate tools in code.
 - owner_agent: Research, Content
 - access_type: launch-only
 - interface: web
-- launch_target: not yet confirmed
+- launch_target: https://chat.deepseek.com
 - model_type: DeepSeek
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: manual
 - approval_required: no
-- notes: manual overflow chat when Claude credits are low, per `CLAUDE.md`.
+- notes: manual overflow chat when Claude credits are low, per `CLAUDE.md`. Free-tier
+  quota (researched 2026-07-04): the web/mobile chat interface (chat.deepseek.com) has
+  no paid "Plus"/"Pro" tier for individuals — access to the current flagship model is
+  free with daily-reset usage quotas, no fixed message cap published. The separate
+  developer API grants new accounts 5M free tokens (~$8.40 value, expires in 30 days)
+  and otherwise serves requests best-effort with no hard per-user RPM/TPM cap (occasional
+  429/503 under peak load) — not needed for manual chat overflow use, only relevant if
+  API access is ever wired in. Source: [DeepSeek API pricing](https://api-docs.deepseek.com/quick_start/pricing),
+  [DeepSeek API rate limits](https://api-docs.deepseek.com/quick_start/rate_limit).
 
 ### kimi-free
 - name: free Kimi
@@ -128,12 +148,20 @@ enumerate tools in code.
 - owner_agent: Research, Content
 - access_type: launch-only
 - interface: web
-- launch_target: not yet confirmed
-- model_type: Kimi
+- launch_target: https://www.kimi.com
+- model_type: Kimi (Moonshot AI)
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: manual
 - approval_required: no
-- notes: manual overflow chat, per `CLAUDE.md`.
+- notes: manual overflow chat, per `CLAUDE.md`. Free-tier quota (researched
+  2026-07-04): kimi.com's free "Adagio" plan gives unlimited basic chat, file upload
+  (PDFs/images), and web access with no account required to try it; the current
+  flagship model is free through the web UI. What's metered/not free: heavy agent
+  tasks, deep-research mode, Agent Swarm, and Kimi Code — those draw down a separate
+  quota or need a paid plan. The developer API (separate from the free web chat) caps
+  at ~1,000 requests/day on the K2 base model, billed otherwise — not relevant unless
+  API access is ever wired in. Source: [Moonshot AI platform](https://platform.moonshot.ai/),
+  [Kimi AI pricing overview](https://kimik2ai.com/pricing/).
 
 ### ollama-local
 - name: Ollama (local)
@@ -147,7 +175,16 @@ enumerate tools in code.
 - status: launch-only
 - approval_required: no
 - notes: powers Continue.dev autocomplete per `CLAUDE.md` — not wired to any
-  Planner/Build/Research/Content/Chief workflow.
+  Planner/Build/Research/Content/Chief workflow. Research note (2026-07-04, non-binding
+  — no config change made): the currently-configured `qwen2.5-coder:7b`/`14b` (see
+  `continue-dev` below) is still a solid, well-benchmarked choice, but Qwen3-Coder
+  (community default now at 14B, Q4_K_M quantization, ~12GB VRAM) benchmarks ahead of
+  Qwen2.5-Coder at the same size on repo-level coding tasks as of 2026. Worth an
+  eventual `ollama pull` evaluation on David's own hardware before switching — not
+  proposed as an immediate change. DeepSeek-Coder-V3 benchmarks highest of the three
+  overall but needs ~140GB VRAM even at INT4 — not feasible on typical local hardware.
+  Source: [best local coding LLM 2026 comparison](https://runlocalmodel.com/best-local-coding-llm-2026.html),
+  [Qwen3-Coder-Next guide](https://dev.to/sienna/qwen3-coder-next-the-complete-2026-guide-to-running-powerful-ai-coding-agents-locally-1k95).
 
 ### continue-dev
 - name: Continue.dev
@@ -266,7 +303,13 @@ enumerate tools in code.
 - notes: explicitly excluded per `CLAUDE.md` (global): "only if already surfaced
   inside Office/Windows tools; not wired into this dev environment." Copilot Chat's
   cache/storage was cleaned up 2026-07-03 after an earlier uninstall. Not a gap —
-  listed here so the exclusion reads as a decision, not an oversight.
+  listed here so the exclusion reads as a decision, not an oversight. Free-tier facts
+  (researched 2026-07-04, documented for reference only — **this does not reopen the
+  removed decision above**): GitHub's free individual plan gives 2,000 code
+  completions/month and 50 Copilot Chat messages/month, auto model selection only, no
+  credit card required. Recorded here in case it's useful context later; not a
+  reinstall proposal. Source: [GitHub Copilot plans](https://docs.github.com/en/copilot/get-started/plans),
+  [Copilot usage limits](https://docs.github.com/en/copilot/concepts/usage-limits).
 
 ### cline
 - name: Cline (`saoudrizwan.claude-dev`)

@@ -27,6 +27,23 @@ instead of a fabricated entry.
 (`health_state` field, added this pass) — this page is the routing logic, that file
 is the live (currently all-default) state.
 
+## Credit-low mode — quick playbook
+
+A short decision tree for "Claude/Perplexity credits are constrained right now" —
+synthesized from the Tiers and Best-use tables below, plus the researched free-tier
+facts in the table under "free-tier AI overflow chain." Real quota numbers, not
+guesses — see `docs/TOOL_CATALOG.md` for the researched source per tool
+(researched 2026-07-04).
+
+| If... | Do this |
+|---|---|
+| Claude Code itself is `BLOCKED` | No fallback — this is a real outage, not a routing decision (see `claude-code` below). All agent work stops until resolved. |
+| Claude Pro / Claude Code credits are low but not exhausted | Keep using Claude Code for repo-scale work (nothing else does that job); shift *ad-hoc* reasoning/drafting to free ChatGPT first, then free Gemini/DeepSeek/Kimi. Return to Claude once credits refresh — don't keep defaulting to free tools out of habit. |
+| Perplexity credits are low | Free ChatGPT → free Gemini for research, in that order; state which tier was actually used in the output, per Research's "cite what was checked" rule. |
+| Need cheap, routine, in-editor chat/autocomplete (not repo-scale reasoning) | Continue.dev on local Ollama — $0, always available, this *is* the standing fallback lane, not a stopgap. |
+| Fully offline / no internet at all | Continue.dev + Ollama only — every other lane above needs a network connection. |
+| A specific free tool's daily/rate quota is hit mid-task | Chain to the next free tool in the list (no required order among ChatGPT/Gemini/DeepSeek/Kimi) rather than waiting out the reset window, unless the task can wait. |
+
 ## Tiers
 
 - **Primary premium** — the tool used for the highest-value work by default:
@@ -182,6 +199,18 @@ is the live (currently all-default) state.
   relay input/output by hand.
 - **when to prefer fallback:** Claude Pro/Perplexity is down or rate-limited and the
   task can't wait.
+
+**Researched free-tier limits (2026-07-04)** — real numbers, not guesses; full
+citations live on each tool's block in `docs/TOOL_CATALOG.md`:
+
+| Tool | Free-tier limit | Best for | Source |
+|---|---|---|---|
+| ChatGPT (free) | ~10 messages / 5-hour rolling window on the flagship model, then falls back to a smaller model; no fixed daily cap | Quick second opinion, short overflow chat | [OpenAI Help Center](https://help.openai.com/en/articles/9275245-chatgpt-free-tier-faq) |
+| Gemini (free) | AI Studio itself is unlimited/free to browse; a free API key gets ~1,500 req/day, 1M TPM on Gemini 2.5 Flash (Pro is far more limited, ~50 req/day, API access paid-only since Apr 2026) | Large-context/multimodal, and free-form chat via AI Studio | [Gemini API rate limits](https://ai.google.dev/gemini-api/docs/rate-limits) |
+| DeepSeek (free) | Web chat (chat.deepseek.com) — unlimited flagship-model access, no Plus/Pro tier exists; API — 5M free tokens for new accounts (30-day expiry), no hard per-user rate cap after | Manual overflow chat; cheapest option if API access is ever wired in | [DeepSeek API docs](https://api-docs.deepseek.com/quick_start/pricing) |
+| Kimi (free) | kimi.com "Adagio" plan — unlimited basic chat/file upload, no account required; agent/deep-research/coding modes are metered separately; API capped ~1,000 req/day | Manual overflow chat; not for agentic/coding workloads on the free plan | [Moonshot AI platform](https://platform.moonshot.ai/) |
+| GitHub Copilot (free) | 2,000 code completions/mo + 50 chat messages/mo, auto model selection only | **Reference only — stays excluded from this stack per the `removed` decision below; not proposed for use** | [GitHub Copilot plans](https://docs.github.com/en/copilot/get-started/plans) |
+| Ollama local (`qwen2.5-coder:7b`/`14b`, current config) | $0, fully offline, no quota | Editor autocomplete + cheap/routine chat (Continue.dev) | see `docs/TOOL_CATALOG.md` `ollama-local` notes for a non-binding Qwen3-Coder upgrade path |
 
 ---
 
