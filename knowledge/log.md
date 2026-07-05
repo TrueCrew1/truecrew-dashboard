@@ -89,6 +89,11 @@ priority state stays in Obsidian per `MEMORY.md`'s existing disclaimer.
 - 2026-07-04 — reviewed, no change — `knowledge/MEMORY.md`,
   `knowledge/concepts/tool-catalog.md`, `knowledge/reference/tool-access.md` — access
   levels and the curated "check-first" index aren't affected by this pass.
+- 2026-07-04 — pushed — commit `43834c2` on `docs/second-brain-starter-vault`, folded
+  into the already-open PR #80 (per explicit choice: adding to #80 instead of a new
+  stacked branch, since `main` has no `knowledge/`/`docs/TOOL_CATALOG.md` yet for a
+  true standalone PR). `npm run qa` verified passing before push. Approval card
+  presented for this pass; not yet merged — awaiting PR review/merge decision.
 - 2026-07-04 — updated — `index.md` — added a "Vault size (at a glance)" table,
   linked the new concept page, and converted the Sources section from a folder
   pointer into direct links to all 10 source notes (closing a "no orphaned pages"
