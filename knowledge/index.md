@@ -120,6 +120,18 @@ just a folder pointer) so every note is actually reachable from this page, per t
 
 ## Recent updates
 
+- **2026-07-04** — Knowledge base refresh + free-tool research pass: added a Slice 2
+  (Supabase Health Monitor, PR #59) pointer to
+  [projects/truecrew-dashboard.md](projects/truecrew-dashboard.md)'s Open items
+  (factual pointer only — this vault doesn't mirror live Obsidian priority state).
+  Researched real 2026 free-tier quotas for ChatGPT, Gemini, DeepSeek, Kimi, GitHub
+  Copilot, and current best local Ollama coding models, and recorded them in
+  `docs/TOOL_CATALOG.md` (per-tool `notes`, with sources) and
+  [reference/tool-fallbacks.md](reference/tool-fallbacks.md) (new "Credit-low mode —
+  quick playbook" section + a researched-limits table). No tool was adopted, removed,
+  or reinstalled — GitHub Copilot's free-tier facts are documented for reference only,
+  its `removed` status in `docs/TOOL_CATALOG.md` is unchanged. See
+  [log.md](log.md) for the full line-by-line record.
 - **2026-07-04** — Reliability Agent fully defined (still reserved, not activated):
   `docs/AGENT_RUNBOOK.md` § Reliability Agent (purpose, responsibilities,
   boundaries, ownership under Chief), four health states (HEALTHY/DEGRADED/

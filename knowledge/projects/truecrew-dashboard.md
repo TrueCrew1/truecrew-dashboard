@@ -54,6 +54,14 @@ Recent real threads, all live at once:
 
 ## Open items
 
+- **Slice 2 — Supabase Health Monitor (PR #59)** is the current dashboard-internal
+  task per Obsidian's active-task doc, blocked on a Vercel Deployment Protection
+  setting (human-only — not actioned from this repo). This is a pointer, not a live
+  tracker: this vault deliberately doesn't mirror Obsidian's real-time priority state
+  (see `knowledge/MEMORY.md`'s "Active priorities" disclaimer) — check
+  `True Crew/02_OPERATIONS/Tasks/active-task-truecrew-dashboard.md` in Obsidian for
+  current status, not this line. Distinct from the Vercel Preview secret-scope issue
+  below (different root cause, different PR).
 - PRs #69, #70, #71 (runbook-adjacent) still open/unmerged; #71 in particular is now
   stale relative to `main` on unrelated files (see `decisions/agent-runbook-adoption.md`).
 - Secret-rotation confirmation for the #57/#58 auth fix — blocking, unresolved, only
