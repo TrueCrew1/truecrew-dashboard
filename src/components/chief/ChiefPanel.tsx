@@ -31,6 +31,7 @@ import {
 import { SpecialistCards } from "./SpecialistCards";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
 import { ChiefBoard } from "./ChiefBoard";
+import { AgentWorkBoard } from "./AgentWorkBoard";
 import type {
   ApprovalAction,
   ApprovalDecision,
@@ -48,7 +49,7 @@ const EXAMPLE_COMMANDS = [
   "Show open alerts",
 ];
 
-type ChiefTab = "command" | "board" | "approvals" | "history";
+type ChiefTab = "command" | "board" | "agents" | "approvals" | "history";
 
 export function ChiefPanel() {
   const { data, loading, source } = useData();
@@ -356,6 +357,17 @@ export function ChiefPanel() {
         <button
           type="button"
           role="tab"
+          id="chief-tab-agents"
+          aria-selected={activeTab === "agents"}
+          aria-controls="chief-panel-agents"
+          className={`chief-tab${activeTab === "agents" ? " chief-tab--active" : ""}`}
+          onClick={() => setActiveTab("agents")}
+        >
+          Agents
+        </button>
+        <button
+          type="button"
+          role="tab"
           id="chief-tab-approvals"
           aria-selected={activeTab === "approvals"}
           aria-controls="chief-panel-approvals"
@@ -506,6 +518,17 @@ export function ChiefPanel() {
               onApprovalAction={handleApprovalAction}
               onOpenApprovals={() => openApprovals("pending")}
             />
+          </div>
+        ) : null}
+
+        {activeTab === "agents" ? (
+          <div
+            id="chief-panel-agents"
+            role="tabpanel"
+            aria-labelledby="chief-tab-agents"
+            className="chief-tab-panel"
+          >
+            <AgentWorkBoard />
           </div>
         ) : null}
 
