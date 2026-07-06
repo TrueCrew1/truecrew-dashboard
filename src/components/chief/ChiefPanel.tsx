@@ -26,6 +26,7 @@ import {
   buildChiefLiveContext,
   deriveApprovalCandidates,
   deriveChiefBoardItems,
+  mergeApprovalSources,
   resolveChiefCommand,
 } from "./chiefLiveContext";
 import { SpecialistCards } from "./SpecialistCards";
@@ -137,11 +138,8 @@ export function ChiefPanel() {
   }, []);
 
   const approvals = useMemo(() => {
-    const byId = new Map<string, ApprovalProposal>();
-    for (const proposal of [...derivedApprovals, ...commandApprovals]) {
-      byId.set(proposal.id, proposal);
-    }
-    return [...byId.values()].map((proposal) => {
+    const merged = mergeApprovalSources(derivedApprovals, commandApprovals);
+    return merged.map((proposal) => {
       const decision = approvalDecisions[proposal.id];
       if (!decision) return proposal;
       return {

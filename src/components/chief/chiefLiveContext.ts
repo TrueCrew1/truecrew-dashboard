@@ -369,6 +369,24 @@ export function deriveApprovalCandidates(
   return proposals;
 }
 
+/**
+ * Dedup-merge approval proposal sources by id, last source wins on
+ * conflict. Shared by ChiefPanel (sidebar queue) and any other surface
+ * that needs the same pending-approval set — e.g. a homepage snapshot —
+ * so both read from one merge rule instead of two copies of it. Does not
+ * apply operator decisions; callers that track decisions (ChiefPanel)
+ * layer those on separately.
+ */
+export function mergeApprovalSources(
+  ...sources: ApprovalProposal[][]
+): ApprovalProposal[] {
+  const byId = new Map<string, ApprovalProposal>();
+  for (const proposal of sources.flat()) {
+    byId.set(proposal.id, proposal);
+  }
+  return [...byId.values()];
+}
+
 export function deriveChiefBoardItems(
   ctx: ChiefLiveContext,
   pendingApprovals: ApprovalProposal[],
