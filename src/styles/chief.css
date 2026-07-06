@@ -2814,3 +2814,132 @@ button.chief-brief-metric {
   font-size: 9px;
   color: var(--steel-dim);
 }
+
+.chief-home-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.chief-home-panel .chief-brief {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.chief-home-intake {
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.chief-home-intake-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+}
+
+.chief-home-intake-row {
+  display: flex;
+  gap: 8px;
+}
+
+.chief-home-intake-input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-panel);
+  color: var(--text);
+  font-size: 12px;
+}
+
+.chief-home-intake-input:focus-visible {
+  outline: 2px solid var(--orange-border);
+  outline-offset: -1px;
+}
+
+.chief-home-intake-submit {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  border: 1px solid var(--orange-border);
+  border-radius: 6px;
+  background: var(--orange);
+  color: #0a0b0d;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chief-home-intake-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chief-home-response {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+}
+
+.chief-home-response-summary {
+  margin: 0 0 6px;
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.chief-home-response-action {
+  margin: 0;
+  font-size: 11px;
+  color: var(--steel);
+  line-height: 1.5;
+}
+
+.chief-home-response-label {
+  font-weight: 600;
+  color: var(--steel-dim);
+}
+
+.chief-home-response-approval {
+  margin: 6px 0 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--orange);
+}
+
+.chief-home-snapshots {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 1100px) {
+  .chief-home-snapshots {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chief-home-snapshot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.chief-home-snapshot-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+}

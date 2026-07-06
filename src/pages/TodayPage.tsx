@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { ShiftStatsStrip } from "@/components/dashboard/ShiftStatsStrip";
+import { ChiefHomePanel } from "@/components/chief/ChiefHomePanel";
 import { EntityContextMeta, TaskCell } from "@/components/tasks/TaskCell";
 import { TaskWarningSummary } from "@/components/tasks/TaskWarningSummary";
 import {
@@ -68,6 +69,8 @@ export function TodayPage() {
       <ShiftStatsStrip />
 
       <div className="page-stack">
+        <ChiefHomePanel />
+
         <div className="grid-2">
           <Panel title="Focus queue">
             <TaskWarningSummary
