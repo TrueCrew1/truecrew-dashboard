@@ -1,6 +1,9 @@
+import { useMemo } from "react";
 import { ApprovalSectionHeader, ApprovalSectionShell, ApprovalSurfaceEmpty } from "./approvalWrappers";
 import { AGENT_WORK_ITEMS, AGENT_WORK_STATUS_CONFIG } from "./agentWorkBoardMock";
 import { formatChiefTimestamp } from "./chiefMock";
+import { deriveBuildAgentWorkItems } from "./chiefLiveContext";
+import { useData } from "@/context/DataContext";
 import type { AgentWorkItem, AgentWorkStatus } from "./types";
 import type { TaskPriority } from "@/types";
 
@@ -10,6 +13,7 @@ const SPECIALIST_INITIALS: Record<AgentWorkItem["agent"], string> = {
   "Research Agent": "RS",
   "Roadmap Agent": "RM",
   "Marketer Agent": "MK",
+  "Build Agent": "BD",
 };
 
 const PRIORITY_BADGE_VARIANT: Record<TaskPriority, "red" | "orange" | "yellow" | "steel"> = {
@@ -41,8 +45,11 @@ function AgentWorkCard({ item }: { item: AgentWorkItem }) {
           </span>
           <span className="agent-work-card-agent-name">{item.agent}</span>
         </div>
-        <span className={`badge badge-${PRIORITY_BADGE_VARIANT[item.priority]}`}>
-          {item.priority}
+        <span className="agent-work-card-badges">
+          {item.source === "live" ? <span className="badge badge-green">live</span> : null}
+          <span className={`badge badge-${PRIORITY_BADGE_VARIANT[item.priority]}`}>
+            {item.priority}
+          </span>
         </span>
       </div>
       <p className="agent-work-card-task">{item.task}</p>
@@ -60,7 +67,9 @@ function AgentWorkCard({ item }: { item: AgentWorkItem }) {
 }
 
 export function AgentWorkBoard() {
-  const items = AGENT_WORK_ITEMS;
+  const { data } = useData();
+  const buildItems = useMemo(() => deriveBuildAgentWorkItems(data.tasks), [data.tasks]);
+  const items = useMemo(() => [...buildItems, ...AGENT_WORK_ITEMS], [buildItems]);
 
   if (items.length === 0) {
     return (
@@ -81,8 +90,9 @@ export function AgentWorkBoard() {
       count={`${items.length} item${items.length === 1 ? "" : "s"}`}
     >
       <p className="agent-work-board-note">
-        Snapshot of what each agent is carrying right now. Mock data for this slice — read-only,
-        no actions taken here.
+        Snapshot of what each agent is carrying right now. Build (marked{" "}
+        <span className="badge badge-green">live</span>) reflects real task data; other agents
+        are still mock for this slice. Read-only — no actions taken here.
       </p>
 
       <div className="agent-work-lanes">
