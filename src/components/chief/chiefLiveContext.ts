@@ -1,5 +1,5 @@
 import type { MockData } from "@/data/mockData";
-import type { AlertItem, Task, WorkflowStage } from "@/types";
+import { WorkflowStage, type AlertItem, type Task } from "@/types";
 import {
   deriveShiftStats,
   isActiveIncidentStatus,
@@ -22,6 +22,7 @@ import {
   routeLabelForPath,
 } from "./chiefRoutes";
 import type {
+  AgentWorkItem,
   ApprovalProposal,
   ChiefBoardItem,
   ChiefBoardLaneConfig,
@@ -385,6 +386,63 @@ export function mergeApprovalSources(
     byId.set(proposal.id, proposal);
   }
   return [...byId.values()];
+}
+
+/**
+ * Real, not mock: derives Build's Agents-tab entries from the same live
+ * task data (gates, blocker, stage) Chief already uses elsewhere in this
+ * file — no separate agent-status source exists, so a build-workflow
+ * task's own record IS the truthful signal. Baseline integration for the
+ * Agents tab (see agentWorkBoardMock.ts); other agents there still run on
+ * hand-written mock entries pending their own real signal.
+ *
+ * Status mapping: Done/Logged -> completed; an open required gate or a
+ * blocker string -> blocked; Inbox/Triage/Planned (not yet started) ->
+ * queued; anything else open -> active. There is no live signal yet for
+ * "awaiting_approval" specifically (that would require cross-referencing
+ * the approvals queue), so build tasks never land in that lane here.
+ */
+export function deriveBuildAgentWorkItems(tasks: Task[]): AgentWorkItem[] {
+  return tasks
+    .filter((task) => task.workflowType === "build")
+    .map((task) => {
+      const blockingGates = getBlockingGates(task.gates);
+      const isBlocked = blockingGates.length > 0 || Boolean(task.blocker);
+      const isDone = task.stage === WorkflowStage.Done || task.stage === WorkflowStage.Logged;
+      const isUnstarted =
+        task.stage === WorkflowStage.Inbox ||
+        task.stage === WorkflowStage.Triage ||
+        task.stage === WorkflowStage.Planned;
+
+      const status: AgentWorkItem["status"] = isDone
+        ? "completed"
+        : isBlocked
+          ? "blocked"
+          : isUnstarted
+            ? "queued"
+            : "active";
+
+      const note = isDone
+        ? "Build complete — see task record for deploy/next steps."
+        : task.blocker
+          ? task.blocker
+          : blockingGates.length > 0
+            ? formatOpenGateSummary(blockingGates)
+            : isUnstarted
+              ? "Not yet started."
+              : "In progress — no open blockers.";
+
+      return {
+        id: `agentwork-build-${task.id}`,
+        agent: "Build Agent",
+        task: task.title,
+        status,
+        priority: task.priority,
+        note,
+        updatedAt: task.updatedAt,
+        source: "live",
+      };
+    });
 }
 
 export function deriveChiefBoardItems(

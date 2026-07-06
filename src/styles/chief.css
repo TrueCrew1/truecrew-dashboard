@@ -2943,3 +2943,10 @@ button.chief-brief-metric {
   text-transform: uppercase;
   color: var(--steel-dim);
 }
+
+.agent-work-card-badges {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
