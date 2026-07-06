@@ -38,7 +38,7 @@ export function TaskContextMeta({ context }: { context: TaskContext }) {
         ·
       </span>
       <span className="task-context-work-order">
-        {context.workOrderName !== context.workOrderId ? (
+        {context.hasLinkedWorkflow ? (
           <>
             <span>{context.workOrderName}</span>
             <span className="task-context-sep" aria-hidden>
