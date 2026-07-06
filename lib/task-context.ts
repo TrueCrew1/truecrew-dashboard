@@ -19,6 +19,8 @@ export interface TaskContext {
   customerSource: CustomerResolutionSource;
   workOrderName: string;
   workOrderId: string;
+  /** True only when workOrderName comes from a distinct linked workflow — not a fallback echo of the task's own title. */
+  hasLinkedWorkflow: boolean;
 }
 
 export interface TaskContextData {
@@ -109,6 +111,7 @@ export function resolveTaskContextFromTask(
     customerSource: customer.source,
     workOrderName: linkedWorkflow?.title ?? task.title,
     workOrderId: task.id,
+    hasLinkedWorkflow: Boolean(linkedWorkflow),
   };
 }
 
@@ -130,6 +133,7 @@ export function resolveEntityContext(
       customerSource: "none",
       workOrderName: workflow.title,
       workOrderId: workflow.id,
+      hasLinkedWorkflow: true,
     };
   }
 
@@ -138,6 +142,7 @@ export function resolveEntityContext(
     customerSource: "none",
     workOrderName: entityId,
     workOrderId: entityId,
+    hasLinkedWorkflow: false,
   };
 }
 
