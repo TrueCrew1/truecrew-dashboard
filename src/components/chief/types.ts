@@ -1,4 +1,4 @@
-import type { Persona } from "@/types";
+import type { Persona, TaskPriority } from "@/types";
 
 export type ChiefSpecialist =
   | "Workflow Gate Agent"
@@ -144,6 +144,33 @@ export interface ChiefBoardItem {
 
 export interface ChiefBoardLaneConfig {
   lane: ChiefBoardLane;
+  label: string;
+  emptyMessage: string;
+}
+
+export type AgentWorkStatus = "queued" | "active" | "blocked" | "awaiting_approval" | "completed";
+
+/**
+ * A single unit of work an agent is carrying, shown on the Chief "Agents"
+ * tab. Distinct from ApprovalProposal/ChiefBoardItem — this tracks an
+ * agent's current task and status, not an operator decision or a live
+ * dashboard signal. Mock data only for now (see agentWorkBoardMock.ts);
+ * extension point: back this with real agent job state once agents report
+ * status somewhere other than approval requests.
+ */
+export interface AgentWorkItem {
+  id: string;
+  agent: Exclude<ChiefSpecialist, "Chief">;
+  task: string;
+  status: AgentWorkStatus;
+  priority: TaskPriority;
+  /** Short next-step (in-progress work) or blocker (why it's stuck) text. */
+  note: string;
+  updatedAt: string;
+}
+
+export interface AgentWorkStatusConfig {
+  status: AgentWorkStatus;
   label: string;
   emptyMessage: string;
 }
