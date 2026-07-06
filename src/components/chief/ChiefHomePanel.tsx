@@ -1,42 +1,22 @@
 import { FormEvent, useMemo, useRef, useState } from "react";
 import { Panel } from "@/components/ui";
 import { useData } from "@/context/DataContext";
-import { AGENT_APPROVAL_CARDS } from "./agentApprovalGates";
-import { MOCK_PR_APPROVAL_CARDS } from "./chiefApprovalCardMocks";
-import {
-  buildChiefLiveContext,
-  deriveApprovalCandidates,
-  deriveChiefBoardItems,
-  mergeApprovalSources,
-  resolveChiefCommand,
-} from "./chiefLiveContext";
-import { REPO_CHANGE_APPROVAL_CARDS } from "./repoChangeApprovals";
+import { buildApprovalFromResponse } from "./chiefMock";
+import { deriveChiefBoardItems, resolveChiefCommand } from "./chiefLiveContext";
+import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
 import type { ChiefResponse } from "./types";
 
 const SNAPSHOT_LIMIT = 4;
 
-const STATIC_APPROVAL_SOURCES = [
-  ...MOCK_PR_APPROVAL_CARDS,
-  ...REPO_CHANGE_APPROVAL_CARDS,
-  ...AGENT_APPROVAL_CARDS,
-];
-
 export function ChiefHomePanel() {
   const { data } = useData();
   const approvalSnapshotRef = useRef<HTMLDivElement>(null);
 
-  const liveContext = useMemo(() => buildChiefLiveContext(data), [data]);
-
-  // Read-only: merges the same sources ChiefPanel does, but has no access
-  // to in-session approve/reject decisions (those live in ChiefPanel's own
-  // state — see chiefLiveContext.ts's mergeApprovalSources doc comment).
-  // Counts here match the sidebar at load; a decision made in the sidebar
-  // during this session won't retract from this snapshot until reload.
-  const approvals = useMemo(() => {
-    const derived = deriveApprovalCandidates(data, liveContext);
-    return mergeApprovalSources(derived, STATIC_APPROVAL_SOURCES);
-  }, [data, liveContext]);
+  // Shared with the sidebar Chief panel (ChiefApprovalsContext) — same
+  // merged, decision-applied queue, so counts here stay in sync with the
+  // sidebar within the same session instead of only matching at load.
+  const { liveContext, approvals, addCommandApproval } = useChiefApprovals();
 
   const pendingApprovals = useMemo(
     () => approvals.filter((proposal) => proposal.status === "pending"),
@@ -71,7 +51,14 @@ export function ChiefHomePanel() {
 
     setIsProcessing(true);
     window.setTimeout(() => {
-      setResponse(resolveChiefCommand(trimmed, data, liveContext, approvals));
+      const result = resolveChiefCommand(trimmed, data, liveContext, approvals);
+      setResponse(result);
+
+      const newApproval = buildApprovalFromResponse(trimmed, result);
+      if (newApproval) {
+        addCommandApproval(newApproval);
+      }
+
       setIsProcessing(false);
     }, 320);
   };
@@ -119,7 +106,7 @@ export function ChiefHomePanel() {
               </p>
               {response.approvalNeeded ? (
                 <p className="chief-home-response-approval">
-                  Needs approval — open the Approvals tab in the Chief panel to decide.
+                  Needs approval — filed to the Chief panel's Approvals tab for review.
                 </p>
               ) : null}
             </div>
