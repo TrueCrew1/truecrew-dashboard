@@ -3,6 +3,19 @@
 
 _Last updated: 2026-07-03_
 
+**Status (2026-07-05): Shipped, merged to `origin/main`.** Confirmed via `git log`/
+`git show origin/main` that `src/components/chief/ApprovalAlertsPanel.tsx`,
+`useApprovalAlerts.ts`, and the `MonitorPage.tsx` wiring all exist on `main` today — this
+isn't inferred from the plan being written, it's verified against the actual merged
+history. The checklists below reflect the original plan and were never checked off after
+merge; this pass corrects that but does **not** re-verify each item live (e.g. mobile
+layout, individual badge colors) — treat unchecked-but-plausible items as "not
+re-confirmed this pass," not as "not done."
+
+This is a different, already-shipped feature from the Phase 4 urgency/escalation work —
+see `APPROVAL_ALERTS_INSPECTION.md`'s 2026-07-05 status update for that one, which is
+implemented locally but **not yet merged**. Don't conflate the two.
+
 ---
 
 ## 1. Inspection Findings
@@ -288,5 +301,3 @@ No route changes. No nav changes.
 | `src/pages/MonitorPage.tsx` | Edit | Mount the approval alerts panel on `/monitor` |
 
 No other files should change in this slice.
-
-After creating the file, stop. Do not implement the feature yet. Show me the diff for docs/APPROVAL_ALERTS_PLAN.md only.
