@@ -425,6 +425,33 @@
   padding: 0;
 }
 
+.panel-copy {
+  padding: 14px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--steel-dim);
+}
+
+.panel-copy p {
+  margin: 0 0 10px;
+}
+
+.panel-copy p:last-child {
+  margin-bottom: 0;
+}
+
+.panel-copy .chief-board-list + p {
+  margin-top: 10px;
+}
+
+.panel-note {
+  margin: 0;
+  padding: 0 14px 14px;
+  font-size: 11px;
+  color: var(--steel-dim);
+  line-height: 1.45;
+}
+
 .data-table {
   width: 100%;
   border-collapse: collapse;
