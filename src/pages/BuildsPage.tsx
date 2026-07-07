@@ -10,6 +10,8 @@ import {
   TableScroll,
   TableText,
 } from "@/components/ui";
+import { enqueueBuildAgentTestProposal } from "@/components/chief/buildAgentTestProposal";
+import { useChiefApprovals } from "@/components/chief/ChiefApprovalsContext";
 import { TaskCell } from "@/components/tasks/TaskCell";
 import { TaskWarningSummary } from "@/components/tasks/TaskWarningSummary";
 import { useData } from "@/context/DataContext";
@@ -22,10 +24,25 @@ import {
   type TaskWarningKind,
 } from "../../lib/task-warnings";
 
+type BuildAgentTestFeedback = "queued" | "already_pending" | null;
+
 export function BuildsPage() {
   const { selectedEntityId, setSelectedEntityId } = useSelection();
   const { data } = useData();
+  const { approvals, addCommandApproval } = useChiefApprovals();
   const [warningKind, setWarningKind] = useState<TaskWarningKind | null>(null);
+  const [buildAgentTestFeedback, setBuildAgentTestFeedback] =
+    useState<BuildAgentTestFeedback>(null);
+
+  function handleProposeBuildAgentTest() {
+    const result = enqueueBuildAgentTestProposal(approvals);
+    if (result.outcome === "blocked") {
+      setBuildAgentTestFeedback("already_pending");
+      return;
+    }
+    addCommandApproval(result.card);
+    setBuildAgentTestFeedback("queued");
+  }
   const buildWorkflows = data.workflows.filter((w) => w.type === "build");
   const buildTasks = data.tasks.filter((t) => t.workflowType === "build");
   const warningContext = useMemo(
@@ -46,6 +63,30 @@ export function BuildsPage() {
       />
 
       <div className="page-stack">
+        <Panel
+          title="Build Agent approval test"
+          action={
+            <button type="button" className="empty-state-link" onClick={handleProposeBuildAgentTest}>
+              Propose test change
+            </button>
+          }
+        >
+          <p className="cell-muted">
+            Queue a docs-only Build Agent proposal into Chief&apos;s approval queue for end-to-end
+            QA. Review on Chief → Approvals; the Agents tab shows it under Awaiting approval.
+          </p>
+          {buildAgentTestFeedback === "queued" ? (
+            <p className="cell-muted" role="status">
+              Queued for operator approval — open Chief → Approvals to decide.
+            </p>
+          ) : null}
+          {buildAgentTestFeedback === "already_pending" ? (
+            <p className="cell-muted" role="status">
+              Already awaiting approval — review the pending test proposal on Chief → Approvals.
+            </p>
+          ) : null}
+        </Panel>
+
         <Panel title="Build workflows">
           {buildWorkflows.length === 0 ? (
             <PanelEmpty

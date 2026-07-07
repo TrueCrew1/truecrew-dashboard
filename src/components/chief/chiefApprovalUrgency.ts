@@ -97,3 +97,29 @@ export function compareApprovalsByAge(
 ): number {
   return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
 }
+
+export interface PendingApprovalUrgencySummary {
+  pending: number;
+  dueSoon: number;
+  overdue: number;
+}
+
+/** Count pending proposals by urgency tier — same buckets as getUrgency. */
+export function summarizePendingApprovalUrgency(
+  approvals: ApprovalProposal[],
+  now?: Date,
+): PendingApprovalUrgencySummary {
+  let pending = 0;
+  let dueSoon = 0;
+  let overdue = 0;
+
+  for (const proposal of approvals) {
+    if (proposal.status !== "pending") continue;
+    pending += 1;
+    const urgency = getUrgency(proposal.createdAt, now);
+    if (urgency === "overdue") overdue += 1;
+    else if (urgency === "dueSoon") dueSoon += 1;
+  }
+
+  return { pending, dueSoon, overdue };
+}

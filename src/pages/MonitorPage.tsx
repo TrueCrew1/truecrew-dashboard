@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   formatRelativeTime,
@@ -12,6 +12,8 @@ import {
   TableText,
 } from "@/components/ui";
 import { ApprovalAlertsPanel } from "@/components/chief/ApprovalAlertsPanel";
+import { enqueueResearchAgentTestProposal } from "@/components/chief/researchAgentTestProposal";
+import { useChiefApprovals } from "@/components/chief/ChiefApprovalsContext";
 import { PlatformHealthCard } from "@/components/monitor/PlatformHealthCard";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
@@ -21,6 +23,8 @@ import {
   filterIncidentsByShiftParam,
   SHIFT_FILTER_LABELS,
 } from "../../lib/queries/dashboard-stats";
+
+type ResearchAgentTestFeedback = "queued" | "already_pending" | null;
 
 const statusVariant = (status: string) => {
   if (status === "healthy") return "green" as const;
@@ -32,7 +36,20 @@ const statusVariant = (status: string) => {
 export function MonitorPage() {
   const { selectedEntityId, setSelectedEntityId } = useSelection();
   const { data } = useData();
+  const { approvals, addCommandApproval } = useChiefApprovals();
+  const [researchAgentTestFeedback, setResearchAgentTestFeedback] =
+    useState<ResearchAgentTestFeedback>(null);
   const [searchParams] = useSearchParams();
+
+  function handleProposeResearchAgentTest() {
+    const result = enqueueResearchAgentTestProposal(approvals);
+    if (result.outcome === "blocked") {
+      setResearchAgentTestFeedback("already_pending");
+      return;
+    }
+    addCommandApproval(result.card);
+    setResearchAgentTestFeedback("queued");
+  }
   const filter = searchParams.get("filter");
   const health = useMonitorHealth();
   const liveApiEnabled = isLiveApiEnabled();
@@ -107,6 +124,35 @@ export function MonitorPage() {
       </div>
 
       <div className="page-stack">
+        <Panel
+          title="Research Agent approval test"
+          action={
+            <button
+              type="button"
+              className="empty-state-link"
+              onClick={handleProposeResearchAgentTest}
+            >
+              Propose test investigation
+            </button>
+          }
+        >
+          <p className="cell-muted">
+            Queue a docs-only Research Agent QA proposal into Chief&apos;s approval queue — not a
+            real tool adoption or vendor decision. Review on Chief → Approvals; the Agents tab shows
+            it under Awaiting approval.
+          </p>
+          {researchAgentTestFeedback === "queued" ? (
+            <p className="cell-muted" role="status">
+              Queued for operator approval — open Chief → Approvals to decide.
+            </p>
+          ) : null}
+          {researchAgentTestFeedback === "already_pending" ? (
+            <p className="cell-muted" role="status">
+              Already awaiting approval — review the pending test proposal on Chief → Approvals.
+            </p>
+          ) : null}
+        </Panel>
+
         <Panel title="Service catalog">
           {data.tools.length === 0 ? (
             <PanelEmpty
