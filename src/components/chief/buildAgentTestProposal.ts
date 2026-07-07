@@ -1,5 +1,5 @@
 import {
-  APPROVAL_GATES,
+  BUILD_APPROVAL_GATES,
   createApprovalCardFromBuildRequest,
   type BuildApprovalRequest,
 } from "./agentApprovalGates";
@@ -23,7 +23,7 @@ export function buildBuildAgentTestRequest(
 ): BuildApprovalRequest {
   return {
     id: BUILD_AGENT_TEST_PROPOSAL_ID,
-    gate: APPROVAL_GATES.build[0],
+    gate: BUILD_APPROVAL_GATES[0],
     summary: `Build Agent proposes adding ${BUILD_AGENT_TEST_DOC_PATH} — a one-page note documenting the agent → Chief → operator approval loop for QA.`,
     riskLevel: "low",
     testsOrChecksDone: [
