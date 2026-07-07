@@ -1,6 +1,6 @@
 # True Crew — Command Center
 
-Premium desktop command center for running business operations end-to-end.
+Command center for operations and maintenance teams — run the day from the field.
 
 ## Stack (canonical)
 
