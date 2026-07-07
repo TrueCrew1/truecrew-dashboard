@@ -28,6 +28,25 @@ import type {
 export type AgentRole = "planner" | "build" | "research" | "content";
 
 /**
+ * Build-specific approval gates, typed so `BuildApprovalRequest.gate` can't
+ * drift from this canonical list (Planner/Research/Content gates stay plain
+ * strings for now — Build is the one agent with a real, wired request, so
+ * it's the one worth the extra type safety).
+ */
+export type BuildApprovalGate =
+  | "Code change merging to main"
+  | "Database or schema migration"
+  | "Production-impacting refactor"
+  | "Changes to approval-related UX or logic";
+
+export const BUILD_APPROVAL_GATES: readonly BuildApprovalGate[] = [
+  "Code change merging to main",
+  "Database or schema migration",
+  "Production-impacting refactor",
+  "Changes to approval-related UX or logic",
+];
+
+/**
  * Which agent actions require an ApprovalCard before proceeding. Anything
  * NOT listed here is routine enough for the agent to just do — anything
  * listed here must go through Chief first.
@@ -38,11 +57,7 @@ export const APPROVAL_GATES: Record<AgentRole, readonly string[]> = {
     "New roadmap phase",
     "Roadmap reprioritization or re-sequencing",
   ],
-  build: [
-    "Code change merging to main",
-    "Database or schema migration",
-    "Production-impacting refactor",
-  ],
+  build: BUILD_APPROVAL_GATES,
   research: [
     "New tool or stack adoption",
     "Vendor selection or contract decision",
@@ -76,7 +91,8 @@ export interface PlannerApprovalRequest extends BaseAgentApprovalRequest {
   affectedPhases: string[];
 }
 
-export interface BuildApprovalRequest extends BaseAgentApprovalRequest {
+export interface BuildApprovalRequest extends Omit<BaseAgentApprovalRequest, "gate"> {
+  gate: BuildApprovalGate;
   filesOrAreas: string[];
 }
 
@@ -172,7 +188,7 @@ export const EXAMPLE_PLANNER_REQUEST: PlannerApprovalRequest = {
  */
 export const BUILD_REQUEST_DUPLICATE_AUTH_FIX: BuildApprovalRequest = {
   id: "apr-build-duplicate-auth-prs",
-  gate: APPROVAL_GATES.build[0],
+  gate: BUILD_APPROVAL_GATES[0],
   summary:
     "PR #57 (build/auth-trim-fix) and PR #58 (fix/internal-auth-401) both trim the internal API secret/header before comparison in lib/auth.ts — identical diffs, opened 8 minutes apart. Both are green on CI and mergeable.",
   riskLevel: "low",
