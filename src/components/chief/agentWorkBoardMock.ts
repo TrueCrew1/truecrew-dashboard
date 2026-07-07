@@ -13,19 +13,11 @@ export const AGENT_WORK_STATUS_CONFIG: AgentWorkStatusConfig[] = [
 ];
 
 // Mock only — see AgentWorkItem in types.ts for the extension point once
-// agents report real status. Workflow Gate Agent's entries used to live
-// here too; it's now derived from real task data (see
-// deriveWorkflowGateAgentWorkItems in chiefLiveContext.ts), same as Build.
+// agents report real status. Workflow Gate Agent's and Research Agent's
+// entries used to live here too; both are now derived from real data (see
+// deriveWorkflowGateAgentWorkItems and deriveResearchAgentWorkItems in
+// chiefLiveContext.ts), same as Build.
 export const AGENT_WORK_ITEMS: AgentWorkItem[] = [
-  {
-    id: "agentwork-research-1",
-    agent: "Research Agent",
-    task: "Correlate open Sev 1–2 incidents with recent deploys",
-    status: "blocked",
-    priority: "high",
-    note: "Deploy history for one service is missing service tags.",
-    updatedAt: "2026-07-06T11:55:00.000Z",
-  },
   {
     id: "agentwork-librarian-1",
     agent: "Librarian Agent",

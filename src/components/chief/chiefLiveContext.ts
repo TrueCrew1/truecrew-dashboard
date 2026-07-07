@@ -1,5 +1,12 @@
 import type { MockData } from "@/data/mockData";
-import { WorkflowStage, type AlertItem, type Task } from "@/types";
+import {
+  WorkflowStage,
+  type AlertItem,
+  type Incident,
+  type IncidentSeverity,
+  type Task,
+  type TaskPriority,
+} from "@/types";
 import {
   deriveShiftStats,
   isActiveIncidentStatus,
@@ -505,6 +512,56 @@ export function deriveWorkflowGateAgentWorkItems(tasks: Task[]): AgentWorkItem[]
         source: "live",
       };
     });
+}
+
+/** Incidents don't carry a TaskPriority — severity is the closest real signal, and the two scales already line up ordinally. */
+const INCIDENT_SEVERITY_PRIORITY: Record<IncidentSeverity, TaskPriority> = {
+  1: "critical",
+  2: "high",
+  3: "medium",
+  4: "low",
+};
+
+/**
+ * Real, not mock: derives Research Agent's Agents-tab entries from real
+ * incident data — the same signal Chief already treats as Research
+ * Agent's domain elsewhere in this file (see the specialist attribution
+ * on incident alerts and incident-repair proposals above). Every incident
+ * becomes a row, same as Build and Workflow Gate take their whole domain
+ * rather than pre-filtering by urgency — severity conveys relative
+ * urgency via the priority badge instead.
+ *
+ * Status mapping: incidents don't have their own gate checklist or
+ * blocker field, so there's no live "blocked" or "queued" signal here —
+ * same honesty rule Build and Workflow Gate apply to "awaiting_approval"
+ * (no signal, no lane). Instead: any status in ACTIVE_INCIDENT_STATUSES
+ * (open/mitigating/mitigated — see lib/queries/dashboard-stats.ts, the
+ * same constant Chief's shift stats already use) -> active; resolved or
+ * post_mortem_filed -> completed.
+ *
+ * Third live-derived row for the Agents tab; Librarian, Roadmap, and
+ * Marketer remain mock pending their own real signal.
+ */
+export function deriveResearchAgentWorkItems(incidents: Incident[]): AgentWorkItem[] {
+  return incidents.map((incident) => {
+    const isDone = !isActiveIncidentStatus(incident.status);
+    const status: AgentWorkItem["status"] = isDone ? "completed" : "active";
+
+    const note = isDone
+      ? "Resolved — see incident record for post-mortem/follow-up."
+      : `Sev ${incident.severity} · ${incident.status} — ${incident.summary}`;
+
+    return {
+      id: `agentwork-research-${incident.id}`,
+      agent: "Research Agent",
+      task: incident.title,
+      status,
+      priority: INCIDENT_SEVERITY_PRIORITY[incident.severity],
+      note,
+      updatedAt: incident.updatedAt,
+      source: "live",
+    };
+  });
 }
 
 export function deriveChiefBoardItems(
