@@ -8,9 +8,10 @@ import {
   deriveResearchAgentWorkItems,
   deriveWorkflowGateAgentWorkItems,
 } from "./chiefLiveContext";
+import { getApprovalUrgencyBadge, OVERDUE_HOURS } from "./chiefApprovalUrgency";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { useData } from "@/context/DataContext";
-import type { AgentWorkItem, AgentWorkStatus } from "./types";
+import type { AgentWorkItem, AgentWorkStatus, ApprovalProposal } from "./types";
 import type { TaskPriority } from "@/types";
 
 const SPECIALIST_INITIALS: Record<AgentWorkItem["agent"], string> = {
@@ -41,7 +42,15 @@ function itemsForStatus(items: AgentWorkItem[], status: AgentWorkStatus): AgentW
   return items.filter((item) => item.status === status);
 }
 
-function AgentWorkCard({ item }: { item: AgentWorkItem }) {
+function AgentWorkCard({
+  item,
+  proposal,
+}: {
+  item: AgentWorkItem;
+  proposal?: ApprovalProposal;
+}) {
+  const urgencyBadge = proposal ? getApprovalUrgencyBadge(proposal) : null;
+
   return (
     <article className={`agent-work-card agent-work-card--${item.status}`}>
       <div className="agent-work-card-header">
@@ -53,6 +62,20 @@ function AgentWorkCard({ item }: { item: AgentWorkItem }) {
         </div>
         <span className="agent-work-card-badges">
           {item.source === "live" ? <span className="badge badge-green">live</span> : null}
+          {urgencyBadge ? (
+            <span
+              className={`badge ${urgencyBadge.badgeClass}`}
+              title={
+                urgencyBadge.escalate
+                  ? `Pending ${OVERDUE_HOURS}h+ — consider escalating to the operator.`
+                  : proposal
+                    ? `Pending since ${formatChiefTimestamp(proposal.createdAt)}.`
+                    : undefined
+              }
+            >
+              {urgencyBadge.label}
+            </span>
+          ) : null}
           <span className={`badge badge-${PRIORITY_BADGE_VARIANT[item.priority]}`}>
             {item.priority}
           </span>
@@ -88,6 +111,15 @@ export function AgentWorkBoard() {
     () => deriveAgentAwaitingApprovalWorkItems(approvals),
     [approvals],
   );
+  const proposalByAwaitingWorkId = useMemo(() => {
+    const map = new Map<string, ApprovalProposal>();
+    for (const proposal of approvals) {
+      if (proposal.status === "pending") {
+        map.set(`agentwork-awaiting-${proposal.id}`, proposal);
+      }
+    }
+    return map;
+  }, [approvals]);
   const items = useMemo(
     () => [
       ...buildItems,
@@ -127,6 +159,13 @@ export function AgentWorkBoard() {
       <div className="agent-work-lanes">
         {AGENT_WORK_STATUS_CONFIG.map((laneConfig) => {
           const laneItems = itemsForStatus(items, laneConfig.status);
+          const isAwaitingLane = laneConfig.status === "awaiting_approval";
+          const awaitingOverdueCount = isAwaitingLane
+            ? laneItems.filter((item) => {
+                const linked = proposalByAwaitingWorkId.get(item.id);
+                return linked ? getApprovalUrgencyBadge(linked)?.escalate : false;
+              }).length
+            : 0;
 
           return (
             <section
@@ -139,13 +178,25 @@ export function AgentWorkBoard() {
                 <span className="agent-work-lane-count">{laneItems.length}</span>
               </header>
 
+              {isAwaitingLane && awaitingOverdueCount > 0 ? (
+                <p className="chief-board-lane-note chief-board-lane-note--escalate">
+                  {awaitingOverdueCount} of {laneItems.length} awaiting operator decisions are
+                  overdue — review on the Approvals tab.
+                </p>
+              ) : null}
+
               {laneItems.length === 0 ? (
                 <p className="agent-work-lane-empty">{laneConfig.emptyMessage}</p>
               ) : (
                 <ul className="agent-work-list">
                   {laneItems.map((item) => (
                     <li key={item.id}>
-                      <AgentWorkCard item={item} />
+                      <AgentWorkCard
+                        item={item}
+                        proposal={
+                          isAwaitingLane ? proposalByAwaitingWorkId.get(item.id) : undefined
+                        }
+                      />
                     </li>
                   ))}
                 </ul>
