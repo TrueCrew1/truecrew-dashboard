@@ -13,26 +13,10 @@ export const AGENT_WORK_STATUS_CONFIG: AgentWorkStatusConfig[] = [
 ];
 
 // Mock only — see AgentWorkItem in types.ts for the extension point once
-// agents report real status.
+// agents report real status. Workflow Gate Agent's entries used to live
+// here too; it's now derived from real task data (see
+// deriveWorkflowGateAgentWorkItems in chiefLiveContext.ts), same as Build.
 export const AGENT_WORK_ITEMS: AgentWorkItem[] = [
-  {
-    id: "agentwork-wg-1",
-    agent: "Workflow Gate Agent",
-    task: "Scan open build gates for stale required checks",
-    status: "active",
-    priority: "high",
-    note: "Flag any task still gated after 30 min without a status change.",
-    updatedAt: "2026-07-06T13:12:00.000Z",
-  },
-  {
-    id: "agentwork-wg-2",
-    agent: "Workflow Gate Agent",
-    task: "Re-check onboarding checklist gates for waiting customers",
-    status: "queued",
-    priority: "medium",
-    note: "Runs on the next onboarding-stage poll.",
-    updatedAt: "2026-07-06T07:50:00.000Z",
-  },
   {
     id: "agentwork-research-1",
     agent: "Research Agent",
