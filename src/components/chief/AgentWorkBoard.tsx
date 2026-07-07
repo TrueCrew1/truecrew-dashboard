@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { ApprovalSectionHeader, ApprovalSectionShell, ApprovalSurfaceEmpty } from "./approvalWrappers";
 import { AGENT_WORK_ITEMS, AGENT_WORK_STATUS_CONFIG } from "./agentWorkBoardMock";
 import { formatChiefTimestamp } from "./chiefMock";
-import { deriveBuildAgentWorkItems } from "./chiefLiveContext";
+import { deriveBuildAgentWorkItems, deriveWorkflowGateAgentWorkItems } from "./chiefLiveContext";
 import { useData } from "@/context/DataContext";
 import type { AgentWorkItem, AgentWorkStatus } from "./types";
 import type { TaskPriority } from "@/types";
@@ -69,7 +69,14 @@ function AgentWorkCard({ item }: { item: AgentWorkItem }) {
 export function AgentWorkBoard() {
   const { data } = useData();
   const buildItems = useMemo(() => deriveBuildAgentWorkItems(data.tasks), [data.tasks]);
-  const items = useMemo(() => [...buildItems, ...AGENT_WORK_ITEMS], [buildItems]);
+  const workflowGateItems = useMemo(
+    () => deriveWorkflowGateAgentWorkItems(data.tasks),
+    [data.tasks],
+  );
+  const items = useMemo(
+    () => [...buildItems, ...workflowGateItems, ...AGENT_WORK_ITEMS],
+    [buildItems, workflowGateItems],
+  );
 
   if (items.length === 0) {
     return (
@@ -90,8 +97,8 @@ export function AgentWorkBoard() {
       count={`${items.length} item${items.length === 1 ? "" : "s"}`}
     >
       <p className="agent-work-board-note">
-        Snapshot of what each agent is carrying right now. Build (marked{" "}
-        <span className="badge badge-green">live</span>) reflects real task data; other agents
+        Snapshot of what each agent is carrying right now. Build and Workflow Gate (marked{" "}
+        <span className="badge badge-green">live</span>) reflect real task data; other agents
         are still mock for this slice. Read-only — no actions taken here.
       </p>
 
