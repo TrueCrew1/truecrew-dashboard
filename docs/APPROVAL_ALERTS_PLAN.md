@@ -288,5 +288,3 @@ No route changes. No nav changes.
 | `src/pages/MonitorPage.tsx` | Edit | Mount the approval alerts panel on `/monitor` |
 
 No other files should change in this slice.
-
-After creating the file, stop. Do not implement the feature yet. Show me the diff for docs/APPROVAL_ALERTS_PLAN.md only.
