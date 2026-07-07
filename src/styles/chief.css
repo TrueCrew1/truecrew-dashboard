@@ -767,6 +767,11 @@ button.chief-brief-metric {
   line-height: 1.45;
 }
 
+.chief-board-lane-note--escalate {
+  color: var(--red);
+  font-weight: 600;
+}
+
 .chief-board-list {
   margin: 0;
   padding: 0;
@@ -834,6 +839,13 @@ button.chief-brief-metric {
   color: var(--text);
   line-height: 1.35;
   overflow-wrap: anywhere;
+}
+
+.chief-board-card-header-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .chief-board-card-meta {
