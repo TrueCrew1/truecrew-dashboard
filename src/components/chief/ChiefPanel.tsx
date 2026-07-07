@@ -11,7 +11,7 @@ import { SpecialistCards } from "./SpecialistCards";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
 import { ChiefBoard } from "./ChiefBoard";
 import { AgentWorkBoard } from "./AgentWorkBoard";
-import type { ApprovalAction, ChiefResponse, CommandHistoryEntry } from "./types";
+import type { ApprovalAction, ChiefResponse } from "./types";
 import type { ApprovalStatusFilter } from "./approvalStatus";
 
 const EXAMPLE_COMMANDS = [
@@ -34,6 +34,8 @@ export function ChiefPanel() {
     decisionsHydrated,
     addCommandApproval,
     recordDecision,
+    history,
+    addHistoryEntry,
   } = useChiefApprovals();
 
   const [activeTab, setActiveTab] = useState<ChiefTab>("command");
@@ -43,7 +45,6 @@ export function ChiefPanel() {
   const [approvalActionStates, setApprovalActionStates] = useState<
     Record<string, ApprovalActionState>
   >({});
-  const [history, setHistory] = useState<CommandHistoryEntry[]>([]);
   const [approvalStatusFilter, setApprovalStatusFilter] = useState<ApprovalStatusFilter>("all");
 
   const openApprovals = useCallback((filter: ApprovalStatusFilter = "all") => {
@@ -151,7 +152,7 @@ export function ChiefPanel() {
     window.setTimeout(() => {
       const result = resolveChiefCommand(command, data, liveContext, approvals);
       setResponse(result);
-      setHistory((prev) => [buildHistoryEntry(command, result), ...prev]);
+      addHistoryEntry(buildHistoryEntry(command, result));
 
       const newApproval = buildApprovalFromResponse(command, result);
       if (newApproval) {
