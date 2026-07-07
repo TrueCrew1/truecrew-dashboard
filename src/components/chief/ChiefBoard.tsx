@@ -5,6 +5,7 @@ import {
   ApprovalSectionShell,
   ApprovalSurfaceEmpty,
 } from "./approvalWrappers";
+import { getApprovalUrgencyBadge, OVERDUE_HOURS } from "./chiefApprovalUrgency";
 import { formatChiefTimestamp } from "./chiefMock";
 import { CHIEF_BOARD_LANES } from "./chiefLiveContext";
 import type { ApprovalActionState } from "./chiefApproval";
@@ -57,13 +58,29 @@ function ApprovalBoardCard({
   actionState?: ApprovalActionState;
   onApprovalAction: (proposalId: string, action: ApprovalAction) => void;
 }) {
+  const urgencyBadge = getApprovalUrgencyBadge(proposal);
+
   return (
     <article
       className={`chief-board-card chief-board-card--actionable chief-board-card--${item.tone}`}
     >
       <div className="chief-board-card-header">
         <span className="chief-board-card-title">{item.title}</span>
-        {item.meta ? <span className="chief-board-card-meta">{item.meta}</span> : null}
+        <span className="chief-board-card-header-right">
+          {urgencyBadge ? (
+            <span
+              className={`badge ${urgencyBadge.badgeClass}`}
+              title={
+                urgencyBadge.escalate
+                  ? `Pending ${OVERDUE_HOURS}h+ — consider escalating to the operator.`
+                  : undefined
+              }
+            >
+              {urgencyBadge.label}
+            </span>
+          ) : null}
+          {item.meta ? <span className="chief-board-card-meta">{item.meta}</span> : null}
+        </span>
       </div>
       <p className="chief-board-card-detail">{item.detail}</p>
       <footer className="chief-board-card-footer">
@@ -96,6 +113,11 @@ export function ChiefBoard({
 }: ChiefBoardProps) {
   const totalSignal = items.length;
   const approvalLaneCount = itemsForLane(items, "approval").length;
+  // Counted across all pending proposals (not just what's shown on this
+  // lane) to match pendingApprovalCount's own scope, just below.
+  const overduePendingCount = [...proposalsById.values()].filter(
+    (proposal) => getApprovalUrgencyBadge(proposal)?.escalate,
+  ).length;
 
   if (totalSignal === 0) {
     return (
@@ -140,6 +162,13 @@ export function ChiefBoard({
                   {isApprovalLane ? pendingApprovalCount : laneItems.length}
                 </span>
               </header>
+
+              {isApprovalLane && overduePendingCount > 0 ? (
+                <p className="chief-board-lane-note chief-board-lane-note--escalate">
+                  {overduePendingCount} of {pendingApprovalCount} pending{" "}
+                  {overduePendingCount === 1 ? "is" : "are"} overdue — consider escalating.
+                </p>
+              ) : null}
 
               {isApprovalLane && pendingApprovalCount > approvalLaneCount ? (
                 <p className="chief-board-lane-note">

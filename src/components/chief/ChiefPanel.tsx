@@ -1,43 +1,17 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useMemo, useState } from "react";
 import { useData } from "@/context/DataContext";
-import {
-  ChiefApprovalConflictError,
-  fetchChiefApprovalDecisions,
-  formatDataSourceLabel,
-  isLiveApiEnabled,
-  recordChiefApprovalDecision,
-} from "@/lib/api/client";
+import { ChiefApprovalConflictError, formatDataSourceLabel } from "@/lib/api/client";
 import { ApprovalBoard } from "./ApprovalBoard";
 import { CommandHistory } from "./CommandHistory";
-import { AGENT_APPROVAL_CARDS } from "./agentApprovalGates";
-import { MOCK_PR_APPROVAL_CARDS } from "./chiefApprovalCardMocks";
-import { REPO_CHANGE_APPROVAL_CARDS } from "./repoChangeApprovals";
-import {
-  buildApprovalFromResponse,
-  buildHistoryEntry,
-} from "./chiefMock";
-import {
-  APPROVAL_ACTION_DELAY_MS,
-  approvalActionSuccessMessage,
-  approvalActionToStatus,
-  type ApprovalActionState,
-} from "./chiefApproval";
-import {
-  buildChiefLiveContext,
-  deriveApprovalCandidates,
-  deriveChiefBoardItems,
-  resolveChiefCommand,
-} from "./chiefLiveContext";
+import { buildApprovalFromResponse, buildHistoryEntry } from "./chiefMock";
+import { approvalActionSuccessMessage, type ApprovalActionState } from "./chiefApproval";
+import { deriveChiefBoardItems, resolveChiefCommand } from "./chiefLiveContext";
+import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { SpecialistCards } from "./SpecialistCards";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
 import { ChiefBoard } from "./ChiefBoard";
-import type {
-  ApprovalAction,
-  ApprovalDecision,
-  ApprovalProposal,
-  ChiefResponse,
-  CommandHistoryEntry,
-} from "./types";
+import { AgentWorkBoard } from "./AgentWorkBoard";
+import type { ApprovalAction, ChiefResponse } from "./types";
 import type { ApprovalStatusFilter } from "./approvalStatus";
 
 const EXAMPLE_COMMANDS = [
@@ -48,40 +22,29 @@ const EXAMPLE_COMMANDS = [
   "Show open alerts",
 ];
 
-type ChiefTab = "command" | "board" | "approvals" | "history";
+type ChiefTab = "command" | "board" | "agents" | "approvals" | "history";
 
 export function ChiefPanel() {
   const { data, loading, source } = useData();
-  const liveContext = useMemo(() => buildChiefLiveContext(data), [data]);
-  const derivedApprovals = useMemo(
-    () => deriveApprovalCandidates(data, liveContext),
-    [data, liveContext],
-  );
+  const {
+    liveContext,
+    approvals,
+    pendingApprovalCount,
+    proposalsById,
+    decisionsHydrated,
+    addCommandApproval,
+    recordDecision,
+    history,
+    addHistoryEntry,
+  } = useChiefApprovals();
 
   const [activeTab, setActiveTab] = useState<ChiefTab>("command");
   const [input, setInput] = useState("");
   const [response, setResponse] = useState<ChiefResponse | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  // Seeded with demo PR cards (chiefApprovalCardMocks.ts), the one real
-  // wired source (pending local repo changes, repoChangeApprovals.ts), and
-  // one example request per agent (agentApprovalGates.ts) — so every
-  // approval, from any source, routes through this one queue. No agent may
-  // surface an approval any other way; see agentApprovalGates.ts's header
-  // and docs/AGENT_WORKFLOW.md for the rule. Extension point: a real GitHub
-  // PRs fetch, agent job feed, or live agent requests would replace/extend
-  // this seed.
-  const [commandApprovals, setCommandApprovals] = useState<ApprovalProposal[]>([
-    ...MOCK_PR_APPROVAL_CARDS,
-    ...REPO_CHANGE_APPROVAL_CARDS,
-    ...AGENT_APPROVAL_CARDS,
-  ]);
-  const [approvalDecisions, setApprovalDecisions] = useState<Record<string, ApprovalDecision>>(
-    {},
-  );
   const [approvalActionStates, setApprovalActionStates] = useState<
     Record<string, ApprovalActionState>
   >({});
-  const [history, setHistory] = useState<CommandHistoryEntry[]>([]);
   const [approvalStatusFilter, setApprovalStatusFilter] = useState<ApprovalStatusFilter>("all");
 
   const openApprovals = useCallback((filter: ApprovalStatusFilter = "all") => {
@@ -89,82 +52,9 @@ export function ChiefPanel() {
     setActiveTab("approvals");
   }, []);
 
-  const liveApi = isLiveApiEnabled();
-  const [decisionsHydrated, setDecisionsHydrated] = useState(!liveApi);
-
-  useEffect(() => {
-    if (!liveApi) return;
-
-    let cancelled = false;
-    setDecisionsHydrated(false);
-
-    fetchChiefApprovalDecisions()
-      .then((decisions) => {
-        if (cancelled) return;
-        setApprovalDecisions(
-          Object.fromEntries(
-            decisions.map((decision) => [
-              decision.proposalId,
-              {
-                proposalId: decision.proposalId,
-                status: decision.status,
-                decidedAt: decision.decidedAt,
-                actor: decision.actor,
-              },
-            ]),
-          ),
-        );
-      })
-      .catch(() => {
-        // Leave previously hydrated/optimistic decisions in place — a failed
-        // refetch shouldn't erase decisions the operator already recorded.
-      })
-      .finally(() => {
-        if (!cancelled) setDecisionsHydrated(true);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [liveApi, source]);
-
-  // Extension point: a "card resolved" notification hook (email/Slack/SMS)
-  // would fire here, once a notification service exists — this is the one
-  // place every approval decision (approve/reject/send back) lands.
-  const applyDecision = useCallback((decision: ApprovalDecision) => {
-    setApprovalDecisions((prev) => ({ ...prev, [decision.proposalId]: decision }));
-  }, []);
-
-  const approvals = useMemo(() => {
-    const byId = new Map<string, ApprovalProposal>();
-    for (const proposal of [...derivedApprovals, ...commandApprovals]) {
-      byId.set(proposal.id, proposal);
-    }
-    return [...byId.values()].map((proposal) => {
-      const decision = approvalDecisions[proposal.id];
-      if (!decision) return proposal;
-      return {
-        ...proposal,
-        status: decision.status,
-        decidedAt: decision.decidedAt,
-        decidedBy: decision.actor ?? undefined,
-      };
-    });
-  }, [derivedApprovals, commandApprovals, approvalDecisions]);
-
-  const pendingApprovalCount = useMemo(
-    () => approvals.filter((proposal) => proposal.status === "pending").length,
-    [approvals],
-  );
-
   const boardItems = useMemo(
     () => deriveChiefBoardItems(liveContext, approvals),
     [liveContext, approvals],
-  );
-
-  const proposalsById = useMemo(
-    () => new Map(approvals.map((proposal) => [proposal.id, proposal])),
-    [approvals],
   );
 
   const boardSignalCount = boardItems.length;
@@ -214,27 +104,7 @@ export function ChiefPanel() {
       }));
 
       try {
-        const nextStatus = approvalActionToStatus(action);
-
-        if (liveApi) {
-          const decision = await recordChiefApprovalDecision(id, nextStatus);
-          applyDecision({
-            proposalId: decision.proposalId,
-            status: decision.status,
-            decidedAt: decision.decidedAt,
-            actor: decision.actor,
-          });
-        } else {
-          await new Promise<void>((resolve) => {
-            window.setTimeout(resolve, APPROVAL_ACTION_DELAY_MS);
-          });
-          applyDecision({
-            proposalId: id,
-            status: nextStatus,
-            decidedAt: new Date().toISOString(),
-            actor: null,
-          });
-        }
+        await recordDecision(id, action);
 
         setApprovalActionStates((prev) => ({
           ...prev,
@@ -246,12 +116,6 @@ export function ChiefPanel() {
         }));
       } catch (error) {
         if (error instanceof ChiefApprovalConflictError) {
-          applyDecision({
-            proposalId: error.decision.proposalId,
-            status: error.decision.status,
-            decidedAt: error.decision.decidedAt,
-            actor: error.decision.actor,
-          });
           setApprovalActionStates((prev) => ({
             ...prev,
             [id]: {
@@ -273,7 +137,7 @@ export function ChiefPanel() {
         }));
       }
     },
-    [proposalsById, liveApi, applyDecision, decisionsHydrated],
+    [proposalsById, recordDecision, decisionsHydrated],
   );
 
   const handleSubmit = (event: FormEvent) => {
@@ -288,14 +152,14 @@ export function ChiefPanel() {
     window.setTimeout(() => {
       const result = resolveChiefCommand(command, data, liveContext, approvals);
       setResponse(result);
-      setHistory((prev) => [buildHistoryEntry(command, result), ...prev]);
+      addHistoryEntry(buildHistoryEntry(command, result));
 
       const newApproval = buildApprovalFromResponse(command, result);
       if (newApproval) {
         // Extension point: a "card created" notification hook would fire
         // here too, alongside any future real approval sources (GitHub PRs,
         // agent job queue) that push a new ApprovalCard into this list.
-        setCommandApprovals((prev) => [newApproval, ...prev]);
+        addCommandApproval(newApproval);
       }
 
       setIsProcessing(false);
@@ -352,6 +216,17 @@ export function ChiefPanel() {
               {boardSignalCount}
             </span>
           ) : null}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          id="chief-tab-agents"
+          aria-selected={activeTab === "agents"}
+          aria-controls="chief-panel-agents"
+          className={`chief-tab${activeTab === "agents" ? " chief-tab--active" : ""}`}
+          onClick={() => setActiveTab("agents")}
+        >
+          Agents
         </button>
         <button
           type="button"
@@ -506,6 +381,17 @@ export function ChiefPanel() {
               onApprovalAction={handleApprovalAction}
               onOpenApprovals={() => openApprovals("pending")}
             />
+          </div>
+        ) : null}
+
+        {activeTab === "agents" ? (
+          <div
+            id="chief-panel-agents"
+            role="tabpanel"
+            aria-labelledby="chief-tab-agents"
+            className="chief-tab-panel"
+          >
+            <AgentWorkBoard />
           </div>
         ) : null}
 

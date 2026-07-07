@@ -1,4 +1,4 @@
-import type { Persona } from "@/types";
+import type { Persona, TaskPriority } from "@/types";
 
 export type ChiefSpecialist =
   | "Workflow Gate Agent"
@@ -144,6 +144,46 @@ export interface ChiefBoardItem {
 
 export interface ChiefBoardLaneConfig {
   lane: ChiefBoardLane;
+  label: string;
+  emptyMessage: string;
+}
+
+export type AgentWorkStatus = "queued" | "active" | "blocked" | "awaiting_approval" | "completed";
+
+/**
+ * Agent names shown on the Agents tab. "Build Agent" isn't part of
+ * ChiefSpecialist (that vocabulary attributes build-gate work to
+ * "Workflow Gate Agent" instead) — it's added here, scoped to the
+ * agent-work board only, so Build can have its own live-derived lane
+ * without renaming/rippling ChiefSpecialist across approvals, routing,
+ * and specialist-attribution call sites.
+ */
+export type AgentWorkAgentName = Exclude<ChiefSpecialist, "Chief"> | "Build Agent";
+
+/**
+ * A single unit of work an agent is carrying, shown on the Chief "Agents"
+ * tab. Distinct from ApprovalProposal/ChiefBoardItem — this tracks an
+ * agent's current task and status, not an operator decision or a live
+ * dashboard signal. Mock data for most agents still (see
+ * agentWorkBoardMock.ts); Build is the first real source — see
+ * deriveBuildAgentWorkItems in chiefLiveContext.ts. Extension point: back
+ * the remaining agents with real status once they report it somewhere.
+ */
+export interface AgentWorkItem {
+  id: string;
+  agent: AgentWorkAgentName;
+  task: string;
+  status: AgentWorkStatus;
+  priority: TaskPriority;
+  /** Short next-step (in-progress work) or blocker (why it's stuck) text. */
+  note: string;
+  updatedAt: string;
+  /** Marks this item as derived from real app data rather than hand-written mock; omitted (mock) by default. */
+  source?: "live" | "mock";
+}
+
+export interface AgentWorkStatusConfig {
+  status: AgentWorkStatus;
   label: string;
   emptyMessage: string;
 }
