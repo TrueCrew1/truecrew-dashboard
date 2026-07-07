@@ -1,7 +1,7 @@
 import { FormEvent, useMemo, useRef, useState } from "react";
 import { Panel } from "@/components/ui";
 import { useData } from "@/context/DataContext";
-import { buildApprovalFromResponse } from "./chiefMock";
+import { buildApprovalFromResponse, buildHistoryEntry } from "./chiefMock";
 import { deriveChiefBoardItems, resolveChiefCommand } from "./chiefLiveContext";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
@@ -16,7 +16,7 @@ export function ChiefHomePanel() {
   // Shared with the sidebar Chief panel (ChiefApprovalsContext) — same
   // merged, decision-applied queue, so counts here stay in sync with the
   // sidebar within the same session instead of only matching at load.
-  const { liveContext, approvals, addCommandApproval } = useChiefApprovals();
+  const { liveContext, approvals, addCommandApproval, addHistoryEntry } = useChiefApprovals();
 
   const pendingApprovals = useMemo(
     () => approvals.filter((proposal) => proposal.status === "pending"),
@@ -53,6 +53,7 @@ export function ChiefHomePanel() {
     window.setTimeout(() => {
       const result = resolveChiefCommand(trimmed, data, liveContext, approvals);
       setResponse(result);
+      addHistoryEntry(buildHistoryEntry(trimmed, result));
 
       const newApproval = buildApprovalFromResponse(trimmed, result);
       if (newApproval) {

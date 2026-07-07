@@ -24,7 +24,12 @@ import {
   mergeApprovalSources,
   type ChiefLiveContext,
 } from "./chiefLiveContext";
-import type { ApprovalAction, ApprovalDecision, ApprovalProposal } from "./types";
+import type {
+  ApprovalAction,
+  ApprovalDecision,
+  ApprovalProposal,
+  CommandHistoryEntry,
+} from "./types";
 
 interface ChiefApprovalsContextValue {
   liveContext: ChiefLiveContext;
@@ -35,6 +40,9 @@ interface ChiefApprovalsContextValue {
   decisionsHydrated: boolean;
   liveApi: boolean;
   addCommandApproval: (proposal: ApprovalProposal) => void;
+  /** Shared command history — the one source both ChiefPanel's History tab and the homepage panel's intake write to. */
+  history: CommandHistoryEntry[];
+  addHistoryEntry: (entry: CommandHistoryEntry) => void;
   /**
    * Records an approve/reject/send-back decision against the shared
    * queue. Callers that render per-action UI feedback (loading/success/
@@ -67,6 +75,7 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
     ...AGENT_APPROVAL_CARDS,
   ]);
   const [approvalDecisions, setApprovalDecisions] = useState<Record<string, ApprovalDecision>>({});
+  const [history, setHistory] = useState<CommandHistoryEntry[]>([]);
 
   const liveApi = isLiveApiEnabled();
   const [decisionsHydrated, setDecisionsHydrated] = useState(!liveApi);
@@ -139,6 +148,10 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
     setCommandApprovals((prev) => [proposal, ...prev]);
   }, []);
 
+  const addHistoryEntry = useCallback((entry: CommandHistoryEntry) => {
+    setHistory((prev) => [entry, ...prev]);
+  }, []);
+
   const recordDecision = useCallback(
     async (id: string, action: ApprovalAction): Promise<ApprovalDecision> => {
       const nextStatus = approvalActionToStatus(action);
@@ -187,6 +200,8 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
       liveApi,
       addCommandApproval,
       recordDecision,
+      history,
+      addHistoryEntry,
     }),
     [
       liveContext,
@@ -197,6 +212,8 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
       liveApi,
       addCommandApproval,
       recordDecision,
+      history,
+      addHistoryEntry,
     ],
   );
 
