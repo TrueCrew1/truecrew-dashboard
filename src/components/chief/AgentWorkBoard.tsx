@@ -3,10 +3,12 @@ import { ApprovalSectionHeader, ApprovalSectionShell, ApprovalSurfaceEmpty } fro
 import { AGENT_WORK_ITEMS, AGENT_WORK_STATUS_CONFIG } from "./agentWorkBoardMock";
 import { formatChiefTimestamp } from "./chiefMock";
 import {
+  deriveAgentAwaitingApprovalWorkItems,
   deriveBuildAgentWorkItems,
   deriveResearchAgentWorkItems,
   deriveWorkflowGateAgentWorkItems,
 } from "./chiefLiveContext";
+import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { useData } from "@/context/DataContext";
 import type { AgentWorkItem, AgentWorkStatus } from "./types";
 import type { TaskPriority } from "@/types";
@@ -72,6 +74,7 @@ function AgentWorkCard({ item }: { item: AgentWorkItem }) {
 
 export function AgentWorkBoard() {
   const { data } = useData();
+  const { approvals } = useChiefApprovals();
   const buildItems = useMemo(() => deriveBuildAgentWorkItems(data.tasks), [data.tasks]);
   const workflowGateItems = useMemo(
     () => deriveWorkflowGateAgentWorkItems(data.tasks),
@@ -81,9 +84,19 @@ export function AgentWorkBoard() {
     () => deriveResearchAgentWorkItems(data.incidents),
     [data.incidents],
   );
+  const awaitingApprovalItems = useMemo(
+    () => deriveAgentAwaitingApprovalWorkItems(approvals),
+    [approvals],
+  );
   const items = useMemo(
-    () => [...buildItems, ...workflowGateItems, ...researchItems, ...AGENT_WORK_ITEMS],
-    [buildItems, workflowGateItems, researchItems],
+    () => [
+      ...buildItems,
+      ...workflowGateItems,
+      ...researchItems,
+      ...awaitingApprovalItems,
+      ...AGENT_WORK_ITEMS,
+    ],
+    [buildItems, workflowGateItems, researchItems, awaitingApprovalItems],
   );
 
   if (items.length === 0) {
@@ -105,9 +118,10 @@ export function AgentWorkBoard() {
       count={`${items.length} item${items.length === 1 ? "" : "s"}`}
     >
       <p className="agent-work-board-note">
-        Snapshot of what each agent is carrying right now. Build, Workflow Gate, and Research
-        (marked <span className="badge badge-green">live</span>) reflect real task/incident data;
-        other agents are still mock for this slice. Read-only — no actions taken here.
+        Snapshot of what each agent is carrying right now. Build, Workflow Gate, Research, and
+        Awaiting approval rows marked <span className="badge badge-green">live</span> reflect real
+        task/incident data or pending proposals from the shared Approvals queue; other agents are
+        still mock for this slice. Read-only — no actions taken here.
       </p>
 
       <div className="agent-work-lanes">

@@ -28,13 +28,16 @@ import {
   routeForTask,
   routeLabelForPath,
 } from "./chiefRoutes";
-import { compareApprovalsByAge } from "./chiefApprovalUrgency";
+import { compareApprovalsByAge, getApprovalUrgencyBadge } from "./chiefApprovalUrgency";
 import type {
+  AgentWorkAgentName,
   AgentWorkItem,
   ApprovalProposal,
+  ApprovalSource,
   ChiefBoardItem,
   ChiefBoardLaneConfig,
   ChiefResponse,
+  ChiefSpecialist,
 } from "./types";
 
 export const CHIEF_BOARD_LANES: ChiefBoardLaneConfig[] = [
@@ -562,6 +565,93 @@ export function deriveResearchAgentWorkItems(incidents: Incident[]): AgentWorkIt
       source: "live",
     };
   });
+}
+
+function agentFromApprovalSource(source: ApprovalSource): AgentWorkAgentName | null {
+  switch (source) {
+    case "agent_build":
+    case "repo_change":
+    case "pr":
+      return "Build Agent";
+    case "research_agent":
+      return "Research Agent";
+    case "planner_agent":
+      return "Roadmap Agent";
+    case "content_agent":
+      return "Marketer Agent";
+    case "ops_change":
+      return null;
+  }
+}
+
+function agentFromApprovalSpecialist(
+  specialist: Exclude<ChiefSpecialist, "Chief">,
+): AgentWorkAgentName | null {
+  switch (specialist) {
+    case "Workflow Gate Agent":
+      return "Workflow Gate Agent";
+    case "Librarian Agent":
+      return "Librarian Agent";
+    case "Research Agent":
+      return "Research Agent";
+    case "Roadmap Agent":
+      return "Roadmap Agent";
+    case "Marketer Agent":
+      return "Marketer Agent";
+  }
+}
+
+function resolveAgentForAwaitingApproval(proposal: ApprovalProposal): AgentWorkAgentName | null {
+  if (proposal.source) {
+    const fromSource = agentFromApprovalSource(proposal.source);
+    if (fromSource) return fromSource;
+  }
+  if (proposal.specialist) {
+    return agentFromApprovalSpecialist(proposal.specialist);
+  }
+  return null;
+}
+
+function priorityFromAwaitingApproval(proposal: ApprovalProposal): TaskPriority {
+  const urgency = getApprovalUrgencyBadge(proposal);
+  if (urgency?.escalate) return "high";
+  if (urgency?.urgency === "dueSoon") return "medium";
+  return "medium";
+}
+
+/**
+ * Real, not mock: derives Agents-tab "Awaiting approval" rows from pending
+ * proposals in the shared Chief approval queue. Only proposals with explicit
+ * source or specialist attribution map to an agent — anything ambiguous is
+ * omitted rather than guessed. Source wins when both are present and the
+ * source maps; ops_change proposals rely on specialist only.
+ */
+export function deriveAgentAwaitingApprovalWorkItems(
+  approvals: ApprovalProposal[],
+): AgentWorkItem[] {
+  const pending = approvals
+    .filter((proposal) => proposal.status === "pending")
+    .sort(compareApprovalsByAge);
+
+  const items: AgentWorkItem[] = [];
+
+  for (const proposal of pending) {
+    const agent = resolveAgentForAwaitingApproval(proposal);
+    if (!agent) continue;
+
+    items.push({
+      id: `agentwork-awaiting-${proposal.id}`,
+      agent,
+      task: proposal.title,
+      status: "awaiting_approval",
+      priority: priorityFromAwaitingApproval(proposal),
+      note: "Operator decision pending — review on Approvals tab.",
+      updatedAt: proposal.updatedAt ?? proposal.createdAt,
+      source: "live",
+    });
+  }
+
+  return items;
 }
 
 export function deriveChiefBoardItems(
