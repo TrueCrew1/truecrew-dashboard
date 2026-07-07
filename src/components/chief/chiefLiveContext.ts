@@ -1,5 +1,12 @@
 import type { MockData } from "@/data/mockData";
-import type { AlertItem, Task, WorkflowStage } from "@/types";
+import {
+  WorkflowStage,
+  type AlertItem,
+  type Incident,
+  type IncidentSeverity,
+  type Task,
+  type TaskPriority,
+} from "@/types";
 import {
   deriveShiftStats,
   isActiveIncidentStatus,
@@ -21,7 +28,9 @@ import {
   routeForTask,
   routeLabelForPath,
 } from "./chiefRoutes";
+import { compareApprovalsByAge } from "./chiefApprovalUrgency";
 import type {
+  AgentWorkItem,
   ApprovalProposal,
   ChiefBoardItem,
   ChiefBoardLaneConfig,
@@ -369,6 +378,192 @@ export function deriveApprovalCandidates(
   return proposals;
 }
 
+/**
+ * Dedup-merge approval proposal sources by id, last source wins on
+ * conflict. Shared by ChiefPanel (sidebar queue) and any other surface
+ * that needs the same pending-approval set — e.g. a homepage snapshot —
+ * so both read from one merge rule instead of two copies of it. Does not
+ * apply operator decisions; callers that track decisions (ChiefPanel)
+ * layer those on separately.
+ */
+export function mergeApprovalSources(
+  ...sources: ApprovalProposal[][]
+): ApprovalProposal[] {
+  const byId = new Map<string, ApprovalProposal>();
+  for (const proposal of sources.flat()) {
+    byId.set(proposal.id, proposal);
+  }
+  return [...byId.values()];
+}
+
+/**
+ * Real, not mock: derives Build's Agents-tab entries from the same live
+ * task data (gates, blocker, stage) Chief already uses elsewhere in this
+ * file — no separate agent-status source exists, so a build-workflow
+ * task's own record IS the truthful signal. Baseline integration for the
+ * Agents tab (see agentWorkBoardMock.ts); other agents there still run on
+ * hand-written mock entries pending their own real signal.
+ *
+ * Status mapping: Done/Logged -> completed; an open required gate or a
+ * blocker string -> blocked; Inbox/Triage/Planned (not yet started) ->
+ * queued; anything else open -> active. There is no live signal yet for
+ * "awaiting_approval" specifically (that would require cross-referencing
+ * the approvals queue), so build tasks never land in that lane here.
+ */
+export function deriveBuildAgentWorkItems(tasks: Task[]): AgentWorkItem[] {
+  return tasks
+    .filter((task) => task.workflowType === "build")
+    .map((task) => {
+      const blockingGates = getBlockingGates(task.gates);
+      const isBlocked = blockingGates.length > 0 || Boolean(task.blocker);
+      const isDone = task.stage === WorkflowStage.Done || task.stage === WorkflowStage.Logged;
+      const isUnstarted =
+        task.stage === WorkflowStage.Inbox ||
+        task.stage === WorkflowStage.Triage ||
+        task.stage === WorkflowStage.Planned;
+
+      const status: AgentWorkItem["status"] = isDone
+        ? "completed"
+        : isBlocked
+          ? "blocked"
+          : isUnstarted
+            ? "queued"
+            : "active";
+
+      const note = isDone
+        ? "Build complete — see task record for deploy/next steps."
+        : task.blocker
+          ? task.blocker
+          : blockingGates.length > 0
+            ? formatOpenGateSummary(blockingGates)
+            : isUnstarted
+              ? "Not yet started."
+              : "In progress — no open blockers.";
+
+      return {
+        id: `agentwork-build-${task.id}`,
+        agent: "Build Agent",
+        task: task.title,
+        status,
+        priority: task.priority,
+        note,
+        updatedAt: task.updatedAt,
+        source: "live",
+      };
+    });
+}
+
+/**
+ * Real, not mock: derives Workflow Gate Agent's Agents-tab entries the same
+ * way deriveBuildAgentWorkItems does — a task's own gates/blocker/stage IS
+ * the truthful signal, no separate agent-status source exists. Scoped to
+ * non-build tasks with a gate checklist (workflowType !== "build" &&
+ * task.gates.length > 0) so a task isn't listed under two different
+ * agents' rows at once — build tasks already have their own row via
+ * deriveBuildAgentWorkItems, and Workflow Gate Agent's real job elsewhere
+ * in this file (see specialist attribution on gate/deploy/onboarding
+ * proposals above) already spans every workflow type, build included.
+ * Second live-derived row for the Agents tab; Librarian, Research,
+ * Roadmap, and Marketer remain mock pending their own real signal.
+ *
+ * Status mapping: same rules as deriveBuildAgentWorkItems — Done/Logged ->
+ * completed; an open required gate or a blocker string -> blocked;
+ * Inbox/Triage/Planned (not yet started) -> queued; anything else open ->
+ * active. No live "awaiting_approval" signal here either, same reason.
+ */
+export function deriveWorkflowGateAgentWorkItems(tasks: Task[]): AgentWorkItem[] {
+  return tasks
+    .filter((task) => task.workflowType !== "build" && task.gates.length > 0)
+    .map((task) => {
+      const blockingGates = getBlockingGates(task.gates);
+      const isBlocked = blockingGates.length > 0 || Boolean(task.blocker);
+      const isDone = task.stage === WorkflowStage.Done || task.stage === WorkflowStage.Logged;
+      const isUnstarted =
+        task.stage === WorkflowStage.Inbox ||
+        task.stage === WorkflowStage.Triage ||
+        task.stage === WorkflowStage.Planned;
+
+      const status: AgentWorkItem["status"] = isDone
+        ? "completed"
+        : isBlocked
+          ? "blocked"
+          : isUnstarted
+            ? "queued"
+            : "active";
+
+      const note = isDone
+        ? "All required gates cleared."
+        : task.blocker
+          ? task.blocker
+          : blockingGates.length > 0
+            ? formatOpenGateSummary(blockingGates)
+            : isUnstarted
+              ? "Not yet started."
+              : "In progress — no open blockers.";
+
+      return {
+        id: `agentwork-workflowgate-${task.id}`,
+        agent: "Workflow Gate Agent",
+        task: task.title,
+        status,
+        priority: task.priority,
+        note,
+        updatedAt: task.updatedAt,
+        source: "live",
+      };
+    });
+}
+
+/** Incidents don't carry a TaskPriority — severity is the closest real signal, and the two scales already line up ordinally. */
+const INCIDENT_SEVERITY_PRIORITY: Record<IncidentSeverity, TaskPriority> = {
+  1: "critical",
+  2: "high",
+  3: "medium",
+  4: "low",
+};
+
+/**
+ * Real, not mock: derives Research Agent's Agents-tab entries from real
+ * incident data — the same signal Chief already treats as Research
+ * Agent's domain elsewhere in this file (see the specialist attribution
+ * on incident alerts and incident-repair proposals above). Every incident
+ * becomes a row, same as Build and Workflow Gate take their whole domain
+ * rather than pre-filtering by urgency — severity conveys relative
+ * urgency via the priority badge instead.
+ *
+ * Status mapping: incidents don't have their own gate checklist or
+ * blocker field, so there's no live "blocked" or "queued" signal here —
+ * same honesty rule Build and Workflow Gate apply to "awaiting_approval"
+ * (no signal, no lane). Instead: any status in ACTIVE_INCIDENT_STATUSES
+ * (open/mitigating/mitigated — see lib/queries/dashboard-stats.ts, the
+ * same constant Chief's shift stats already use) -> active; resolved or
+ * post_mortem_filed -> completed.
+ *
+ * Third live-derived row for the Agents tab; Librarian, Roadmap, and
+ * Marketer remain mock pending their own real signal.
+ */
+export function deriveResearchAgentWorkItems(incidents: Incident[]): AgentWorkItem[] {
+  return incidents.map((incident) => {
+    const isDone = !isActiveIncidentStatus(incident.status);
+    const status: AgentWorkItem["status"] = isDone ? "completed" : "active";
+
+    const note = isDone
+      ? "Resolved — see incident record for post-mortem/follow-up."
+      : `Sev ${incident.severity} · ${incident.status} — ${incident.summary}`;
+
+    return {
+      id: `agentwork-research-${incident.id}`,
+      agent: "Research Agent",
+      task: incident.title,
+      status,
+      priority: INCIDENT_SEVERITY_PRIORITY[incident.severity],
+      note,
+      updatedAt: incident.updatedAt,
+      source: "live",
+    };
+  });
+}
+
 export function deriveChiefBoardItems(
   ctx: ChiefLiveContext,
   pendingApprovals: ApprovalProposal[],
@@ -475,7 +670,13 @@ export function deriveChiefBoardItems(
     });
   }
 
-  for (const proposal of pendingApprovals.filter((entry) => entry.status === "pending")) {
+  // Stale first — the longest-waiting proposals surface at the top of the
+  // approval lane, same rule ApprovalBoard applies to the Approvals tab.
+  const staleFirstApprovals = pendingApprovals
+    .filter((entry) => entry.status === "pending")
+    .sort(compareApprovalsByAge);
+
+  for (const proposal of staleFirstApprovals) {
     const entityId = proposalEntityId(proposal);
 
     if (proposal.id.startsWith("apr-focus-") && entityId && focusIds.has(entityId)) {

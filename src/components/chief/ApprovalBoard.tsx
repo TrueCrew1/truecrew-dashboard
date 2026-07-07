@@ -25,6 +25,11 @@ import {
   APPROVAL_STATUS_ORDER,
   type ApprovalActionState,
 } from "./chiefApproval";
+import {
+  compareApprovalsByAge,
+  getApprovalUrgencyBadge,
+  OVERDUE_HOURS,
+} from "./chiefApprovalUrgency";
 import { formatChiefTimestamp } from "./chiefMock";
 import type { ApprovalAction, ApprovalProposal } from "./types";
 
@@ -59,6 +64,11 @@ export function ApprovalBoard({
       [...filteredProposals].sort((a, b) => {
         const statusDiff = APPROVAL_STATUS_ORDER[a.status] - APPROVAL_STATUS_ORDER[b.status];
         if (statusDiff !== 0) return statusDiff;
+        // Pending: stale-first, so the longest-waiting proposals surface at
+        // the top. Decided proposals keep newest-first — not an aging signal.
+        if (a.status === "pending" && b.status === "pending") {
+          return compareApprovalsByAge(a, b);
+        }
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       }),
     [filteredProposals],
@@ -111,90 +121,106 @@ export function ApprovalBoard({
           ) : null}
 
           <div className="chief-approval-list">
-            {sortedProposals.map((proposal) => (
-              <article
-                key={proposal.id}
-                className={`chief-approval-card chief-approval-card--${proposal.status}`}
-              >
-                <div className="chief-approval-card-header">
-                  <h3 className="chief-approval-card-title">{proposal.title}</h3>
-                  <span className={`badge ${APPROVAL_STATUS_BADGE[proposal.status]}`}>
-                    {APPROVAL_STATUS_LABEL[proposal.status]}
-                  </span>
-                </div>
+            {sortedProposals.map((proposal) => {
+              const urgencyBadge = getApprovalUrgencyBadge(proposal);
 
-                {proposal.source || proposal.recommendedDecision ? (
-                  <div className="chief-approval-card-tags">
-                    {proposal.source ? (
-                      <span className={`badge ${APPROVAL_SOURCE_BADGE[proposal.source]}`}>
-                        {APPROVAL_SOURCE_LABEL[proposal.source]}
-                      </span>
-                    ) : null}
-                    {proposal.recommendedDecision ? (
-                      <span
-                        className={`badge ${APPROVAL_RECOMMENDED_DECISION_BADGE[proposal.recommendedDecision]}`}
-                      >
-                        {APPROVAL_RECOMMENDED_DECISION_LABEL[proposal.recommendedDecision]}
-                      </span>
-                    ) : null}
-                  </div>
-                ) : null}
-
-                <p className="chief-approval-card-summary">{proposal.summary}</p>
-
-                <div className="chief-approval-card-details">
-                  <div className="chief-approval-card-field">
-                    <span className="chief-approval-card-label">Recommended</span>
-                    <p className="chief-approval-card-value">{proposal.recommendedAction}</p>
+              return (
+                <article
+                  key={proposal.id}
+                  className={`chief-approval-card chief-approval-card--${proposal.status}`}
+                >
+                  <div className="chief-approval-card-header">
+                    <h3 className="chief-approval-card-title">{proposal.title}</h3>
+                    <span className={`badge ${APPROVAL_STATUS_BADGE[proposal.status]}`}>
+                      {APPROVAL_STATUS_LABEL[proposal.status]}
+                    </span>
                   </div>
 
-                  <div className="chief-approval-card-field chief-approval-card-field--risk">
-                    <span className="chief-approval-card-label">Risk / impact</span>
-                    <p className="chief-approval-card-value">{proposal.riskNote}</p>
-                  </div>
-
-                  {proposal.checklist && proposal.checklist.length > 0 ? (
-                    <div className="chief-approval-card-field">
-                      <span className="chief-approval-card-label">Checklist</span>
-                      <ul className="chief-approval-checklist">
-                        {proposal.checklist.map((item) => (
-                          <li
-                            key={item.label}
-                            className={`chief-approval-checklist-item chief-approval-checklist-item--${item.status}`}
-                          >
-                            <span aria-hidden="true">
-                              {APPROVAL_CHECKLIST_STATUS_ICON[item.status]}
-                            </span>
-                            {item.label}
-                          </li>
-                        ))}
-                      </ul>
+                  {proposal.source || proposal.recommendedDecision || urgencyBadge ? (
+                    <div className="chief-approval-card-tags">
+                      {proposal.source ? (
+                        <span className={`badge ${APPROVAL_SOURCE_BADGE[proposal.source]}`}>
+                          {APPROVAL_SOURCE_LABEL[proposal.source]}
+                        </span>
+                      ) : null}
+                      {proposal.recommendedDecision ? (
+                        <span
+                          className={`badge ${APPROVAL_RECOMMENDED_DECISION_BADGE[proposal.recommendedDecision]}`}
+                        >
+                          {APPROVAL_RECOMMENDED_DECISION_LABEL[proposal.recommendedDecision]}
+                        </span>
+                      ) : null}
+                      {urgencyBadge ? (
+                        <span
+                          className={`badge ${urgencyBadge.badgeClass}`}
+                          title={
+                            urgencyBadge.escalate
+                              ? `Pending ${OVERDUE_HOURS}h+ — consider escalating to the operator.`
+                              : `Pending since ${formatChiefTimestamp(proposal.createdAt)}.`
+                          }
+                        >
+                          {urgencyBadge.label}
+                        </span>
+                      ) : null}
                     </div>
                   ) : null}
-                </div>
 
-                <footer
-                  className={`chief-approval-card-footer${proposal.specialist ? "" : " chief-approval-card-footer--solo"}`}
-                >
-                  {proposal.specialist ? (
-                    <span className="chief-approval-card-meta">
-                      <span className="chief-approval-card-meta-label">Via</span>
-                      <span className="chief-approval-card-meta-value">{proposal.specialist}</span>
-                    </span>
-                  ) : null}
-                  <time className="chief-approval-card-time" dateTime={proposal.createdAt}>
-                    {formatChiefTimestamp(proposal.createdAt)}
-                  </time>
-                </footer>
+                  <p className="chief-approval-card-summary">{proposal.summary}</p>
 
-                <ChiefApprovalActions
-                  proposal={proposal}
-                  actionState={approvalActionStates[proposal.id]}
-                  onAction={onApprovalAction}
-                  variant="card"
-                />
-              </article>
-            ))}
+                  <div className="chief-approval-card-details">
+                    <div className="chief-approval-card-field">
+                      <span className="chief-approval-card-label">Recommended</span>
+                      <p className="chief-approval-card-value">{proposal.recommendedAction}</p>
+                    </div>
+
+                    <div className="chief-approval-card-field chief-approval-card-field--risk">
+                      <span className="chief-approval-card-label">Risk / impact</span>
+                      <p className="chief-approval-card-value">{proposal.riskNote}</p>
+                    </div>
+
+                    {proposal.checklist && proposal.checklist.length > 0 ? (
+                      <div className="chief-approval-card-field">
+                        <span className="chief-approval-card-label">Checklist</span>
+                        <ul className="chief-approval-checklist">
+                          {proposal.checklist.map((item) => (
+                            <li
+                              key={item.label}
+                              className={`chief-approval-checklist-item chief-approval-checklist-item--${item.status}`}
+                            >
+                              <span aria-hidden="true">
+                                {APPROVAL_CHECKLIST_STATUS_ICON[item.status]}
+                              </span>
+                              {item.label}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <footer
+                    className={`chief-approval-card-footer${proposal.specialist ? "" : " chief-approval-card-footer--solo"}`}
+                  >
+                    {proposal.specialist ? (
+                      <span className="chief-approval-card-meta">
+                        <span className="chief-approval-card-meta-label">Via</span>
+                        <span className="chief-approval-card-meta-value">{proposal.specialist}</span>
+                      </span>
+                    ) : null}
+                    <time className="chief-approval-card-time" dateTime={proposal.createdAt}>
+                      {formatChiefTimestamp(proposal.createdAt)}
+                    </time>
+                  </footer>
+
+                  <ChiefApprovalActions
+                    proposal={proposal}
+                    actionState={approvalActionStates[proposal.id]}
+                    onAction={onApprovalAction}
+                    variant="card"
+                  />
+                </article>
+              );
+            })}
           </div>
 
           {auditEntries.length > 0 ? (
