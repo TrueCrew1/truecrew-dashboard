@@ -21,6 +21,7 @@ import {
   routeForTask,
   routeLabelForPath,
 } from "./chiefRoutes";
+import { compareApprovalsByAge } from "./chiefApprovalUrgency";
 import type {
   AgentWorkItem,
   ApprovalProposal,
@@ -551,7 +552,13 @@ export function deriveChiefBoardItems(
     });
   }
 
-  for (const proposal of pendingApprovals.filter((entry) => entry.status === "pending")) {
+  // Stale first — the longest-waiting proposals surface at the top of the
+  // approval lane, same rule ApprovalBoard applies to the Approvals tab.
+  const staleFirstApprovals = pendingApprovals
+    .filter((entry) => entry.status === "pending")
+    .sort(compareApprovalsByAge);
+
+  for (const proposal of staleFirstApprovals) {
     const entityId = proposalEntityId(proposal);
 
     if (proposal.id.startsWith("apr-focus-") && entityId && focusIds.has(entityId)) {
