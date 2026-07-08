@@ -171,13 +171,15 @@ export async function findTasksForPullRequest(params: {
   }
 
   if (ids.size > 0) {
-    await supabase
+    const { error } = await supabase
       .from("tasks")
       .update({
         github_pr_number: params.prNumber,
         github_head_sha: params.headSha,
       })
       .in("id", [...ids]);
+
+    if (error) throw error;
   }
 
   return [...ids];

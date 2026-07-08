@@ -103,9 +103,12 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
           ),
         );
       })
-      .catch(() => {
+      .catch((error) => {
         // Leave previously hydrated/optimistic decisions in place — a failed
         // refetch shouldn't erase decisions the operator already recorded.
+        if (!cancelled) {
+          console.error("Failed to hydrate chief approval decisions", error);
+        }
       })
       .finally(() => {
         if (!cancelled) setDecisionsHydrated(true);

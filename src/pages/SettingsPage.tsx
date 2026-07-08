@@ -25,7 +25,10 @@ export function SettingsPage() {
     setHealthLoading(true);
     fetchHealth()
       .then((result) => setHealth(result))
-      .catch(() => setHealth(null))
+      .catch((error) => {
+        console.error("Failed to fetch integration health", error);
+        setHealth(null);
+      })
       .finally(() => setHealthLoading(false));
   }, [liveApi]);
 

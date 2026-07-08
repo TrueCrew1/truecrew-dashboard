@@ -78,7 +78,11 @@ export async function tryRefineWithAi(
 ): Promise<ArtifactDraft & { refinementSource: "ai" | "deterministic" }> {
   try {
     return await refineWithAi(task, draft);
-  } catch {
+  } catch (error) {
+    console.warn(
+      "AI artifact refinement failed; falling back to deterministic draft",
+      error instanceof Error ? error.message : error,
+    );
     return { ...deterministicArtifactDraft(task), refinementSource: "deterministic" };
   }
 }
