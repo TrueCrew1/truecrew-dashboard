@@ -1,8 +1,11 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { requireInternalAuth } from "../../../lib/auth";
 import { listTaskArtifacts } from "../../../lib/librarian/create";
 import { isSupabaseConfigured } from "../../../lib/supabase/admin";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (!requireInternalAuth(req, res)) return;
+
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
     return res.status(405).json({ ok: false, error: "Method not allowed" });
