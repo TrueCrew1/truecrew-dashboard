@@ -2,11 +2,13 @@ import type { MockData } from "@/data/mockData";
 import { mockData } from "@/data/mockData";
 import type {
   AlertItem,
+  Artifact,
   Customer,
   Deploy,
   FocusItem,
   Incident,
   Note,
+  Persona,
   Prompt,
   Runbook,
   Task,
@@ -196,6 +198,74 @@ export async function fetchObsidianNotes(): Promise<ObsidianNotesResult> {
     notes: body?.notes ?? [],
     configured: body?.configured ?? true,
   };
+}
+
+export interface CreateArtifactResult {
+  ok: boolean;
+  artifact: Artifact;
+  vaultWritten: boolean;
+}
+
+export class ArtifactExistsError extends Error {
+  constructor(message = "Artifact already exists for this task") {
+    super(message);
+    this.name = "ArtifactExistsError";
+  }
+}
+
+export async function createTaskArtifact(
+  taskId: string,
+  options: { useAi?: boolean; actor?: Persona } = {},
+): Promise<CreateArtifactResult> {
+  const response = await apiFetch("/api/librarian/artifacts", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      taskId,
+      useAi: options.useAi === true,
+      actor: options.actor,
+    }),
+  });
+
+  const body = (await response.json().catch(() => ({}))) as {
+    ok?: boolean;
+    error?: string;
+    artifact?: Artifact;
+    vaultWritten?: boolean;
+  };
+
+  if (response.status === 409) {
+    throw new ArtifactExistsError(body.error);
+  }
+
+  if (!response.ok || !body.artifact) {
+    throw new Error(body.error ?? `Create artifact returned ${response.status}`);
+  }
+
+  return {
+    ok: true,
+    artifact: body.artifact,
+    vaultWritten: body.vaultWritten === true,
+  };
+}
+
+export async function fetchTaskArtifacts(taskId: string): Promise<Artifact[]> {
+  const response = await apiFetch(`/api/tasks/${encodeURIComponent(taskId)}/artifacts`);
+  const body = (await response.json().catch(() => ({}))) as {
+    ok?: boolean;
+    error?: string;
+    artifacts?: Artifact[];
+  };
+
+  if (response.status === 404) {
+    return [];
+  }
+
+  if (!response.ok) {
+    throw new Error(body.error ?? `Task artifacts API returned ${response.status}`);
+  }
+
+  return body.artifacts ?? [];
 }
 
 export function mergeWithMockFallback(live: Partial<CommandCenterPayload>): MockData {

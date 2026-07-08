@@ -54,6 +54,14 @@ Obsidian Sync (or git on the vault) propagates notes to your second brain.
 - [x] `OBSIDIAN_VAULT_PATH` in `.env.example`
 - [x] `npm run obsidian:log` script
 
+### Librarian artifacts (v1 slice)
+
+- `POST /api/librarian/artifacts` — create indexed artifact for a task (`{ taskId, useAi? }`)
+- `GET /api/tasks/:id/artifacts` — list artifacts linked to a task
+- CLI: `npm run obsidian:log -- artifact --task-id task-001 [--use-ai]`
+- Tier 0: deterministic title/summary/tags + Supabase `notes` upsert + optional local vault write
+- Tier 1: set `LIBRARIAN_AI_ENABLED=true` with local Ollama; always falls back to deterministic
+
 ### Deferred (safe next steps)
 
 | Step | Why later |
@@ -61,7 +69,7 @@ Obsidian Sync (or git on the vault) propagates notes to your second brain.
 | `GET /api/obsidian/notes` read route | Needed for KnowledgePage live vault; separate from write logging |
 | CI / deploy hooks calling `obsidian:log` | Requires vault access in CI or a sync agent |
 | Task → `Logged` stage auto-write | Couples workflow to vault; needs prompt templates + Supabase index upsert |
-| Supabase `notes` row upsert on write | Index sync is useful but not required for markdown-first v1 |
+| Supabase `notes` row upsert on write | **Done** — Librarian artifact slice |
 
 ## Manual vs automated (v1)
 

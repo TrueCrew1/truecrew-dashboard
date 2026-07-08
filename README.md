@@ -46,7 +46,9 @@ npm run dev:vercel       # UI + API (requires .env.local)
 | `GET /api/health` | Integration status |
 | `GET /api/data` | Full command center payload |
 | `GET /api/tasks` | Tasks + gates |
-| `POST /api/github/webhook` | PR/CI gate automation |
+| `GET /api/obsidian/notes` | Vault note list (local dev) |
+| `POST /api/librarian/artifacts` | Create task-linked Obsidian artifact index |
+| `GET /api/tasks/:id/artifacts` | List Librarian artifacts for a task |
 
 ## App routes
 
