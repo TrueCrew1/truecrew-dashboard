@@ -2,8 +2,10 @@ import type { MockData } from "@/data/mockData";
 import {
   WorkflowStage,
   type AlertItem,
+  type Artifact,
   type Incident,
   type IncidentSeverity,
+  type Note,
   type Task,
   type TaskPriority,
 } from "@/types";
@@ -29,6 +31,8 @@ import {
   routeLabelForPath,
 } from "./chiefRoutes";
 import { compareApprovalsByAge, getApprovalUrgencyBadge } from "./chiefApprovalUrgency";
+import { noteToArtifact } from "../../../lib/librarian/artifact";
+import { isObsidianFilingCandidate, workItemFromTask } from "../../../lib/librarian/workItem";
 import type {
   AgentWorkAgentName,
   AgentWorkItem,
@@ -565,6 +569,63 @@ export function deriveResearchAgentWorkItems(incidents: Incident[]): AgentWorkIt
       source: "live",
     };
   });
+}
+
+function artifactsByWorkItemId(notes: Note[]): Map<string, Artifact> {
+  const map = new Map<string, Artifact>();
+  for (const note of notes) {
+    const artifact = noteToArtifact(note);
+    if (artifact?.workItemId) {
+      map.set(artifact.workItemId, artifact);
+    }
+  }
+  return map;
+}
+
+/**
+ * Real, not mock: derives Librarian Agent's Agents-tab entries from task
+ * records plus indexed Obsidian artifacts (notes where agent === "librarian").
+ * Tasks at Done/Logged without an artifact show as active filing work; filed
+ * tasks show title, target path, and tags on the card note line.
+ */
+export function deriveLibrarianAgentWorkItems(
+  tasks: Task[],
+  notes: Note[],
+): AgentWorkItem[] {
+  const artifacts = artifactsByWorkItemId(notes);
+
+  return tasks
+    .filter((task) => artifacts.has(task.id) || isObsidianFilingCandidate(task))
+    .map((task) => {
+      const artifact = artifacts.get(task.id);
+      const workItem = workItemFromTask(task, Boolean(artifact));
+
+      const status: AgentWorkItem["status"] =
+        workItem.status === "filed"
+          ? "completed"
+          : workItem.status === "blocked"
+            ? "blocked"
+            : workItem.status === "pending"
+              ? "queued"
+              : "active";
+
+      const note = artifact
+        ? `${artifact.title} · ${artifact.targetPath} · tags: ${artifact.tags.join(", ")}`
+        : workItem.status === "blocked"
+          ? "Open gates or blocker must clear before filing."
+          : "Ready to create Obsidian artifact from task context rail.";
+
+      return {
+        id: `agentwork-librarian-${task.id}`,
+        agent: "Librarian Agent",
+        task: artifact?.title ?? `${task.title} — Obsidian filing`,
+        status,
+        priority: task.priority,
+        note,
+        updatedAt: artifact?.createdAt ?? task.updatedAt,
+        source: "live",
+      };
+    });
 }
 
 function agentFromApprovalSource(source: ApprovalSource): AgentWorkAgentName | null {

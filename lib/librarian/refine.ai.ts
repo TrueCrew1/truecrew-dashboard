@@ -1,4 +1,4 @@
-import type { WorkItem } from "./types";
+import type { Task } from "../../src/types";
 import type { ArtifactDraft } from "./types";
 import { deterministicArtifactDraft } from "./refine.deterministic";
 
@@ -17,7 +17,7 @@ function parseJsonFromText(text: string): Partial<ArtifactDraft> | null {
 }
 
 export async function refineWithAi(
-  task: WorkItem,
+  task: Task,
   draft: ArtifactDraft,
 ): Promise<ArtifactDraft & { refinementSource: "ai" }> {
   const host = process.env.OLLAMA_HOST?.trim() || "http://127.0.0.1:11434";
@@ -73,7 +73,7 @@ Draft summary: ${draft.summary}`;
 }
 
 export async function tryRefineWithAi(
-  task: WorkItem,
+  task: Task,
   draft: ArtifactDraft,
 ): Promise<ArtifactDraft & { refinementSource: "ai" | "deterministic" }> {
   try {

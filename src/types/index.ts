@@ -210,17 +210,41 @@ export interface Note extends EntityBase {
   tags?: string[];
   refinementSource?: "deterministic" | "ai";
   agent?: "librarian";
+  /** Canonical artifact fields when agent === "librarian". */
+  workItemId?: string;
+  artifactType?: "obsidian_note";
+  targetPath?: string;
 }
+
+export type ArtifactType = "obsidian_note";
 
 /** Indexed Obsidian artifact created by the Librarian agent. */
-export interface Artifact extends Note {
+export interface Artifact {
+  id: string;
+  workItemId: string;
+  artifactType: ArtifactType;
+  title: string;
+  targetPath: string;
   tags: string[];
-  refinementSource: "deterministic" | "ai";
-  agent: "librarian";
+  createdAt: string;
+  summary?: string;
+  refinementSource?: "deterministic" | "ai";
+  syncedAt?: string;
+  updatedAt?: string;
+  createdBy?: Persona;
 }
 
-/** Work item alias — tasks are the unit of operator work. */
-export type WorkItem = Task;
+export type LibrarianWorkItemType = "obsidian_filing";
+
+export type WorkItemStatus = "pending" | "active" | "filed" | "blocked";
+
+/** Librarian/Obsidian filing work item derived from a task. */
+export interface WorkItem {
+  id: string;
+  type: LibrarianWorkItemType;
+  source: string;
+  status: WorkItemStatus;
+}
 
 export interface AlertItem {
   id: string;
