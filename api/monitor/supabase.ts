@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { requireInternalAuth } from "../../lib/auth.js";
-import { getSupabaseAdmin, isSupabaseConfigured } from "../../lib/supabase/admin.js";
+import { errorMessage, requireSupabase } from "../../lib/http.js";
+import { getSupabaseAdmin } from "../../lib/supabase/admin.js";
 
 interface MonitorSupabaseHealth {
   db_reachable: boolean;
@@ -12,10 +13,7 @@ interface MonitorSupabaseHealth {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!requireInternalAuth(req, res)) return;
-
-  if (!isSupabaseConfigured()) {
-    return res.status(503).json({ error: "Database not configured" });
-  }
+  if (!requireSupabase(res)) return;
 
   try {
     const supabase = getSupabaseAdmin();
@@ -37,7 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error("Failed to fetch Supabase health", error);
     return res.status(500).json({
       error: "Failed to fetch Supabase health",
-      message: error instanceof Error ? error.message : "Unknown error",
+      message: errorMessage(error),
     });
   }
 }

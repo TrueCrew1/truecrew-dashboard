@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { requireInternalAuth } from "../../../lib/auth.js";
+import { errorMessage, requireMethod, requireSupabase } from "../../../lib/http.js";
 import { mapDbChiefApprovalDecisionToClient } from "../../../lib/mappers/chief-approvals.js";
-import { isSupabaseConfigured } from "../../../lib/supabase/admin.js";
 import {
   fetchChiefApprovalDecisions,
   insertChiefApprovalDecision,
@@ -18,10 +18,8 @@ function parseActor(value: unknown): string | null {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!requireInternalAuth(req, res)) return;
-
-  if (!isSupabaseConfigured()) {
-    return res.status(503).json({ error: "Database not configured" });
-  }
+  if (!requireMethod(req, res, ["GET", "POST"])) return;
+  if (!requireSupabase(res)) return;
 
   if (req.method === "GET") {
     try {
@@ -33,7 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.error("Failed to fetch chief approval decisions", error);
       return res.status(500).json({
         error: "Failed to fetch approval decisions",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: errorMessage(error),
       });
     }
   }
@@ -76,7 +74,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.error("Failed to record chief approval decision", error);
       return res.status(500).json({
         error: "Failed to record approval decision",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: errorMessage(error),
       });
     }
   }
