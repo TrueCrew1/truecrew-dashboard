@@ -31,6 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(201).json({
       ok: true,
+      workItem: result.workItem,
       artifact: result.artifact,
       vaultWritten: result.vaultWritten,
     });

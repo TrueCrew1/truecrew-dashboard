@@ -1,19 +1,18 @@
-import type { Artifact, Persona, Task } from "../../src/types";
+import type { Artifact, Persona, Task, WorkItem } from "../../src/types";
 
-/** Work item in Librarian runtime — alias for Task (no separate DB table). */
-export type WorkItem = Task;
+export type { Artifact, WorkItem };
 
-export type { Artifact };
-
-export type ArtifactRefinementSource = Artifact["refinementSource"];
+export type ArtifactRefinementSource = NonNullable<Artifact["refinementSource"]>;
 
 export interface ArtifactDraft {
   title: string;
   summary: string;
   tags: string[];
   pathSegment: string;
-  noteType: Artifact["type"];
+  noteType: NoteCategory;
 }
+
+type NoteCategory = "build" | "deploy" | "incident" | "ticket" | "decision" | "onboarding";
 
 export interface CreateArtifactInput {
   taskId: string;
@@ -22,11 +21,12 @@ export interface CreateArtifactInput {
 }
 
 export interface CreateArtifactResult {
+  workItem: WorkItem;
   artifact: Artifact;
   vaultWritten: boolean;
 }
 
-export function workflowTypeToNoteType(workflowType: Task["workflowType"]): Artifact["type"] {
+export function workflowTypeToNoteType(workflowType: Task["workflowType"]): NoteCategory {
   switch (workflowType) {
     case "build":
       return "build";

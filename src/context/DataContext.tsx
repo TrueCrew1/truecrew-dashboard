@@ -19,7 +19,7 @@ import {
   createMockArtifact,
   listMockArtifactsForTask,
 } from "@/lib/librarian/mockCreate";
-import type { Artifact, Persona, WorkflowStage } from "@/types";
+import type { Artifact, Persona, WorkflowStage, WorkItem } from "@/types";
 
 function applyTaskStage(data: MockData, taskId: string, stage: WorkflowStage): MockData {
   return {
@@ -48,7 +48,7 @@ interface DataContextValue {
   createTaskArtifact: (
     taskId: string,
     options?: { useAi?: boolean; actor?: Persona },
-  ) => Promise<{ artifact: Artifact; vaultWritten: boolean }>;
+  ) => Promise<{ workItem: WorkItem; artifact: Artifact; vaultWritten: boolean }>;
   isArtifactCreating: (taskId: string) => boolean;
 }
 
@@ -123,12 +123,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const getTaskArtifacts = useCallback(
-    (taskId: string) => {
-      const librarianNotes = data.notes.filter(
-        (note): note is Artifact => note.agent === "librarian",
-      );
-      return listMockArtifactsForTask(librarianNotes, taskId);
-    },
+    (taskId: string) => listMockArtifactsForTask(data.notes, taskId),
     [data.notes],
   );
 
@@ -141,29 +136,30 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           const task = data.tasks.find((t) => t.id === taskId);
           if (!task) throw new Error("Task not found");
 
-          const librarianNotes = data.notes.filter(
-            (note): note is Artifact => note.agent === "librarian",
-          );
-
-          const result = createMockArtifact(task, librarianNotes, options.actor ?? "operator");
+          const result = createMockArtifact(task, data.notes, options.actor ?? "operator");
 
           setData((prev) => ({
             ...prev,
-            notes: [
-              result.artifact,
-              ...prev.notes.filter((n) => n.id !== result.artifact.id),
-            ],
+            notes: result.notes,
             tasks: prev.tasks.map((t) =>
-              t.id === taskId ? { ...t, obsidianNoteId: result.artifact.obsidianPath } : t,
+              result.tasks.find((updated) => updated.id === t.id) ?? t,
             ),
           }));
 
-          return { artifact: result.artifact, vaultWritten: false };
+          return {
+            workItem: result.workItem,
+            artifact: result.artifact,
+            vaultWritten: false,
+          };
         }
 
         const result = await createTaskArtifactApi(taskId, options);
         await refresh();
-        return { artifact: result.artifact, vaultWritten: result.vaultWritten };
+        return {
+          workItem: result.workItem,
+          artifact: result.artifact,
+          vaultWritten: result.vaultWritten,
+        };
       } finally {
         setCreatingArtifactTaskIds((prev) => {
           const next = new Set(prev);
