@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import fs from "node:fs/promises";
+import { createTaskArtifact } from "../lib/librarian/create.js";
 import {
   isVaultConfigured,
   logBuild,
@@ -8,7 +9,7 @@ import {
   updateHotContext,
 } from "../lib/obsidian/index";
 
-type Command = "build" | "decision" | "pr" | "hot-context";
+type Command = "build" | "decision" | "pr" | "hot-context" | "artifact";
 
 function usage(): string {
   return `True Crew → Obsidian logging (local-first)
@@ -19,15 +20,18 @@ Usage:
   npm run obsidian:log -- pr --number <n> --title <text> --status <opened|merged|closed|updated> [--url <url>] [--notes <text>]
   npm run obsidian:log -- hot-context --body <text>
   npm run obsidian:log -- hot-context --file <path>
+  npm run obsidian:log -- artifact --task-id <id> [--use-ai]
 
 Environment:
   OBSIDIAN_VAULT_PATH  Absolute path to your local Obsidian vault root
+  SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY  Required for artifact indexing
+  LIBRARIAN_AI_ENABLED  Optional; set true with Ollama for AI refinement
 `;
 }
 
 function parseArgs(argv: string[]): { command: Command; flags: Map<string, string> } {
   const [command, ...rest] = argv;
-  if (!command || !["build", "decision", "pr", "hot-context"].includes(command)) {
+  if (!command || !["build", "decision", "pr", "hot-context", "artifact"].includes(command)) {
     throw new Error(`Unknown or missing command: ${command ?? "(none)"}`);
   }
 
@@ -102,6 +106,17 @@ async function main(): Promise<void> {
       const content = body ?? (await fs.readFile(file!, "utf8"));
       result = await updateHotContext({ body: content });
       break;
+    }
+    case "artifact": {
+      const created = await createTaskArtifact({
+        taskId: requireFlag(flags, "task-id"),
+        useAi: flags.get("use-ai") === "true",
+        actor: "operator",
+      });
+      console.log(`Indexed artifact ${created.artifact.id}`);
+      console.log(`Vault written: ${created.vaultWritten}`);
+      console.log(`Path: ${created.artifact.obsidianPath}`);
+      return;
     }
   }
 

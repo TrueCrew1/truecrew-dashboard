@@ -8,12 +8,18 @@ import {
 } from "react";
 import { mockData, type MockData } from "@/data/mockData";
 import {
+  ArtifactExistsError,
+  createTaskArtifact as createTaskArtifactApi,
   fetchCommandCenterData,
   isLiveApiEnabled,
   mergeWithMockFallback,
   patchTaskStage,
 } from "@/lib/api/client";
-import type { WorkflowStage } from "@/types";
+import {
+  createMockArtifact,
+  listMockArtifactsForTask,
+} from "@/lib/librarian/mockCreate";
+import type { Artifact, Persona, WorkflowStage } from "@/types";
 
 function applyTaskStage(data: MockData, taskId: string, stage: WorkflowStage): MockData {
   return {
@@ -38,6 +44,12 @@ interface DataContextValue {
   refresh: () => Promise<void>;
   updateTaskStage: (taskId: string, stage: WorkflowStage) => Promise<void>;
   isTaskUpdating: (taskId: string) => boolean;
+  getTaskArtifacts: (taskId: string) => Artifact[];
+  createTaskArtifact: (
+    taskId: string,
+    options?: { useAi?: boolean; actor?: Persona },
+  ) => Promise<{ artifact: Artifact; vaultWritten: boolean }>;
+  isArtifactCreating: (taskId: string) => boolean;
 }
 
 const DataContext = createContext<DataContextValue | null>(null);
@@ -48,6 +60,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [source, setSource] = useState<DataContextValue["source"]>("mock");
   const [error, setError] = useState<string | null>(null);
   const [updatingTaskIds, setUpdatingTaskIds] = useState<Set<string>>(new Set());
+  const [creatingArtifactTaskIds, setCreatingArtifactTaskIds] = useState<Set<string>>(
+    new Set(),
+  );
 
   const refresh = useCallback(async () => {
     if (!isLiveApiEnabled()) {
@@ -107,9 +122,67 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const getTaskArtifacts = useCallback(
+    (taskId: string) => {
+      const librarianNotes = data.notes.filter(
+        (note): note is Artifact => note.agent === "librarian",
+      );
+      return listMockArtifactsForTask(librarianNotes, taskId);
+    },
+    [data.notes],
+  );
+
+  const createTaskArtifact = useCallback(
+    async (taskId: string, options: { useAi?: boolean; actor?: Persona } = {}) => {
+      setCreatingArtifactTaskIds((prev) => new Set(prev).add(taskId));
+
+      try {
+        if (!isLiveApiEnabled()) {
+          const task = data.tasks.find((t) => t.id === taskId);
+          if (!task) throw new Error("Task not found");
+
+          const librarianNotes = data.notes.filter(
+            (note): note is Artifact => note.agent === "librarian",
+          );
+
+          const result = createMockArtifact(task, librarianNotes, options.actor ?? "operator");
+
+          setData((prev) => ({
+            ...prev,
+            notes: [
+              result.artifact,
+              ...prev.notes.filter((n) => n.id !== result.artifact.id),
+            ],
+            tasks: prev.tasks.map((t) =>
+              t.id === taskId ? { ...t, obsidianNoteId: result.artifact.obsidianPath } : t,
+            ),
+          }));
+
+          return { artifact: result.artifact, vaultWritten: false };
+        }
+
+        const result = await createTaskArtifactApi(taskId, options);
+        await refresh();
+        return { artifact: result.artifact, vaultWritten: result.vaultWritten };
+      } finally {
+        setCreatingArtifactTaskIds((prev) => {
+          const next = new Set(prev);
+          next.delete(taskId);
+          return next;
+        });
+      }
+    },
+    [data.notes, data.tasks, refresh],
+  );
+
   const isTaskUpdating = useCallback(
     (taskId: string) => updatingTaskIds.has(taskId),
     [updatingTaskIds],
+  );
+
+  const isArtifactCreating = useCallback(
+    (taskId: string) => creatingArtifactTaskIds.has(taskId),
+    [creatingArtifactTaskIds],
   );
 
   useEffect(() => {
@@ -126,8 +199,22 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       refresh,
       updateTaskStage,
       isTaskUpdating,
+      getTaskArtifacts,
+      createTaskArtifact,
+      isArtifactCreating,
     }),
-    [data, loading, source, error, refresh, updateTaskStage, isTaskUpdating],
+    [
+      data,
+      loading,
+      source,
+      error,
+      refresh,
+      updateTaskStage,
+      isTaskUpdating,
+      getTaskArtifacts,
+      createTaskArtifact,
+      isArtifactCreating,
+    ],
   );
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
@@ -138,3 +225,5 @@ export function useData() {
   if (!ctx) throw new Error("useData must be used within DataProvider");
   return ctx;
 }
+
+export { ArtifactExistsError };
