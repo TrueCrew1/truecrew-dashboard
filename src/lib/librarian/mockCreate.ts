@@ -1,18 +1,21 @@
 import { artifactNotePath } from "../../../lib/librarian/paths";
 import { deterministicArtifactDraft } from "../../../lib/librarian/refine.deterministic";
-import type { Artifact, Persona, Task } from "@/types";
+import { workItemFromTask } from "../../../lib/librarian/workItem";
+import { artifactToNoteFields } from "../../../lib/librarian/artifact";
+import type { Artifact, Note, Persona, Task, WorkItem } from "@/types";
+import { noteToArtifact } from "../../../lib/librarian/artifact";
 
-export function listMockArtifactsForTask(notes: Artifact[], taskId: string): Artifact[] {
-  return notes.filter(
-    (note) => note.sourceTaskId === taskId && note.agent === "librarian",
-  );
+export function listMockArtifactsForTask(notes: Note[], taskId: string): Artifact[] {
+  return notes
+    .map((note) => noteToArtifact(note))
+    .filter((artifact): artifact is Artifact => artifact !== null && artifact.workItemId === taskId);
 }
 
 export function createMockArtifact(
   task: Task,
-  notes: Artifact[],
+  notes: Note[],
   actor: Persona = "operator",
-): { artifact: Artifact; notes: Artifact[]; tasks: Task[] } {
+): { workItem: WorkItem; artifact: Artifact; notes: Note[]; tasks: Task[] } {
   const existing = listMockArtifactsForTask(notes, task.id);
   if (existing.length > 0) {
     const err = new Error("Artifact already exists for this task");
@@ -21,34 +24,36 @@ export function createMockArtifact(
   }
 
   const draft = deterministicArtifactDraft(task);
-  const obsidianPath = artifactNotePath(draft);
+  const targetPath = artifactNotePath(draft);
   const now = new Date().toISOString();
 
   const artifact: Artifact = {
     id: `artifact-${task.id}`,
+    workItemId: task.id,
+    artifactType: "obsidian_note",
     title: draft.title,
-    type: draft.noteType,
-    obsidianPath,
-    summary: draft.summary,
-    sourceTaskId: task.id,
-    syncedAt: now,
+    targetPath,
     tags: draft.tags,
-    refinementSource: "deterministic",
-    agent: "librarian",
     createdAt: now,
+    summary: draft.summary,
+    refinementSource: "deterministic",
+    syncedAt: now,
     updatedAt: now,
     createdBy: actor,
   };
 
+  const noteRecord = artifactToNoteFields(artifact, draft.noteType, actor);
+
   const updatedTask: Task = {
     ...task,
-    obsidianNoteId: obsidianPath,
+    obsidianNoteId: targetPath,
     updatedAt: now,
   };
 
   return {
+    workItem: workItemFromTask(updatedTask, true),
     artifact,
-    notes: [artifact, ...notes],
+    notes: [noteRecord, ...notes.filter((n) => n.id !== noteRecord.id)],
     tasks: [updatedTask],
   };
 }

@@ -15,6 +15,7 @@ import type {
   Tool,
   Workflow,
   WorkflowStage,
+  WorkItem,
 } from "@/types";
 
 function apiFetch(input: string, init: RequestInit = {}): Promise<Response> {
@@ -202,6 +203,7 @@ export async function fetchObsidianNotes(): Promise<ObsidianNotesResult> {
 
 export interface CreateArtifactResult {
   ok: boolean;
+  workItem: WorkItem;
   artifact: Artifact;
   vaultWritten: boolean;
 }
@@ -230,6 +232,7 @@ export async function createTaskArtifact(
   const body = (await response.json().catch(() => ({}))) as {
     ok?: boolean;
     error?: string;
+    workItem?: WorkItem;
     artifact?: Artifact;
     vaultWritten?: boolean;
   };
@@ -238,12 +241,13 @@ export async function createTaskArtifact(
     throw new ArtifactExistsError(body.error);
   }
 
-  if (!response.ok || !body.artifact) {
+  if (!response.ok || !body.artifact || !body.workItem) {
     throw new Error(body.error ?? `Create artifact returned ${response.status}`);
   }
 
   return {
     ok: true,
+    workItem: body.workItem,
     artifact: body.artifact,
     vaultWritten: body.vaultWritten === true,
   };

@@ -13,20 +13,9 @@ export const AGENT_WORK_STATUS_CONFIG: AgentWorkStatusConfig[] = [
 ];
 
 // Mock only — see AgentWorkItem in types.ts for the extension point once
-// agents report real status. Workflow Gate Agent's and Research Agent's
-// entries used to live here too; both are now derived from real data (see
-// deriveWorkflowGateAgentWorkItems and deriveResearchAgentWorkItems in
-// chiefLiveContext.ts), same as Build.
+// agents report real status. Workflow Gate, Research, and Librarian entries
+// are now derived from real data (see chiefLiveContext.ts), same as Build.
 export const AGENT_WORK_ITEMS: AgentWorkItem[] = [
-  {
-    id: "agentwork-librarian-1",
-    agent: "Librarian Agent",
-    task: "Refresh knowledge index against latest runbooks and notes",
-    status: "awaiting_approval",
-    priority: "low",
-    note: "Two runbooks have conflicting steps — needs an operator call.",
-    updatedAt: "2026-07-06T12:40:00.000Z",
-  },
   {
     id: "agentwork-roadmap-1",
     agent: "Roadmap Agent",

@@ -1,4 +1,4 @@
-import type { WorkItem } from "./types";
+import type { Task } from "../../src/types";
 import type { ArtifactDraft } from "./types";
 import { workflowTypeToNoteType } from "./types";
 
@@ -8,7 +8,7 @@ function truncate(text: string, max: number): string {
   return `${trimmed.slice(0, max - 1)}…`;
 }
 
-export function deterministicArtifactDraft(task: WorkItem): ArtifactDraft {
+export function deterministicArtifactDraft(task: Task): ArtifactDraft {
   const noteType = workflowTypeToNoteType(task.workflowType);
   const summarySource =
     task.description?.trim() ||

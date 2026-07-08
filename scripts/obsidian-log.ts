@@ -114,8 +114,9 @@ async function main(): Promise<void> {
         actor: "operator",
       });
       console.log(`Indexed artifact ${created.artifact.id}`);
+      console.log(`Work item: ${created.workItem.id} (${created.workItem.status})`);
       console.log(`Vault written: ${created.vaultWritten}`);
-      console.log(`Path: ${created.artifact.obsidianPath}`);
+      console.log(`Path: ${created.artifact.targetPath}`);
       return;
     }
   }

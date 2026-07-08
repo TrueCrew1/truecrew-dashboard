@@ -112,19 +112,19 @@ export async function setTaskObsidianNoteId(
 }
 
 export function mapDbNoteToArtifact(row: DbNoteRow, clientTaskId?: string): Artifact {
+  const workItemId = clientTaskId ?? row.source_task_id ?? "";
   return {
     id: row.legacy_id ?? row.id,
+    workItemId,
+    artifactType: "obsidian_note",
     title: row.title,
-    type: row.type as Artifact["type"],
-    obsidianPath: row.obsidian_path,
-    summary: row.summary ?? "",
-    sourceTaskId: clientTaskId ?? row.source_task_id ?? undefined,
-    syncedAt: row.synced_at,
+    targetPath: row.obsidian_path,
     tags: row.tags ?? [],
-    refinementSource: row.refinement_source ?? "deterministic",
-    agent: "librarian",
-    createdBy: row.created_by as Persona,
     createdAt: row.created_at,
+    summary: row.summary ?? "",
+    refinementSource: row.refinement_source ?? "deterministic",
+    syncedAt: row.synced_at,
     updatedAt: row.updated_at,
+    createdBy: row.created_by as Persona,
   };
 }

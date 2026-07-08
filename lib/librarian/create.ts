@@ -1,8 +1,8 @@
 import { isVaultConfigured } from "../obsidian/config";
 import { writeVaultNote } from "../obsidian/write";
 import { mapDbTaskToClient } from "../mappers/tasks";
-import type { DbTaskRow } from "../supabase/admin";
 import { isSupabaseConfigured, writeAuditEvent } from "../supabase/admin";
+import type { Task } from "../../src/types";
 import {
   fetchNoteForTaskUuid,
   fetchNotesForTaskUuid,
@@ -14,11 +14,8 @@ import {
 import { artifactNotePath } from "./paths";
 import { refineArtifactDraft } from "./refine";
 import { renderTaskArtifactNote } from "./templates";
-import type { Artifact, CreateArtifactInput, CreateArtifactResult, WorkItem } from "./types";
-
-function workItemFromRow(row: DbTaskRow): WorkItem {
-  return mapDbTaskToClient(row) as WorkItem;
-}
+import type { Artifact, CreateArtifactInput, CreateArtifactResult } from "./types";
+import { workItemFromTask } from "./workItem";
 
 export async function listTaskArtifacts(taskId: string): Promise<Artifact[]> {
   if (!isSupabaseConfigured()) {
@@ -52,15 +49,15 @@ export async function createTaskArtifact(input: CreateArtifactInput): Promise<Cr
     throw err;
   }
 
-  const task = workItemFromRow(taskRow);
+  const task = mapDbTaskToClient(taskRow) as Task;
   const clientTaskId = taskRow.legacy_id ?? taskRow.id;
   const refined = await refineArtifactDraft(task, { useAi: Boolean(input.useAi) });
-  const obsidianPath = artifactNotePath(refined);
-  const markdown = renderTaskArtifactNote(task, refined, obsidianPath, refined.refinementSource);
+  const targetPath = artifactNotePath(refined);
+  const markdown = renderTaskArtifactNote(task, refined, targetPath, refined.refinementSource);
 
   let vaultWritten = false;
   if (isVaultConfigured()) {
-    await writeVaultNote(obsidianPath, markdown);
+    await writeVaultNote(targetPath, markdown);
     vaultWritten = true;
   }
 
@@ -69,7 +66,7 @@ export async function createTaskArtifact(input: CreateArtifactInput): Promise<Cr
     legacyId,
     title: refined.title,
     type: refined.noteType,
-    obsidianPath,
+    obsidianPath: targetPath,
     summary: refined.summary,
     sourceTaskUuid: taskRow.id,
     tags: refined.tags,
@@ -77,22 +74,25 @@ export async function createTaskArtifact(input: CreateArtifactInput): Promise<Cr
     createdBy: input.actor ?? "operator",
   });
 
-  await setTaskObsidianNoteId(taskRow.id, obsidianPath);
+  await setTaskObsidianNoteId(taskRow.id, targetPath);
 
   await writeAuditEvent(
     "task",
     taskRow.id,
     "artifact_created",
     {
-      obsidianPath,
+      targetPath,
       refinementSource: refined.refinementSource,
       vaultWritten,
     },
     "librarian",
   );
 
+  const artifact = mapDbNoteToArtifact(noteRow, clientTaskId);
+
   return {
-    artifact: mapDbNoteToArtifact(noteRow, clientTaskId),
+    workItem: workItemFromTask(task, true),
+    artifact,
     vaultWritten,
   };
 }
