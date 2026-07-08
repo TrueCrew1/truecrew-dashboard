@@ -39,6 +39,7 @@ export const mockTasks: Task[] = [
       { type: "deploy", id: "deploy-001", label: "Billing API v2.4.1" },
     ],
     githubRef: "truecrew/billing-api#142",
+    obsidianNoteId: "Operations/Artifacts/2026-06-29 — Billing API rate limiter.md",
   },
   {
     id: "task-002",
@@ -475,6 +476,21 @@ export const mockNotes: Note[] = [
     createdAt: iso(2160),
     updatedAt: iso(2160),
     createdBy: "founder",
+  },
+  {
+    id: "note-004",
+    title: "Billing API rate limiter — work record",
+    type: "build",
+    obsidianPath: "Operations/Artifacts/2026-06-29 — Billing API rate limiter.md",
+    summary: "Build task for token bucket rate limiter on billing endpoints. PR gate open.",
+    sourceTaskId: "task-001",
+    syncedAt: iso(2),
+    tags: ["build", "in-progress", "librarian"],
+    refinementSource: "deterministic",
+    agent: "librarian",
+    createdAt: iso(2),
+    updatedAt: iso(2),
+    createdBy: "operator",
   },
 ];
 

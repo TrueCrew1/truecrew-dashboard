@@ -207,7 +207,20 @@ export interface Note extends EntityBase {
   summary: string;
   sourceTaskId?: string;
   syncedAt: string;
+  tags?: string[];
+  refinementSource?: "deterministic" | "ai";
+  agent?: "librarian";
 }
+
+/** Indexed Obsidian artifact created by the Librarian agent. */
+export interface Artifact extends Note {
+  tags: string[];
+  refinementSource: "deterministic" | "ai";
+  agent: "librarian";
+}
+
+/** Work item alias — tasks are the unit of operator work. */
+export type WorkItem = Task;
 
 export interface AlertItem {
   id: string;

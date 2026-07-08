@@ -195,6 +195,7 @@ export function KnowledgePage() {
                   <tr>
                     <th scope="col">Note</th>
                     <th scope="col">Type</th>
+                    <th scope="col">Task</th>
                     <th scope="col">Path</th>
                     <th scope="col">Source</th>
                   </tr>
@@ -204,6 +205,7 @@ export function KnowledgePage() {
                     <tr key={`${entry.source}:${entry.id}`}>
                       <td>{entry.title}</td>
                       <td>{entry.type}</td>
+                      <td className="cell-muted">{entry.sourceTaskId ?? "—"}</td>
                       <td className="mono">{entry.obsidianPath}</td>
                       <td>
                         <SourceBadge source={entry.source} />

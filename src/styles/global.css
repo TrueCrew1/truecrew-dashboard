@@ -993,6 +993,16 @@
   text-decoration: underline;
 }
 
+.librarian-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--steel-dim);
+  cursor: pointer;
+}
+
 /* --- Table usability + empty-state hardening (phase 2) --- */
 
 .data-table td {

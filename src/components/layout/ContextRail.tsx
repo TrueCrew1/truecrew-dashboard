@@ -1,5 +1,5 @@
+import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
-import { useLocation } from "react-router-dom";
 import {
   AdvanceButton,
   GateList,
@@ -8,7 +8,7 @@ import {
   formatRelativeTime,
   getNextWorkflowStage,
 } from "@/components/ui";
-import { useData } from "@/context/DataContext";
+import { ArtifactExistsError, useData } from "@/context/DataContext";
 import type { MockData } from "@/data/mockData";
 import type { Task } from "@/types";
 import { WorkflowStage } from "@/types";
@@ -126,6 +126,89 @@ function TaskRailAdvance({ task }: { task: Task }) {
   );
 }
 
+function TaskArtifactsRail({ task }: { task: Task }) {
+  const { getTaskArtifacts, createTaskArtifact, isArtifactCreating } = useData();
+  const [useAi, setUseAi] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const artifacts = getTaskArtifacts(task.id);
+  const creating = isArtifactCreating(task.id);
+  const hasArtifact = artifacts.length > 0;
+
+  const handleCreate = async () => {
+    setError(null);
+    setSuccess(null);
+    try {
+      const result = await createTaskArtifact(task.id, { useAi });
+      setSuccess(
+        result.vaultWritten
+          ? "Artifact indexed and written to vault"
+          : "Artifact indexed (vault not available here)",
+      );
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      if (err instanceof ArtifactExistsError) {
+        setError("This task already has an artifact");
+      } else {
+        setError(err instanceof Error ? err.message : "Create failed");
+      }
+    }
+  };
+
+  return (
+    <div className="rail-section">
+      <div className="rail-section-title">Artifacts (Librarian)</div>
+      {artifacts.length === 0 ? (
+        <div className="rail-item">
+          <div className="rail-item-meta">No Obsidian artifact linked to this task yet.</div>
+        </div>
+      ) : (
+        artifacts.map((artifact) => (
+          <div key={artifact.id} className="rail-item">
+            <div className="rail-item-title">{artifact.title}</div>
+            <div className="rail-item-meta mono">{artifact.obsidianPath}</div>
+            <div className="rail-item-meta">
+              {artifact.refinementSource} · {artifact.tags.slice(0, 3).join(", ")}
+            </div>
+            <Link to="/knowledge" className="empty-state-link">
+              View in Knowledge
+            </Link>
+          </div>
+        ))
+      )}
+      {!hasArtifact ? (
+        <>
+          <label className="librarian-option">
+            <input
+              type="checkbox"
+              checked={useAi}
+              onChange={(e) => setUseAi(e.target.checked)}
+              disabled={creating}
+            />
+            Use AI refinement (optional, falls back if unavailable)
+          </label>
+          <AdvanceButton
+            label="Create artifact"
+            onClick={handleCreate}
+            disabled={creating}
+            loading={creating}
+            error={error}
+          />
+        </>
+      ) : null}
+      {success ? (
+        <span className="stage-select-status saved" aria-live="polite">
+          {success}
+        </span>
+      ) : null}
+      {error && hasArtifact ? (
+        <span className="stage-select-error">{error}</span>
+      ) : null}
+    </div>
+  );
+}
+
 function EntityRailContent({ entityId, data }: { entityId: string; data: MockData }) {
   const task = data.tasks.find((t) => t.id === entityId);
   if (task) {
@@ -163,6 +246,7 @@ function EntityRailContent({ entityId, data }: { entityId: string; data: MockDat
             <div className="rail-item">{task.blocker}</div>
           </div>
         ) : null}
+        <TaskArtifactsRail task={task} />
       </>
     );
   }
