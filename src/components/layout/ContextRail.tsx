@@ -167,9 +167,9 @@ function TaskArtifactsRail({ task }: { task: Task }) {
         artifacts.map((artifact) => (
           <div key={artifact.id} className="rail-item">
             <div className="rail-item-title">{artifact.title}</div>
-            <div className="rail-item-meta mono">{artifact.obsidianPath}</div>
+            <div className="rail-item-meta mono">{artifact.targetPath}</div>
             <div className="rail-item-meta">
-              {artifact.refinementSource} · {artifact.tags.slice(0, 3).join(", ")}
+              {artifact.refinementSource ?? "deterministic"} · {artifact.tags.slice(0, 3).join(", ")}
             </div>
             <Link to="/knowledge" className="empty-state-link">
               View in Knowledge

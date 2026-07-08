@@ -1,10 +1,10 @@
-import type { WorkItem } from "./types";
+import type { Task } from "../../src/types";
 import type { ArtifactDraft } from "./types";
 import { deterministicArtifactDraft } from "./refine.deterministic";
 import { tryRefineWithAi } from "./refine.ai";
 
 export async function refineArtifactDraft(
-  task: WorkItem,
+  task: Task,
   opts: { useAi: boolean },
 ): Promise<ArtifactDraft & { refinementSource: "deterministic" | "ai" }> {
   const draft = deterministicArtifactDraft(task);

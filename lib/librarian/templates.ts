@@ -1,4 +1,4 @@
-import type { WorkItem } from "./types";
+import type { Task } from "../../src/types";
 import type { ArtifactDraft } from "./types";
 
 function yamlFrontmatter(fields: Record<string, string | string[]>): string {
@@ -18,7 +18,7 @@ function yamlFrontmatter(fields: Record<string, string | string[]>): string {
 }
 
 export function renderTaskArtifactNote(
-  task: WorkItem,
+  task: Task,
   draft: ArtifactDraft,
   obsidianPath: string,
   refinementSource: "deterministic" | "ai",
