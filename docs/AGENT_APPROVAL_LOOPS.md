@@ -33,6 +33,8 @@ Operator trigger (page button)
   → card leaves pending Approvals + Agents awaiting views
 ```
 
+For future Chief voice/text intake behavior, see `docs/CHIEF_VOICE_AND_COMMAND_SPEC.md`. This spec defines input behavior only and does not change the Chief-only approval model.
+
 **Persistence today:**
 
 - Proposal content is session-scoped (not stored in Supabase).
