@@ -9,6 +9,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "qa": "npm run lint && npm run build",
     "qa:nightly": "bash scripts/nightly-qa.sh",
     "preview": "vite preview",
@@ -39,6 +41,7 @@
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.62.1",
     "vercel": "^54.18.2",
-    "vite": "^6.3.5"
+    "vite": "^6.3.5",
+    "vitest": "^4.1.9"
   }
 }
