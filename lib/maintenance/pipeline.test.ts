@@ -87,6 +87,17 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
+/** Shared assertion for the hard-fail path: job + work item both marked failed with `message`. */
+function expectHardFail(message: string) {
+  expect(finishRuntimeExecutionJobMock).toHaveBeenCalledWith(
+    "job-9",
+    "failed",
+    expect.any(Array),
+    message,
+  );
+  expect(updateRuntimeWorkItemStatusMock).toHaveBeenCalledWith("wi-9", "failed");
+}
+
 describe("processNextMaintenanceWorkItem", () => {
   it("throws when the Obsidian vault is not configured", async () => {
     isVaultConfiguredMock.mockReturnValue(false);
@@ -172,13 +183,16 @@ describe("processNextMaintenanceWorkItem", () => {
       /maintenance_task payload requires title/,
     );
 
-    expect(finishRuntimeExecutionJobMock).toHaveBeenCalledWith(
-      "job-9",
-      "failed",
-      expect.any(Array),
-      "maintenance_task payload requires title",
-    );
-    expect(updateRuntimeWorkItemStatusMock).toHaveBeenCalledWith("wi-9", "failed");
+    expectHardFail("maintenance_task payload requires title");
+  });
+
+  it("marks the work item failed and rethrows when the vault write fails", async () => {
+    logMaintenanceMock.mockRejectedValue(new Error("disk full"));
+
+    await expect(processNextMaintenanceWorkItem()).rejects.toThrow(/disk full/);
+
+    expectHardFail("disk full");
+    expect(insertRuntimeArtifactMock).not.toHaveBeenCalled();
   });
 
   it("marks the work item failed and rethrows when the obsidian sink delivery fails (hard-fail, not fail-open)", async () => {
@@ -188,13 +202,17 @@ describe("processNextMaintenanceWorkItem", () => {
       /sink delivery table unreachable/,
     );
 
-    expect(finishRuntimeExecutionJobMock).toHaveBeenCalledWith(
-      "job-9",
-      "failed",
-      expect.any(Array),
-      "sink delivery table unreachable",
-    );
-    expect(updateRuntimeWorkItemStatusMock).toHaveBeenCalledWith("wi-9", "failed");
+    expectHardFail("sink delivery table unreachable");
     expect(upsertNotesIndexRowMock).not.toHaveBeenCalled();
+  });
+
+  it("does not fire an audit event when the pipeline hard-fails (audit only follows a successful write)", async () => {
+    insertRuntimeSinkDeliveryMock.mockRejectedValue(new Error("sink delivery table unreachable"));
+
+    await expect(processNextMaintenanceWorkItem()).rejects.toThrow(
+      /sink delivery table unreachable/,
+    );
+
+    expect(writeAuditEventMock).not.toHaveBeenCalled();
   });
 });
