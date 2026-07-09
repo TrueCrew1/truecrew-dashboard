@@ -87,6 +87,17 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
+/** Shared assertion for the hard-fail path: job + work item both marked failed with `message`. */
+function expectHardFail(message: string) {
+  expect(finishRuntimeExecutionJobMock).toHaveBeenCalledWith(
+    "job-1",
+    "failed",
+    expect.any(Array),
+    message,
+  );
+  expect(updateRuntimeWorkItemStatusMock).toHaveBeenCalledWith("wi-1", "failed");
+}
+
 describe("processNextLibrarianWorkItem", () => {
   it("throws when the Obsidian vault is not configured", async () => {
     isVaultConfiguredMock.mockReturnValue(false);
@@ -172,13 +183,7 @@ describe("processNextLibrarianWorkItem", () => {
       /chief_decision payload requires title/,
     );
 
-    expect(finishRuntimeExecutionJobMock).toHaveBeenCalledWith(
-      "job-1",
-      "failed",
-      expect.any(Array),
-      "chief_decision payload requires title",
-    );
-    expect(updateRuntimeWorkItemStatusMock).toHaveBeenCalledWith("wi-1", "failed");
+    expectHardFail("chief_decision payload requires title");
   });
 
   it("marks the work item failed and rethrows when the vault write fails", async () => {
@@ -186,13 +191,7 @@ describe("processNextLibrarianWorkItem", () => {
 
     await expect(processNextLibrarianWorkItem()).rejects.toThrow(/disk full/);
 
-    expect(finishRuntimeExecutionJobMock).toHaveBeenCalledWith(
-      "job-1",
-      "failed",
-      expect.any(Array),
-      "disk full",
-    );
-    expect(updateRuntimeWorkItemStatusMock).toHaveBeenCalledWith("wi-1", "failed");
+    expectHardFail("disk full");
     expect(insertRuntimeArtifactMock).not.toHaveBeenCalled();
   });
 
@@ -203,13 +202,7 @@ describe("processNextLibrarianWorkItem", () => {
       /sink delivery table unreachable/,
     );
 
-    expect(finishRuntimeExecutionJobMock).toHaveBeenCalledWith(
-      "job-1",
-      "failed",
-      expect.any(Array),
-      "sink delivery table unreachable",
-    );
-    expect(updateRuntimeWorkItemStatusMock).toHaveBeenCalledWith("wi-1", "failed");
+    expectHardFail("sink delivery table unreachable");
     expect(upsertNotesIndexRowMock).not.toHaveBeenCalled();
   });
 });
