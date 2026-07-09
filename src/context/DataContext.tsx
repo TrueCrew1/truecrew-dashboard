@@ -9,6 +9,7 @@ import {
 import { mockData, type MockData } from "@/data/mockData";
 import {
   ArtifactExistsError,
+  createMaintenanceNote as createMaintenanceNoteApi,
   createTaskArtifact as createTaskArtifactApi,
   fetchCommandCenterData,
   isLiveApiEnabled,
@@ -50,6 +51,11 @@ interface DataContextValue {
     options?: { useAi?: boolean; actor?: Persona },
   ) => Promise<{ workItem: WorkItem; artifact: Artifact; vaultWritten: boolean }>;
   isArtifactCreating: (taskId: string) => boolean;
+  createMaintenanceNote: (
+    taskId: string,
+    options?: { actor?: Persona },
+  ) => Promise<{ workItem: WorkItem; note: Artifact; vaultWritten: boolean }>;
+  isMaintenanceNoteCreating: (taskId: string) => boolean;
 }
 
 const DataContext = createContext<DataContextValue | null>(null);
@@ -63,6 +69,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [creatingArtifactTaskIds, setCreatingArtifactTaskIds] = useState<Set<string>>(
     new Set(),
   );
+  const [creatingMaintenanceNoteTaskIds, setCreatingMaintenanceNoteTaskIds] = useState<
+    Set<string>
+  >(new Set());
 
   const refresh = useCallback(async () => {
     if (!isLiveApiEnabled()) {
@@ -171,6 +180,33 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     [data.notes, data.tasks, refresh],
   );
 
+  const createMaintenanceNote = useCallback(
+    async (taskId: string, options: { actor?: Persona } = {}) => {
+      setCreatingMaintenanceNoteTaskIds((prev) => new Set(prev).add(taskId));
+
+      try {
+        if (!isLiveApiEnabled()) {
+          throw new Error("Maintenance note creation requires the live API");
+        }
+
+        const result = await createMaintenanceNoteApi(taskId, options);
+        await refresh();
+        return {
+          workItem: result.workItem,
+          note: result.note,
+          vaultWritten: result.vaultWritten,
+        };
+      } finally {
+        setCreatingMaintenanceNoteTaskIds((prev) => {
+          const next = new Set(prev);
+          next.delete(taskId);
+          return next;
+        });
+      }
+    },
+    [refresh],
+  );
+
   const isTaskUpdating = useCallback(
     (taskId: string) => updatingTaskIds.has(taskId),
     [updatingTaskIds],
@@ -179,6 +215,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const isArtifactCreating = useCallback(
     (taskId: string) => creatingArtifactTaskIds.has(taskId),
     [creatingArtifactTaskIds],
+  );
+
+  const isMaintenanceNoteCreating = useCallback(
+    (taskId: string) => creatingMaintenanceNoteTaskIds.has(taskId),
+    [creatingMaintenanceNoteTaskIds],
   );
 
   useEffect(() => {
@@ -198,6 +239,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       getTaskArtifacts,
       createTaskArtifact,
       isArtifactCreating,
+      createMaintenanceNote,
+      isMaintenanceNoteCreating,
     }),
     [
       data,
@@ -210,6 +253,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       getTaskArtifacts,
       createTaskArtifact,
       isArtifactCreating,
+      createMaintenanceNote,
+      isMaintenanceNoteCreating,
     ],
   );
 
