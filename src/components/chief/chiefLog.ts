@@ -64,6 +64,9 @@ export type ChiefLogEventInput = DistributiveOmit<ChiefLogEvent, "at">;
 
 const LOG_PREFIX = "[chief]";
 
+/** Cap the in-memory buffer so a long session can't grow it unbounded. */
+const MAX_ENTRIES = 500;
+
 const entries: ChiefLogEvent[] = [];
 
 /**
@@ -74,6 +77,7 @@ const entries: ChiefLogEvent[] = [];
 export function logChiefEvent(event: ChiefLogEventInput): ChiefLogEvent {
   const entry = { ...event, at: new Date().toISOString() } as ChiefLogEvent;
   entries.push(entry);
+  if (entries.length > MAX_ENTRIES) entries.splice(0, entries.length - MAX_ENTRIES);
   if (typeof console !== "undefined" && typeof console.info === "function") {
     console.info(LOG_PREFIX, entry.kind, entry);
   }
