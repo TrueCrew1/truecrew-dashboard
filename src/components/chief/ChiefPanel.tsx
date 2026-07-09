@@ -6,6 +6,7 @@ import { CommandHistory } from "./CommandHistory";
 import { buildApprovalFromResponse, buildHistoryEntry } from "./chiefMock";
 import { approvalActionSuccessMessage, type ApprovalActionState } from "./chiefApproval";
 import { deriveChiefBoardItems, resolveChiefCommand } from "./chiefLiveContext";
+import { logChiefEvent } from "./chiefLog";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { SpecialistCards } from "./SpecialistCards";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
@@ -148,11 +149,18 @@ export function ChiefPanel() {
     setIsProcessing(true);
     setActiveTab("command");
     setResponse(null);
+    logChiefEvent({ kind: "intake", surface: "sidebar", command });
 
     window.setTimeout(() => {
       const result = resolveChiefCommand(command, data, liveContext, approvals);
       setResponse(result);
       addHistoryEntry(buildHistoryEntry(command, result));
+      logChiefEvent({
+        kind: "routing",
+        surface: "sidebar",
+        routedTo: result.routedTo,
+        approvalNeeded: Boolean(result.approvalNeeded),
+      });
 
       const newApproval = buildApprovalFromResponse(command, result);
       if (newApproval) {
@@ -160,6 +168,13 @@ export function ChiefPanel() {
         // here too, alongside any future real approval sources (GitHub PRs,
         // agent job queue) that push a new ApprovalCard into this list.
         addCommandApproval(newApproval);
+        logChiefEvent({
+          kind: "approval",
+          phase: "enqueued",
+          surface: "sidebar",
+          proposalId: newApproval.id,
+          title: newApproval.title,
+        });
       }
 
       setIsProcessing(false);

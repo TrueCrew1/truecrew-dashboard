@@ -202,11 +202,57 @@ law.
      intent.
    - Research already does this; mirror the pattern for any new agent test slice.
 
+## Structured logging (`chiefLog.ts`)
+
+`src/components/chief/chiefLog.ts` records what happens along the intake →
+routing → approval path. It does not change behavior — it only observes the
+existing wired points. There is no backend for it: entries are buffered
+in-memory (session-scoped) via `getChiefLogEntries()` and also emitted with
+`console.info` under the stable `[chief]` prefix. `clearChiefLogEntries()`
+resets the buffer (test/dev only).
+
+`logChiefEvent(event)` takes a discriminated union (`kind`) and stamps an ISO
+`at` timestamp. Three outcome kinds:
+
+| `kind` | When | Fields |
+|--------|------|--------|
+| `intake` | A command is submitted | `surface` (`dashboard`/`sidebar`), `command` |
+| `routing` | After `resolveChiefCommand` | `surface`, `routedTo`, `approvalNeeded` |
+| `approval` | A proposal is enqueued or a decision is recorded | `phase: "enqueued"` → `surface`, `proposalId`, `title`; `phase: "decision"` → `proposalId`, `action` |
+
+Wired points (logging only, no new behavior):
+
+- `ChiefPanel.tsx` / `ChiefHomePanel.tsx` `handleSubmit` — `intake` on submit,
+  `routing` after `resolveChiefCommand`, `approval`/`enqueued` when
+  `addCommandApproval` fires.
+- `ChiefApprovalsContext.tsx` `recordDecision` — `approval`/`decision` via the
+  shared `applyDecision` choke point (covers live, mock, and conflict paths).
+
+## Future-agent entry contract (`agentPacket.ts`)
+
+`src/components/chief/agentPacket.ts` defines the shape a future Research or
+Builder agent will hand to Chief. It is a **contract only** — no agent
+behavior, no runtime enqueue, no UI.
+
+- `AgentPacket` — the typed entry shape: shared request fields (`id`, `gate`,
+  `summary`, `riskLevel`, `checksDone`, `requestedAction`, `createdAt`) plus
+  optional role-specific context (`affectedPhases`, `filesOrAreas`,
+  `alternativesConsidered`, `audience`) and the producing `agent` role.
+- `createApprovalCardFromPacket(packet)` — a pure mapper that converts a packet
+  into an `ApprovalCard` using the existing `createApprovalCardFrom*Request()`
+  helpers in `agentApprovalGates.ts`. It does not enqueue.
+
+The contract enforces System law: a packet is a proposal, never an execution.
+Callers must still route the mapped card through `addCommandApproval()` — Chief
+is the only approval surface and human-in-the-loop is mandatory.
+
 ## Code map (reference only)
 
 | Area | Location |
 |------|----------|
 | Request types + card helpers + `APPROVAL_GATES` | `src/components/chief/agentApprovalGates.ts` |
+| Structured intake/routing/approval logging | `src/components/chief/chiefLog.ts` |
+| Future-agent entry contract + packet mapper | `src/components/chief/agentPacket.ts` |
 | Shared queue, `addCommandApproval`, `recordDecision` | `src/components/chief/ChiefApprovalsContext.tsx` |
 | Build runtime test factory | `src/components/chief/buildAgentTestProposal.ts` |
 | Research runtime test factory | `src/components/chief/researchAgentTestProposal.ts` |

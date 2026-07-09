@@ -15,6 +15,7 @@ import {
   recordChiefApprovalDecision,
 } from "@/lib/api/client";
 import { AGENT_APPROVAL_CARDS } from "./agentApprovalGates";
+import { logChiefEvent } from "./chiefLog";
 import { MOCK_PR_APPROVAL_CARDS } from "./chiefApprovalCardMocks";
 import { REPO_CHANGE_APPROVAL_CARDS } from "./repoChangeApprovals";
 import { APPROVAL_ACTION_DELAY_MS, approvalActionToStatus } from "./chiefApproval";
@@ -118,6 +119,14 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
 
   const applyDecision = useCallback((decision: ApprovalDecision) => {
     setApprovalDecisions((prev) => ({ ...prev, [decision.proposalId]: decision }));
+    // Single choke point for every operator decision recorded via
+    // recordDecision (live, mock, and conflict paths all land here).
+    logChiefEvent({
+      kind: "approval",
+      phase: "decision",
+      proposalId: decision.proposalId,
+      action: decision.status,
+    });
   }, []);
 
   const approvals = useMemo(() => {

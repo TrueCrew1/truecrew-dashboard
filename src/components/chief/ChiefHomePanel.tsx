@@ -3,6 +3,7 @@ import { Panel } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import { buildApprovalFromResponse, buildHistoryEntry } from "./chiefMock";
 import { deriveChiefBoardItems, resolveChiefCommand } from "./chiefLiveContext";
+import { logChiefEvent } from "./chiefLog";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
 import type { ChiefResponse } from "./types";
@@ -50,14 +51,28 @@ export function ChiefHomePanel() {
     if (!trimmed || isProcessing) return;
 
     setIsProcessing(true);
+    logChiefEvent({ kind: "intake", surface: "dashboard", command: trimmed });
     window.setTimeout(() => {
       const result = resolveChiefCommand(trimmed, data, liveContext, approvals);
       setResponse(result);
       addHistoryEntry(buildHistoryEntry(trimmed, result));
+      logChiefEvent({
+        kind: "routing",
+        surface: "dashboard",
+        routedTo: result.routedTo,
+        approvalNeeded: Boolean(result.approvalNeeded),
+      });
 
       const newApproval = buildApprovalFromResponse(trimmed, result);
       if (newApproval) {
         addCommandApproval(newApproval);
+        logChiefEvent({
+          kind: "approval",
+          phase: "enqueued",
+          surface: "dashboard",
+          proposalId: newApproval.id,
+          title: newApproval.title,
+        });
       }
 
       setIsProcessing(false);
