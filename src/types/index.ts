@@ -209,7 +209,7 @@ export interface Note extends EntityBase {
   syncedAt: string;
   tags?: string[];
   refinementSource?: "deterministic" | "ai";
-  agent?: "librarian";
+  agent?: "librarian" | "maintenance";
   /** Canonical artifact fields when agent === "librarian". */
   workItemId?: string;
   artifactType?: "obsidian_note";
