@@ -12,6 +12,8 @@
     "qa": "npm run lint && npm run build",
     "qa:nightly": "bash scripts/nightly-qa.sh",
     "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "db:push": "supabase db push",
     "db:reset": "supabase db reset",
     "db:status": "supabase migration list",
@@ -39,6 +41,7 @@
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.62.1",
     "vercel": "^54.18.2",
-    "vite": "^6.3.5"
+    "vite": "^6.3.5",
+    "vitest": "^3.2.4"
   }
 }
