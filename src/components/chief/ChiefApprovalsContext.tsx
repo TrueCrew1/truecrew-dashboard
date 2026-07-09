@@ -15,6 +15,7 @@ import {
   recordChiefApprovalDecision,
 } from "@/lib/api/client";
 import { AGENT_APPROVAL_CARDS } from "./agentApprovalGates";
+import { chiefLog } from "./chiefLog";
 import { MOCK_PR_APPROVAL_CARDS } from "./chiefApprovalCardMocks";
 import { REPO_CHANGE_APPROVAL_CARDS } from "./repoChangeApprovals";
 import { APPROVAL_ACTION_DELAY_MS, approvalActionToStatus } from "./chiefApproval";
@@ -166,6 +167,8 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
             actor: decision.actor,
           };
           applyDecision(applied);
+          const decidedCard = proposalsById.get(id);
+          if (decidedCard) chiefLog.cardDecided(decidedCard, action);
           return applied;
         } catch (error) {
           if (error instanceof ChiefApprovalConflictError) {
@@ -185,9 +188,11 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
         actor: null,
       };
       applyDecision(decision);
+      const decidedCard = proposalsById.get(id);
+      if (decidedCard) chiefLog.cardDecided(decidedCard, action);
       return decision;
     },
-    [liveApi, applyDecision],
+    [liveApi, applyDecision, proposalsById],
   );
 
   const value = useMemo<ChiefApprovalsContextValue>(
