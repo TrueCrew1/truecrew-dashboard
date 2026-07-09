@@ -188,4 +188,22 @@ describe("createMaintenanceNote", () => {
     expect(setTaskObsidianNoteId).not.toHaveBeenCalled();
     expect(writeAuditEvent).not.toHaveBeenCalled();
   });
+
+  it("persists the DB row as type: 'ticket' while the vault note's own frontmatter records type: maintenance — an intentional split tracked by #97/#98, not a bug", async () => {
+    await createMaintenanceNote({ taskId: "task-42" });
+
+    // DB side: notes.type has no CHECK value for "maintenance" (#97), so the
+    // row is persisted as the compat value "ticket".
+    expect(vi.mocked(upsertNoteByPath).mock.calls[0][0]).toMatchObject({
+      type: "ticket",
+      agent: "maintenance",
+    });
+
+    // Vault side: the frontmatter written to the note itself is the real
+    // "maintenance" type — the reader (lib/obsidian/read.ts) is responsible
+    // for reconciling this split back to "maintenance" (#98).
+    const [, markdown] = vi.mocked(writeVaultNote).mock.calls[0];
+    expect(markdown).toContain("type: maintenance");
+    expect(markdown).toContain("agent: maintenance");
+  });
 });
