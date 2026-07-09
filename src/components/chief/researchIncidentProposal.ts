@@ -4,6 +4,7 @@ import {
   type ResearchApprovalRequest,
 } from "./agentApprovalGates";
 import { createAgentPacket } from "./agentPacket";
+import { chiefLog } from "./chiefLog";
 import { stableChiefId } from "./chiefMock";
 import type { ApprovalCard, ApprovalProposal } from "./types";
 import type { Incident } from "@/types";
@@ -72,10 +73,13 @@ export function hasPendingResearchIncidentProposal(
  * Real signal → AgentPacket<ResearchApprovalRequest> → ApprovalCard. The
  * first call site that exercises createAgentPacket end to end — see
  * docs/RESEARCH_AGENT_PACKET_SPEC.md's Routing section for the full path
- * this follows (packet creation logs via chiefLog.packetCreated
- * automatically; card creation and the operator's eventual decision log via
- * chiefLog.cardCreated/cardDecided, wired in agentApprovalGates.ts and
- * ChiefApprovalsContext.tsx respectively).
+ * this follows. Packet creation logs via chiefLog.packetCreated
+ * automatically; card creation logs via chiefLog.cardCreated here (not
+ * inside createApprovalCardFromResearchRequest itself, since that shared
+ * factory also builds the static seeded example at module load — logging
+ * there would fire a spurious "card created" event on every app boot). The
+ * operator's eventual decision logs via chiefLog.cardDecided, wired in
+ * ChiefApprovalsContext.tsx.
  */
 export function proposeResearchIncidentPacket(
   incident: Incident,
@@ -88,5 +92,6 @@ export function proposeResearchIncidentPacket(
   const request = buildResearchIncidentRequest(incident);
   const packet = createAgentPacket("research", request);
   const card = createApprovalCardFromResearchRequest(packet.request);
+  chiefLog.cardCreated(card);
   return { outcome: "queued", card };
 }

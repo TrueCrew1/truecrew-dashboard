@@ -186,10 +186,10 @@ export function MonitorPage() {
         >
           {activeIncidentForResearch ? (
             <p className="cell-muted">
-              Wraps the real active incident &quot;{activeIncidentForResearch.title}&quot; (Sev{" "}
-              {activeIncidentForResearch.severity}, {activeIncidentForResearch.status}) as an{" "}
-              <code>AgentPacket&lt;ResearchApprovalRequest&gt;</code> and queues it as a Chief
-              approval card — a real recommendation, not a QA fixture. Review on Chief → Approvals.
+              Flags the active incident &quot;{activeIncidentForResearch.title}&quot; (Sev{" "}
+              {activeIncidentForResearch.severity}, {activeIncidentForResearch.status}) to
+              Research and queues a real recommendation on Chief&apos;s approval queue — not a QA
+              fixture. Review on Chief → Approvals.
             </p>
           ) : (
             <p className="cell-muted">

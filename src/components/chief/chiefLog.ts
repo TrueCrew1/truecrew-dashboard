@@ -6,10 +6,11 @@ import type { ApprovalAction, ApprovalCard } from "./types";
 export const chiefLog = {
   /** Logs that an agent wrapped a request as a packet. Not a card, not an approval. */
   packetCreated<TRequest extends AgentPacketRequest>(packet: AgentPacket<TRequest>): void {
+    const agentLabel = packet.agent.charAt(0).toUpperCase() + packet.agent.slice(1);
     emitChiefGovernanceEvent({
       id: `evt-${packet.id}-created`,
       type: "packet_created",
-      summary: `${packet.agent} packet queued: ${packet.request.gate}`,
+      summary: `${agentLabel} packet queued: ${packet.request.gate}`,
       detail: { packetId: packet.id, agent: packet.agent, gate: packet.request.gate },
       timestamp: packet.createdAt,
     });

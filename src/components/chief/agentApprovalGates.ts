@@ -1,4 +1,3 @@
-import { chiefLog } from "./chiefLog";
 import type {
   ApprovalCard,
   ApprovalChecklistItem,
@@ -146,7 +145,7 @@ export function createApprovalCardFromBuildRequest(request: BuildApprovalRequest
 export function createApprovalCardFromResearchRequest(
   request: ResearchApprovalRequest,
 ): ApprovalCard {
-  const card = baseCardFields(
+  return baseCardFields(
     request,
     "Research",
     "research_agent",
@@ -154,8 +153,6 @@ export function createApprovalCardFromResearchRequest(
       ? `Alternatives considered: ${request.alternativesConsidered.join(", ")}.`
       : "No alternatives recorded.",
   );
-  chiefLog.cardCreated(card);
-  return card;
 }
 
 export function createApprovalCardFromContentRequest(request: ContentApprovalRequest): ApprovalCard {
