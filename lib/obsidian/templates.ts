@@ -2,6 +2,7 @@ import type {
   BuildLogEntry,
   DecisionLogEntry,
   HotContextEntry,
+  MaintenanceLogEntry,
   PrLogEntry,
 } from "./types.js";
 
@@ -80,6 +81,26 @@ export function renderDecisionNote(entry: DecisionLogEntry): string {
   sections.push("## Decision", "", entry.decision, "");
   if (entry.consequences) {
     sections.push("## Consequences", "", entry.consequences, "");
+  }
+
+  return frontmatter + sections.join("\n");
+}
+
+export function renderMaintenanceNote(entry: MaintenanceLogEntry): string {
+  const loggedAt = entry.loggedAt ?? new Date();
+  const frontmatter = yamlFrontmatter({
+    type: "maintenance",
+    source: "true-crew",
+    logged_at: formatIso(loggedAt),
+  });
+
+  const sections = [`# ${entry.title}`, ""];
+  if (entry.context) {
+    sections.push("## Context", "", entry.context, "");
+  }
+  sections.push("## Description", "", entry.description, "");
+  if (entry.notes) {
+    sections.push("## Notes", "", entry.notes, "");
   }
 
   return frontmatter + sections.join("\n");

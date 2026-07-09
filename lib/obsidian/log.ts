@@ -1,6 +1,7 @@
 import {
   decisionNotePath,
   HOT_CONTEXT_PATH,
+  maintenanceNotePath,
   ROLLING_LOG_PATHS,
 } from "./paths.js";
 import {
@@ -8,6 +9,7 @@ import {
   renderBuildLogSeed,
   renderDecisionNote,
   renderHotContextNote,
+  renderMaintenanceNote,
   renderPrLogSection,
   renderPrLogSeed,
 } from "./templates.js";
@@ -15,6 +17,7 @@ import type {
   BuildLogEntry,
   DecisionLogEntry,
   HotContextEntry,
+  MaintenanceLogEntry,
   ObsidianWriteResult,
   PrLogEntry,
 } from "./types.js";
@@ -37,6 +40,12 @@ export async function logBuild(entry: BuildLogEntry): Promise<ObsidianWriteResul
 export async function logDecision(entry: DecisionLogEntry): Promise<ObsidianWriteResult> {
   const relativePath = decisionNotePath(entry.title, entry.loggedAt);
   const absolutePath = await writeVaultNote(relativePath, renderDecisionNote(entry));
+  return toResult(relativePath, absolutePath);
+}
+
+export async function logMaintenance(entry: MaintenanceLogEntry): Promise<ObsidianWriteResult> {
+  const relativePath = maintenanceNotePath(entry.title, entry.loggedAt);
+  const absolutePath = await writeVaultNote(relativePath, renderMaintenanceNote(entry));
   return toResult(relativePath, absolutePath);
 }
 

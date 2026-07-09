@@ -18,3 +18,9 @@ export function decisionNotePath(title: string, loggedAt = new Date()): string {
   const safeTitle = sanitizeFilenameSegment(title);
   return `Decisions/${date} — ${safeTitle}.md`;
 }
+
+export function maintenanceNotePath(title: string, loggedAt = new Date()): string {
+  const date = loggedAt.toISOString().slice(0, 10);
+  const safeTitle = sanitizeFilenameSegment(title);
+  return `Operations/Maintenance/${date} — ${safeTitle}.md`;
+}
