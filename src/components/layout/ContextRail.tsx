@@ -209,6 +209,53 @@ function TaskArtifactsRail({ task }: { task: Task }) {
   );
 }
 
+function TaskMaintenanceRail({ task }: { task: Task }) {
+  const { createMaintenanceNote, isMaintenanceNoteCreating } = useData();
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const creating = isMaintenanceNoteCreating(task.id);
+
+  const handleCreate = async () => {
+    setError(null);
+    setSuccess(null);
+    try {
+      const result = await createMaintenanceNote(task.id);
+      setSuccess(
+        result.vaultWritten
+          ? "Maintenance note indexed and written to vault"
+          : "Maintenance note indexed (vault not available here)",
+      );
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Create failed");
+    }
+  };
+
+  return (
+    <div className="rail-section">
+      <div className="rail-section-title">Maintenance</div>
+      <div className="rail-item">
+        <div className="rail-item-meta">
+          File a maintenance note for this task in Obsidian and the notes index.
+        </div>
+      </div>
+      <AdvanceButton
+        label="Create maintenance note"
+        onClick={handleCreate}
+        disabled={creating}
+        loading={creating}
+        error={error}
+      />
+      {success ? (
+        <span className="stage-select-status saved" aria-live="polite">
+          {success}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 function EntityRailContent({ entityId, data }: { entityId: string; data: MockData }) {
   const task = data.tasks.find((t) => t.id === entityId);
   if (task) {
@@ -247,6 +294,7 @@ function EntityRailContent({ entityId, data }: { entityId: string; data: MockDat
           </div>
         ) : null}
         <TaskArtifactsRail task={task} />
+        <TaskMaintenanceRail task={task} />
       </>
     );
   }

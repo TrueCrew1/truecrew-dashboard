@@ -253,6 +253,46 @@ export async function createTaskArtifact(
   };
 }
 
+export interface CreateMaintenanceNoteResult {
+  ok: boolean;
+  workItem: WorkItem;
+  note: Artifact;
+  vaultWritten: boolean;
+}
+
+export async function createMaintenanceNote(
+  taskId: string,
+  options: { actor?: Persona } = {},
+): Promise<CreateMaintenanceNoteResult> {
+  const response = await apiFetch("/api/maintenance/notes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      taskId,
+      actor: options.actor,
+    }),
+  });
+
+  const body = (await response.json().catch(() => ({}))) as {
+    ok?: boolean;
+    error?: string;
+    workItem?: WorkItem;
+    note?: Artifact;
+    vaultWritten?: boolean;
+  };
+
+  if (!response.ok || !body.note || !body.workItem) {
+    throw new Error(body.error ?? `Create maintenance note returned ${response.status}`);
+  }
+
+  return {
+    ok: true,
+    workItem: body.workItem,
+    note: body.note,
+    vaultWritten: body.vaultWritten === true,
+  };
+}
+
 export async function fetchTaskArtifacts(taskId: string): Promise<Artifact[]> {
   const response = await apiFetch(`/api/tasks/${encodeURIComponent(taskId)}/artifacts`);
   const body = (await response.json().catch(() => ({}))) as {
