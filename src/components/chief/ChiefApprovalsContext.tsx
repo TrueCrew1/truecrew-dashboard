@@ -14,6 +14,7 @@ import {
   isLiveApiEnabled,
   recordChiefApprovalDecision,
 } from "@/lib/api/client";
+import { chiefLog } from "@/lib/chiefLog";
 import { AGENT_APPROVAL_CARDS } from "./agentApprovalGates";
 import { MOCK_PR_APPROVAL_CARDS } from "./chiefApprovalCardMocks";
 import { REPO_CHANGE_APPROVAL_CARDS } from "./repoChangeApprovals";
@@ -145,6 +146,12 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
   );
 
   const addCommandApproval = useCallback((proposal: ApprovalProposal) => {
+    chiefLog({
+      kind: "approval_enqueued",
+      approvalId: proposal.id,
+      source: proposal.source,
+      title: proposal.title,
+    });
     setCommandApprovals((prev) => [proposal, ...prev]);
   }, []);
 
@@ -166,6 +173,7 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
             actor: decision.actor,
           };
           applyDecision(applied);
+          chiefLog({ kind: "approval_decided", approvalId: id, decision: nextStatus });
           return applied;
         } catch (error) {
           if (error instanceof ChiefApprovalConflictError) {
@@ -185,6 +193,7 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
         actor: null,
       };
       applyDecision(decision);
+      chiefLog({ kind: "approval_decided", approvalId: id, decision: nextStatus });
       return decision;
     },
     [liveApi, applyDecision],
