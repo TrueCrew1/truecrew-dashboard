@@ -145,7 +145,12 @@ export async function fetchHealth(): Promise<{
 
 export interface ObsidianNote {
   title: string;
-  type: Note["type"];
+  /**
+   * "maintenance" is a vault-only type the DB's Note["type"] union doesn't
+   * carry (see #97/#98) — the vault reader (lib/obsidian/read.ts) can
+   * legitimately return it for vault-only Maintenance notes.
+   */
+  type: Note["type"] | "maintenance";
   obsidianPath: string;
   summary?: string;
   syncedAt?: string;

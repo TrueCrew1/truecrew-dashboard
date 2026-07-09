@@ -20,6 +20,7 @@ import {
   createMockArtifact,
   listMockArtifactsForTask,
 } from "@/lib/librarian/mockCreate";
+import { noteToMaintenanceNote } from "../../lib/maintenance/artifact";
 import type { Artifact, Persona, WorkflowStage, WorkItem } from "@/types";
 
 function applyTaskStage(data: MockData, taskId: string, stage: WorkflowStage): MockData {
@@ -51,6 +52,7 @@ interface DataContextValue {
     options?: { useAi?: boolean; actor?: Persona },
   ) => Promise<{ workItem: WorkItem; artifact: Artifact; vaultWritten: boolean }>;
   isArtifactCreating: (taskId: string) => boolean;
+  getTaskMaintenanceNotes: (taskId: string) => Artifact[];
   createMaintenanceNote: (
     taskId: string,
     options?: { actor?: Persona },
@@ -133,6 +135,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const getTaskArtifacts = useCallback(
     (taskId: string) => listMockArtifactsForTask(data.notes, taskId),
+    [data.notes],
+  );
+
+  const getTaskMaintenanceNotes = useCallback(
+    (taskId: string) =>
+      data.notes
+        .map((note) => noteToMaintenanceNote(note))
+        .filter(
+          (note): note is Artifact => note !== null && note.workItemId === taskId,
+        ),
     [data.notes],
   );
 
@@ -239,6 +251,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       getTaskArtifacts,
       createTaskArtifact,
       isArtifactCreating,
+      getTaskMaintenanceNotes,
       createMaintenanceNote,
       isMaintenanceNoteCreating,
     }),
@@ -253,6 +266,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       getTaskArtifacts,
       createTaskArtifact,
       isArtifactCreating,
+      getTaskMaintenanceNotes,
       createMaintenanceNote,
       isMaintenanceNoteCreating,
     ],

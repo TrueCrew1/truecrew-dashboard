@@ -216,6 +216,15 @@ describe("createTaskArtifact", () => {
     expect(setTaskObsidianNoteId).not.toHaveBeenCalled();
     expect(writeAuditEvent).not.toHaveBeenCalled();
   });
+
+  it("hard-fails when the audit event write rejects, even though the note was already created and linked (governance: audit failure is not fail-open here)", async () => {
+    vi.mocked(writeAuditEvent).mockRejectedValue(new Error("audit sink unreachable"));
+
+    await expectHardFail(createTaskArtifact({ taskId: "task-7" }), "audit sink unreachable");
+
+    expect(upsertNoteByPath).toHaveBeenCalledTimes(1);
+    expect(setTaskObsidianNoteId).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("listTaskArtifacts", () => {

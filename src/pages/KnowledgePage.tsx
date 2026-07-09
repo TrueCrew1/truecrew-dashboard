@@ -6,11 +6,17 @@ import {
   ObsidianVaultError,
   type ObsidianNote,
 } from "@/lib/api/client";
+import { displayNoteType } from "../../lib/knowledge/displayNoteType";
 import type { Note } from "@/types";
 
 type NoteSource = "supabase" | "obsidian";
 
-type KnowledgeEntry = Note & { source: NoteSource };
+// "maintenance" is a vault-only type value (see #97/#98) that a Supabase-
+// sourced Note never carries but a vault-sourced ObsidianNote can.
+type KnowledgeEntry = Omit<Note, "type"> & {
+  type: Note["type"] | "maintenance";
+  source: NoteSource;
+};
 
 type VaultStatus = "syncing" | "live" | "unreachable" | "unconfigured";
 
@@ -204,7 +210,7 @@ export function KnowledgePage() {
                   {knowledgeEntries.map((entry) => (
                     <tr key={`${entry.source}:${entry.id}`}>
                       <td>{entry.title}</td>
-                      <td>{entry.type}</td>
+                      <td>{displayNoteType(entry)}</td>
                       <td className="cell-muted">{entry.sourceTaskId ?? "—"}</td>
                       <td className="mono">{entry.obsidianPath}</td>
                       <td>

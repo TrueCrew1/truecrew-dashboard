@@ -228,4 +228,15 @@ describe("createMaintenanceNote", () => {
     expect(auditOrder).toBeGreaterThan(upsertOrder);
     expect(auditOrder).toBeGreaterThan(linkOrder);
   });
+
+  it("hard-fails when the audit event write rejects, even though the note was already created and linked (governance: consistent with Librarian, audit failure is not fail-open here)", async () => {
+    vi.mocked(writeAuditEvent).mockRejectedValue(new Error("audit sink unreachable"));
+
+    await expect(
+      createMaintenanceNote({ taskId: "task-42" }),
+    ).rejects.toThrow("audit sink unreachable");
+
+    expect(upsertNoteByPath).toHaveBeenCalledTimes(1);
+    expect(setTaskObsidianNoteId).toHaveBeenCalledTimes(1);
+  });
 });

@@ -75,6 +75,10 @@ export async function createMaintenanceNote(
 
   await setTaskObsidianNoteId(taskRow.id, targetPath);
 
+  // Hard-fail: unlike a fail-open audit design, this call is intentionally
+  // not wrapped in try/catch. If it fails after the note/vault work already
+  // succeeded, the caller still sees an error — consistent with Librarian's
+  // createTaskArtifact (governance-tested in create.test.ts).
   await writeAuditEvent(
     "task",
     taskRow.id,

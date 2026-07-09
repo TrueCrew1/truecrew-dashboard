@@ -191,24 +191,34 @@ export function mapCommandCenterData(raw: Awaited<ReturnType<typeof import("../s
     updatedAt: String(row.updated_at),
   }));
 
-  const notes = (raw.notes as Row[]).map((row) => ({
-    id: id(row),
-    title: String(row.title),
-    type: String(row.type),
-    obsidianPath: String(row.obsidian_path),
-    targetPath: row.obsidian_path ? String(row.obsidian_path) : undefined,
-    summary: String(row.summary ?? ""),
-    sourceTaskId: row.source_task_id ? String(row.source_task_id) : undefined,
-    workItemId: row.source_task_id ? String(row.source_task_id) : undefined,
-    artifactType: row.agent === "librarian" ? ("obsidian_note" as const) : undefined,
-    syncedAt: String(row.synced_at),
-    tags: (row.tags as string[] | null) ?? undefined,
-    refinementSource: row.refinement_source as "deterministic" | "ai" | undefined,
-    agent: row.agent === "librarian" ? ("librarian" as const) : undefined,
-    createdBy: String(row.created_by),
-    createdAt: String(row.created_at),
-    updatedAt: String(row.updated_at),
-  }));
+  const notes = (raw.notes as Row[]).map((row) => {
+    // agent is the canonical cross-sink discriminator (#97/#98) — preserve
+    // both known agent values rather than collapsing non-Librarian agents to
+    // undefined, so Maintenance notes stay identifiable client-side.
+    const agent =
+      row.agent === "librarian" || row.agent === "maintenance"
+        ? (row.agent as "librarian" | "maintenance")
+        : undefined;
+
+    return {
+      id: id(row),
+      title: String(row.title),
+      type: String(row.type),
+      obsidianPath: String(row.obsidian_path),
+      targetPath: row.obsidian_path ? String(row.obsidian_path) : undefined,
+      summary: String(row.summary ?? ""),
+      sourceTaskId: row.source_task_id ? String(row.source_task_id) : undefined,
+      workItemId: row.source_task_id ? String(row.source_task_id) : undefined,
+      artifactType: agent ? ("obsidian_note" as const) : undefined,
+      syncedAt: String(row.synced_at),
+      tags: (row.tags as string[] | null) ?? undefined,
+      refinementSource: row.refinement_source as "deterministic" | "ai" | undefined,
+      agent,
+      createdBy: String(row.created_by),
+      createdAt: String(row.created_at),
+      updatedAt: String(row.updated_at),
+    };
+  });
 
   const focusItems = buildFocusItems(tasks, incidents);
   const alerts = buildAlerts(tasks, incidents, deploys, customers);

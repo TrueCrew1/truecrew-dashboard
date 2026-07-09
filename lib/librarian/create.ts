@@ -76,6 +76,10 @@ export async function createTaskArtifact(input: CreateArtifactInput): Promise<Cr
 
   await setTaskObsidianNoteId(taskRow.id, targetPath);
 
+  // Hard-fail: unlike the Maintenance slice's identical audit call, this is
+  // intentionally not wrapped in try/catch. If the audit write fails after
+  // the note/vault work already succeeded, the caller still sees an error —
+  // consistent across both domains (governance-tested in create.test.ts).
   await writeAuditEvent(
     "task",
     taskRow.id,
