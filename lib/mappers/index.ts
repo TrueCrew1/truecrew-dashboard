@@ -204,7 +204,10 @@ export function mapCommandCenterData(raw: Awaited<ReturnType<typeof import("../s
     syncedAt: String(row.synced_at),
     tags: (row.tags as string[] | null) ?? undefined,
     refinementSource: row.refinement_source as "deterministic" | "ai" | undefined,
-    agent: row.agent === "librarian" ? ("librarian" as const) : undefined,
+    agent:
+      row.agent === "librarian" || row.agent === "maintenance"
+        ? (row.agent as "librarian" | "maintenance")
+        : undefined,
     createdBy: String(row.created_by),
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),

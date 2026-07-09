@@ -210,11 +210,13 @@ function TaskArtifactsRail({ task }: { task: Task }) {
 }
 
 function TaskMaintenanceRail({ task }: { task: Task }) {
-  const { createMaintenanceNote, isMaintenanceNoteCreating } = useData();
+  const { createMaintenanceNote, isMaintenanceNoteCreating, getTaskMaintenanceNote } =
+    useData();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   const creating = isMaintenanceNoteCreating(task.id);
+  const maintenanceNote = getTaskMaintenanceNote(task.id);
 
   const handleCreate = async () => {
     setError(null);
@@ -235,18 +237,31 @@ function TaskMaintenanceRail({ task }: { task: Task }) {
   return (
     <div className="rail-section">
       <div className="rail-section-title">Maintenance</div>
-      <div className="rail-item">
-        <div className="rail-item-meta">
-          File a maintenance note for this task in Obsidian and the notes index.
+      {maintenanceNote ? (
+        <div className="rail-item">
+          <div className="rail-item-title">Maintenance note filed</div>
+          <div className="rail-item-meta">{maintenanceNote.title}</div>
+          <div className="rail-item-meta mono">{maintenanceNote.obsidianPath}</div>
+          <Link to="/knowledge" className="empty-state-link">
+            View in Knowledge
+          </Link>
         </div>
-      </div>
-      <AdvanceButton
-        label="Create maintenance note"
-        onClick={handleCreate}
-        disabled={creating}
-        loading={creating}
-        error={error}
-      />
+      ) : (
+        <>
+          <div className="rail-item">
+            <div className="rail-item-meta">
+              File a maintenance note for this task in Obsidian and the notes index.
+            </div>
+          </div>
+          <AdvanceButton
+            label="Create maintenance note"
+            onClick={handleCreate}
+            disabled={creating}
+            loading={creating}
+            error={error}
+          />
+        </>
+      )}
       {success ? (
         <span className="stage-select-status saved" aria-live="polite">
           {success}
