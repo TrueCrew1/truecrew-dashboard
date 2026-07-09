@@ -1,19 +1,28 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { isSupabaseConfiguredMock, insertRuntimeWorkItemMock, fetchLibrarianWorkItemsMock, getRuntimeWorkItemByIdempotencyKeyMock, mapRuntimeWorkItemToClientMock } =
-  vi.hoisted(() => ({
-    isSupabaseConfiguredMock: vi.fn(),
-    insertRuntimeWorkItemMock: vi.fn(),
-    fetchLibrarianWorkItemsMock: vi.fn(),
-    getRuntimeWorkItemByIdempotencyKeyMock: vi.fn(),
-    mapRuntimeWorkItemToClientMock: vi.fn((row: { id: string }) => ({
-      id: row.id,
-      agentRole: "librarian",
-      status: "queued",
-      latestObsidianPath: null,
-    })),
-  }));
+function defaultMapRuntimeWorkItemToClient(row: { id: string }) {
+  return {
+    id: row.id,
+    agentRole: "librarian",
+    status: "queued",
+    latestObsidianPath: null,
+  };
+}
+
+const {
+  isSupabaseConfiguredMock,
+  insertRuntimeWorkItemMock,
+  fetchLibrarianWorkItemsMock,
+  getRuntimeWorkItemByIdempotencyKeyMock,
+  mapRuntimeWorkItemToClientMock,
+} = vi.hoisted(() => ({
+  isSupabaseConfiguredMock: vi.fn(),
+  insertRuntimeWorkItemMock: vi.fn(),
+  fetchLibrarianWorkItemsMock: vi.fn(),
+  getRuntimeWorkItemByIdempotencyKeyMock: vi.fn(),
+  mapRuntimeWorkItemToClientMock: vi.fn(),
+}));
 
 vi.mock("../../../lib/supabase/admin.js", () => ({
   isSupabaseConfigured: isSupabaseConfiguredMock,
@@ -77,6 +86,7 @@ describe("/api/runtime/librarian/work-items", () => {
     fetchLibrarianWorkItemsMock.mockResolvedValue([]);
     getRuntimeWorkItemByIdempotencyKeyMock.mockResolvedValue(null);
     insertRuntimeWorkItemMock.mockResolvedValue({ id: "work-1" });
+    mapRuntimeWorkItemToClientMock.mockImplementation(defaultMapRuntimeWorkItemToClient);
   });
 
   afterEach(() => {
@@ -91,6 +101,28 @@ describe("/api/runtime/librarian/work-items", () => {
     await handler(req, res as unknown as VercelResponse);
 
     expect(res.statusCode).toBe(401);
+  });
+
+  it("returns 503 when Supabase is not configured", async () => {
+    isSupabaseConfiguredMock.mockReturnValue(false);
+    const req = createMockRequest({ method: "GET", headers: authorizedHeaders() });
+    const res = createMockResponse();
+
+    await handler(req, res as unknown as VercelResponse);
+
+    expect(res.statusCode).toBe(503);
+    expect(res.body).toEqual({ error: "Database not configured" });
+    expect(fetchLibrarianWorkItemsMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 405 for an unsupported HTTP method", async () => {
+    const req = createMockRequest({ method: "DELETE", headers: authorizedHeaders() });
+    const res = createMockResponse();
+
+    await handler(req, res as unknown as VercelResponse);
+
+    expect(res.statusCode).toBe(405);
+    expect(res.body).toEqual({ error: "Method not allowed" });
   });
 
   it("GET returns librarian work items", async () => {
@@ -144,6 +176,42 @@ describe("/api/runtime/librarian/work-items", () => {
     await handler(req, res as unknown as VercelResponse);
 
     expect(res.statusCode).toBe(200);
+    expect(insertRuntimeWorkItemMock).not.toHaveBeenCalled();
+  });
+
+  it("POST returns 400 for an unsupported inputKind", async () => {
+    const req = createMockRequest({
+      method: "POST",
+      headers: authorizedHeaders(),
+      body: {
+        inputKind: "maintenance_task",
+        inputPayload: { title: "T", description: "D" },
+      },
+    });
+    const res = createMockResponse();
+
+    await handler(req, res as unknown as VercelResponse);
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toEqual({ error: "inputKind must be chief_decision" });
+    expect(insertRuntimeWorkItemMock).not.toHaveBeenCalled();
+  });
+
+  it("POST returns 400 for an invalid inputPayload", async () => {
+    const req = createMockRequest({
+      method: "POST",
+      headers: authorizedHeaders(),
+      body: {
+        inputKind: "chief_decision",
+        inputPayload: { decision: "Approved" },
+      },
+    });
+    const res = createMockResponse();
+
+    await handler(req, res as unknown as VercelResponse);
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toEqual({ error: "chief_decision payload requires title" });
     expect(insertRuntimeWorkItemMock).not.toHaveBeenCalled();
   });
 });
