@@ -188,4 +188,39 @@ describe("createMaintenanceNote", () => {
     expect(setTaskObsidianNoteId).not.toHaveBeenCalled();
     expect(writeAuditEvent).not.toHaveBeenCalled();
   });
+
+  it("hard-fails when linking the task note (setTaskObsidianNoteId) rejects", async () => {
+    vi.mocked(setTaskObsidianNoteId).mockRejectedValue(new Error("link failed"));
+
+    await expect(
+      createMaintenanceNote({ taskId: "task-42" }),
+    ).rejects.toThrow("link failed");
+
+    expect(upsertNoteByPath).toHaveBeenCalledTimes(1);
+    expect(writeAuditEvent).not.toHaveBeenCalled();
+  });
+
+  it("persists type 'ticket' and agent 'maintenance' and writes maintenance frontmatter to the vault", async () => {
+    await createMaintenanceNote({ taskId: "task-42" });
+
+    expect(vi.mocked(upsertNoteByPath).mock.calls[0][0]).toMatchObject({
+      type: "ticket",
+      agent: "maintenance",
+    });
+
+    const [, markdown] = vi.mocked(writeVaultNote).mock.calls[0];
+    expect(markdown).toContain("type: maintenance");
+    expect(markdown).toContain("agent: maintenance");
+  });
+
+  it("writes the audit event only after both Supabase writes succeed", async () => {
+    await createMaintenanceNote({ taskId: "task-42" });
+
+    const upsertOrder = vi.mocked(upsertNoteByPath).mock.invocationCallOrder[0];
+    const linkOrder = vi.mocked(setTaskObsidianNoteId).mock.invocationCallOrder[0];
+    const auditOrder = vi.mocked(writeAuditEvent).mock.invocationCallOrder[0];
+
+    expect(auditOrder).toBeGreaterThan(upsertOrder);
+    expect(auditOrder).toBeGreaterThan(linkOrder);
+  });
 });
