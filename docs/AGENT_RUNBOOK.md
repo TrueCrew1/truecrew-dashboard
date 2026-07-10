@@ -26,6 +26,22 @@ top of those, it doesn't replace them.
 
 ---
 
+## Internal Agents Quick Start
+
+- **To spin up Chief for a session:** paste the Chief Session Checklist (this file's §
+  Chief Intake Rule) and answer its opening questions before anything else runs.
+- **To run a Research pass:** use the Research workflow (§ Research Agent below, and
+  `docs/RESEARCH_SECOND_BRAIN_WORKFLOW.md`), then send the finished finding to the
+  Filing lane via the `Research Finding Intake` template
+  (`docs/OBSIDIAN_RESEARCH_INTAKE.md`).
+- **To file knowledge:** ask the Filing lane (Claude Code) to apply
+  `docs/OBSIDIAN_RESEARCH_INTAKE.md` and append the intake payload to the destination
+  it names.
+- See `docs/AGENT_LANES_INTERNAL.md` for the full Chief / Research / Filing lane
+  definitions (responsibilities, boundaries, required outputs) in one place.
+
+---
+
 ## Common Principles
 
 - **Human-in-the-loop.** No irreversible action — merge to `main`, migration, production deploy,
@@ -710,6 +726,14 @@ against is sprawl, not thinness. For the vault's first month:
     content plus a short note on why and what superseded it.
   - **3.** If two pages cover materially the same topic, merge them into one (per
     Knowledge Maintenance's "no duplicate topics") and note the merge.
+  - **4. Lesson expiry check.** Any `knowledge/lessons/*.md` file that has gone three
+    consecutive Memory Review passes without being cited by a build session, applied
+    in a decision, or promoted toward Starter-Pass-candidate must be re-evaluated at
+    this pass: sharpen it with a fresh citation, merge it into a related lesson, or
+    remove it. A lesson's `last_reviewed` field is the source of truth for this count
+    — filing a lesson starts the clock, it doesn't exempt it. **Owner: Chief** (same
+    as the rest of this workflow) — Chief is responsible for running this check every
+    pass, not just the status-marker steps above.
 - **Gate:** none — this changes status markers and merges internal pages, it doesn't
   touch code, external copy, or approval gates.
 - **Good output:** a short summary of pages marked active/tentative/deprecated, and
@@ -830,6 +854,11 @@ orchestration-pattern), then body sections **Rule**, **Why**, **Apply when**,
 overlaps an existing lesson's topic, sharpen or extend that lesson (and bump
 `last_reviewed`) rather than adding a near-duplicate file. A new lesson file is
 warranted only when the insight is genuinely distinct from every existing one.
+
+A lesson's lifecycle doesn't end at filing — see § Memory Review Pass's **Lesson
+expiry check** above: an uncited lesson is re-evaluated (sharpened, merged, or
+removed) after three consecutive Memory Review passes, so `knowledge/lessons/`
+doesn't accumulate pages nobody is actually using.
 
 ### Coverage: every agent contributes
 
