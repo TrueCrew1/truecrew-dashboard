@@ -1,12 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { PageHeader, Panel, PanelEmpty, StatusBadge, TableScroll, TableText } from "@/components/ui";
+import { useChiefApprovals } from "@/components/chief/ChiefApprovalsContext";
+import { proposeContentApiDocsFix } from "@/components/chief/contentApiDocsProposal";
 import { useData } from "@/context/DataContext";
 import { fetchHealth, isLiveApiEnabled } from "@/lib/api/client";
 import { WORKFLOW_STAGES } from "@/types";
 
+type ContentSignalFeedback = "queued" | "already_pending" | "no_signal" | null;
+
 export function SettingsPage() {
   const { source } = useData();
+  const { approvals, addCommandApproval } = useChiefApprovals();
   const liveApi = isLiveApiEnabled();
   const [healthLoading, setHealthLoading] = useState(liveApi);
   const [health, setHealth] = useState<{
@@ -15,6 +20,16 @@ export function SettingsPage() {
     host?: string;
     liveApi?: boolean;
   } | null>(null);
+  const [contentSignalFeedback, setContentSignalFeedback] =
+    useState<ContentSignalFeedback>(null);
+
+  function handleProposeContentApiDocsFix() {
+    const result = proposeContentApiDocsFix(liveApi, approvals);
+    if (result.outcome === "queued") {
+      addCommandApproval(result.card);
+    }
+    setContentSignalFeedback(result.outcome === "blocked" ? "already_pending" : result.outcome);
+  }
 
   useEffect(() => {
     if (!liveApi) {
@@ -217,6 +232,42 @@ export function SettingsPage() {
               </tbody>
             </table>
           </TableScroll>
+        </Panel>
+
+        <Panel
+          title="Content: README API docs check"
+          action={
+            <button
+              type="button"
+              className="empty-state-link"
+              onClick={handleProposeContentApiDocsFix}
+            >
+              Check README against live routes
+            </button>
+          }
+        >
+          <p className="cell-muted">
+            README&apos;s public API routes table omits <code>/api/chief/approvals</code> — the
+            route this app&apos;s own client actually calls for Chief approval decisions. When
+            live API mode is on, Content files a doc-accuracy proposal into Chief&apos;s approval
+            queue. Review on Chief &rarr; Approvals.
+          </p>
+          {contentSignalFeedback === "queued" ? (
+            <p className="cell-muted" role="status">
+              Queued for operator approval — open Chief &rarr; Approvals to decide.
+            </p>
+          ) : null}
+          {contentSignalFeedback === "already_pending" ? (
+            <p className="cell-muted" role="status">
+              Already awaiting approval — review the pending proposal on Chief &rarr; Approvals.
+            </p>
+          ) : null}
+          {contentSignalFeedback === "no_signal" ? (
+            <p className="cell-muted" role="status">
+              Mock mode — /api/chief/approvals isn&apos;t live traffic right now, so there&apos;s
+              nothing to flag. Enable live API mode to check this for real.
+            </p>
+          ) : null}
         </Panel>
 
         <Panel title="Personas & permissions">
