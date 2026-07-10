@@ -464,14 +464,16 @@ export function deriveBuildAgentWorkItems(tasks: Task[]): AgentWorkItem[] {
  * Real, not mock: derives Workflow Gate Agent's Agents-tab entries the same
  * way deriveBuildAgentWorkItems does — a task's own gates/blocker/stage IS
  * the truthful signal, no separate agent-status source exists. Scoped to
- * non-build tasks with a gate checklist (workflowType !== "build" &&
- * task.gates.length > 0) so a task isn't listed under two different
- * agents' rows at once — build tasks already have their own row via
- * deriveBuildAgentWorkItems, and Workflow Gate Agent's real job elsewhere
- * in this file (see specialist attribution on gate/deploy/onboarding
- * proposals above) already spans every workflow type, build included.
- * Second live-derived row for the Agents tab; Librarian, Research,
- * Roadmap, and Marketer remain mock pending their own real signal.
+ * non-build, non-decision tasks with a gate checklist (workflowType !==
+ * "build" && workflowType !== "decision" && task.gates.length > 0) so a
+ * task isn't listed under two different agents' rows at once — build tasks
+ * have their own row via deriveBuildAgentWorkItems, decision tasks have
+ * their own row via deriveRoadmapAgentWorkItems, and Workflow Gate Agent's
+ * real job elsewhere in this file (see specialist attribution on gate/
+ * deploy/onboarding proposals above) already spans every workflow type,
+ * build and decision included.
+ * Second live-derived row for the Agents tab; Marketer remains mock
+ * pending its own real signal.
  *
  * Status mapping: same rules as deriveBuildAgentWorkItems — Done/Logged ->
  * completed; an open required gate or a blocker string -> blocked;
@@ -480,7 +482,12 @@ export function deriveBuildAgentWorkItems(tasks: Task[]): AgentWorkItem[] {
  */
 export function deriveWorkflowGateAgentWorkItems(tasks: Task[]): AgentWorkItem[] {
   return tasks
-    .filter((task) => task.workflowType !== "build" && task.gates.length > 0)
+    .filter(
+      (task) =>
+        task.workflowType !== "build" &&
+        task.workflowType !== "decision" &&
+        task.gates.length > 0,
+    )
     .map((task) => {
       const blockingGates = getBlockingGates(task.gates);
       const isBlocked = blockingGates.length > 0 || Boolean(task.blocker);
@@ -511,6 +518,66 @@ export function deriveWorkflowGateAgentWorkItems(tasks: Task[]): AgentWorkItem[]
       return {
         id: `agentwork-workflowgate-${task.id}`,
         agent: "Workflow Gate Agent",
+        task: task.title,
+        status,
+        priority: task.priority,
+        note,
+        updatedAt: task.updatedAt,
+        source: "live",
+      };
+    });
+}
+
+/**
+ * Real, not mock: derives Roadmap Agent's Agents-tab entries the same way
+ * deriveWorkflowGateAgentWorkItems does — a decision task's own gates/
+ * blocker/stage IS the truthful signal, no separate agent-status source
+ * exists. Scoped to workflowType === "decision" tasks, the same signal
+ * Chief already treats as Roadmap Agent's domain elsewhere in this file
+ * (see the decision-item specialist attribution in resolveRiskToday above).
+ *
+ * Status mapping: same rules as deriveWorkflowGateAgentWorkItems —
+ * Done/Logged -> completed; an open required gate or a blocker string ->
+ * blocked; Inbox/Triage/Planned (not yet started) -> queued; anything else
+ * open -> active. No live "awaiting_approval" signal here either, same
+ * reason as the other live-derived agents.
+ *
+ * Fourth live-derived row for the Agents tab; Marketer remains mock pending
+ * its own real signal.
+ */
+export function deriveRoadmapAgentWorkItems(tasks: Task[]): AgentWorkItem[] {
+  return tasks
+    .filter((task) => task.workflowType === "decision")
+    .map((task) => {
+      const blockingGates = getBlockingGates(task.gates);
+      const isBlocked = blockingGates.length > 0 || Boolean(task.blocker);
+      const isDone = task.stage === WorkflowStage.Done || task.stage === WorkflowStage.Logged;
+      const isUnstarted =
+        task.stage === WorkflowStage.Inbox ||
+        task.stage === WorkflowStage.Triage ||
+        task.stage === WorkflowStage.Planned;
+
+      const status: AgentWorkItem["status"] = isDone
+        ? "completed"
+        : isBlocked
+          ? "blocked"
+          : isUnstarted
+            ? "queued"
+            : "active";
+
+      const note = isDone
+        ? "Decision recorded — see task record for outcome/next steps."
+        : task.blocker
+          ? task.blocker
+          : blockingGates.length > 0
+            ? formatOpenGateSummary(blockingGates)
+            : isUnstarted
+              ? "Not yet started."
+              : "In progress — no open blockers.";
+
+      return {
+        id: `agentwork-roadmap-${task.id}`,
+        agent: "Roadmap Agent",
         task: task.title,
         status,
         priority: task.priority,

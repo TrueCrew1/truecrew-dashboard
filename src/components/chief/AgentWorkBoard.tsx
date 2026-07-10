@@ -7,6 +7,7 @@ import {
   deriveBuildAgentWorkItems,
   deriveLibrarianAgentWorkItems,
   deriveResearchAgentWorkItems,
+  deriveRoadmapAgentWorkItems,
   deriveWorkflowGateAgentWorkItems,
 } from "./chiefLiveContext";
 import { getApprovalUrgencyBadge, OVERDUE_HOURS } from "./chiefApprovalUrgency";
@@ -112,6 +113,10 @@ export function AgentWorkBoard() {
     () => deriveLibrarianAgentWorkItems(data.tasks, data.notes),
     [data.tasks, data.notes],
   );
+  const roadmapItems = useMemo(
+    () => deriveRoadmapAgentWorkItems(data.tasks),
+    [data.tasks],
+  );
   const awaitingApprovalItems = useMemo(
     () => deriveAgentAwaitingApprovalWorkItems(approvals),
     [approvals],
@@ -131,10 +136,18 @@ export function AgentWorkBoard() {
       ...workflowGateItems,
       ...researchItems,
       ...librarianItems,
+      ...roadmapItems,
       ...awaitingApprovalItems,
       ...AGENT_WORK_ITEMS,
     ],
-    [buildItems, workflowGateItems, researchItems, librarianItems, awaitingApprovalItems],
+    [
+      buildItems,
+      workflowGateItems,
+      researchItems,
+      librarianItems,
+      roadmapItems,
+      awaitingApprovalItems,
+    ],
   );
 
   if (items.length === 0) {
@@ -157,9 +170,10 @@ export function AgentWorkBoard() {
     >
       <p className="agent-work-board-note">
         Snapshot of what each agent is carrying right now. Build, Workflow Gate, Research,
-        Librarian, and Awaiting approval rows marked <span className="badge badge-green">live</span>{" "}
-        reflect real task/incident/artifact data or pending proposals from the shared Approvals
-        queue; other agents are still mock for this slice. Read-only — no actions taken here.
+        Librarian, Roadmap, and Awaiting approval rows marked{" "}
+        <span className="badge badge-green">live</span> reflect real task/incident/artifact data
+        or pending proposals from the shared Approvals queue; Marketer is still mock for this
+        slice. Read-only — no actions taken here.
       </p>
 
       <div className="agent-work-lanes">
