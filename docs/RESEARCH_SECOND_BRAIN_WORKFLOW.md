@@ -53,7 +53,7 @@ AGENT_RUNBOOK already grants. Three tiers, in order of how often each is used:
 | Tier | What | Who writes it | How often |
 |---|---|---|---|
 | **1 — Log** | One line in the Build Log / Agent Log (or `knowledge/log.md`) | Research, always allowed | Every finding worth remembering at all |
-| **2 — Lesson** | One `knowledge/lessons/*.md` file, category `research-pattern` | Research, only inside its own workflow's Learning capture step (per AGENT_RUNBOOK § Lessons' "narrow exception") | Only when a finding clears the Lessons bar (success/failure/constraint/recovery/research pattern) |
+| **2 — Lesson** | One `knowledge/lessons/*.md` file, category set by what the finding actually is (per AGENT_RUNBOOK § Lessons' category list — not fixed to `research-pattern` just because Research filed it) | Research, only inside its own workflow's Learning capture step (per AGENT_RUNBOOK § Lessons' "narrow exception") | Only when a finding clears the Lessons bar (success/failure/constraint/recovery/research pattern) |
 | **3 — Starter Pass candidate** | A durable `sources/`, `concepts/`, `projects/`, or `decisions/` page | **Not Research** — flagged by Research, created only by the next **Second Brain Starter Pass** (Chief, coordinating Research + Content) | Rare — only findings that pass the 3–6 month test in AGENT_RUNBOOK § Second Brain Starter Pass |
 
 Tier 3 is a flag, not a write. Research's job is to make the candidate easy for the
