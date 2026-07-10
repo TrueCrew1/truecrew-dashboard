@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { DbTaskRow } from "../../lib/supabase/admin";
+import { WorkflowStage, type GateCheck, type Task } from "@/types";
 
 export interface PendingGate {
   key: string;
@@ -19,36 +19,23 @@ export interface BuildGateTask {
   pendingGates: PendingGate[];
 }
 
-const REQUIRED_BUILD_GATES: Record<string, PendingGate> = {
-  lint: { key: "lint", name: "Lint", description: "Code style and syntax checks" },
-  typecheck: { key: "typecheck", name: "TypeCheck", description: "TypeScript compilation" },
-  test: { key: "test", name: "Tests", description: "Unit and integration tests" },
-  build: { key: "build", name: "Build", description: "Production build compilation" },
-};
+/** Stages a task can no longer meaningfully be "awaiting gates" in. */
+const TERMINAL_STAGES: readonly WorkflowStage[] = [WorkflowStage.Done, WorkflowStage.Logged];
 
-function getPendingGates(task: DbTaskRow): PendingGate[] {
-  const pending: PendingGate[] = [];
-  
-  if (task.workflow_type !== "build") return pending;
-  
-  const completedGates = new Set(
-    (task.gate_status as Record<string, boolean>) || {}
-  );
-  
-  for (const gate of Object.values(REQUIRED_BUILD_GATES)) {
-    if (!completedGates.has(gate.key)) {
-      pending.push(gate);
-    }
-  }
-  
-  return pending;
+function toPendingGate(gate: GateCheck): PendingGate {
+  return { key: gate.id, name: gate.label, description: gate.label };
 }
 
-function mapTaskToBuildGateTask(task: DbTaskRow): BuildGateTask | null {
+/** A task's real, required-but-unpassed gates — driven by its own gate data, not a hardcoded list. */
+function getPendingGates(task: Task): PendingGate[] {
+  return task.gates.filter((gate) => gate.required && !gate.passed).map(toPendingGate);
+}
+
+function mapTaskToBuildGateTask(task: Task): BuildGateTask | null {
   const pendingGates = getPendingGates(task);
   if (pendingGates.length === 0) return null;
 
-  const isOverdue = task.due_at && new Date(task.due_at) < new Date();
+  const isOverdue = Boolean(task.dueAt && new Date(task.dueAt) < new Date());
   const tone = isOverdue ? "critical" : pendingGates.length > 2 ? "warn" : "neutral";
 
   return {
@@ -59,7 +46,7 @@ function mapTaskToBuildGateTask(task: DbTaskRow): BuildGateTask | null {
     tone,
     routeTo: `/tasks/${task.id}`,
     routeLabel: "task",
-    timestamp: task.updated_at || task.created_at,
+    timestamp: task.updatedAt || task.createdAt,
     pendingGates,
   };
 }
@@ -81,15 +68,20 @@ export function useBuildTasks(): {
         setIsLoading(true);
         setError(null);
         
-        const response = await fetch("/api/tasks?workflowType=build&stage=in_progress");
+        // /api/tasks does not support server-side filtering — every task
+        // comes back regardless of query string, so "build" + non-terminal
+        // is applied client-side below, against the real frontend Task
+        // contract (@/types), not a query param the API never reads.
+        const response = await fetch("/api/tasks");
         if (!response.ok) {
           throw new Error(`Failed to fetch build tasks: ${response.statusText}`);
         }
-        
+
         const data = await response.json();
-        const tasks: DbTaskRow[] = data.tasks || [];
-        
+        const tasks: Task[] = data.tasks || [];
+
         const mappedTasks = tasks
+          .filter((task) => task.workflowType === "build" && !TERMINAL_STAGES.includes(task.stage))
           .map(mapTaskToBuildGateTask)
           .filter((task): task is BuildGateTask => task !== null);
         
