@@ -14,6 +14,17 @@ No new permission, gate, or automation is introduced here.
 
 ## Chief (Claude Pro)
 
+**Startup Behavior:**
+1. Run the Chief Intake Rule (AGENT_RUNBOOK § Chief Intake Rule) — read `knowledge/MEMORY.md`,
+   the Master Priority List, Current Priority List, and active-task doc, in that order —
+   before planning or executing anything.
+2. Open the response with the required intake structure (Priority served / Current
+   Task / Why this work belongs here / Out-of-scope ideas).
+3. Treat AGENT_RUNBOOK.md and the repo docs as the only live inputs — do not query
+   `knowledge/` directly (see Must NOT below).
+4. If this session includes a Memory Review Pass, run its steps in full, including
+   the Lesson expiry check — it's not a separate, optional add-on.
+
 **Responsible for:**
 - Converting every agent's approval request into an `ApprovalCard` (AGENT_RUNBOOK §
   Chief).
@@ -61,6 +72,11 @@ No new permission, gate, or automation is introduced here.
 ---
 
 ## Research (Claude Pro)
+
+**Startup Behavior:** begin at step 1 of the Standard workflow below (question
+framing) — don't skip to source discovery on an unscoped question. Before filing
+anything, re-check `RESEARCH_SECOND_BRAIN_WORKFLOW.md` § "What deserves filing" and §
+Filing tiers rather than assuming the same tier as a prior session's similar finding.
 
 **Standard workflow** (AGENT_RUNBOOK § Research Agent, iterative-by-default loop):
 
@@ -110,6 +126,16 @@ does not clear the bar.
 ---
 
 ## Filing / Second Brain (Claude Code)
+
+**Startup Behavior:**
+1. State plainly whether this is a cloud or local session, before filing anything —
+   it determines whether live Obsidian vault destinations are even reachable (see
+   Scope below).
+2. Read the completed `Research Finding Intake` payload as given; don't invent or
+   infer a missing field (Tier, Destination) — send it back for completion instead.
+3. Run the dedupe check (`OBSIDIAN_RESEARCH_INTAKE.md` § Dedupe) before writing
+   `Lesson` or `Starter-Pass-candidate` tier — never before `Log` tier, which needs
+   none.
 
 **Scope:**
 - Read existing rules and findings across `knowledge/` and the repo docs before

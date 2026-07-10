@@ -731,9 +731,9 @@ against is sprawl, not thinness. For the vault's first month:
     in a decision, or promoted toward Starter-Pass-candidate must be re-evaluated at
     this pass: sharpen it with a fresh citation, merge it into a related lesson, or
     remove it. A lesson's `last_reviewed` field is the source of truth for this count
-    — filing a lesson starts the clock, it doesn't exempt it. **Owner: Chief** (same
-    as the rest of this workflow) — Chief is responsible for running this check every
-    pass, not just the status-marker steps above.
+    — filing a lesson starts the clock, it doesn't exempt it. Same owner as the rest
+    of this workflow (see **Owner** above) — this step runs every pass, not just when
+    a lesson happens to look stale.
 - **Gate:** none — this changes status markers and merges internal pages, it doesn't
   touch code, external copy, or approval gates.
 - **Good output:** a short summary of pages marked active/tentative/deprecated, and
