@@ -16,6 +16,7 @@
     "db:reset": "supabase db reset",
     "db:status": "supabase migration list",
     "obsidian:log": "npx tsx scripts/obsidian-log.ts",
+    "test:filing": "npx tsx --test scripts/research-finding.test.ts",
     "obsidian:setup-vault": "npx tsx scripts/setup-obsidian-vault.ts"
   },
   "dependencies": {

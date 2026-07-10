@@ -8,6 +8,10 @@ import {
   logPr,
   updateHotContext,
 } from "../lib/obsidian/index";
+import {
+  previewResearchFinding,
+  type ResearchFindingPayload,
+} from "../lib/research/researchFinding";
 
 type Command = "build" | "decision" | "pr" | "hot-context" | "artifact";
 
@@ -21,6 +25,7 @@ Usage:
   npm run obsidian:log -- hot-context --body <text>
   npm run obsidian:log -- hot-context --file <path>
   npm run obsidian:log -- artifact --task-id <id> [--use-ai]
+  npm run obsidian:log -- research-finding --file <path>   (dry run: validates + prints destination, writes nothing)
 
 Environment:
   OBSIDIAN_VAULT_PATH  Absolute path to your local Obsidian vault root
@@ -57,10 +62,50 @@ function requireFlag(flags: Map<string, string>, key: string): string {
   return value;
 }
 
+/**
+ * Dry-run Filing scaffold: read a prepared Research Finding payload, validate it, and
+ * print the exact knowledge/ path + file name it would write. Writes nothing to the
+ * vault or Supabase, so it deliberately does NOT require OBSIDIAN_VAULT_PATH.
+ */
+async function runResearchFindingPreview(rest: string[]): Promise<void> {
+  const fileIndex = rest.indexOf("--file");
+  const filePath = fileIndex >= 0 ? rest[fileIndex + 1] : undefined;
+  if (!filePath || filePath.startsWith("--")) {
+    throw new Error("research-finding requires --file <path> to a JSON payload");
+  }
+
+  const raw = await fs.readFile(filePath, "utf8");
+  let payload: ResearchFindingPayload;
+  try {
+    payload = JSON.parse(raw) as ResearchFindingPayload;
+  } catch {
+    throw new Error(`Could not parse JSON payload at ${filePath}`);
+  }
+
+  const preview = previewResearchFinding(payload);
+  if (!preview.ok || !preview.destination) {
+    console.error("Research Finding payload is invalid:");
+    for (const error of preview.errors) console.error(`  - ${error}`);
+    process.exit(1);
+  }
+
+  console.log("Research Finding — dry run (no files written)");
+  console.log(`  tier:      ${preview.destination.tier}`);
+  console.log(`  path:      ${preview.destination.path}`);
+  console.log(`  file name: ${preview.destination.fileName}`);
+  console.log(`  mode:      ${preview.destination.mode}`);
+  if (preview.logLine) console.log(`  log line:  ${preview.logLine}`);
+}
+
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   if (args.length === 0 || args.includes("-h") || args.includes("--help")) {
     console.log(usage());
+    return;
+  }
+
+  if (args[0] === "research-finding") {
+    await runResearchFindingPreview(args.slice(1));
     return;
   }
 
