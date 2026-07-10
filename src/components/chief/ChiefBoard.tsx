@@ -8,6 +8,8 @@ import {
 import { getApprovalUrgencyBadge, OVERDUE_HOURS } from "./chiefApprovalUrgency";
 import { formatChiefTimestamp } from "./chiefMock";
 import { CHIEF_BOARD_LANES } from "./chiefLiveContext";
+import { useBuildTasks } from "./hooks/useBuildTasks";
+import { BuildTaskApprovalCard } from "./BuildTaskApprovalCard";
 import type { ApprovalActionState } from "./chiefApproval";
 import type { ApprovalAction, ApprovalProposal, ChiefBoardItem, ChiefBoardLane } from "./types";
 
@@ -111,15 +113,14 @@ export function ChiefBoard({
   onApprovalAction,
   onOpenApprovals,
 }: ChiefBoardProps) {
-  const totalSignal = items.length;
+  const { buildGateTasks, isLoading, error } = useBuildTasks();
+  const totalSignal = items.length + buildGateTasks.length;
   const approvalLaneCount = itemsForLane(items, "approval").length;
-  // Counted across all pending proposals (not just what's shown on this
-  // lane) to match pendingApprovalCount's own scope, just below.
   const overduePendingCount = [...proposalsById.values()].filter(
     (proposal) => getApprovalUrgencyBadge(proposal)?.escalate,
   ).length;
 
-  if (totalSignal === 0) {
+  if (totalSignal === 0 && !isLoading) {
     return (
       <ApprovalSectionShell className="chief-board">
         <ApprovalSectionHeader
@@ -128,7 +129,7 @@ export function ChiefBoard({
         />
         <ApprovalSurfaceEmpty
           lead="Nothing needs attention"
-          description="At-risk work, gate blocks, context gaps, and approval candidates are all clear against current dashboard state."
+          description="At-risk work, gate blocks, context gaps, approval candidates, and build gate tasks are all clear against current dashboard state."
         />
       </ApprovalSectionShell>
     );
@@ -141,7 +142,7 @@ export function ChiefBoard({
       count={`${totalSignal} item${totalSignal === 1 ? "" : "s"}`}
     >
       <p className="chief-board-note">
-        At-risk, blocked, and context lanes are read-only. Approve, reject, or send back directly
+        At-risk, blocked, context, and build gate lanes are read-only. Approve, reject, or send back directly
         in Needs approval — same decisions as the Approvals tab.
       </p>
 
@@ -216,6 +217,35 @@ export function ChiefBoard({
             </section>
           );
         })}
+
+        {/* Build Gates Lane - Visibility Only */}
+        <section
+          className="chief-board-lane"
+          aria-label="Build gates"
+        >
+          <header className="chief-board-lane-header">
+            <h3 className="chief-board-lane-title">Build gates</h3>
+            <span className="chief-board-lane-count">{buildGateTasks.length}</span>
+          </header>
+
+          {isLoading ? (
+            <p className="chief-board-lane-empty">Loading build gate tasks…</p>
+          ) : error ? (
+            <p className="chief-board-lane-empty chief-board-lane-empty--error">
+              Failed to load build gate tasks: {error}
+            </p>
+          ) : buildGateTasks.length === 0 ? (
+            <p className="chief-board-lane-empty">No build tasks waiting on required gates</p>
+          ) : (
+            <ul className="chief-board-list">
+              {buildGateTasks.map((task) => (
+                <li key={task.id}>
+                  <BuildTaskApprovalCard task={task} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
     </ApprovalSectionShell>
   );
