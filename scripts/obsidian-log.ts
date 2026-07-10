@@ -12,6 +12,7 @@ import {
   previewResearchFinding,
   type ResearchFindingPayload,
 } from "../lib/research/researchFinding";
+import { writeFindingToKnowledge } from "../lib/research/writeFinding";
 
 type Command = "build" | "decision" | "pr" | "hot-context" | "artifact";
 
@@ -25,7 +26,8 @@ Usage:
   npm run obsidian:log -- hot-context --body <text>
   npm run obsidian:log -- hot-context --file <path>
   npm run obsidian:log -- artifact --task-id <id> [--use-ai]
-  npm run obsidian:log -- research-finding --file <path>   (dry run: validates + prints destination, writes nothing)
+  npm run obsidian:log -- research-finding --file <path>            (dry run: validates + prints destination, writes nothing)
+  npm run obsidian:log -- research-finding --file <path> --write    (real local write to knowledge/, tier-limited)
 
 Environment:
   OBSIDIAN_VAULT_PATH  Absolute path to your local Obsidian vault root
@@ -63,16 +65,19 @@ function requireFlag(flags: Map<string, string>, key: string): string {
 }
 
 /**
- * Dry-run Filing scaffold: read a prepared Research Finding payload, validate it, and
- * print the exact knowledge/ path + file name it would write. Writes nothing to the
- * vault or Supabase, so it deliberately does NOT require OBSIDIAN_VAULT_PATH.
+ * Filing scaffold entry point: read a prepared Research Finding payload,
+ * validate it, and either preview (default) or perform the real local write
+ * (`--write`). Dry run remains the default — nothing is written unless
+ * `--write` is passed explicitly. Neither mode requires OBSIDIAN_VAULT_PATH:
+ * this writes only to the repo's own `knowledge/` tree, never the vault.
  */
-async function runResearchFindingPreview(rest: string[]): Promise<void> {
+async function runResearchFinding(rest: string[]): Promise<void> {
   const fileIndex = rest.indexOf("--file");
   const filePath = fileIndex >= 0 ? rest[fileIndex + 1] : undefined;
   if (!filePath || filePath.startsWith("--")) {
     throw new Error("research-finding requires --file <path> to a JSON payload");
   }
+  const write = rest.includes("--write");
 
   const raw = await fs.readFile(filePath, "utf8");
   let payload: ResearchFindingPayload;
@@ -89,12 +94,24 @@ async function runResearchFindingPreview(rest: string[]): Promise<void> {
     process.exit(1);
   }
 
-  console.log("Research Finding — dry run (no files written)");
-  console.log(`  tier:      ${preview.destination.tier}`);
-  console.log(`  path:      ${preview.destination.path}`);
-  console.log(`  file name: ${preview.destination.fileName}`);
-  console.log(`  mode:      ${preview.destination.mode}`);
-  if (preview.logLine) console.log(`  log line:  ${preview.logLine}`);
+  if (!write) {
+    console.log("Research Finding — dry run (no files written)");
+    console.log(`  tier:      ${preview.destination.tier}`);
+    console.log(`  path:      ${preview.destination.path}`);
+    console.log(`  file name: ${preview.destination.fileName}`);
+    console.log(`  mode:      ${preview.destination.mode}`);
+    if (preview.logLine) console.log(`  log line:  ${preview.logLine}`);
+    console.log("Re-run with --write to perform this write for real.");
+    return;
+  }
+
+  const result = await writeFindingToKnowledge(payload, preview.destination);
+  console.log(
+    result.mode === "append" ? "Research Finding — appended" : "Research Finding — written",
+  );
+  console.log(`  tier: ${preview.destination.tier}`);
+  console.log(`  path: ${result.path}`);
+  console.log(`  absolute: ${result.absolutePath}`);
 }
 
 async function main(): Promise<void> {
@@ -105,7 +122,7 @@ async function main(): Promise<void> {
   }
 
   if (args[0] === "research-finding") {
-    await runResearchFindingPreview(args.slice(1));
+    await runResearchFinding(args.slice(1));
     return;
   }
 

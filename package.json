@@ -17,7 +17,7 @@
     "db:status": "supabase migration list",
     "obsidian:log": "npx tsx scripts/obsidian-log.ts",
     "research:finding:build": "npx tsx scripts/research-finding-build.ts",
-    "test:filing": "npx tsx --test scripts/research-finding.test.ts scripts/research-finding-build.test.ts",
+    "test:filing": "npx tsx --test scripts/research-finding.test.ts scripts/research-finding-build.test.ts scripts/research-finding-write.test.ts",
     "obsidian:setup-vault": "npx tsx scripts/setup-obsidian-vault.ts"
   },
   "dependencies": {

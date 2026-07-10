@@ -156,6 +156,41 @@ export function formatLogLine(payload: ResearchFindingPayload): string {
 }
 
 /**
+ * Deterministic note body for "create"/"flag" mode destinations (lesson,
+ * starter-pass-candidate) — the fixed "Research Finding" note shape from
+ * docs/RESEARCH_SECOND_BRAIN_WORKFLOW.md § Fixed note headings, rendered
+ * directly from the payload's own fields. Not the full lesson-template
+ * frontmatter shape (status/confidence/source_workflow aren't part of this
+ * payload) — that reshaping is Filing/Starter-Pass work, out of scope here.
+ */
+export function formatFindingNote(payload: ResearchFindingPayload): string {
+  const title = payload.title?.trim() || payload.finding.trim();
+  const sources = (payload.sources_checked ?? []).map((s) => s.trim()).filter(Boolean);
+  const worked = payload.worked?.trim() || "none";
+  const failed = payload.failed?.trim() || "none";
+  const nextTime = payload.next_time?.trim() || "none";
+  const candidateLabel =
+    payload.tier === "lesson"
+      ? "Tier 2 (lesson)"
+      : payload.tier === "starter-pass-candidate"
+        ? "Tier 3 (flag for Starter Pass)"
+        : "no";
+
+  const lines = [
+    `### Research Finding — ${title}`,
+    `- Date: ${payload.date.trim()}`,
+    `- Source(s) checked: ${sources.join("; ")}`,
+    `- Finding: ${payload.finding.trim()}`,
+    `- Worked / Failed / Next time: ${worked} / ${failed} / ${nextTime}`,
+    `- Second-brain candidate: ${candidateLabel}`,
+    `- Related approval request: ${payload.related_approval?.trim() || "none"}`,
+  ];
+  if (payload.category?.trim()) lines.push(`- Category: ${payload.category.trim()}`);
+
+  return `${lines.join("\n")}\n`;
+}
+
+/**
  * Full dry-run preview: validate, and (only if valid) resolve destination + log line.
  * Never writes anything. This is the single entry point the CLI scaffold consumes.
  */
