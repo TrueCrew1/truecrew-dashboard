@@ -24,5 +24,6 @@ export const AGENT_WORK_ITEMS: AgentWorkItem[] = [
     priority: "low",
     note: "Sent for content approval — see Approvals tab.",
     updatedAt: "2026-07-06T08:15:00.000Z",
+    source: "mock",
   },
 ];

@@ -63,7 +63,11 @@ function AgentWorkCard({
           <span className="agent-work-card-agent-name">{item.agent}</span>
         </div>
         <span className="agent-work-card-badges">
-          {item.source === "live" ? <span className="badge badge-green">live</span> : null}
+          {item.source === "live" ? (
+            <span className="badge badge-green">live</span>
+          ) : (
+            <span className="badge badge-steel">mock</span>
+          )}
           {urgencyBadge ? (
             <span
               className={`badge ${urgencyBadge.badgeClass}`}
