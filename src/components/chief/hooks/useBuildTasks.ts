@@ -67,10 +67,16 @@ export function useBuildTasks(): {
       try {
         setIsLoading(true);
         setError(null);
-        
+
         const response = await fetch("/api/tasks");
         if (!response.ok) {
           throw new Error(`Failed to fetch build tasks: ${response.statusText}`);
+        }
+
+        // Ensure the response is JSON before attempting to parse
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          throw new Error("Invalid response format: expected JSON");
         }
 
         const data = await response.json();
@@ -80,13 +86,19 @@ export function useBuildTasks(): {
           .filter((task) => task.workflowType === "build" && !TERMINAL_STAGES.includes(task.stage))
           .map(mapTaskToBuildGateTask)
           .filter((task): task is BuildGateTask => task !== null);
-        
+
         if (mounted) {
           setBuildGateTasks(mappedTasks);
         }
       } catch (err) {
         if (mounted) {
-          setError(err instanceof Error ? err.message : "Unknown error");
+          if (err instanceof SyntaxError) {
+            setError("Failed to load build tasks: Invalid JSON response");
+          } else if (err instanceof Error) {
+            setError(err.message);
+          } else {
+            setError("Unknown error");
+          }
         }
       } finally {
         if (mounted) {
