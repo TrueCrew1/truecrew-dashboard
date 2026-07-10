@@ -17,11 +17,15 @@ export interface ChiefLogRecord {
   event: ChiefLogEvent;
 }
 
+/** Cap the in-memory buffer so a long session can't grow it unbounded. */
+const MAX_ENTRIES = 500;
+
 const buffer: ChiefLogRecord[] = [];
 
 export function chiefLog(event: ChiefLogEvent): void {
   const record: ChiefLogRecord = { at: new Date().toISOString(), event };
   buffer.push(record);
+  if (buffer.length > MAX_ENTRIES) buffer.splice(0, buffer.length - MAX_ENTRIES);
   console.debug("[chief]", record);
 }
 
