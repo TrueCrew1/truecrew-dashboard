@@ -45,7 +45,7 @@ re-interpret prose to figure out where something goes.
   - **`knowledge/` destinations** (`log.md`, `inbox/`, `lessons/`) — any Claude Code
     session with repo access, cloud or local, via a normal commit/PR. This may be the
     same session that produced the finding, or a separate one handed the intake block.
-  - **Live Obsidian vault destinations** (Build Log, Agent Log, Decisions) — only a
+  - **Live Obsidian vault destinations** (Build Log, PR Log, Decisions) — only a
     **local** Claude Code session, run on David's machine with `OBSIDIAN_VAULT_PATH`
     set, using the existing `npm run obsidian:log` commands from
     `docs/OBSIDIAN_LOGGING.md`. A cloud session must never claim to have written to the
@@ -72,7 +72,7 @@ have to split a field apart.
 
 ```
 ### Research Finding Intake — {{short title}}
-- ID: {{YYYY-MM-DD-short-slug}}
+- ID: {{YYYY-MM-DD-short-slug-NN}}
 - Date: {{YYYY-MM-DD}}
 - Agent: Research
 - Source(s) checked: {{what was actually read — cite it, not memory}}
@@ -81,17 +81,23 @@ have to split a field apart.
 - Failed: {{what didn't and is worth avoiding, or "none"}}
 - Next time: {{one concrete change for next time, or "none"}}
 - Tier: {{Log | Lesson | Starter-Pass-candidate}}
-- Dedupe check: {{what was searched before filing — MEMORY.md, index.md, log.md, lessons/ — and what it found, or "n/a for Log tier"}}
-- Destination: {{knowledge/log.md | knowledge/lessons/<slug>.md | knowledge/inbox/<slug>.md | Obsidian Build Log | Obsidian Agent Log | "none — Log tier only"}}
+- Dedupe check: {{what was searched before filing — MEMORY.md, index.md, log.md, lessons/, inbox/ — and what it found, or "n/a for Log tier"}}
+- Destination: {{knowledge/log.md | knowledge/lessons/<slug>.md | knowledge/inbox/<slug>.md | Obsidian Build Log | Obsidian PR Log | "none — Log tier only"}}
 - Related approval request: {{gate/card name, or "none"}}
 - Related PR: {{# or "none"}}
 ```
+
+`NN` is a two-digit sequence (starting `01`), incremented only when the same
+`YYYY-MM-DD-short-slug` already exists — checked as part of Dedupe check below, same
+step, no separate lookup. This keeps same-day findings with the same title (multiple
+blocks from one task, per Canonical hand-off format above) collision-free without
+requiring wall-clock precision.
 
 ### Required vs optional fields
 
 | Field | Required | Notes |
 |---|---|---|
-| ID, Date, Agent | Always | ID is the stable key filing and any later reference (a card, a PR) can point back to. |
+| ID, Date, Agent | Always | ID is the stable key filing and any later reference (a card, a PR) can point back to — the `NN` suffix makes it collision-resistant across same-day, same-slug findings. |
 | Source(s) checked, Finding | Always | No filing without a real, checked source — same rule as the underlying Research Agent loop. |
 | Worked / Failed / Next time | Always present, value may be "none" | Per `RESEARCH_SECOND_BRAIN_WORKFLOW.md` — any clause can be "none," that's a complete answer, not a gap. |
 | Tier | Always | Drives everything below. Defaults to `Log` — Research doesn't self-select `Lesson`/`Starter-Pass-candidate` without clearing that tier's real bar. |
@@ -107,9 +113,9 @@ mechanical "what file, literally" mapping, nothing new:
 
 | Tier | Destination | Who files | Note-update rule |
 |---|---|---|---|
-| **Log** | `knowledge/log.md` line, always. Also the live Obsidian Build Log / Agent Log via `npm run obsidian:log -- build ...` **when a local session is filing** — map Finding + Worked/Failed/Next-time into that command's `--notes` field; there is no dedicated "research finding" CLI command today (see Future Work). | Any Claude Code session (repo access for `log.md`; local-only for the live Build Log) | Always append — never edit a past log line. |
+| **Log** | `knowledge/log.md` line, always. Also the live Obsidian Build Log via `npm run obsidian:log -- build ...` **when a local session is filing** — map Finding + Worked/Failed/Next-time into that command's `--notes` field; there is no dedicated "research finding" CLI command today (see Future Work). | Any Claude Code session (repo access for `log.md`; local-only for the live Build Log) | Always append — never edit a past log line. |
 | **Lesson** | `knowledge/lessons/<slug>.md` | Any Claude Code session with repo access, via PR — this is Research's own existing narrow exception in `AGENT_RUNBOOK.md` § Lessons, not a new permission | Prefer updating an existing lesson on the same topic (bump `last_reviewed`) over creating a new file — see Dedupe below. New file only when genuinely distinct. |
-| **Starter-Pass-candidate** | `knowledge/inbox/<slug>.md` — a raw capture, **not** a `sources/`/`concepts/`/`decisions/` page | Any Claude Code session with repo access | Always a new file — `inbox/` is a landing zone, not something to edit in place. The next Second Brain Starter Pass processes it into a real page (or discards it) and removes it from `inbox/`. |
+| **Starter-Pass-candidate** | `knowledge/inbox/<slug>.md` — a raw capture staged for the next Starter Pass, **not** a `sources/`/`concepts/`/`decisions/` page itself; only the Starter Pass creates that durable page | Any Claude Code session with repo access | Check `inbox/` first (see Dedupe below): update the existing candidate file if one matches, otherwise create a new one. Never edit `sources/`/`concepts/`/`decisions/` directly at this tier. |
 
 Research does not gain write access to `knowledge/concepts/`, `knowledge/projects/`,
 `knowledge/decisions/`, or `knowledge/sources/` through this doc — those still require
@@ -140,6 +146,12 @@ Before filing `Lesson` or `Starter-Pass-candidate` tier, the filing clerk checks
    heading; if one already covers the topic, sharpen/extend it instead of adding a
    near-duplicate file (the vault's lessons cap makes this the default, not an
    exception).
+4. For `Starter-Pass-candidate` tier specifically: search `knowledge/inbox/` by ID and
+   topic before creating a file. If a matching candidate is already staged there,
+   update that file (append the new source/finding under its own dated sub-heading)
+   instead of creating a second one — refiling the same pending candidate must not
+   produce duplicate inbox entries or duplicate Starter Pass work. Create a new file
+   only when no match exists.
 
 For the live Obsidian vault: Decisions are one note per decision
 (`Decisions/{{YYYY-MM-DD}} — {{title}}.md`, per `docs/OBSIDIAN_LOGGING.md`) — an update
@@ -202,7 +214,7 @@ and hand it to a Claude Code session (cloud, for `knowledge/` destinations; loca
 
 ```markdown
 ### Research Finding Intake — {{short title}}
-- ID: {{YYYY-MM-DD-short-slug}}
+- ID: {{YYYY-MM-DD-short-slug-NN}}
 - Date: {{YYYY-MM-DD}}
 - Agent: Research
 - Source(s) checked: {{...}}
@@ -212,7 +224,7 @@ and hand it to a Claude Code session (cloud, for `knowledge/` destinations; loca
 - Next time: {{... | none}}
 - Tier: {{Log | Lesson | Starter-Pass-candidate}}
 - Dedupe check: {{... | n/a for Log tier}}
-- Destination: {{knowledge/log.md | knowledge/lessons/<slug>.md | knowledge/inbox/<slug>.md | Obsidian Build Log | Obsidian Agent Log}}
+- Destination: {{knowledge/log.md | knowledge/lessons/<slug>.md | knowledge/inbox/<slug>.md | Obsidian Build Log | Obsidian PR Log}}
 - Related approval request: {{gate/card name | none}}
 - Related PR: {{# | none}}
 ```

@@ -54,10 +54,12 @@ AGENT_RUNBOOK already grants. Three tiers, in order of how often each is used:
 |---|---|---|---|
 | **1 — Log** | One line in the Build Log / Agent Log (or `knowledge/log.md`) | Research, always allowed | Every finding worth remembering at all |
 | **2 — Lesson** | One `knowledge/lessons/*.md` file, category set by what the finding actually is (per AGENT_RUNBOOK § Lessons' category list — not fixed to `research-pattern` just because Research filed it) | Research, only inside its own workflow's Learning capture step (per AGENT_RUNBOOK § Lessons' "narrow exception") | Only when a finding clears the Lessons bar (success/failure/constraint/recovery/research pattern) |
-| **3 — Starter Pass candidate** | A durable `sources/`, `concepts/`, `projects/`, or `decisions/` page | **Not Research** — flagged by Research, created only by the next **Second Brain Starter Pass** (Chief, coordinating Research + Content) | Rare — only findings that pass the 3–6 month test in AGENT_RUNBOOK § Second Brain Starter Pass |
+| **3 — Starter Pass candidate** | A raw capture staged in `knowledge/inbox/` — **not** the durable `sources/`, `concepts/`, `projects/`, or `decisions/` page itself | Staging: any Claude Code session filing on Research's behalf. The durable page: **not Research** — created only by the next **Second Brain Starter Pass** (Chief, coordinating Research + Content) | Rare — only findings that pass the 3–6 month test in AGENT_RUNBOOK § Second Brain Starter Pass |
 
-Tier 3 is a flag, not a write. Research's job is to make the candidate easy for the
-Starter Pass to find later (name it in the log line), not to create the page itself.
+Tier 3 is a flag, not a write to durable memory. Research's job (via whoever files on
+its behalf) is to stage the candidate in `knowledge/inbox/` so the Starter Pass can
+find it later — never to create the `sources/`/`concepts/`/`projects/`/`decisions/`
+page directly. See `docs/OBSIDIAN_RESEARCH_INTAKE.md` for the exact staging mechanics.
 
 **Graduation rule:** promote a finding to Starter-Pass-candidate only after it has
 been validated by a working implementation OR cited in at least two separate build
@@ -68,9 +70,9 @@ per `AGENT_RUNBOOK.md` § Memory Review Pass's **Lesson expiry check**, Chief
 re-evaluates any lesson that's gone three consecutive Memory Review passes uncited,
 unapplied, or unpromoted, and sharpens, merges, or removes it. Filing a finding at
 Tier 2 starts that clock; it isn't the end of the finding's lifecycle. (See
-`knowledge/lessons/second-brain-agent-maintenance-rot.md` for a live example of a
-Tier 2 entry currently on the clock, having cleared zero Memory Review passes so
-far.)
+`knowledge/lessons/second-brain-agent-maintenance-rot.md` for an example of a Tier 2
+entry subject to this expiry check — check the file itself for its current review
+count rather than treating any count as fixed here.)
 
 ## Fixed note headings
 
