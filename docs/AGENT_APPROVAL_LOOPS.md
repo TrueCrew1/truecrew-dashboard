@@ -88,6 +88,31 @@ Validated end-to-end QA path (runtime trigger, parallel to Build).
 (Resend/Postmark) is a different card. The runtime test card mentions
 `research-agent-approval-test.md` and QA-only language.
 
+## Research Agent loop — real incident signal
+
+Validated end-to-end path using **real** data (an active incident from the current
+mock/live data set), not a QA fixture — the first path to exercise `AgentPacket` /
+`chiefLog` end to end. Distinct from the QA-fixture Research loop above.
+
+| Item | Current behavior |
+|------|------------------|
+| **Trigger** | **Monitor** page → panel **Research packet: active incident** → **Propose Research packet** (only shown when a Sev ≤2 active incident exists) |
+| **Factory** | `src/components/chief/researchIncidentProposal.ts` (`buildResearchIncidentRequest`, `proposeResearchIncidentPacket`) |
+| **Packet** | Wraps the request via `createAgentPacket("research", request)` (`agentPacket.ts`) before card creation — logs `packet_created` |
+| **Enqueue** | `proposeResearchIncidentPacket(incident, approvals)` → `addCommandApproval(card)`, called from `MonitorPage.tsx` |
+| **Proposal** | Real: summary, risk level, and checklist are derived from the incident's actual severity/status/service and a live comparison of two monitoring options — not seeded or QA copy |
+| **Gate** | `APPROVAL_GATES.research[0]` — “New tool or stack adoption” (same structural gate as the QA loop; this occurrence is a genuine recommendation, not a fixture) |
+| **Card source** | `research_agent` |
+| **Approvals title** | **Research: New tool or stack adoption** (disambiguate by summary text — it names the real incident, e.g. “Auth p99 latency spike”) |
+| **Agents lane** | **Research Agent**, same awaiting-approval mapping as the QA loop — no separate wiring needed |
+| **Duplicate guard** | Stable ID keyed to the incident (`stableChiefId("apr-research-incident", incident.id)`); block while a proposal for that incident is **pending** |
+| **Observability** | `packet_created` → `card_created` (both logged from `researchIncidentProposal.ts`, not from the shared `createApprovalCardFromResearchRequest` factory, to avoid logging the QA loop's/seeded example's card too) → `card_decided` (logged from `ChiefApprovalsContext.tsx`'s `recordDecision`) — visible on the operator-facing Recent Activity strip (`RecentActivityStrip.tsx`, on the Chief situation brief) and, in dev builds only, the Chief → Dev tab's Governance Events panel |
+
+**Disambiguation:** Both this loop and the QA-fixture Research loop above produce cards
+titled **Research: New tool or stack adoption**. Tell them apart by summary content:
+this one names a real incident and service; the QA loop's summary references
+`research-agent-approval-test.md` and states QA-only intent.
+
 ## Urgency and escalation signals
 
 Pending approvals carry aging signals in two complementary places:
@@ -212,6 +237,8 @@ law.
 | Shared queue, `addCommandApproval`, `recordDecision` | `src/components/chief/ChiefApprovalsContext.tsx` |
 | Build runtime test factory | `src/components/chief/buildAgentTestProposal.ts` |
 | Research runtime test factory | `src/components/chief/researchAgentTestProposal.ts` |
+| Research real-incident factory | `src/components/chief/researchIncidentProposal.ts` |
+| Packet envelope + logging | `src/components/chief/agentPacket.ts`, `chiefLog.ts`, `chiefGovernanceEvents.ts` |
 | Build trigger UI | `src/pages/BuildsPage.tsx` |
 | Research trigger UI | `src/pages/MonitorPage.tsx` |
 | Approvals tab UI | `src/components/chief/ApprovalBoard.tsx`, `ChiefPanel.tsx` |
