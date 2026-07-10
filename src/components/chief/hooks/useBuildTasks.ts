@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { WorkflowStage, type GateCheck, type Task } from "@/types";
+import { Task, GateCheck, WorkflowStage } from "@/types";
 
 export interface PendingGate {
   key: string;
@@ -68,10 +68,6 @@ export function useBuildTasks(): {
         setIsLoading(true);
         setError(null);
         
-        // /api/tasks does not support server-side filtering — every task
-        // comes back regardless of query string, so "build" + non-terminal
-        // is applied client-side below, against the real frontend Task
-        // contract (@/types), not a query param the API never reads.
         const response = await fetch("/api/tasks");
         if (!response.ok) {
           throw new Error(`Failed to fetch build tasks: ${response.statusText}`);
