@@ -59,6 +59,10 @@ AGENT_RUNBOOK already grants. Three tiers, in order of how often each is used:
 Tier 3 is a flag, not a write. Research's job is to make the candidate easy for the
 Starter Pass to find later (name it in the log line), not to create the page itself.
 
+**Graduation rule:** promote a finding to Starter-Pass-candidate only after it has
+been validated by a working implementation OR cited in at least two separate build
+sessions. A flag that doesn't clear this bar stays at Tier 1 or 2.
+
 ## Fixed note headings
 
 Every finding worth Tier 1 or above gets written up once, in this shape, before it's
@@ -113,6 +117,15 @@ the other:
 - When a finding does both, the `ResearchApprovalRequest.summary` names the same
   short title used in the fixed-heading note, so Chief (and anyone reading the card
   later) can find the underlying write-up without re-deriving it.
+
+## Chief and the second brain
+
+Chief has **no** direct read access to `knowledge/` and does not query the second
+brain store — that boundary is unchanged by this doc. Chief's inputs stay
+AGENT_RUNBOOK and the repo docs. Filed research reaches Chief indirectly: the
+operator reads filed findings and uses them to update AGENT_RUNBOOK or shape the
+prompt context Chief runs on. This doc adds no automation or permission that
+changes that path.
 
 ## Constraints
 
