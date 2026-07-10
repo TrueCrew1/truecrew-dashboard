@@ -49,6 +49,8 @@ export interface ResearchFindingPayload {
   next_time?: string;
   /** Optional cross-reference to a Chief approval request (title/id). */
   related_approval?: string;
+  /** Optional free-form category tag (e.g. "governance", "tooling"). */
+  category?: string;
 }
 
 export interface ValidationResult {
@@ -149,7 +151,8 @@ export function formatLogLine(payload: ResearchFindingPayload): string {
   const approvalPart = payload.related_approval?.trim()
     ? ` [approval: ${payload.related_approval.trim()}]`
     : "";
-  return `- ${payload.date.trim()} — [research]${titlePart} ${finding} (tier: ${payload.tier})${approvalPart}`;
+  const categoryPart = payload.category?.trim() ? ` [category: ${payload.category.trim()}]` : "";
+  return `- ${payload.date.trim()} — [research]${titlePart} ${finding} (tier: ${payload.tier})${categoryPart}${approvalPart}`;
 }
 
 /**
