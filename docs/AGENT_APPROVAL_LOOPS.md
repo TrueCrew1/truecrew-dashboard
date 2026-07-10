@@ -86,6 +86,46 @@ Validated end-to-end QA path (runtime trigger, parallel to Build).
 (Resend/Postmark) is a different card. The runtime test card mentions
 `research-agent-approval-test.md` and QA-only language.
 
+## Chief command-surface loop
+
+Validated end-to-end path from typed operator commands (not an agent trigger,
+but the same shared queue).
+
+| Item | Current behavior |
+|------|------------------|
+| **Trigger** | Chief → **Command** tab — free-text input, submitted via the command form |
+| **Classifier** | `resolveChiefCommand()` in `chiefLiveContext.ts` — keyword match against live ops data (blocked/gates, missing context, incidents, alerts, approvals, risk, knowledge) |
+| **Card builder** | `buildApprovalFromResponse()` in `chiefMock.ts` — only runs when the matched resolver sets `ChiefResponse.approvalNeeded: true` (today: blocked/gates, missing context, incidents needing repair, alerts) |
+| **Enqueue** | `addCommandApproval(card)` — same call every other source uses |
+| **Card attribution** | No `source` is set on command-originated cards; `specialist` is set from `response.routedTo` (or the first `specialists` entry). `resolveAgentForAwaitingApproval()` in `chiefLiveContext.ts` already falls back to `specialist` when `source` is absent — this is documented, intentional behavior (see that function's comment), not a gap. Command-originated cards therefore surface correctly in Chief → Agents → Awaiting when routed to an agent specialist (e.g. Workflow Gate Agent, Research Agent, Librarian Agent). |
+| **Logging** | `addCommandApproval()` unconditionally emits `approval_proposal_created` (`chiefGovernanceEvents.ts`) — command-originated cards are logged the same as every other source, no separate wiring needed |
+
+**Same shared queue:** command-generated proposals merge into the exact
+`ChiefApprovalsContext` queue as runtime QA triggers, seeded examples, and live
+ops derivations. There is no separate command-approval queue, and none should
+be added — see System law above.
+
+**Handoff contract for future Research/Builder proposals:** the required path
+for any future Research or Builder agent output that needs an operator
+decision is the same typed-request pattern already defined in
+`src/components/chief/agentApprovalGates.ts`:
+
+```
+<agent> builds its typed *ApprovalRequest object
+  (PlannerApprovalRequest / BuildApprovalRequest /
+   ResearchApprovalRequest / ContentApprovalRequest)
+  → createApprovalCardFrom*Request()
+  → addCommandApproval()
+  → shared approvals queue (same queue as the command surface above)
+```
+
+This is not a new contract to design — it is the existing pattern Build and
+Research already use for their validated QA loops above. Any future
+Research/Builder integration should populate one of these typed request
+objects (or add a new `*ApprovalRequest` following the same shape, with a
+matching `createApprovalCardFrom*Request()` and an `ApprovalSource` entry)
+rather than inventing a new packet shape or a new queue.
+
 ## Urgency and escalation signals
 
 Pending approvals carry aging signals in two complementary places:
@@ -220,6 +260,8 @@ law.
 
 ## Related docs
 
+- [AGENT_CONSTITUTION.md](AGENT_CONSTITUTION.md) — authoritative agent laws, Chief foreman role, roster, session prompts
+- [EXECUTION_KIT.md](EXECUTION_KIT.md) — start-here entry point summarizing this doc plus lane routing
 - [AGENT_WORKFLOW.md](AGENT_WORKFLOW.md) — agent vs approver roles, PR process, Chief-only routing
 - [PR_SUMMARY_TEMPLATE.md](PR_SUMMARY_TEMPLATE.md) — PR description template
 - `src/components/chief/agentApprovalGates.ts` (file header) — operating rule for agent approval requests

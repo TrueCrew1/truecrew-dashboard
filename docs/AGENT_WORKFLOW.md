@@ -1,5 +1,20 @@
 # Agent ↔ Approver workflow
 
+**Start a new session with [EXECUTION_KIT.md](EXECUTION_KIT.md)** — lane routing (which
+tool/agent handles what) and copy-paste kickoff prompts.
+
+**Agent ecosystem law (roles, Chief foreman model, prompts):**
+[AGENT_CONSTITUTION.md](AGENT_CONSTITUTION.md). This file covers PR/approver process;
+Build/Research approval technical detail lives in
+[AGENT_APPROVAL_LOOPS.md](AGENT_APPROVAL_LOOPS.md).
+
+**Chief's Priority/Task intake discipline and the Second Brain vault (`knowledge/`) —
+Lessons, Memory Review Pass, Research filing tiers — are not covered above; they live in
+[AGENT_RUNBOOK.md](AGENT_RUNBOOK.md) and [AGENT_LANES_INTERNAL.md](AGENT_LANES_INTERNAL.md).**
+Chief must run AGENT_RUNBOOK.md's Chief Intake Rule (active Priority/Task check) in
+addition to AGENT_CONSTITUTION.md's session-start steps, not instead of them — the two
+docs cover different, non-overlapping parts of Chief's startup behavior.
+
 True Crew work is split into two roles. **Agents and scripts do the work.** The **approver** only reviews and approves outputs.
 
 ## Approval routing (Chief only)
@@ -13,6 +28,16 @@ No agent — Planner, Build, Research, Content, or any future one — asks the a
 `APPROVAL_GATES` in that same file lists which actions per agent require a card (e.g. Build: any change merging to `main` or a migration; Content: anything external-facing). Actions not listed there are routine enough for the agent to just do.
 
 This pass wires the pattern with one example request per agent (illustrative, not live agent output yet) — the pattern is the deliverable, not a full integration.
+
+### Validated approval loops (Build + Research)
+
+Build and Research each have a **runtime QA trigger** that exercises the full path
+(trigger → shared queue → Chief Approvals → Chief Agents awaiting → operator
+decision). Approval records the decision only — it does not execute agent work.
+
+See **[AGENT_APPROVAL_LOOPS.md](AGENT_APPROVAL_LOOPS.md)** for system law, concrete
+triggers, urgency signals, known limitations (including stable-ID re-propose), and
+rules for agents and tools.
 
 ## Roles
 
@@ -43,7 +68,10 @@ This pass wires the pattern with one example request per agent (illustrative, no
 
 | Artifact | Location |
 |----------|----------|
+| Execution Kit (start-here, lanes, kickoff prompts) | `docs/EXECUTION_KIT.md` |
+| Agent constitution + operating playbook | `docs/AGENT_CONSTITUTION.md` |
 | Agent workflow (repo) | `docs/AGENT_WORKFLOW.md` (this file) |
+| Agent approval loops (Build + Research) | `docs/AGENT_APPROVAL_LOOPS.md` |
 | PR summary template | `docs/PR_SUMMARY_TEMPLATE.md` |
 | Vault templates (seed source) | `docs/vault-templates/` |
 | Ops checklists (live vault) | `10_INTEGRATIONS/GitHub-Workflow.md` and siblings |
