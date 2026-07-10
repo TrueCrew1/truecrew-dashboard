@@ -63,6 +63,15 @@ Starter Pass to find later (name it in the log line), not to create the page its
 been validated by a working implementation OR cited in at least two separate build
 sessions. A flag that doesn't clear this bar stays at Tier 1 or 2.
 
+**Expiry, once filed:** a Tier 2 (Lesson) entry isn't permanent by default either —
+per `AGENT_RUNBOOK.md` § Memory Review Pass's **Lesson expiry check**, Chief
+re-evaluates any lesson that's gone three consecutive Memory Review passes uncited,
+unapplied, or unpromoted, and sharpens, merges, or removes it. Filing a finding at
+Tier 2 starts that clock; it isn't the end of the finding's lifecycle. (See
+`knowledge/lessons/second-brain-agent-maintenance-rot.md` for a live example of a
+Tier 2 entry currently on the clock, having cleared zero Memory Review passes so
+far.)
+
 ## Fixed note headings
 
 Every finding worth Tier 1 or above gets written up once, in this shape, before it's
