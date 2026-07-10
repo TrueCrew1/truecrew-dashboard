@@ -57,6 +57,7 @@ export const APPROVAL_SOURCE_LABEL: Record<ApprovalSource, string> = {
   planner_agent: "Planner",
   research_agent: "Research",
   content_agent: "Content",
+  chief_workflow: "Chief",
 };
 
 export const APPROVAL_SOURCE_BADGE: Record<ApprovalSource, string> = {
@@ -67,6 +68,7 @@ export const APPROVAL_SOURCE_BADGE: Record<ApprovalSource, string> = {
   planner_agent: "badge-blue",
   research_agent: "badge-steel",
   content_agent: "badge-orange",
+  chief_workflow: "badge-steel",
 };
 
 export const APPROVAL_CHECKLIST_STATUS_ICON: Record<"pass" | "fail" | "pending", string> = {

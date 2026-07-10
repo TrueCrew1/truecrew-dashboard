@@ -641,6 +641,7 @@ function agentFromApprovalSource(source: ApprovalSource): AgentWorkAgentName | n
     case "content_agent":
       return "Marketer Agent";
     case "ops_change":
+    case "chief_workflow":
       return null;
   }
 }
