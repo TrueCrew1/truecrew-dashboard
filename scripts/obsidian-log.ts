@@ -29,6 +29,10 @@ Usage:
   npm run obsidian:log -- research-finding --file <path>            (dry run: validates + prints destination, writes nothing)
   npm run obsidian:log -- research-finding --file <path> --write    (real local write to knowledge/, tier-limited)
 
+  Note: research-finding (both dry run and --write) needs none of the Environment
+  variables below — it only reads/writes this repo's own knowledge/ tree, never the
+  live Obsidian vault or Supabase. Every other command above does need them.
+
 Environment:
   OBSIDIAN_VAULT_PATH  Absolute path to your local Obsidian vault root
   SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY  Required for artifact indexing
