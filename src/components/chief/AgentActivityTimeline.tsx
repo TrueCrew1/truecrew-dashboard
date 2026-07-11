@@ -1,16 +1,12 @@
 import { useMemo, useState } from "react";
 import { ApprovalSectionShell, ApprovalSurfaceEmpty } from "./approvalWrappers";
-import { deriveAgentActivityTimeline, recentActivityForAgent, type AgentActivityItem, type AgentActivityType } from "./agentActivityFeed";
+import { recentActivityForAgent, type AgentActivityItem, type AgentActivityType } from "./agentActivityFeed";
 import { formatChiefTimestamp } from "./chiefMock";
-import { useLibrarianWorkItems } from "@/hooks/useLibrarianWorkItems";
-import { usePlannerWorkItems } from "@/hooks/usePlannerWorkItems";
-import { useData } from "@/context/DataContext";
-import { useChiefApprovals } from "./ChiefApprovalsContext";
+import { useAgentWorkData } from "@/hooks/useAgentWorkData";
 import { AgentDetailDrawer } from "./AgentDetailDrawer";
-import { combineAgentWorkItems } from "./agentWorkItems";
 import { AGENT_DIRECTORY } from "./agentWorkBoardMock";
 import { resolveOpenAgentEntry } from "./agentWorkPresentation";
-import type { AgentWorkAgentName, ApprovalProposal } from "./types";
+import type { AgentWorkAgentName } from "./types";
 
 /** The five agents this timeline covers — matches the Agents-tab roster minus Workflow Gate/Research. */
 const FILTER_AGENTS: AgentWorkAgentName[] = [
@@ -133,42 +129,12 @@ export function AgentActivityCard({
 }
 
 export function AgentActivityTimeline() {
-  const { data } = useData();
-  const { approvals, navigation } = useChiefApprovals();
-  const { items: plannerWorkItems } = usePlannerWorkItems();
-  const { items: librarianWorkItems } = useLibrarianWorkItems();
-
-  const allActivity = useMemo(
-    () =>
-      deriveAgentActivityTimeline({
-        tasks: data.tasks,
-        plannerWorkItems,
-        librarianWorkItems,
-      }),
-    [data.tasks, plannerWorkItems, librarianWorkItems],
-  );
-
-  const workItems = useMemo(
-    () =>
-      combineAgentWorkItems({
-        tasks: data.tasks,
-        incidents: data.incidents,
-        plannerWorkItems,
-        librarianWorkItems,
-        approvals,
-      }),
-    [data.tasks, data.incidents, plannerWorkItems, librarianWorkItems, approvals],
-  );
-
-  const proposalByAwaitingWorkId = useMemo(() => {
-    const map = new Map<string, ApprovalProposal>();
-    for (const proposal of approvals) {
-      if (proposal.status === "pending") {
-        map.set(`agentwork-awaiting-${proposal.id}`, proposal);
-      }
-    }
-    return map;
-  }, [approvals]);
+  const {
+    items: workItems,
+    activity: allActivity,
+    proposalByAwaitingWorkId,
+    navigation,
+  } = useAgentWorkData();
 
   const handleReviewInApprovals = (proposalId: string) => {
     navigation?.openApprovals({ filter: "pending", focusProposalId: proposalId });

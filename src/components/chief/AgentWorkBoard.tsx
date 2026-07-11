@@ -5,13 +5,9 @@ import {
   type AgentDirectoryEntry,
 } from "./agentWorkBoardMock";
 import { deriveAgentAwaitingApprovalWorkItems } from "./chiefLiveContext";
-import { deriveAgentActivityTimeline, recentActivityForAgent } from "./agentActivityFeed";
-import { combineAgentWorkItems } from "./agentWorkItems";
-import { useLibrarianWorkItems } from "@/hooks/useLibrarianWorkItems";
-import { usePlannerWorkItems } from "@/hooks/usePlannerWorkItems";
+import { recentActivityForAgent } from "./agentActivityFeed";
+import { useAgentWorkData } from "@/hooks/useAgentWorkData";
 import { getApprovalUrgencyBadge } from "./chiefApprovalUrgency";
-import { useChiefApprovals } from "./ChiefApprovalsContext";
-import { useData } from "@/context/DataContext";
 import { AgentDetailDrawer } from "./AgentDetailDrawer";
 import {
   AgentWorkCard,
@@ -137,42 +133,10 @@ function AgentLane({
 const ALL_AGENT_NAMES = AGENT_DIRECTORY.map((entry) => entry.agent);
 
 export function AgentWorkBoard() {
-  const { data } = useData();
-  const { approvals, navigation } = useChiefApprovals();
-  const { items: librarianWorkItems } = useLibrarianWorkItems();
-  const { items: plannerWorkItems } = usePlannerWorkItems();
+  const { items, activity, proposalByAwaitingWorkId, approvals, navigation } = useAgentWorkData();
   const awaitingApprovalItems = useMemo(
     () => deriveAgentAwaitingApprovalWorkItems(approvals),
     [approvals],
-  );
-  const proposalByAwaitingWorkId = useMemo(() => {
-    const map = new Map<string, ApprovalProposal>();
-    for (const proposal of approvals) {
-      if (proposal.status === "pending") {
-        map.set(`agentwork-awaiting-${proposal.id}`, proposal);
-      }
-    }
-    return map;
-  }, [approvals]);
-  const items = useMemo(
-    () =>
-      combineAgentWorkItems({
-        tasks: data.tasks,
-        incidents: data.incidents,
-        plannerWorkItems,
-        librarianWorkItems,
-        approvals,
-      }),
-    [data.tasks, data.incidents, plannerWorkItems, librarianWorkItems, approvals],
-  );
-  const activity = useMemo(
-    () =>
-      deriveAgentActivityTimeline({
-        tasks: data.tasks,
-        plannerWorkItems,
-        librarianWorkItems,
-      }),
-    [data.tasks, plannerWorkItems, librarianWorkItems],
   );
 
   const itemsByAgent = useMemo(() => {
