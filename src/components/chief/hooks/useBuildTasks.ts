@@ -68,7 +68,7 @@ export function useBuildTasks(): {
         setIsLoading(true);
         setError(null);
 
-        const response = await fetch("/api/tasks");
+        const response = await fetch("/api/data");
         if (!response.ok) {
           throw new Error(`Failed to fetch build tasks: ${response.statusText}`);
         }
