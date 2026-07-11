@@ -18,6 +18,16 @@ if (!INTERNAL_API_SECRET) {
 const baseUrl = env.PLANNER_RUNTIME_BASE_URL || "http://localhost:3000";
 const url = `${baseUrl}/api/runtime/planner/work-items`;
 
+// Debug output for secret and headers
+console.log(`INTERNAL_API_SECRET present: ${INTERNAL_API_SECRET ? "yes" : "no"}`);
+console.log(`INTERNAL_API_SECRET length: ${INTERNAL_API_SECRET.length}`);
+console.log(`Base URL: ${baseUrl}`);
+console.log(`Header: x-internal-key`);
+const secretPreview = INTERNAL_API_SECRET.length > 12 
+  ? `${INTERNAL_API_SECRET.slice(0, 6)}...${INTERNAL_API_SECRET.slice(-6)}`
+  : "[too short to mask]";
+console.log(`Secret preview: ${secretPreview} (len ${INTERNAL_API_SECRET.length})`);
+
 const body = {
   inputPayload: {
     title: "Smoke test work item",
