@@ -1,4 +1,4 @@
-import { timingSafeEqual } from "node:crypto";
+import { createHash, timingSafeEqual } from "node:crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 const HEADER_NAME = "x-internal-key";
@@ -8,6 +8,16 @@ function safeCompare(provided: string, expected: string): boolean {
   const expectedBuf = Buffer.from(expected);
   if (providedBuf.length !== expectedBuf.length) return false;
   return timingSafeEqual(providedBuf, expectedBuf);
+}
+
+// TEMPORARY DIAGNOSTIC — hash-only, never logs raw values. Remove after debugging.
+function diagHash(value: string | undefined): { present: boolean; length?: number; hash8?: string } {
+  if (!value) return { present: false };
+  return {
+    present: true,
+    length: value.length,
+    hash8: createHash("sha256").update(value).digest("hex").slice(0, 8),
+  };
 }
 
 /**
@@ -25,6 +35,7 @@ export function requireInternalAuth(
   res: VercelResponse,
 ): boolean {
   const expected = process.env.INTERNAL_API_SECRET;
+  console.log("[diag] expected:", diagHash(expected)); // TEMPORARY DIAGNOSTIC
 
   if (!expected) {
     console.error("INTERNAL_API_SECRET is not configured — rejecting request");
@@ -34,6 +45,7 @@ export function requireInternalAuth(
 
   const header = req.headers[HEADER_NAME];
   const provided = Array.isArray(header) ? header[0] : header;
+  console.log("[diag] provided:", diagHash(provided)); // TEMPORARY DIAGNOSTIC
 
   if (!provided || !safeCompare(provided, expected)) {
     res.status(401).json({ error: "Unauthorized" });
