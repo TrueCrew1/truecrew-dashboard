@@ -20,7 +20,16 @@ export function getSupabaseAdmin(): SupabaseClient {
 }
 
 export function isSupabaseConfigured(): boolean {
-  return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return false;
+  }
+
+  try {
+    getSupabaseAdmin();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export interface DbTaskRow {

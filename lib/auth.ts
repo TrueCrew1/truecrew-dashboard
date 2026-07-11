@@ -1,4 +1,4 @@
-import { createHash, timingSafeEqual } from "node:crypto";
+import { timingSafeEqual } from "node:crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 const HEADER_NAME = "x-internal-key";
@@ -28,7 +28,7 @@ export function requireInternalAuth(
   if (process.env.NODE_ENV === "development") {
     try {
       process.loadEnvFile(".env.local");
-    } catch (error) {
+    } catch {
       // Ignore if file not found
     }
   }

@@ -239,14 +239,9 @@ The script always prints `HTTP Status: <code>` after the request. What follows d
 
 | Status | Meaning | What to check |
 |--------|---------|----------------|
-| **401 Unauthorized** | `requireInternalAuth` rejected the request ([lib/auth.ts](../lib/auth.ts)). If the `vercel dev` terminal also logged `INTERNAL_API_SECRET is not configured — rejecting request`, the server process never loaded the env var — restart `vercel dev` after editing `.env.local`. If nothing was logged server-side, the secret the script sent doesn't byte-match what the server has — the two `.env.local` reads have drifted. |
-| **503 Database not configured** | Auth passed; `isSupabaseConfigured()` returned false. `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` are missing or not loaded by the `vercel dev` process. |
+| **401 Unauthorized** | `requireInternalAuth` rejected the request ([lib/auth.ts](../lib/auth.ts)). It reloads `.env.local` itself on every request in development, so a stale `vercel dev` process is no longer the usual cause — if the terminal also logged `INTERNAL_API_SECRET is not configured — rejecting request`, `.env.local` is missing or empty. If nothing was logged server-side, the secret the script sent doesn't byte-match what's currently in `.env.local`. |
+| **503 Database not configured** | Auth passed; `isSupabaseConfigured()` returned false ([lib/supabase/admin.ts](../lib/supabase/admin.ts)). Either `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` are missing, or they're present but the Supabase client failed to construct (e.g. a malformed URL) — both cases are checked by the same function. |
 | **201 with work item details** | Full round trip succeeded — auth, validation, and the Supabase insert all passed. The script prints `Work Item ID`, `Agent Role`, `Status`, and `Created At` from the response. |
-
-**Caution:** the script's debug output includes a partial preview of `INTERNAL_API_SECRET`
-(first/last 6 characters) alongside its length, printed on every run regardless of outcome.
-Don't paste that console output into tickets, Slack, or shared logs — treat it the same as
-you would the secret itself.
 
 ---
 
