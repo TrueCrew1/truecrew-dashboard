@@ -207,6 +207,49 @@ mock, or docs-only lane; **missing** = defined here, not yet implemented.
 
 ---
 
+## Planner Runtime Smoke Test
+
+A local, manual check that the planner runtime route is reachable, authenticated, and
+writing to Supabase — `scripts/planner-smoke-test.ts`, run via `npm run planner:smoke`.
+It POSTs one hardcoded `planning_task` payload to `/api/runtime/planner/work-items` and
+reports what came back. It does not replace the automated tests in
+`lib/planner/*.test.ts` or `api/runtime/planner/work-items.test.ts` — it's a fast
+end-to-end sanity check for a local dev environment.
+
+### Commands
+
+```bash
+# Terminal 1 — start the serverless functions locally
+npm run dev:vercel
+
+# Terminal 2 — fire the smoke test
+npm run planner:smoke
+```
+
+### Required env vars (`.env.local`)
+
+| Var | Required | Purpose |
+|-----|----------|---------|
+| `INTERNAL_API_SECRET` | Yes | Sent as the `x-internal-key` header. The script loads `.env.local` itself and exits immediately with `INTERNAL_API_SECRET is not set` if it's missing — it never fires the request without it. |
+| `PLANNER_RUNTIME_BASE_URL` | No | Overrides the target host; defaults to `http://localhost:3000`. Set this if `vercel dev` is running on a different port (e.g. `3004`). |
+
+### Interpreting the result
+
+The script always prints `HTTP Status: <code>` after the request. What follows depends on the code:
+
+| Status | Meaning | What to check |
+|--------|---------|----------------|
+| **401 Unauthorized** | `requireInternalAuth` rejected the request ([lib/auth.ts](../lib/auth.ts)). If the `vercel dev` terminal also logged `INTERNAL_API_SECRET is not configured — rejecting request`, the server process never loaded the env var — restart `vercel dev` after editing `.env.local`. If nothing was logged server-side, the secret the script sent doesn't byte-match what the server has — the two `.env.local` reads have drifted. |
+| **503 Database not configured** | Auth passed; `isSupabaseConfigured()` returned false. `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` are missing or not loaded by the `vercel dev` process. |
+| **201 with work item details** | Full round trip succeeded — auth, validation, and the Supabase insert all passed. The script prints `Work Item ID`, `Agent Role`, `Status`, and `Created At` from the response. |
+
+**Caution:** the script's debug output includes a partial preview of `INTERNAL_API_SECRET`
+(first/last 6 characters) alongside its length, printed on every run regardless of outcome.
+Don't paste that console output into tickets, Slack, or shared logs — treat it the same as
+you would the secret itself.
+
+---
+
 ## Related docs
 
 | Doc | Purpose |
