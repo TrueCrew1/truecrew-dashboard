@@ -1,12 +1,22 @@
 import { env } from "node:process";
 
+// Load .env.local for local development
+try {
+  process.loadEnvFile(".env.local");
+} catch (error) {
+  if (error.code !== "ENOENT") {
+    console.error("Error loading .env.local:", error);
+  }
+}
+
 const INTERNAL_API_SECRET = env.INTERNAL_API_SECRET;
 if (!INTERNAL_API_SECRET) {
   console.error("INTERNAL_API_SECRET is not set");
   process.exit(1);
 }
 
-const url = "http://localhost:3004/api/runtime/planner/work-items";
+const baseUrl = env.PLANNER_RUNTIME_BASE_URL || "http://localhost:3000";
+const url = `${baseUrl}/api/runtime/planner/work-items`;
 
 const body = {
   inputPayload: {
