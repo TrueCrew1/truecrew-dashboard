@@ -3,6 +3,7 @@ import type {
   DecisionLogEntry,
   HotContextEntry,
   MaintenanceLogEntry,
+  PlanningLogEntry,
   PrLogEntry,
 } from "./types.js";
 
@@ -14,9 +15,30 @@ function formatIso(date: Date): string {
   return date.toISOString();
 }
 
+function formatDate(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
 function yamlFrontmatter(fields: Record<string, string>): string {
   const lines = Object.entries(fields).map(([key, value]) => `${key}: ${value}`);
   return `---\n${lines.join("\n")}\n---\n\n`;
+}
+
+/**
+ * Minimal governed-note frontmatter (see docs/SYSTEM_OF_RECORD.md § source_of_truth).
+ * `owner` and `tags` have no real input source from the pipelines yet. `owner` is
+ * emitted as YAML `null` (not a fabricated string like "unassigned") so it reads
+ * unambiguously as "not yet set" rather than a real value; `tags` is emitted as a
+ * real empty YAML list for the same reason.
+ */
+function governedFields(loggedAt: Date): Record<string, string> {
+  return {
+    status: "active",
+    owner: "null",
+    source_of_truth: "vault",
+    last_reviewed: formatDate(loggedAt),
+    tags: "[]",
+  };
 }
 
 export function renderBuildLogSection(entry: BuildLogEntry): string {
@@ -72,6 +94,7 @@ export function renderDecisionNote(entry: DecisionLogEntry): string {
     type: "decision",
     source: "true-crew",
     logged_at: formatIso(loggedAt),
+    ...governedFields(loggedAt),
   });
 
   const sections = [`# ${entry.title}`, ""];
@@ -92,6 +115,7 @@ export function renderMaintenanceNote(entry: MaintenanceLogEntry): string {
     type: "maintenance",
     source: "true-crew",
     logged_at: formatIso(loggedAt),
+    ...governedFields(loggedAt),
   });
 
   const sections = [`# ${entry.title}`, ""];
@@ -99,6 +123,27 @@ export function renderMaintenanceNote(entry: MaintenanceLogEntry): string {
     sections.push("## Context", "", entry.context, "");
   }
   sections.push("## Description", "", entry.description, "");
+  if (entry.notes) {
+    sections.push("## Notes", "", entry.notes, "");
+  }
+
+  return frontmatter + sections.join("\n");
+}
+
+export function renderPlanningNote(entry: PlanningLogEntry): string {
+  const loggedAt = entry.loggedAt ?? new Date();
+  const frontmatter = yamlFrontmatter({
+    type: "planning",
+    source: "true-crew",
+    logged_at: formatIso(loggedAt),
+    ...governedFields(loggedAt),
+  });
+
+  const sections = [`# ${entry.title}`, ""];
+  if (entry.context) {
+    sections.push("## Context", "", entry.context, "");
+  }
+  sections.push("## Plan", "", entry.description, "");
   if (entry.notes) {
     sections.push("## Notes", "", entry.notes, "");
   }

@@ -1,4 +1,10 @@
-export type ObsidianLogKind = "build" | "decision" | "pr" | "hot-context" | "maintenance";
+export type ObsidianLogKind =
+  | "build"
+  | "decision"
+  | "pr"
+  | "hot-context"
+  | "maintenance"
+  | "planning";
 
 export interface BuildLogEntry {
   result: "success" | "failure" | "cancelled" | "unknown";
@@ -31,6 +37,14 @@ export interface HotContextEntry {
 }
 
 export interface MaintenanceLogEntry {
+  title: string;
+  description: string;
+  context?: string;
+  notes?: string;
+  loggedAt?: Date;
+}
+
+export interface PlanningLogEntry {
   title: string;
   description: string;
   context?: string;

@@ -212,3 +212,27 @@ export async function writeAuditEvent(
   });
   if (error) throw error;
 }
+
+export interface DbAuditEventRow {
+  id: string;
+  entity_type: string;
+  entity_id: string;
+  action: string;
+  actor: string | null;
+  details: Record<string, unknown>;
+  created_at: string;
+}
+
+/** Durable audit_events rows for Chief approval decisions only — see ADR-001. */
+export async function fetchChiefApprovalAuditEvents(limit = 50): Promise<DbAuditEventRow[]> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("audit_events")
+    .select("id, entity_type, entity_id, action, actor, details, created_at")
+    .eq("entity_type", "chief_approval_decision")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return (data ?? []) as DbAuditEventRow[];
+}

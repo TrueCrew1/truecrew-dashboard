@@ -50,6 +50,8 @@ over a broader "while I'm in here" change.
 
 ## Workflow
 This repo already has an approval-first process — don't restate or reinvent it, follow it:
+- **Start here each session:** `docs/EXECUTION_KIT.md` — lane routing (which tool/agent handles
+  what) and copy-paste kickoff prompts.
 - `docs/AGENT_WORKFLOW.md` — agent implements, opens a PR, approver reviews/approves. Agents never
   ask the approver to run commands; anything that must run outside the agent environment goes in
   an **Ops to run** section.

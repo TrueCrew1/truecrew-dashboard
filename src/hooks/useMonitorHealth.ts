@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { isLiveApiEnabled } from "@/lib/api/client";
+import { internalApiHeaders } from "@/lib/api/librarianRuntime";
 import type {
   PlatformHealthState,
   SupabaseMonitorResponse,
@@ -44,8 +45,18 @@ function useMonitorHealth() {
 
     async function fetchSupabase() {
       try {
-        const response = await fetch("/api/monitor/supabase");
-        const data = (await response.json()) as SupabaseMonitorResponse;
+        const response = await fetch("/api/monitor/supabase", {
+          headers: internalApiHeaders(),
+        });
+        const body = (await response.json().catch(() => null)) as SupabaseMonitorResponse | null;
+
+        if (!response.ok) {
+          throw new Error(
+            body?.error ?? body?.message ?? `Supabase monitor request failed (${response.status})`,
+          );
+        }
+
+        const data = body as SupabaseMonitorResponse;
         if (mountedRef.current) {
           setState((prev) => ({
             ...prev,

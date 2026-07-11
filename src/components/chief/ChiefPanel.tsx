@@ -1,17 +1,45 @@
-import { FormEvent, useCallback, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useData } from "@/context/DataContext";
-import { ChiefApprovalConflictError, formatDataSourceLabel } from "@/lib/api/client";
+import { ChiefApprovalConflictError, formatDataSourceLabel, isLiveApiEnabled } from "@/lib/api/client";
+import {
+  buildChiefDecisionPayloadFromProposal,
+  enqueueLibrarianChiefDecision,
+  librarianDecisionIdempotencyKey,
+} from "@/lib/api/librarianRuntime";
+import {
+  buildMaintenanceTaskPayloadFromProposal,
+  enqueueMaintenanceTask,
+  maintenanceTaskIdempotencyKey,
+} from "@/lib/api/maintenanceRuntime";
+import {
+  buildPlannerTaskPayloadFromProposal,
+  enqueuePlannerWorkItem,
+  plannerTaskIdempotencyKey,
+} from "@/lib/api/plannerRuntime";
+import { useLibrarianWorkItems } from "@/hooks/useLibrarianWorkItems";
+import { useMaintenanceWorkItems } from "@/hooks/useMaintenanceWorkItems";
+import { usePlannerWorkItems } from "@/hooks/usePlannerWorkItems";
+import { useMonitorHealth } from "@/hooks/useMonitorHealth";
 import { ApprovalBoard } from "./ApprovalBoard";
 import { CommandHistory } from "./CommandHistory";
 import { buildApprovalFromResponse, buildHistoryEntry } from "./chiefMock";
-import { approvalActionSuccessMessage, type ApprovalActionState } from "./chiefApproval";
-import { deriveChiefBoardItems, resolveChiefCommand } from "./chiefLiveContext";
+import { approvalActionSuccessMessage, APPROVAL_STATUS_LABEL, type ApprovalActionState } from "./chiefApproval";
+import {
+  deriveAgentAwaitingApprovalWorkItems,
+  deriveChiefBoardItems,
+  resolveChiefCommand,
+} from "./chiefLiveContext";
+import { summarizePendingApprovalUrgency } from "./chiefApprovalUrgency";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
+import type { OpenAgentsOptions, OpenApprovalsOptions } from "./ChiefApprovalsContext";
 import { SpecialistCards } from "./SpecialistCards";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
 import { ChiefBoard } from "./ChiefBoard";
 import { AgentWorkBoard } from "./AgentWorkBoard";
-import type { ApprovalAction, ChiefResponse } from "./types";
+import { AgentActivityTimeline } from "./AgentActivityTimeline";
+import { GovernanceEventsPanel } from "./GovernanceEventsPanel";
+import { ChiefApprovalAuditPanel } from "./ChiefApprovalAuditPanel";
+import type { ApprovalAction, ApprovalProposal, ChiefResponse } from "./types";
 import type { ApprovalStatusFilter } from "./approvalStatus";
 
 const EXAMPLE_COMMANDS = [
@@ -22,7 +50,10 @@ const EXAMPLE_COMMANDS = [
   "Show open alerts",
 ];
 
-type ChiefTab = "command" | "board" | "agents" | "approvals" | "history";
+type ChiefTab = "command" | "board" | "agents" | "timeline" | "approvals" | "history" | "governance";
+
+const FOCUS_HIGHLIGHT_MS = 2000;
+const SHOW_GOVERNANCE_TAB = import.meta.env.DEV;
 
 export function ChiefPanel() {
   const { data, loading, source } = useData();
@@ -32,10 +63,12 @@ export function ChiefPanel() {
     pendingApprovalCount,
     proposalsById,
     decisionsHydrated,
+    decisionsHydrationError,
     addCommandApproval,
     recordDecision,
     history,
     addHistoryEntry,
+    registerNavigation,
   } = useChiefApprovals();
 
   const [activeTab, setActiveTab] = useState<ChiefTab>("command");
@@ -46,11 +79,92 @@ export function ChiefPanel() {
     Record<string, ApprovalActionState>
   >({});
   const [approvalStatusFilter, setApprovalStatusFilter] = useState<ApprovalStatusFilter>("all");
+  const [focusProposalId, setFocusProposalId] = useState<string | null>(null);
+  const [scrollAgentsToAwaiting, setScrollAgentsToAwaiting] = useState(false);
+  const liveApi = isLiveApiEnabled();
+  // Same hook and endpoints Monitor already uses — no new polling or data source.
+  const platformHealth = useMonitorHealth();
+  const {
+    byProposalId: librarianWorkByProposalId,
+    refetch: refetchLibrarianWorkItems,
+  } = useLibrarianWorkItems();
+  const [filingProposalId, setFilingProposalId] = useState<string | null>(null);
+  const [fileVaultFeedback, setFileVaultFeedback] = useState<string | null>(null);
+  const {
+    byProposalId: maintenanceWorkByProposalId,
+    refetch: refetchMaintenanceWorkItems,
+  } = useMaintenanceWorkItems();
+  const [filingMaintenanceProposalId, setFilingMaintenanceProposalId] = useState<string | null>(
+    null,
+  );
+  const [fileMaintenanceFeedback, setFileMaintenanceFeedback] = useState<string | null>(null);
+  const {
+    byProposalId: plannerWorkByProposalId,
+    refetch: refetchPlannerWorkItems,
+  } = usePlannerWorkItems();
+  const [filingPlannerProposalId, setFilingPlannerProposalId] = useState<string | null>(null);
+  const [filePlannerFeedback, setFilePlannerFeedback] = useState<string | null>(null);
 
-  const openApprovals = useCallback((filter: ApprovalStatusFilter = "all") => {
-    setApprovalStatusFilter(filter);
+  const openApprovals = useCallback((options?: OpenApprovalsOptions) => {
+    setApprovalStatusFilter(options?.filter ?? "all");
     setActiveTab("approvals");
+    if (options?.focusProposalId) {
+      setFocusProposalId(options.focusProposalId);
+    }
   }, []);
+
+  const openAgents = useCallback((options?: OpenAgentsOptions) => {
+    void options;
+    setActiveTab("agents");
+    setScrollAgentsToAwaiting(true);
+  }, []);
+
+  useEffect(() => {
+    registerNavigation({ openApprovals, openAgents });
+    return () => registerNavigation(null);
+  }, [openApprovals, openAgents, registerNavigation]);
+
+  useEffect(() => {
+    if (!focusProposalId || activeTab !== "approvals") return;
+
+    const scrollTimer = window.setTimeout(() => {
+      document
+        .getElementById(`approval-proposal-${focusProposalId}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }, 50);
+
+    const clearTimer = window.setTimeout(() => {
+      setFocusProposalId(null);
+    }, FOCUS_HIGHLIGHT_MS);
+
+    return () => {
+      window.clearTimeout(scrollTimer);
+      window.clearTimeout(clearTimer);
+    };
+  }, [focusProposalId, activeTab]);
+
+  useEffect(() => {
+    if (activeTab !== "agents" || !scrollAgentsToAwaiting) return;
+
+    const scrollTimer = window.setTimeout(() => {
+      document
+        .getElementById("agent-work-lane-awaiting_approval")
+        ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      setScrollAgentsToAwaiting(false);
+    }, 50);
+
+    return () => window.clearTimeout(scrollTimer);
+  }, [activeTab, scrollAgentsToAwaiting]);
+
+  const awaitingApprovalCount = useMemo(
+    () => deriveAgentAwaitingApprovalWorkItems(approvals).length,
+    [approvals],
+  );
+
+  const pendingUrgency = useMemo(
+    () => summarizePendingApprovalUrgency(approvals),
+    [approvals],
+  );
 
   const boardItems = useMemo(
     () => deriveChiefBoardItems(liveContext, approvals),
@@ -140,6 +254,126 @@ export function ChiefPanel() {
     [proposalsById, recordDecision, decisionsHydrated],
   );
 
+  const handleFileDecisionToVault = useCallback(
+    async (proposal: ApprovalProposal) => {
+      if (!liveApi) return;
+
+      setFilingProposalId(proposal.id);
+      setFileVaultFeedback(null);
+
+      try {
+        const existing = librarianWorkByProposalId.get(proposal.id);
+        const idempotencyKey =
+          existing?.status === "failed"
+            ? `${librarianDecisionIdempotencyKey(proposal.id)}:retry:${Date.now()}`
+            : librarianDecisionIdempotencyKey(proposal.id);
+
+        await enqueueLibrarianChiefDecision({
+          triggerType: "reactive",
+          chiefProposalId: proposal.id,
+          idempotencyKey,
+          inputPayload: buildChiefDecisionPayloadFromProposal({
+            proposalId: proposal.id,
+            title: proposal.title,
+            summary: proposal.summary,
+            recommendedAction: proposal.recommendedAction,
+            riskNote: proposal.riskNote,
+            decisionLabel: APPROVAL_STATUS_LABEL[proposal.status],
+          }),
+        });
+        await refetchLibrarianWorkItems();
+        setFileVaultFeedback("Queued for vault — run npm run librarian:run locally.");
+      } catch (error) {
+        setFileVaultFeedback(
+          error instanceof Error ? error.message : "Could not queue vault filing.",
+        );
+      } finally {
+        setFilingProposalId(null);
+      }
+    },
+    [liveApi, librarianWorkByProposalId, refetchLibrarianWorkItems],
+  );
+
+  const handleFileMaintenanceTask = useCallback(
+    async (proposal: ApprovalProposal) => {
+      if (!liveApi) return;
+
+      setFilingMaintenanceProposalId(proposal.id);
+      setFileMaintenanceFeedback(null);
+
+      try {
+        const existing = maintenanceWorkByProposalId.get(proposal.id);
+        const idempotencyKey =
+          existing?.status === "failed"
+            ? `${maintenanceTaskIdempotencyKey(proposal.id)}:retry:${Date.now()}`
+            : maintenanceTaskIdempotencyKey(proposal.id);
+
+        await enqueueMaintenanceTask({
+          triggerType: "reactive",
+          chiefProposalId: proposal.id,
+          idempotencyKey,
+          inputPayload: buildMaintenanceTaskPayloadFromProposal({
+            proposalId: proposal.id,
+            title: proposal.title,
+            summary: proposal.summary,
+            recommendedAction: proposal.recommendedAction,
+            riskNote: proposal.riskNote,
+            decisionLabel: APPROVAL_STATUS_LABEL[proposal.status],
+          }),
+        });
+        await refetchMaintenanceWorkItems();
+        setFileMaintenanceFeedback("Queued for maintenance — run npm run maintenance:run locally.");
+      } catch (error) {
+        setFileMaintenanceFeedback(
+          error instanceof Error ? error.message : "Could not queue maintenance filing.",
+        );
+      } finally {
+        setFilingMaintenanceProposalId(null);
+      }
+    },
+    [liveApi, maintenanceWorkByProposalId, refetchMaintenanceWorkItems],
+  );
+
+  const handleFileDecisionToPlanner = useCallback(
+    async (proposal: ApprovalProposal) => {
+      if (!liveApi) return;
+
+      setFilingPlannerProposalId(proposal.id);
+      setFilePlannerFeedback(null);
+
+      try {
+        const existing = plannerWorkByProposalId.get(proposal.id);
+        const idempotencyKey =
+          existing?.status === "failed"
+            ? `${plannerTaskIdempotencyKey(proposal.id)}:retry:${Date.now()}`
+            : plannerTaskIdempotencyKey(proposal.id);
+
+        await enqueuePlannerWorkItem({
+          triggerType: "reactive",
+          chiefProposalId: proposal.id,
+          idempotencyKey,
+          inputPayload: buildPlannerTaskPayloadFromProposal({
+            proposalId: proposal.id,
+            title: proposal.title,
+            summary: proposal.summary,
+            recommendedAction: proposal.recommendedAction,
+            riskNote: proposal.riskNote,
+            decisionLabel: APPROVAL_STATUS_LABEL[proposal.status],
+          }),
+        });
+        await refetchPlannerWorkItems();
+        setFilePlannerFeedback("Queued for Planner — run npm run planner:run locally.");
+      } catch (error) {
+        setFilePlannerFeedback(
+          error instanceof Error ? error.message : "Could not queue Planner filing.",
+        );
+      } finally {
+        setFilingPlannerProposalId(null);
+      }
+    },
+    [liveApi, plannerWorkByProposalId, refetchPlannerWorkItems],
+  );
+
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
     const command = input.trim();
@@ -227,6 +461,22 @@ export function ChiefPanel() {
           onClick={() => setActiveTab("agents")}
         >
           Agents
+          {awaitingApprovalCount > 0 ? (
+            <span className="chief-tab-badge" aria-label={`${awaitingApprovalCount} awaiting approval`}>
+              {awaitingApprovalCount}
+            </span>
+          ) : null}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          id="chief-tab-timeline"
+          aria-selected={activeTab === "timeline"}
+          aria-controls="chief-panel-timeline"
+          className={`chief-tab${activeTab === "timeline" ? " chief-tab--active" : ""}`}
+          onClick={() => setActiveTab("timeline")}
+        >
+          Timeline
         </button>
         <button
           type="button"
@@ -255,6 +505,19 @@ export function ChiefPanel() {
         >
           History
         </button>
+        {SHOW_GOVERNANCE_TAB ? (
+          <button
+            type="button"
+            role="tab"
+            id="chief-tab-governance"
+            aria-selected={activeTab === "governance"}
+            aria-controls="chief-panel-governance"
+            className={`chief-tab${activeTab === "governance" ? " chief-tab--active" : ""}`}
+            onClick={() => setActiveTab("governance")}
+          >
+            Governance
+          </button>
+        ) : null}
       </nav>
 
       <div className="chief-body">
@@ -268,7 +531,10 @@ export function ChiefPanel() {
             <ChiefSituationBrief
               context={liveContext}
               pendingApprovalCount={pendingApprovalCount}
-              onOpenApprovals={() => openApprovals("pending")}
+              pendingUrgency={pendingUrgency}
+              onOpenApprovals={() => openApprovals({ filter: "pending" })}
+              platformHealth={platformHealth}
+              liveApiEnabled={liveApi}
             />
 
             {!response && !isProcessing ? (
@@ -379,7 +645,7 @@ export function ChiefPanel() {
               proposalsById={proposalsById}
               approvalActionStates={approvalActionStates}
               onApprovalAction={handleApprovalAction}
-              onOpenApprovals={() => openApprovals("pending")}
+              onOpenApprovals={() => openApprovals({ filter: "pending" })}
             />
           </div>
         ) : null}
@@ -395,6 +661,17 @@ export function ChiefPanel() {
           </div>
         ) : null}
 
+        {activeTab === "timeline" ? (
+          <div
+            id="chief-panel-timeline"
+            role="tabpanel"
+            aria-labelledby="chief-tab-timeline"
+            className="chief-tab-panel"
+          >
+            <AgentActivityTimeline />
+          </div>
+        ) : null}
+
         {activeTab === "approvals" ? (
           <div
             id="chief-panel-approvals"
@@ -402,13 +679,46 @@ export function ChiefPanel() {
             aria-labelledby="chief-tab-approvals"
             className="chief-tab-panel"
           >
+            {decisionsHydrationError ? (
+              <p className="chief-approval-note" role="alert">
+                Couldn&apos;t refresh saved decisions from the server ({decisionsHydrationError}).
+                This list may not reflect the latest server state.
+              </p>
+            ) : null}
             <ApprovalBoard
               proposals={approvals}
               approvalActionStates={approvalActionStates}
               onApprovalAction={handleApprovalAction}
               statusFilter={approvalStatusFilter}
               onStatusFilterChange={setApprovalStatusFilter}
+              focusProposalId={focusProposalId}
+              onOpenAgents={openAgents}
+              liveApi={liveApi}
+              librarianWorkByProposalId={librarianWorkByProposalId}
+              filingProposalId={filingProposalId}
+              onFileDecisionToVault={handleFileDecisionToVault}
+              maintenanceWorkByProposalId={maintenanceWorkByProposalId}
+              filingMaintenanceProposalId={filingMaintenanceProposalId}
+              onFileMaintenanceTask={handleFileMaintenanceTask}
+              plannerWorkByProposalId={plannerWorkByProposalId}
+              filingPlannerProposalId={filingPlannerProposalId}
+              onFileDecisionToPlanner={handleFileDecisionToPlanner}
             />
+            {fileVaultFeedback ? (
+              <p className="chief-approval-note" role="status">
+                {fileVaultFeedback}
+              </p>
+            ) : null}
+            {fileMaintenanceFeedback ? (
+              <p className="chief-approval-note" role="status">
+                {fileMaintenanceFeedback}
+              </p>
+            ) : null}
+            {filePlannerFeedback ? (
+              <p className="chief-approval-note" role="status">
+                {filePlannerFeedback}
+              </p>
+            ) : null}
           </div>
         ) : null}
 
@@ -420,6 +730,18 @@ export function ChiefPanel() {
             className="chief-tab-panel"
           >
             <CommandHistory entries={history} />
+          </div>
+        ) : null}
+
+        {SHOW_GOVERNANCE_TAB && activeTab === "governance" ? (
+          <div
+            id="chief-panel-governance"
+            role="tabpanel"
+            aria-labelledby="chief-tab-governance"
+            className="chief-tab-panel"
+          >
+            <GovernanceEventsPanel />
+            <ChiefApprovalAuditPanel />
           </div>
         ) : null}
       </div>

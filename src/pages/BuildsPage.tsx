@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { captureEvent } from "@/lib/analytics/posthog";
 import {
   GatesCell,
   PageHeader,
@@ -38,10 +39,12 @@ export function BuildsPage() {
     const result = enqueueBuildAgentTestProposal(approvals);
     if (result.outcome === "blocked") {
       setBuildAgentTestFeedback("already_pending");
+      captureEvent("build_agent_test_proposed", { outcome: "already_pending" });
       return;
     }
     addCommandApproval(result.card);
     setBuildAgentTestFeedback("queued");
+    captureEvent("build_agent_test_proposed", { outcome: "queued" });
   }
   const buildWorkflows = data.workflows.filter((w) => w.type === "build");
   const buildTasks = data.tasks.filter((t) => t.workflowType === "build");

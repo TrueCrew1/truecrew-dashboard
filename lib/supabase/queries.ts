@@ -75,6 +75,39 @@ export async function insertChiefApprovalDecision(
   return { row: data as DbChiefApprovalDecisionRow, created: true };
 }
 
+export interface InsertPlannerApprovedTaskParams {
+  title: string;
+  description: string;
+  createdBy: "founder" | "operator" | "observer";
+}
+
+/**
+ * Creates a tasks row from a Planner work item whose chief_proposal_id maps
+ * to an approved chief_approval_decisions row — the one bounded Planner
+ * action allowed to mutate the tasks table. Callers must verify approval
+ * via getChiefApprovalDecision before calling this.
+ */
+export async function insertPlannerApprovedTask(
+  params: InsertPlannerApprovedTaskParams,
+): Promise<DbTaskRow> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("tasks")
+    .insert({
+      title: params.title,
+      description: params.description,
+      stage: "Planned",
+      workflow_type: "build",
+      priority: "medium",
+      created_by: params.createdBy,
+    })
+    .select("*, gate_checks(*)")
+    .single();
+
+  if (error) throw error;
+  return data as DbTaskRow;
+}
+
 export async function updateTaskStage(
   taskId: string,
   stage: string,

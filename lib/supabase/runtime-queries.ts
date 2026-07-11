@@ -4,12 +4,16 @@ import type {
   DbRuntimeArtifactRow,
   DbRuntimeExecutionJobRow,
   DbRuntimeMaintenanceWorkItemRow,
+  DbRuntimePlannerWorkItemRow,
   DbRuntimeSinkDeliveryRow,
   DbRuntimeWorkItemRow,
   LibrarianInputKind,
   MaintenanceTaskPayload,
+  PlannerTaskPayload,
   RuntimeExecutionJobStatus,
+  RuntimeMaintenanceWorkItemClient,
   RuntimePassRecord,
+  RuntimePlannerWorkItemClient,
   RuntimeRequestedBy,
   RuntimeTriggerType,
   RuntimeWorkItemClient,
@@ -144,6 +148,44 @@ export async function insertRuntimeMaintenanceWorkItem(
   return data as DbRuntimeMaintenanceWorkItemRow;
 }
 
+export interface InsertRuntimePlannerWorkItemParams {
+  triggerType: RuntimeTriggerType;
+  inputPayload: PlannerTaskPayload;
+  idempotencyKey?: string | null;
+  requestedBy: RuntimeRequestedBy;
+  chiefProposalId?: string | null;
+}
+
+export async function insertRuntimePlannerWorkItem(
+  params: InsertRuntimePlannerWorkItemParams,
+): Promise<DbRuntimePlannerWorkItemRow> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("runtime_work_items")
+    .insert({
+      agent_role: "planner",
+      trigger_type: params.triggerType,
+      input_kind: "planning_task",
+      input_payload: params.inputPayload,
+      status: "queued",
+      idempotency_key: params.idempotencyKey ?? null,
+      requested_by: params.requestedBy,
+      chief_proposal_id: params.chiefProposalId ?? null,
+    })
+    .select("*")
+    .single();
+
+  if (error) {
+    if (error.code === "23505" && params.idempotencyKey) {
+      const existing = await getRuntimeWorkItemByIdempotencyKey(params.idempotencyKey);
+      if (existing) return existing as unknown as DbRuntimePlannerWorkItemRow;
+    }
+    throw error;
+  }
+
+  return data as DbRuntimePlannerWorkItemRow;
+}
+
 export async function fetchLibrarianWorkItems(limit = 20): Promise<RuntimeWorkItemClient[]> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
@@ -161,6 +203,88 @@ export async function fetchLibrarianWorkItems(limit = 20): Promise<RuntimeWorkIt
 
   return rows.map((row) =>
     mapRuntimeWorkItemToClient(row, obsidianByWorkItem.get(row.id) ?? null),
+  );
+}
+
+export function mapRuntimeMaintenanceWorkItemToClient(
+  row: DbRuntimeMaintenanceWorkItemRow,
+  latestObsidianPath: string | null = null,
+): RuntimeMaintenanceWorkItemClient {
+  return {
+    id: row.id,
+    agentRole: row.agent_role,
+    triggerType: row.trigger_type,
+    inputKind: row.input_kind,
+    inputPayload: row.input_payload,
+    status: row.status,
+    idempotencyKey: row.idempotency_key,
+    requestedBy: row.requested_by,
+    chiefProposalId: row.chief_proposal_id,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    latestObsidianPath,
+  };
+}
+
+export async function fetchMaintenanceWorkItems(
+  limit = 20,
+): Promise<RuntimeMaintenanceWorkItemClient[]> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("runtime_work_items")
+    .select("*")
+    .eq("agent_role", "maintenance")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  const rows = (data ?? []) as DbRuntimeMaintenanceWorkItemRow[];
+
+  const completedIds = rows.filter((row) => row.status === "completed").map((row) => row.id);
+  const obsidianByWorkItem = await fetchLatestObsidianPathsForWorkItems(completedIds);
+
+  return rows.map((row) =>
+    mapRuntimeMaintenanceWorkItemToClient(row, obsidianByWorkItem.get(row.id) ?? null),
+  );
+}
+
+export function mapRuntimePlannerWorkItemToClient(
+  row: DbRuntimePlannerWorkItemRow,
+  latestObsidianPath: string | null = null,
+): RuntimePlannerWorkItemClient {
+  return {
+    id: row.id,
+    agentRole: row.agent_role,
+    triggerType: row.trigger_type,
+    inputKind: row.input_kind,
+    inputPayload: row.input_payload,
+    status: row.status,
+    idempotencyKey: row.idempotency_key,
+    requestedBy: row.requested_by,
+    chiefProposalId: row.chief_proposal_id,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    latestObsidianPath,
+  };
+}
+
+export async function fetchPlannerWorkItems(limit = 20): Promise<RuntimePlannerWorkItemClient[]> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("runtime_work_items")
+    .select("*")
+    .eq("agent_role", "planner")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  const rows = (data ?? []) as DbRuntimePlannerWorkItemRow[];
+
+  const completedIds = rows.filter((row) => row.status === "completed").map((row) => row.id);
+  const obsidianByWorkItem = await fetchLatestObsidianPathsForWorkItems(completedIds);
+
+  return rows.map((row) =>
+    mapRuntimePlannerWorkItemToClient(row, obsidianByWorkItem.get(row.id) ?? null),
   );
 }
 
@@ -237,6 +361,10 @@ export async function claimNextQueuedLibrarianWorkItem(): Promise<DbRuntimeWorkI
 
 export async function claimNextQueuedMaintenanceWorkItem(): Promise<DbRuntimeMaintenanceWorkItemRow | null> {
   return claimNextQueuedWorkItemByRole<DbRuntimeMaintenanceWorkItemRow>("maintenance");
+}
+
+export async function claimNextQueuedPlannerWorkItem(): Promise<DbRuntimePlannerWorkItemRow | null> {
+  return claimNextQueuedWorkItemByRole<DbRuntimePlannerWorkItemRow>("planner");
 }
 
 export async function updateRuntimeWorkItemStatus(

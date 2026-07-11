@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useData } from "@/context/DataContext";
+import { captureEvent } from "@/lib/analytics/posthog";
 import type { GateCheck } from "@/types";
 import { WORKFLOW_STAGES, WorkflowStage } from "@/types";
 
@@ -152,6 +153,7 @@ export function TaskStageSelect({
 
     try {
       await updateTaskStage(taskId, next);
+      captureEvent("task_stage_changed", { task_id: taskId, from_stage: stage, to_stage: next });
       setSaved(true);
       if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
       savedTimerRef.current = setTimeout(() => setSaved(false), 2500);

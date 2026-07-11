@@ -1,8 +1,12 @@
-import { FormEvent, useMemo, useRef, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { Panel } from "@/components/ui";
 import { useData } from "@/context/DataContext";
+import { isLiveApiEnabled } from "@/lib/api/client";
+import { useMonitorHealth } from "@/hooks/useMonitorHealth";
+import { captureEvent } from "@/lib/analytics/posthog";
 import { buildApprovalFromResponse, buildHistoryEntry } from "./chiefMock";
 import { deriveChiefBoardItems, resolveChiefCommand } from "./chiefLiveContext";
+import { summarizePendingApprovalUrgency } from "./chiefApprovalUrgency";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
 import type { ChiefResponse } from "./types";
@@ -11,17 +15,30 @@ const SNAPSHOT_LIMIT = 4;
 
 export function ChiefHomePanel() {
   const { data } = useData();
-  const approvalSnapshotRef = useRef<HTMLDivElement>(null);
 
   // Shared with the sidebar Chief panel (ChiefApprovalsContext) — same
   // merged, decision-applied queue, so counts here stay in sync with the
   // sidebar within the same session instead of only matching at load.
-  const { liveContext, approvals, addCommandApproval, addHistoryEntry } = useChiefApprovals();
+  const { liveContext, approvals, addCommandApproval, addHistoryEntry, navigation } =
+    useChiefApprovals();
+
+  // Same hook and endpoints Monitor already uses — no new polling or data source.
+  const platformHealth = useMonitorHealth();
+  const liveApiEnabled = isLiveApiEnabled();
 
   const pendingApprovals = useMemo(
     () => approvals.filter((proposal) => proposal.status === "pending"),
     [approvals],
   );
+
+  const pendingUrgency = useMemo(
+    () => summarizePendingApprovalUrgency(approvals),
+    [approvals],
+  );
+
+  const openChiefApprovals = () => {
+    navigation?.openApprovals({ filter: "pending" });
+  };
 
   const boardItems = useMemo(
     () => deriveChiefBoardItems(liveContext, approvals),
@@ -54,6 +71,7 @@ export function ChiefHomePanel() {
       const result = resolveChiefCommand(trimmed, data, liveContext, approvals);
       setResponse(result);
       addHistoryEntry(buildHistoryEntry(trimmed, result));
+      captureEvent("chief_command_submitted", { approval_needed: result.approvalNeeded ?? false });
 
       const newApproval = buildApprovalFromResponse(trimmed, result);
       if (newApproval) {
@@ -70,9 +88,10 @@ export function ChiefHomePanel() {
         <ChiefSituationBrief
           context={liveContext}
           pendingApprovalCount={pendingApprovals.length}
-          onOpenApprovals={() =>
-            approvalSnapshotRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-          }
+          pendingUrgency={pendingUrgency}
+          onOpenApprovals={openChiefApprovals}
+          platformHealth={platformHealth}
+          liveApiEnabled={liveApiEnabled}
         />
 
         <form className="chief-home-intake" onSubmit={handleSubmit}>
@@ -115,7 +134,7 @@ export function ChiefHomePanel() {
         </form>
 
         <div className="chief-home-snapshots">
-          <div className="chief-home-snapshot" ref={approvalSnapshotRef}>
+          <div className="chief-home-snapshot">
             <header className="chief-home-snapshot-header">
               <h3 className="chief-home-snapshot-title">Needs approval</h3>
               <span className="chief-board-lane-count">{pendingApprovals.length}</span>
@@ -138,9 +157,24 @@ export function ChiefHomePanel() {
             )}
             {pendingApprovals.length > SNAPSHOT_LIMIT ? (
               <p className="chief-board-lane-note">
-                Showing {SNAPSHOT_LIMIT} of {pendingApprovals.length} — review the rest in the
-                Chief panel's Approvals tab.
+                Showing {SNAPSHOT_LIMIT} of {pendingApprovals.length} —{" "}
+                <button
+                  type="button"
+                  className="chief-board-lane-note chief-board-lane-note--link"
+                  onClick={openChiefApprovals}
+                >
+                  review the rest in Chief Approvals
+                </button>
+                .
               </p>
+            ) : pendingApprovals.length > 0 ? (
+              <button
+                type="button"
+                className="chief-board-lane-note chief-board-lane-note--link"
+                onClick={openChiefApprovals}
+              >
+                Open in Chief Approvals
+              </button>
             ) : null}
           </div>
 

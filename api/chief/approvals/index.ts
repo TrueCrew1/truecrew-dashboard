@@ -1,7 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { requireInternalAuth } from "../../../lib/auth.js";
 import { mapDbChiefApprovalDecisionToClient } from "../../../lib/mappers/chief-approvals.js";
-import { isSupabaseConfigured } from "../../../lib/supabase/admin.js";
+import { createPostHogClient, getPostHogContext } from "../../../lib/posthog/server.js";
+import { isSupabaseConfigured, writeAuditEvent } from "../../../lib/supabase/admin.js";
 import {
   fetchChiefApprovalDecisions,
   insertChiefApprovalDecision,
@@ -69,6 +70,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           error: "Already decided",
           decision,
         });
+      }
+
+      try {
+        await writeAuditEvent(
+          "chief_approval_decision",
+          proposalId,
+          `chief.approval.${decision.status}`,
+          { status: decision.status, decidedAt: decision.decidedAt },
+          actor ?? "operator",
+        );
+      } catch {
+        // Fail open per ADR-001
+      }
+
+      const ph = createPostHogClient();
+      if (ph) {
+        const { distinctId, sessionId } = getPostHogContext(req);
+        await ph.withContext({ distinctId, sessionId }, async () => {
+          ph.capture({
+            event: "server_approval_decision_recorded",
+            properties: { proposal_id: proposalId, status: body.status, actor },
+          });
+        });
+        await ph.shutdown().catch(() => {});
       }
 
       return res.status(201).json({ decision });

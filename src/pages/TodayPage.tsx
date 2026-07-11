@@ -1,6 +1,14 @@
-import { useMemo } from "react";
+/**
+ * Today route — intended first multi-tenant dashboard slice (work orders).
+ *
+ * The work-order scaffold above reflects the target layout; data should eventually
+ * be scoped to the user's current org via live memberships (ADR-002). Work orders
+ * stay backend-mediated for v1 — no direct work_order RLS access is assumed here.
+ * Legacy task/incident panels below remain until operational APIs are promoted.
+ */
+import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ShiftStatsStrip } from "@/components/dashboard/ShiftStatsStrip";
+import { captureEvent } from "@/lib/analytics/posthog";
 import { ChiefHomePanel } from "@/components/chief/ChiefHomePanel";
 import { EntityContextMeta, TaskCell } from "@/components/tasks/TaskCell";
 import { TaskWarningSummary } from "@/components/tasks/TaskWarningSummary";
@@ -27,10 +35,26 @@ import {
   useTodayPanelWarningFilter,
   useTodayTaskPanelWarningFilter,
 } from "./todayWarningPanel";
+import { useTodayWorkOrders } from "@/hooks/useTodayWorkOrders";
+import {
+  clearTodayRouteSentryContext,
+  setTodayRouteSentryContext,
+} from "@/lib/sentry/client";
+import { TodayWorkOrdersScaffold } from "./todayWorkOrdersScaffold";
 
 export function TodayPage() {
   const { selectedEntityId, setSelectedEntityId } = useSelection();
   const { data } = useData();
+  const { state: workOrdersState, retry: retryWorkOrders } = useTodayWorkOrders();
+
+  useEffect(() => {
+    const orgId =
+      workOrdersState.status !== "loading" && workOrdersState.status !== "error"
+        ? workOrdersState.data.org_context.org_id
+        : undefined;
+    setTodayRouteSentryContext(orgId);
+    return () => clearTodayRouteSentryContext();
+  }, [workOrdersState]);
 
   const activeIncidents = data.incidents.filter(
     (i) => i.severity <= 2 && isActiveIncidentStatus(i.status),
@@ -63,12 +87,26 @@ export function TodayPage() {
     <>
       <PageHeader
         title="Today"
-        subtitle="Focus items, overdue gates, and active Sev 1–2 incidents"
+        accent="Work orders"
+        subtitle="Org-scoped shift command center — work orders, attention items, and crew schedule (scaffold)"
       />
 
-      <ShiftStatsStrip />
+      <TodayWorkOrdersScaffold
+        state={workOrdersState}
+        onRetry={() => {
+          captureEvent("today_work_orders_retry", {});
+          void retryWorkOrders();
+        }}
+      />
 
       <div className="page-stack">
+        <Panel title="Operator backlog (legacy)">
+          <p className="today-panel-help">
+            Existing task, incident, and gate panels — pre–multi-tenant mock data. Will
+            migrate or retire as org-scoped work-order APIs replace this slice.
+          </p>
+        </Panel>
+
         <ChiefHomePanel />
 
         <div className="grid-2">

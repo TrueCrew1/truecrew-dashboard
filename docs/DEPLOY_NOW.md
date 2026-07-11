@@ -28,6 +28,16 @@ PR #3 is merged to `main`. Complete these steps once — then every push to `mai
 | `VITE_USE_LIVE_API` | `true` |
 | `GITHUB_WEBHOOK_SECRET` | Generate: `openssl rand -hex 32` |
 
+**Observability (optional — Today analytics + errors):** see [OBSERVABILITY.md](OBSERVABILITY.md).
+Add for Preview + Production, then redeploy:
+
+| Name | Value |
+|---|---|
+| `VITE_POSTHOG_API_KEY` | PostHog project API key (`phc_…`) |
+| `VITE_POSTHOG_HOST` | `https://us.i.posthog.com` (or EU host) |
+| `VITE_SENTRY_DSN` | Sentry project DSN |
+| `SENTRY_DSN` | Same DSN (server-side Today API) |
+
 4. Deploy → copy your production URL (e.g. `https://truecrew-dashboard.vercel.app`)
 
 ## Step 3 — GitHub Actions secrets (1 min)

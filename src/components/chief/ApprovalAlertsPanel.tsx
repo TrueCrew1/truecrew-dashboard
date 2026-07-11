@@ -5,8 +5,9 @@ import { ApprovalSectionShell, ApprovalSurfaceEmpty } from "./approvalWrappers";
 export function ApprovalAlertsPanel() {
   const { decisions, isLoading, error } = useApprovalAlerts();
 
-  // TODO: swap for useApprovalAlerts()'s own refetch once the hook exposes one.
-  const handleRetry = () => window.location.reload();
+  // This reloads the whole page, not just the panel's data — label must say
+  // so. Swap for useApprovalAlerts()'s own refetch once the hook exposes one.
+  const handleReload = () => window.location.reload();
 
   return (
     <ApprovalSectionShell
@@ -30,8 +31,8 @@ export function ApprovalAlertsPanel() {
         <div className="chief-section-empty" role="alert">
           <p className="chief-section-empty-lead">Couldn't load approval alerts</p>
           <p className="chief-section-empty-desc">{error}</p>
-          <button type="button" className="chief-approval-filter-clear" onClick={handleRetry}>
-            Retry
+          <button type="button" className="chief-approval-filter-clear" onClick={handleReload}>
+            Reload page
           </button>
         </div>
       ) : decisions.length === 0 ? (

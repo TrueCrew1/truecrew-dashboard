@@ -121,3 +121,60 @@ export interface DbRuntimeMaintenanceWorkItemRow {
   created_at: string;
   updated_at: string;
 }
+
+export interface RuntimeMaintenanceWorkItemClient {
+  id: string;
+  agentRole: string;
+  triggerType: RuntimeTriggerType;
+  inputKind: MaintenanceInputKind;
+  inputPayload: MaintenanceTaskPayload;
+  status: RuntimeWorkItemStatus;
+  idempotencyKey: string | null;
+  requestedBy: RuntimeRequestedBy;
+  chiefProposalId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  latestObsidianPath: string | null;
+}
+
+export const PLANNER_AGENT_ROLE = "planner" as const;
+
+export const PLANNER_INPUT_KINDS = ["planning_task"] as const;
+export type PlannerInputKind = (typeof PLANNER_INPUT_KINDS)[number];
+
+export interface PlannerTaskPayload {
+  title: string;
+  description: string;
+  context?: string;
+  notes?: string;
+  proposalId?: string;
+}
+
+export interface DbRuntimePlannerWorkItemRow {
+  id: string;
+  agent_role: string;
+  trigger_type: RuntimeTriggerType;
+  input_kind: PlannerInputKind;
+  input_payload: PlannerTaskPayload;
+  status: RuntimeWorkItemStatus;
+  idempotency_key: string | null;
+  requested_by: RuntimeRequestedBy;
+  chief_proposal_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RuntimePlannerWorkItemClient {
+  id: string;
+  agentRole: string;
+  triggerType: RuntimeTriggerType;
+  inputKind: PlannerInputKind;
+  inputPayload: PlannerTaskPayload;
+  status: RuntimeWorkItemStatus;
+  idempotencyKey: string | null;
+  requestedBy: RuntimeRequestedBy;
+  chiefProposalId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  latestObsidianPath: string | null;
+}

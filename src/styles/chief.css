@@ -677,6 +677,22 @@ button.chief-brief-metric {
   line-height: 1.2;
 }
 
+.chief-brief-metric-sublabel {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--red);
+  line-height: 1.2;
+  text-align: center;
+}
+
+.chief-brief-metric--critical .chief-brief-metric-sublabel {
+  color: var(--red);
+}
+
+.chief-brief-metric--warn .chief-brief-metric-sublabel {
+  color: var(--yellow);
+}
+
 .chief-brief-footnote {
   margin: 10px 0 0;
   font-size: 10px;
@@ -770,6 +786,38 @@ button.chief-brief-metric {
 .chief-board-lane-note--escalate {
   color: var(--red);
   font-weight: 600;
+}
+
+.chief-board-lane-note--link {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.chief-board-lane-note--link:hover {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.chief-approval-card--focused {
+  animation: chief-approval-focus-pulse 2s ease-out;
+  outline: 2px solid var(--orange-border);
+  outline-offset: 2px;
+}
+
+@keyframes chief-approval-focus-pulse {
+  0% {
+    background: rgba(255, 122, 26, 0.14);
+    outline-color: var(--orange);
+  }
+  100% {
+    background: transparent;
+    outline-color: var(--orange-border);
+  }
 }
 
 .chief-board-list {
@@ -1287,6 +1335,86 @@ button.chief-brief-metric {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.chief-governance {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chief-governance-note {
+  margin: 0;
+  font-size: 10px;
+  color: var(--steel-dim);
+  line-height: 1.45;
+}
+
+.chief-governance-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chief-governance-card {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(148, 163, 184, 0.04);
+}
+
+.chief-governance-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.chief-governance-card-type {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.chief-governance-meta {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chief-governance-meta-row {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.chief-governance-meta-row dt {
+  margin: 0;
+  font-weight: 600;
+  color: var(--steel-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.chief-governance-meta-row dd {
+  margin: 0;
+  color: var(--steel);
+  min-width: 0;
+}
+
+.chief-governance-proposal-id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 9px;
+  word-break: break-all;
 }
 
 .chief-approval-risk {
@@ -2574,6 +2702,24 @@ button.chief-brief-metric {
   line-height: 1.45;
 }
 
+.agent-activity-day-group {
+  margin-top: 16px;
+}
+
+.agent-activity-day-group:first-of-type {
+  margin-top: 10px;
+}
+
+.agent-activity-day-header {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--steel-dim);
+}
+
 /* Approval status dashboard */
 .chief-approval-tab {
   display: flex;
@@ -2769,6 +2915,20 @@ button.chief-brief-metric {
   min-width: 0;
 }
 
+.agent-work-card-agent--clickable {
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.agent-work-card-agent--clickable:hover .agent-work-card-agent-name {
+  color: var(--orange);
+}
+
 .agent-work-card-avatar {
   flex-shrink: 0;
   display: inline-flex;
@@ -2825,6 +2985,256 @@ button.chief-brief-metric {
 .agent-work-card-time {
   font-size: 9px;
   color: var(--steel-dim);
+}
+
+.agent-overview-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.agent-overview-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.agent-overview-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  transition: opacity 0.15s ease;
+}
+
+.agent-overview-pill:not(.active) {
+  opacity: 0.5;
+}
+
+.agent-overview-pill:hover {
+  opacity: 0.85;
+}
+
+.agent-overview-pill.active:hover {
+  opacity: 1;
+}
+
+.agent-overview-pill-visibility {
+  flex-shrink: 0;
+  display: inline-flex;
+  cursor: pointer;
+}
+
+.agent-overview-pill-visibility input {
+  cursor: pointer;
+}
+
+.agent-overview-pill-open {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.agent-overview-pill-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.agent-overview-pill-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.agent-overview-pill-summary {
+  font-size: 9px;
+  color: var(--steel-dim);
+  white-space: nowrap;
+}
+
+.agent-work-lane-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.agent-work-lane-heading:hover .agent-work-lane-title {
+  color: var(--orange);
+}
+
+.agent-work-lane-heading-text {
+  min-width: 0;
+}
+
+.agent-work-lane-description {
+  margin: 2px 0 0;
+  font-size: 10px;
+  color: var(--steel-dim);
+  line-height: 1.4;
+}
+
+.agent-work-lane-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.agent-detail-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 26;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.agent-detail-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--chief-width);
+  z-index: 27;
+  background: rgba(10, 11, 13, 0.98);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  box-shadow: -12px 0 32px rgba(0, 0, 0, 0.45);
+  animation: agent-detail-drawer-in 160ms ease-out;
+}
+
+.app-shell.rail-open .agent-detail-drawer {
+  right: var(--rail-width);
+}
+
+@keyframes agent-detail-drawer-in {
+  from {
+    transform: translateX(16px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.agent-detail-drawer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.agent-detail-drawer-identity {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.agent-detail-drawer-avatar {
+  width: 26px;
+  height: 26px;
+  font-size: 10px;
+}
+
+.agent-detail-drawer-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.agent-detail-drawer-description {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: var(--steel-dim);
+  line-height: 1.5;
+}
+
+.agent-detail-drawer-close {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--steel);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.agent-detail-drawer-close:hover {
+  border-color: var(--orange-border);
+  color: var(--text);
+}
+
+.agent-detail-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.agent-detail-drawer-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.agent-detail-drawer-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.agent-detail-drawer-filtered-note {
+  margin-bottom: 12px;
+}
+
+.agent-detail-drawer-section-title {
+  margin: 20px 0 8px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--steel-dim);
+}
+
+.agent-detail-drawer-section-title:first-of-type {
+  margin-top: 0;
 }
 
 .chief-home-panel {

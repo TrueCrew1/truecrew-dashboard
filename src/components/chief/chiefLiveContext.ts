@@ -654,6 +654,132 @@ export function deriveAgentAwaitingApprovalWorkItems(
   return items;
 }
 
+function librarianWorkItemPriority(status: AgentWorkItem["status"]): TaskPriority {
+  if (status === "blocked") return "high";
+  if (status === "queued" || status === "active") return "medium";
+  return "low";
+}
+
+function mapRuntimeStatusToAgentWorkStatus(
+  status: string,
+): AgentWorkItem["status"] {
+  switch (status) {
+    case "queued":
+      return "queued";
+    case "running":
+      return "active";
+    case "completed":
+      return "completed";
+    case "failed":
+      return "blocked";
+    default:
+      return "queued";
+  }
+}
+
+function librarianWorkItemNote(
+  status: AgentWorkItem["status"],
+  latestObsidianPath: string | null,
+): string {
+  if (status === "completed" && latestObsidianPath) {
+    return `Filed to vault — ${latestObsidianPath}`;
+  }
+  if (status === "completed") {
+    return "Filed to vault.";
+  }
+  if (status === "blocked") {
+    return "Filing failed — review work item and retry.";
+  }
+  if (status === "active") {
+    return "Filing in progress locally.";
+  }
+  return "Queued — run npm run librarian:run locally.";
+}
+
+/**
+ * Live Librarian / Obsidian Agent rows from runtime_work_items.
+ * v1: chief_decision filing loop only.
+ */
+export function deriveLibrarianAgentWorkItems(
+  workItems: Array<{
+    id: string;
+    inputPayload: { title: string };
+    status: string;
+    updatedAt: string;
+    latestObsidianPath: string | null;
+  }>,
+): AgentWorkItem[] {
+  return workItems.map((item) => {
+    const status = mapRuntimeStatusToAgentWorkStatus(item.status);
+    return {
+      id: `agentwork-librarian-${item.id}`,
+      agent: "Librarian Agent",
+      task: `File decision: ${item.inputPayload.title}`,
+      status,
+      priority: librarianWorkItemPriority(status),
+      note: librarianWorkItemNote(status, item.latestObsidianPath),
+      updatedAt: item.updatedAt,
+      source: "live",
+    };
+  });
+}
+
+function plannerWorkItemPriority(status: AgentWorkItem["status"]): TaskPriority {
+  if (status === "blocked") return "high";
+  if (status === "queued" || status === "active") return "medium";
+  return "low";
+}
+
+function plannerWorkItemNote(
+  status: AgentWorkItem["status"],
+  latestObsidianPath: string | null,
+): string {
+  if (status === "completed" && latestObsidianPath) {
+    return `Filed to vault — ${latestObsidianPath}`;
+  }
+  if (status === "completed") {
+    return "Filed to vault.";
+  }
+  if (status === "blocked") {
+    return "Filing failed — review work item and retry.";
+  }
+  if (status === "active") {
+    return "Filing in progress locally.";
+  }
+  return "Queued — run npm run planner:run locally.";
+}
+
+/**
+ * Live Roadmap Agent (Planner) rows from runtime_work_items. Mirrors
+ * deriveLibrarianAgentWorkItems exactly — same runtime work-item shape,
+ * same status mapping. Reports only what the frontend can prove (vault
+ * filing status); it does not claim visibility into any task the Planner
+ * pipeline may also have created.
+ */
+export function derivePlannerAgentWorkItems(
+  workItems: Array<{
+    id: string;
+    inputPayload: { title: string };
+    status: string;
+    updatedAt: string;
+    latestObsidianPath: string | null;
+  }>,
+): AgentWorkItem[] {
+  return workItems.map((item) => {
+    const status = mapRuntimeStatusToAgentWorkStatus(item.status);
+    return {
+      id: `agentwork-planner-${item.id}`,
+      agent: "Roadmap Agent",
+      task: `Plan: ${item.inputPayload.title}`,
+      status,
+      priority: plannerWorkItemPriority(status),
+      note: plannerWorkItemNote(status, item.latestObsidianPath),
+      updatedAt: item.updatedAt,
+      source: "live",
+    };
+  });
+}
+
 export function deriveChiefBoardItems(
   ctx: ChiefLiveContext,
   pendingApprovals: ApprovalProposal[],

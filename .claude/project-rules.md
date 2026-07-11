@@ -24,4 +24,7 @@
   [docs/AGENT_WORKFLOW.md](../docs/AGENT_WORKFLOW.md): implement, open a PR using
   [docs/PR_SUMMARY_TEMPLATE.md](../docs/PR_SUMMARY_TEMPLATE.md), let the approver review. Never ask
   the approver to run commands — put anything that must run outside the agent in an **Ops to run**
-  section.
+  section. Agent ecosystem law (Chief, gates, approval discipline):
+  [docs/AGENT_CONSTITUTION.md](../docs/AGENT_CONSTITUTION.md). See
+  [docs/EXECUTION_KIT.md](../docs/EXECUTION_KIT.md) for which lane (tool/agent) should handle a
+  given task and for copy-paste kickoff prompts.

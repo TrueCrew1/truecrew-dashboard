@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { requireInternalAuth } from "../../lib/auth.js";
 import { mapDbTaskToClient } from "../../lib/mappers/tasks.js";
+import { createPostHogClient, getPostHogContext } from "../../lib/posthog/server.js";
 import { isSupabaseConfigured } from "../../lib/supabase/admin.js";
 import { updateTaskStage } from "../../lib/supabase/queries.js";
 
@@ -43,6 +44,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const row = await updateTaskStage(taskId, body.stage);
     const task = mapDbTaskToClient(row);
+
+    const ph = createPostHogClient();
+    if (ph) {
+      const { distinctId, sessionId } = getPostHogContext(req);
+      await ph.withContext({ distinctId, sessionId }, async () => {
+        ph.capture({
+          event: "server_task_stage_changed",
+          properties: { task_id: taskId, stage: body.stage },
+        });
+      });
+      await ph.shutdown().catch(() => {});
+    }
+
     return res.status(200).json({ task });
   } catch (error) {
     if (error instanceof Error && error.message === "Task not found") {

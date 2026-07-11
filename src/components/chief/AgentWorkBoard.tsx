@@ -1,112 +1,146 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { ApprovalSectionHeader, ApprovalSectionShell, ApprovalSurfaceEmpty } from "./approvalWrappers";
-import { AGENT_WORK_ITEMS, AGENT_WORK_STATUS_CONFIG } from "./agentWorkBoardMock";
-import { formatChiefTimestamp } from "./chiefMock";
 import {
-  deriveAgentAwaitingApprovalWorkItems,
-  deriveBuildAgentWorkItems,
-  deriveResearchAgentWorkItems,
-  deriveWorkflowGateAgentWorkItems,
-} from "./chiefLiveContext";
-import { getApprovalUrgencyBadge, OVERDUE_HOURS } from "./chiefApprovalUrgency";
+  AGENT_DIRECTORY,
+  type AgentDirectoryEntry,
+} from "./agentWorkBoardMock";
+import { deriveAgentAwaitingApprovalWorkItems } from "./chiefLiveContext";
+import { deriveAgentActivityTimeline, recentActivityForAgent } from "./agentActivityFeed";
+import { combineAgentWorkItems } from "./agentWorkItems";
+import { useLibrarianWorkItems } from "@/hooks/useLibrarianWorkItems";
+import { usePlannerWorkItems } from "@/hooks/usePlannerWorkItems";
+import { getApprovalUrgencyBadge } from "./chiefApprovalUrgency";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { useData } from "@/context/DataContext";
-import type { AgentWorkItem, AgentWorkStatus, ApprovalProposal } from "./types";
-import type { TaskPriority } from "@/types";
+import { AgentDetailDrawer } from "./AgentDetailDrawer";
+import {
+  AgentWorkCard,
+  LivenessBadge,
+  SPECIALIST_INITIALS,
+  classifyAgentLiveness,
+  resolveOpenAgentEntry,
+  sortByStatusThenRecency,
+  summarizeStatusCounts,
+} from "./agentWorkPresentation";
+import type { AgentWorkAgentName, AgentWorkItem, ApprovalProposal } from "./types";
 
-const SPECIALIST_INITIALS: Record<AgentWorkItem["agent"], string> = {
-  "Workflow Gate Agent": "WG",
-  "Librarian Agent": "LB",
-  "Research Agent": "RS",
-  "Roadmap Agent": "RM",
-  "Marketer Agent": "MK",
-  "Build Agent": "BD",
-};
+type LiveFilter = "all" | "live" | "mock";
 
-const PRIORITY_BADGE_VARIANT: Record<TaskPriority, "red" | "orange" | "yellow" | "steel"> = {
-  critical: "red",
-  high: "orange",
-  medium: "yellow",
-  low: "steel",
-};
-
-const STATUS_NOTE_LABEL: Record<AgentWorkStatus, string> = {
-  queued: "Next",
-  active: "Next",
-  blocked: "Blocker",
-  awaiting_approval: "Blocker",
-  completed: "Result",
-};
-
-function itemsForStatus(items: AgentWorkItem[], status: AgentWorkStatus): AgentWorkItem[] {
-  return items.filter((item) => item.status === status);
-}
-
-function AgentWorkCard({
-  item,
-  proposal,
+function AgentOverviewPill({
+  entry,
+  items,
+  selected,
+  onToggleVisibility,
+  onOpenDetail,
 }: {
-  item: AgentWorkItem;
-  proposal?: ApprovalProposal;
+  entry: AgentDirectoryEntry;
+  items: AgentWorkItem[];
+  selected: boolean;
+  onToggleVisibility: () => void;
+  onOpenDetail: () => void;
 }) {
-  const urgencyBadge = proposal ? getApprovalUrgencyBadge(proposal) : null;
+  const liveness = classifyAgentLiveness(items, entry);
 
   return (
-    <article className={`agent-work-card agent-work-card--${item.status}`}>
-      <div className="agent-work-card-header">
-        <div className="agent-work-card-agent">
-          <span className="agent-work-card-avatar" aria-hidden="true">
-            {SPECIALIST_INITIALS[item.agent]}
-          </span>
-          <span className="agent-work-card-agent-name">{item.agent}</span>
-        </div>
-        <span className="agent-work-card-badges">
-          {item.source === "live" ? <span className="badge badge-green">live</span> : null}
-          {urgencyBadge ? (
-            <span
-              className={`badge ${urgencyBadge.badgeClass}`}
-              title={
-                urgencyBadge.escalate
-                  ? `Pending ${OVERDUE_HOURS}h+ — consider escalating to the operator.`
-                  : proposal
-                    ? `Pending since ${formatChiefTimestamp(proposal.createdAt)}.`
-                    : undefined
-              }
-            >
-              {urgencyBadge.label}
-            </span>
-          ) : null}
-          <span className={`badge badge-${PRIORITY_BADGE_VARIANT[item.priority]}`}>
-            {item.priority}
-          </span>
+    <div className={`stage-pill agent-overview-pill${selected ? " active" : ""}`}>
+      <label className="agent-overview-pill-visibility" title={`Show or hide the ${entry.agent} lane`}>
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={onToggleVisibility}
+          aria-label={`Show ${entry.agent} lane`}
+        />
+      </label>
+      <button
+        type="button"
+        className="agent-overview-pill-open"
+        onClick={onOpenDetail}
+        title={`View ${entry.agent} details`}
+      >
+        <span className="agent-work-card-avatar" aria-hidden="true">
+          {SPECIALIST_INITIALS[entry.agent]}
         </span>
-      </div>
-      <p className="agent-work-card-task">{item.task}</p>
-      <p className="agent-work-card-note">
-        <span className="agent-work-card-note-label">{STATUS_NOTE_LABEL[item.status]}:</span>{" "}
-        {item.note}
-      </p>
-      <footer className="agent-work-card-footer">
-        <time className="agent-work-card-time" dateTime={item.updatedAt}>
-          {formatChiefTimestamp(item.updatedAt)}
-        </time>
-      </footer>
-    </article>
+        <span className="agent-overview-pill-body">
+          <span className="agent-overview-pill-name">{entry.agent}</span>
+          <span className="agent-overview-pill-summary">{summarizeStatusCounts(items)}</span>
+        </span>
+        <LivenessBadge liveness={liveness} />
+      </button>
+    </div>
   );
 }
+
+function AgentLane({
+  entry,
+  items,
+  proposalByAwaitingWorkId,
+  onReviewInApprovals,
+  onOpenDetail,
+}: {
+  entry: AgentDirectoryEntry;
+  items: AgentWorkItem[];
+  proposalByAwaitingWorkId: Map<string, ApprovalProposal>;
+  onReviewInApprovals: (proposalId: string) => void;
+  onOpenDetail: () => void;
+}) {
+  const liveness = classifyAgentLiveness(items, entry);
+  const sortedItems = useMemo(() => sortByStatusThenRecency(items), [items]);
+
+  return (
+    <section className="agent-work-lane" aria-label={entry.agent}>
+      <header className="agent-work-lane-header">
+        <button
+          type="button"
+          className="agent-work-lane-heading"
+          onClick={onOpenDetail}
+          title={`View ${entry.agent} details`}
+        >
+          <span className="agent-work-card-avatar" aria-hidden="true">
+            {SPECIALIST_INITIALS[entry.agent]}
+          </span>
+          <span className="agent-work-lane-heading-text">
+            <h3 className="agent-work-lane-title">{entry.agent}</h3>
+            <p className="agent-work-lane-description">{entry.description}</p>
+          </span>
+        </button>
+        <div className="agent-work-lane-meta">
+          <LivenessBadge liveness={liveness} />
+          <span className="agent-work-lane-count">{items.length}</span>
+        </div>
+      </header>
+
+      {sortedItems.length === 0 ? (
+        <p className="agent-work-lane-empty">No work tracked for this agent yet.</p>
+      ) : (
+        <ul className="agent-work-list">
+          {sortedItems.map((item) => (
+            <li key={item.id}>
+              <AgentWorkCard
+                item={item}
+                proposal={
+                  item.status === "awaiting_approval"
+                    ? proposalByAwaitingWorkId.get(item.id)
+                    : undefined
+                }
+                onReviewInApprovals={
+                  item.status === "awaiting_approval" ? onReviewInApprovals : undefined
+                }
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+const ALL_AGENT_NAMES = AGENT_DIRECTORY.map((entry) => entry.agent);
 
 export function AgentWorkBoard() {
   const { data } = useData();
-  const { approvals } = useChiefApprovals();
-  const buildItems = useMemo(() => deriveBuildAgentWorkItems(data.tasks), [data.tasks]);
-  const workflowGateItems = useMemo(
-    () => deriveWorkflowGateAgentWorkItems(data.tasks),
-    [data.tasks],
-  );
-  const researchItems = useMemo(
-    () => deriveResearchAgentWorkItems(data.incidents),
-    [data.incidents],
-  );
+  const { approvals, navigation } = useChiefApprovals();
+  const { items: librarianWorkItems } = useLibrarianWorkItems();
+  const { items: plannerWorkItems } = usePlannerWorkItems();
   const awaitingApprovalItems = useMemo(
     () => deriveAgentAwaitingApprovalWorkItems(approvals),
     [approvals],
@@ -121,15 +155,85 @@ export function AgentWorkBoard() {
     return map;
   }, [approvals]);
   const items = useMemo(
-    () => [
-      ...buildItems,
-      ...workflowGateItems,
-      ...researchItems,
-      ...awaitingApprovalItems,
-      ...AGENT_WORK_ITEMS,
-    ],
-    [buildItems, workflowGateItems, researchItems, awaitingApprovalItems],
+    () =>
+      combineAgentWorkItems({
+        tasks: data.tasks,
+        incidents: data.incidents,
+        plannerWorkItems,
+        librarianWorkItems,
+        approvals,
+      }),
+    [data.tasks, data.incidents, plannerWorkItems, librarianWorkItems, approvals],
   );
+  const activity = useMemo(
+    () =>
+      deriveAgentActivityTimeline({
+        tasks: data.tasks,
+        plannerWorkItems,
+        librarianWorkItems,
+      }),
+    [data.tasks, plannerWorkItems, librarianWorkItems],
+  );
+
+  const itemsByAgent = useMemo(() => {
+    const map = new Map<AgentWorkAgentName, AgentWorkItem[]>();
+    for (const entry of AGENT_DIRECTORY) map.set(entry.agent, []);
+    for (const item of items) {
+      map.set(item.agent, [...(map.get(item.agent) ?? []), item]);
+    }
+    return map;
+  }, [items]);
+
+  const [selectedAgents, setSelectedAgents] = useState<Set<AgentWorkAgentName>>(
+    () => new Set(ALL_AGENT_NAMES),
+  );
+  const [liveFilter, setLiveFilter] = useState<LiveFilter>("all");
+  const [openAgent, setOpenAgent] = useState<AgentWorkAgentName | null>(null);
+
+  const toggleAgentVisibility = (agent: AgentWorkAgentName) => {
+    setLiveFilter("all");
+    setSelectedAgents((prev) => {
+      const next = new Set(prev);
+      if (next.has(agent)) {
+        next.delete(agent);
+      } else {
+        next.add(agent);
+      }
+      return next;
+    });
+  };
+
+  const applyLiveFilter = (filter: LiveFilter) => {
+    setLiveFilter(filter);
+    if (filter === "all") {
+      setSelectedAgents(new Set(ALL_AGENT_NAMES));
+      return;
+    }
+    setSelectedAgents(
+      new Set(
+        AGENT_DIRECTORY.filter(
+          (entry) => classifyAgentLiveness(itemsByAgent.get(entry.agent) ?? [], entry) === filter,
+        ).map((entry) => entry.agent),
+      ),
+    );
+  };
+
+  const overdueAwaitingCount = useMemo(
+    () =>
+      awaitingApprovalItems.filter((item) => {
+        const linked = proposalByAwaitingWorkId.get(item.id);
+        return linked ? getApprovalUrgencyBadge(linked)?.escalate : false;
+      }).length,
+    [awaitingApprovalItems, proposalByAwaitingWorkId],
+  );
+
+  const handleReviewInApprovals = (proposalId: string) => {
+    navigation?.openApprovals({ filter: "pending", focusProposalId: proposalId });
+  };
+
+  const handleOpenApprovalsFromEscalation = () => {
+    navigation?.openApprovals({ filter: "pending" });
+  };
 
   if (items.length === 0) {
     return (
@@ -143,6 +247,10 @@ export function AgentWorkBoard() {
     );
   }
 
+  const visibleAgents = AGENT_DIRECTORY.filter((entry) => selectedAgents.has(entry.agent));
+  const openAgentEntry = resolveOpenAgentEntry(openAgent, AGENT_DIRECTORY);
+  const openAgentIsFilteredOut = openAgent ? !selectedAgents.has(openAgent) : false;
+
   return (
     <ApprovalSectionShell
       className="agent-work-board"
@@ -150,61 +258,79 @@ export function AgentWorkBoard() {
       count={`${items.length} item${items.length === 1 ? "" : "s"}`}
     >
       <p className="agent-work-board-note">
-        Snapshot of what each agent is carrying right now. Build, Workflow Gate, Research, and
-        Awaiting approval rows marked <span className="badge badge-green">live</span> reflect real
-        task/incident data or pending proposals from the shared Approvals queue; other agents are
-        still mock for this slice. Read-only — no actions taken here.
+        One control tower for every agent. Rows marked <span className="badge badge-green">live</span>{" "}
+        reflect real data or the shared Approvals queue; rows marked{" "}
+        <span className="badge badge-steel">mock</span> are still local/mock for this slice. Click
+        an agent's name or avatar to open its detail view. Read-only — no actions taken here.
       </p>
 
-      <div className="agent-work-lanes">
-        {AGENT_WORK_STATUS_CONFIG.map((laneConfig) => {
-          const laneItems = itemsForStatus(items, laneConfig.status);
-          const isAwaitingLane = laneConfig.status === "awaiting_approval";
-          const awaitingOverdueCount = isAwaitingLane
-            ? laneItems.filter((item) => {
-                const linked = proposalByAwaitingWorkId.get(item.id);
-                return linked ? getApprovalUrgencyBadge(linked)?.escalate : false;
-              }).length
-            : 0;
+      {overdueAwaitingCount > 0 ? (
+        <button
+          type="button"
+          className="chief-board-lane-note chief-board-lane-note--escalate chief-board-lane-note--link"
+          onClick={handleOpenApprovalsFromEscalation}
+        >
+          {overdueAwaitingCount} proposal{overdueAwaitingCount === 1 ? "" : "s"} awaiting operator
+          decision{overdueAwaitingCount === 1 ? " is" : "s are"} overdue — review on the Approvals
+          tab.
+        </button>
+      ) : null}
 
-          return (
-            <section
-              key={laneConfig.status}
-              className="agent-work-lane"
-              aria-label={laneConfig.label}
-            >
-              <header className="agent-work-lane-header">
-                <h3 className="agent-work-lane-title">{laneConfig.label}</h3>
-                <span className="agent-work-lane-count">{laneItems.length}</span>
-              </header>
-
-              {isAwaitingLane && awaitingOverdueCount > 0 ? (
-                <p className="chief-board-lane-note chief-board-lane-note--escalate">
-                  {awaitingOverdueCount} of {laneItems.length} awaiting operator decisions are
-                  overdue — review on the Approvals tab.
-                </p>
-              ) : null}
-
-              {laneItems.length === 0 ? (
-                <p className="agent-work-lane-empty">{laneConfig.emptyMessage}</p>
-              ) : (
-                <ul className="agent-work-list">
-                  {laneItems.map((item) => (
-                    <li key={item.id}>
-                      <AgentWorkCard
-                        item={item}
-                        proposal={
-                          isAwaitingLane ? proposalByAwaitingWorkId.get(item.id) : undefined
-                        }
-                      />
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-          );
-        })}
+      <div className="agent-overview-filters" role="group" aria-label="Filter agents by data source">
+        {(["all", "live", "mock"] as LiveFilter[]).map((filter) => (
+          <button
+            key={filter}
+            type="button"
+            className={`stage-pill${liveFilter === filter ? " active" : ""}`}
+            aria-pressed={liveFilter === filter}
+            onClick={() => applyLiveFilter(filter)}
+          >
+            {filter === "all" ? "All agents" : filter === "live" ? "Live only" : "Mock only"}
+          </button>
+        ))}
       </div>
+
+      <div className="agent-overview-row" role="group" aria-label="Toggle or open individual agents">
+        {AGENT_DIRECTORY.map((entry) => (
+          <AgentOverviewPill
+            key={entry.agent}
+            entry={entry}
+            items={itemsByAgent.get(entry.agent) ?? []}
+            selected={selectedAgents.has(entry.agent)}
+            onToggleVisibility={() => toggleAgentVisibility(entry.agent)}
+            onOpenDetail={() => setOpenAgent(entry.agent)}
+          />
+        ))}
+      </div>
+
+      <div className="agent-work-lanes">
+        {visibleAgents.length === 0 ? (
+          <p className="agent-work-lane-empty">No agents match the current filter.</p>
+        ) : (
+          visibleAgents.map((entry) => (
+            <AgentLane
+              key={entry.agent}
+              entry={entry}
+              items={itemsByAgent.get(entry.agent) ?? []}
+              proposalByAwaitingWorkId={proposalByAwaitingWorkId}
+              onReviewInApprovals={handleReviewInApprovals}
+              onOpenDetail={() => setOpenAgent(entry.agent)}
+            />
+          ))
+        )}
+      </div>
+
+      {openAgentEntry ? (
+        <AgentDetailDrawer
+          entry={openAgentEntry}
+          items={itemsByAgent.get(openAgentEntry.agent) ?? []}
+          activity={recentActivityForAgent(activity, openAgentEntry.agent)}
+          isFilteredOut={openAgentIsFilteredOut}
+          proposalByAwaitingWorkId={proposalByAwaitingWorkId}
+          onReviewInApprovals={handleReviewInApprovals}
+          onClose={() => setOpenAgent(null)}
+        />
+      ) : null}
     </ApprovalSectionShell>
   );
 }

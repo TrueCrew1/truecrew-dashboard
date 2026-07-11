@@ -9,6 +9,8 @@ const NOTE_TYPES = [
   "ticket",
   "decision",
   "onboarding",
+  "maintenance",
+  "planning",
 ] as const;
 
 export type ObsidianNoteType = (typeof NOTE_TYPES)[number];
@@ -45,6 +47,12 @@ function inferNoteType(relativePath: string, frontmatter: Record<string, unknown
 
   if (normalized.includes("/deploys/") || normalized.startsWith("operations/deploys/")) {
     return "deploy";
+  }
+  if (normalized.includes("/maintenance/") || normalized.startsWith("operations/maintenance/")) {
+    return "maintenance";
+  }
+  if (normalized.includes("/planning/") || normalized.startsWith("operations/planning/")) {
+    return "planning";
   }
   if (normalized.includes("/decisions/") || normalized.startsWith("decisions/")) {
     return "decision";

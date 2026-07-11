@@ -30,8 +30,15 @@ import {
   getApprovalUrgencyBadge,
   OVERDUE_HOURS,
 } from "./chiefApprovalUrgency";
+import { deriveAgentAwaitingApprovalWorkItems } from "./chiefLiveContext";
 import { formatChiefTimestamp } from "./chiefMock";
+import type { OpenAgentsOptions } from "./ChiefApprovalsContext";
 import type { ApprovalAction, ApprovalProposal } from "./types";
+import type {
+  RuntimeMaintenanceWorkItemClient,
+  RuntimePlannerWorkItemClient,
+  RuntimeWorkItemClient,
+} from "@/types/runtime";
 
 interface ApprovalBoardProps {
   proposals: ApprovalProposal[];
@@ -39,6 +46,18 @@ interface ApprovalBoardProps {
   onApprovalAction: (id: string, action: ApprovalAction) => void;
   statusFilter?: ApprovalStatusFilter;
   onStatusFilterChange?: (filter: ApprovalStatusFilter) => void;
+  focusProposalId?: string | null;
+  onOpenAgents?: (options?: OpenAgentsOptions) => void;
+  liveApi?: boolean;
+  librarianWorkByProposalId?: Map<string, RuntimeWorkItemClient>;
+  filingProposalId?: string | null;
+  onFileDecisionToVault?: (proposal: ApprovalProposal) => void;
+  maintenanceWorkByProposalId?: Map<string, RuntimeMaintenanceWorkItemClient>;
+  filingMaintenanceProposalId?: string | null;
+  onFileMaintenanceTask?: (proposal: ApprovalProposal) => void;
+  plannerWorkByProposalId?: Map<string, RuntimePlannerWorkItemClient>;
+  filingPlannerProposalId?: string | null;
+  onFileDecisionToPlanner?: (proposal: ApprovalProposal) => void;
 }
 
 export function ApprovalBoard({
@@ -47,6 +66,18 @@ export function ApprovalBoard({
   onApprovalAction,
   statusFilter: statusFilterProp,
   onStatusFilterChange,
+  focusProposalId,
+  onOpenAgents,
+  liveApi = false,
+  librarianWorkByProposalId,
+  filingProposalId,
+  onFileDecisionToVault,
+  maintenanceWorkByProposalId,
+  filingMaintenanceProposalId,
+  onFileMaintenanceTask,
+  plannerWorkByProposalId,
+  filingPlannerProposalId,
+  onFileDecisionToPlanner,
 }: ApprovalBoardProps) {
   const [localStatusFilter, setLocalStatusFilter] = useState<ApprovalStatusFilter>("all");
   const statusFilter = statusFilterProp ?? localStatusFilter;
@@ -74,8 +105,21 @@ export function ApprovalBoard({
     [filteredProposals],
   );
 
+  const agentLinkedProposalIds = useMemo(() => {
+    const awaitingItems = deriveAgentAwaitingApprovalWorkItems(proposals);
+    return new Set(
+      awaitingItems.map((item) => item.id.replace(/^agentwork-awaiting-/, "")),
+    );
+  }, [proposals]);
+
   return (
     <div className="chief-approval-tab">
+      <p className="chief-approval-note" role="note">
+        Audit logging follows ADR-001 (observability-only auditor system). Logs are
+        for history and inspection — they do not approve, merge, or deploy. Logging
+        failures do not block approvals.
+      </p>
+
       <ApprovalStatusDashboard
         summary={statusSummary}
         activeFilter={statusFilter}
@@ -123,11 +167,23 @@ export function ApprovalBoard({
           <div className="chief-approval-list">
             {sortedProposals.map((proposal) => {
               const urgencyBadge = getApprovalUrgencyBadge(proposal);
+              const isFocused = focusProposalId === proposal.id;
+              const showAgentLink =
+                proposal.status === "pending" &&
+                agentLinkedProposalIds.has(proposal.id) &&
+                onOpenAgents;
 
               return (
                 <article
                   key={proposal.id}
-                  className={`chief-approval-card chief-approval-card--${proposal.status}`}
+                  id={`approval-proposal-${proposal.id}`}
+                  className={[
+                    "chief-approval-card",
+                    `chief-approval-card--${proposal.status}`,
+                    isFocused ? "chief-approval-card--focused" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
                 >
                   <div className="chief-approval-card-header">
                     <h3 className="chief-approval-card-title">{proposal.title}</h3>
@@ -211,6 +267,199 @@ export function ApprovalBoard({
                       {formatChiefTimestamp(proposal.createdAt)}
                     </time>
                   </footer>
+
+                  {showAgentLink ? (
+                    <button
+                      type="button"
+                      className="chief-approval-link"
+                      onClick={() => onOpenAgents({ focusProposalId: proposal.id })}
+                    >
+                      View in Agents
+                    </button>
+                  ) : null}
+
+                  {proposal.status === "approved" && liveApi && onFileDecisionToVault ? (
+                    <div className="chief-approval-file-vault">
+                      {(() => {
+                        const librarianWork = librarianWorkByProposalId?.get(proposal.id);
+                        const isFiling = filingProposalId === proposal.id;
+
+                        if (librarianWork?.status === "completed") {
+                          return (
+                            <p className="chief-approval-file-vault-status" role="status">
+                              Already filed
+                              {librarianWork.latestObsidianPath
+                                ? ` — ${librarianWork.latestObsidianPath}`
+                                : ""}
+                            </p>
+                          );
+                        }
+
+                        if (
+                          librarianWork?.status === "queued" ||
+                          librarianWork?.status === "running"
+                        ) {
+                          return (
+                            <p className="chief-approval-file-vault-status" role="status">
+                              Queued for vault — run{" "}
+                              <code className="cell-mono">npm run librarian:run</code> locally.
+                            </p>
+                          );
+                        }
+
+                        if (librarianWork?.status === "failed") {
+                          return (
+                            <>
+                              <p className="chief-approval-file-vault-status chief-approval-file-vault-status--warn" role="status">
+                                Filing failed — review and retry.
+                              </p>
+                              <button
+                                type="button"
+                                className="chief-approval-link"
+                                disabled={isFiling}
+                                onClick={() => onFileDecisionToVault(proposal)}
+                              >
+                                {isFiling ? "Queueing…" : "Retry file to vault"}
+                              </button>
+                            </>
+                          );
+                        }
+
+                        return (
+                          <button
+                            type="button"
+                            className="chief-approval-link"
+                            disabled={isFiling}
+                            onClick={() => onFileDecisionToVault(proposal)}
+                          >
+                            {isFiling ? "Queueing…" : "File to vault"}
+                          </button>
+                        );
+                      })()}
+                    </div>
+                  ) : null}
+
+                  {proposal.status === "approved" && liveApi && onFileMaintenanceTask ? (
+                    <div className="chief-approval-file-vault">
+                      {(() => {
+                        const maintenanceWork = maintenanceWorkByProposalId?.get(proposal.id);
+                        const isFiling = filingMaintenanceProposalId === proposal.id;
+
+                        if (maintenanceWork?.status === "completed") {
+                          return (
+                            <p className="chief-approval-file-vault-status" role="status">
+                              Already filed as maintenance task
+                              {maintenanceWork.latestObsidianPath
+                                ? ` — ${maintenanceWork.latestObsidianPath}`
+                                : ""}
+                            </p>
+                          );
+                        }
+
+                        if (
+                          maintenanceWork?.status === "queued" ||
+                          maintenanceWork?.status === "running"
+                        ) {
+                          return (
+                            <p className="chief-approval-file-vault-status" role="status">
+                              Queued for maintenance — run{" "}
+                              <code className="cell-mono">npm run maintenance:run</code> locally.
+                            </p>
+                          );
+                        }
+
+                        if (maintenanceWork?.status === "failed") {
+                          return (
+                            <>
+                              <p className="chief-approval-file-vault-status chief-approval-file-vault-status--warn" role="status">
+                                Maintenance filing failed — review and retry.
+                              </p>
+                              <button
+                                type="button"
+                                className="chief-approval-link"
+                                disabled={isFiling}
+                                onClick={() => onFileMaintenanceTask(proposal)}
+                              >
+                                {isFiling ? "Queueing…" : "Retry file as maintenance task"}
+                              </button>
+                            </>
+                          );
+                        }
+
+                        return (
+                          <button
+                            type="button"
+                            className="chief-approval-link"
+                            disabled={isFiling}
+                            onClick={() => onFileMaintenanceTask(proposal)}
+                          >
+                            {isFiling ? "Queueing…" : "File as maintenance task"}
+                          </button>
+                        );
+                      })()}
+                    </div>
+                  ) : null}
+
+                  {proposal.status === "approved" && liveApi && onFileDecisionToPlanner ? (
+                    <div className="chief-approval-file-vault">
+                      {(() => {
+                        const plannerWork = plannerWorkByProposalId?.get(proposal.id);
+                        const isFiling = filingPlannerProposalId === proposal.id;
+
+                        if (plannerWork?.status === "completed") {
+                          return (
+                            <p className="chief-approval-file-vault-status" role="status">
+                              Already filed as planner task
+                              {plannerWork.latestObsidianPath
+                                ? ` — ${plannerWork.latestObsidianPath}`
+                                : ""}
+                            </p>
+                          );
+                        }
+
+                        if (
+                          plannerWork?.status === "queued" ||
+                          plannerWork?.status === "running"
+                        ) {
+                          return (
+                            <p className="chief-approval-file-vault-status" role="status">
+                              Queued for Planner — run{" "}
+                              <code className="cell-mono">npm run planner:run</code> locally.
+                            </p>
+                          );
+                        }
+
+                        if (plannerWork?.status === "failed") {
+                          return (
+                            <>
+                              <p className="chief-approval-file-vault-status chief-approval-file-vault-status--warn" role="status">
+                                Planner filing failed — review and retry.
+                              </p>
+                              <button
+                                type="button"
+                                className="chief-approval-link"
+                                disabled={isFiling}
+                                onClick={() => onFileDecisionToPlanner(proposal)}
+                              >
+                                {isFiling ? "Queueing…" : "Retry file as Planner task"}
+                              </button>
+                            </>
+                          );
+                        }
+
+                        return (
+                          <button
+                            type="button"
+                            className="chief-approval-link"
+                            disabled={isFiling}
+                            onClick={() => onFileDecisionToPlanner(proposal)}
+                          >
+                            {isFiling ? "Queueing…" : "File as Planner task"}
+                          </button>
+                        );
+                      })()}
+                    </div>
+                  ) : null}
 
                   <ChiefApprovalActions
                     proposal={proposal}

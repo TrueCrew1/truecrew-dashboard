@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { requireInternalAuth } from "../../lib/auth.js";
+import { captureTodayApiError } from "../../lib/sentry/server.js";
 import { isSupabaseConfigured } from "../../lib/supabase/admin.js";
 import { buildEmptyTodayWorkOrdersResponse } from "../../lib/today/emptyResponse.js";
 import { getConfiguredTodayOrgContext } from "../../lib/today/orgContext.js";
@@ -29,6 +30,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json(response);
   } catch (error) {
     console.error("Failed to build Today work orders response", error);
+    captureTodayApiError(error, orgContext.org_id);
     return res.status(500).json({
       error: "Failed to load work orders",
       message: error instanceof Error ? error.message : "Unknown error",

@@ -5,10 +5,19 @@ const {
   isSupabaseConfiguredMock,
   insertRuntimeMaintenanceWorkItemMock,
   getRuntimeWorkItemByIdempotencyKeyMock,
+  fetchMaintenanceWorkItemsMock,
+  mapRuntimeMaintenanceWorkItemToClientMock,
 } = vi.hoisted(() => ({
   isSupabaseConfiguredMock: vi.fn(),
   insertRuntimeMaintenanceWorkItemMock: vi.fn(),
   getRuntimeWorkItemByIdempotencyKeyMock: vi.fn(),
+  fetchMaintenanceWorkItemsMock: vi.fn(),
+  mapRuntimeMaintenanceWorkItemToClientMock: vi.fn((row: { id: string }) => ({
+    id: row.id,
+    agentRole: "maintenance",
+    status: "queued",
+    latestObsidianPath: null,
+  })),
 }));
 
 vi.mock("../../../lib/supabase/admin.js", () => ({
@@ -18,6 +27,8 @@ vi.mock("../../../lib/supabase/admin.js", () => ({
 vi.mock("../../../lib/supabase/runtime-queries.js", () => ({
   insertRuntimeMaintenanceWorkItem: insertRuntimeMaintenanceWorkItemMock,
   getRuntimeWorkItemByIdempotencyKey: getRuntimeWorkItemByIdempotencyKeyMock,
+  fetchMaintenanceWorkItems: fetchMaintenanceWorkItemsMock,
+  mapRuntimeMaintenanceWorkItemToClient: mapRuntimeMaintenanceWorkItemToClientMock,
 }));
 
 import handler from "./work-items.js";
@@ -77,6 +88,7 @@ describe("/api/runtime/maintenance/work-items", () => {
     isSupabaseConfiguredMock.mockReturnValue(true);
     getRuntimeWorkItemByIdempotencyKeyMock.mockResolvedValue(null);
     insertRuntimeMaintenanceWorkItemMock.mockResolvedValue({ id: "maint-1" });
+    fetchMaintenanceWorkItemsMock.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -110,8 +122,8 @@ describe("/api/runtime/maintenance/work-items", () => {
     expect(insertRuntimeMaintenanceWorkItemMock).not.toHaveBeenCalled();
   });
 
-  it("returns 405 for an unsupported HTTP method (this endpoint is POST-only)", async () => {
-    const req = createMockRequest({ method: "GET", headers: authorizedHeaders() });
+  it("returns 405 for an unsupported HTTP method", async () => {
+    const req = createMockRequest({ method: "DELETE", headers: authorizedHeaders() });
     const res = createMockResponse();
 
     await handler(req, res as unknown as VercelResponse);
@@ -119,6 +131,42 @@ describe("/api/runtime/maintenance/work-items", () => {
     expect(res.statusCode).toBe(405);
     expect(res.body).toEqual({ error: "Method not allowed" });
     expect(insertRuntimeMaintenanceWorkItemMock).not.toHaveBeenCalled();
+  });
+
+  it("GET returns maintenance work items", async () => {
+    fetchMaintenanceWorkItemsMock.mockResolvedValue([{ id: "maint-1" }]);
+    const req = createMockRequest({ method: "GET", headers: authorizedHeaders() });
+    const res = createMockResponse();
+
+    await handler(req, res as unknown as VercelResponse);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ workItems: [{ id: "maint-1" }] });
+    expect(fetchMaintenanceWorkItemsMock).toHaveBeenCalledWith(20);
+  });
+
+  it("GET clamps a custom limit and passes it through", async () => {
+    const req = createMockRequest({
+      method: "GET",
+      headers: authorizedHeaders(),
+      query: { limit: "5" },
+    });
+    const res = createMockResponse();
+
+    await handler(req, res as unknown as VercelResponse);
+
+    expect(res.statusCode).toBe(200);
+    expect(fetchMaintenanceWorkItemsMock).toHaveBeenCalledWith(5);
+  });
+
+  it("returns 401 for GET without internal auth", async () => {
+    const req = createMockRequest({ method: "GET", headers: {} });
+    const res = createMockResponse();
+
+    await handler(req, res as unknown as VercelResponse);
+
+    expect(res.statusCode).toBe(401);
+    expect(fetchMaintenanceWorkItemsMock).not.toHaveBeenCalled();
   });
 
   it("returns 400 for an invalid inputPayload (missing title)", async () => {
@@ -167,7 +215,11 @@ describe("/api/runtime/maintenance/work-items", () => {
     await handler(req, res as unknown as VercelResponse);
 
     expect(res.statusCode).toBe(201);
-    expect(res.body).toEqual({ workItem: { id: "maint-1" }, created: true });
+    expect(res.body).toEqual({
+      workItem: { id: "maint-1", agentRole: "maintenance", status: "queued", latestObsidianPath: null },
+      created: true,
+    });
+    expect(mapRuntimeMaintenanceWorkItemToClientMock).toHaveBeenCalledWith({ id: "maint-1" });
     expect(insertRuntimeMaintenanceWorkItemMock).toHaveBeenCalledWith(
       expect.objectContaining({
         triggerType: "reactive",
@@ -193,7 +245,11 @@ describe("/api/runtime/maintenance/work-items", () => {
     await handler(req, res as unknown as VercelResponse);
 
     expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({ workItem: { id: "existing" }, created: false });
+    expect(res.body).toEqual({
+      workItem: { id: "existing", agentRole: "maintenance", status: "queued", latestObsidianPath: null },
+      created: false,
+    });
+    expect(mapRuntimeMaintenanceWorkItemToClientMock).toHaveBeenCalledWith({ id: "existing" });
     expect(insertRuntimeMaintenanceWorkItemMock).not.toHaveBeenCalled();
   });
 });

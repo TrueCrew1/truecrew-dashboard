@@ -1,11 +1,17 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { requireInternalAuth } from "../../../lib/auth.js";
 import { validateMaintenanceTaskPayload } from "../../../lib/maintenance/validate-payload.js";
-import type { RuntimeRequestedBy, RuntimeTriggerType } from "../../../lib/runtime/types.js";
+import type {
+  DbRuntimeMaintenanceWorkItemRow,
+  RuntimeRequestedBy,
+  RuntimeTriggerType,
+} from "../../../lib/runtime/types.js";
 import { isSupabaseConfigured } from "../../../lib/supabase/admin.js";
 import {
+  fetchMaintenanceWorkItems,
   getRuntimeWorkItemByIdempotencyKey,
   insertRuntimeMaintenanceWorkItem,
+  mapRuntimeMaintenanceWorkItemToClient,
 } from "../../../lib/supabase/runtime-queries.js";
 
 const REQUESTED_BY = ["founder", "operator", "observer", "system"] as const;
@@ -30,6 +36,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (!isSupabaseConfigured()) {
     return res.status(503).json({ error: "Database not configured" });
+  }
+
+  if (req.method === "GET") {
+    try {
+      const limitRaw = typeof req.query.limit === "string" ? Number(req.query.limit) : 20;
+      const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 50) : 20;
+      const workItems = await fetchMaintenanceWorkItems(limit);
+      return res.status(200).json({ workItems });
+    } catch (error) {
+      console.error("Failed to fetch maintenance work items", error);
+      return res.status(500).json({
+        error: "Failed to fetch maintenance work items",
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
   }
 
   if (req.method !== "POST") {
@@ -61,7 +82,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (idempotencyKey) {
     const existing = await getRuntimeWorkItemByIdempotencyKey(idempotencyKey);
     if (existing) {
-      return res.status(200).json({ workItem: existing, created: false });
+      return res.status(200).json({
+        workItem: mapRuntimeMaintenanceWorkItemToClient(
+          existing as unknown as DbRuntimeMaintenanceWorkItemRow,
+        ),
+        created: false,
+      });
     }
   }
 
@@ -79,7 +105,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       chiefProposalId,
     });
 
-    return res.status(201).json({ workItem: row, created: true });
+    return res.status(201).json({
+      workItem: mapRuntimeMaintenanceWorkItemToClient(row),
+      created: true,
+    });
   } catch (error) {
     console.error("Failed to enqueue maintenance work item", error);
     return res.status(500).json({

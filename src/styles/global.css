@@ -1518,3 +1518,124 @@
 .health-card-error-text {
   color: var(--red);
 }
+
+/* --- Today work-order scaffold (multi-tenant planning UI) --- */
+
+.today-org-context {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.today-org-context-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+  margin-bottom: 2px;
+}
+
+.today-org-context-name {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.today-org-context-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.today-scaffold-note,
+.today-scaffold-intent,
+.today-panel-help {
+  font-size: 11px;
+  color: var(--steel-dim);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.today-scaffold-intent {
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+}
+
+.today-scaffold-intent code,
+.today-panel-help code {
+  font-size: 10px;
+}
+
+.today-panel-help {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.today-attention-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.today-attention-item {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.today-attention-item:last-child {
+  border-bottom: none;
+}
+
+.today-attention-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.today-attention-detail {
+  display: block;
+  font-size: 11px;
+  color: var(--steel-dim);
+}
+
+.today-auditor-note {
+  padding: 10px 14px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 11px;
+  color: var(--steel-dim);
+}
+
+.today-auditor-note-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+  margin-bottom: 6px;
+}
+
+.today-auditor-note p {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.today-work-orders-scaffold {
+  margin-bottom: 16px;
+}

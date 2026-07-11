@@ -10,18 +10,27 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "qa": "npm run lint && npm run build",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "qa:nightly": "bash scripts/nightly-qa.sh",
     "preview": "vite preview",
     "db:push": "supabase db push",
     "db:reset": "supabase db reset",
     "db:status": "supabase migration list",
+    "librarian:run": "npx tsx scripts/librarian-run.ts",
+    "maintenance:run": "npx tsx scripts/maintenance-run.ts",
+    "planner:run": "npx tsx scripts/planner-run.ts",
     "obsidian:log": "npx tsx scripts/obsidian-log.ts",
     "obsidian:setup-vault": "npx tsx scripts/setup-obsidian-vault.ts"
   },
   "dependencies": {
+    "@sentry/node": "^10.64.0",
+    "@sentry/react": "^10.64.0",
     "@supabase/supabase-js": "^2.49.8",
     "@vercel/node": "^5.1.14",
     "gray-matter": "^4.0.3",
+    "posthog-js": "^1.398.2",
+    "posthog-node": "^5.21.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.3"
@@ -39,6 +48,7 @@
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.62.1",
     "vercel": "^54.18.2",
-    "vite": "^6.3.5"
+    "vite": "^6.3.5",
+    "vitest": "^3.2.4"
   }
 }

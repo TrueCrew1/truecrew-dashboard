@@ -5,6 +5,9 @@
   "framework": "vite",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/ingest/static/(.*)", "destination": "https://us-assets.i.posthog.com/static/$1" },
+    { "source": "/ingest/array/(.*)", "destination": "https://us-assets.i.posthog.com/array/$1" },
+    { "source": "/ingest/(.*)", "destination": "https://us.i.posthog.com/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [

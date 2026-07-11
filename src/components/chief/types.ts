@@ -158,7 +158,10 @@ export type AgentWorkStatus = "queued" | "active" | "blocked" | "awaiting_approv
  * without renaming/rippling ChiefSpecialist across approvals, routing,
  * and specialist-attribution call sites.
  */
-export type AgentWorkAgentName = Exclude<ChiefSpecialist, "Chief"> | "Build Agent";
+export type AgentWorkAgentName =
+  | Exclude<ChiefSpecialist, "Chief">
+  | "Build Agent"
+  | "Competitive Research Agent";
 
 /**
  * A single unit of work an agent is carrying, shown on the Chief "Agents"

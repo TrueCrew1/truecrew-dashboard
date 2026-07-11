@@ -1,7 +1,8 @@
 # True Crew workflow checklists
 
-Short, practical checklists for common work. Pair with [project-rules.md](project-rules.md) and
-[docs/AGENT_WORKFLOW.md](../docs/AGENT_WORKFLOW.md) for the full process.
+Short, practical checklists for common work. Pair with [project-rules.md](project-rules.md),
+[docs/AGENT_WORKFLOW.md](../docs/AGENT_WORKFLOW.md) for the full process, and
+[docs/EXECUTION_KIT.md](../docs/EXECUTION_KIT.md) for lane routing and copy-paste kickoff prompts.
 
 ## Feature build
 - [ ] Confirm the goal in one sentence — what does the user get that they don't have now?

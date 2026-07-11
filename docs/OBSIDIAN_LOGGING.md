@@ -21,9 +21,18 @@ Minimal local-first logging from True Crew into your live Obsidian vault. Obsidi
 | **Build log** | `Operations/Logs/Build Log.md` | Append section |
 | **PR log** | `Operations/Logs/PR Log.md` | Append section |
 | **Decision log** | `Decisions/{YYYY-MM-DD} — {title}.md` | New note per decision |
+| **Maintenance log** | `Operations/Maintenance/{YYYY-MM-DD} — {title}.md` | New note per maintenance item |
 | **Hot context** | `True Crew/Hot Context.md` | Overwrite (single living note) |
 
 These align with existing seed/mock conventions (`Decisions/…`, `Operations/…`) and keep rolling logs separate from one-off deploy/runbook notes.
+
+Decision and maintenance notes — the two governed note types written today — carry the
+minimal frontmatter schema defined in [SYSTEM_OF_RECORD.md](SYSTEM_OF_RECORD.md) §
+Governed note frontmatter (`type`, `status`, `owner`, `source_of_truth`,
+`last_reviewed`, `tags`) in addition to their existing `source`/`logged_at` fields.
+`lib/obsidian/read.ts` recognizes `type: maintenance` directly and falls back to it for
+any untyped note under `Operations/Maintenance/` — it no longer misreads maintenance
+notes as `decision`.
 
 ## Setup
 
@@ -53,6 +62,12 @@ Obsidian Sync (or git on the vault) propagates notes to your second brain.
 - [x] `scripts/obsidian-log.ts` — four commands: `build`, `decision`, `pr`, `hot-context`
 - [x] `OBSIDIAN_VAULT_PATH` in `.env.example`
 - [x] `npm run obsidian:log` script
+
+### Librarian runtime (chief decision filing)
+
+1. On Chief → Approvals, open an **approved** card and click **File to vault** (live API only).
+2. Run locally: `npm run librarian:run` (requires `OBSIDIAN_VAULT_PATH` + Supabase env).
+3. Check Agents → Librarian row and your vault `Decisions/` note.
 
 ### Deferred (safe next steps)
 

@@ -1,0 +1,63 @@
+name: True Crew (local)
+version: 0.1.0
+schema: v1
+
+# Zero-marginal-cost setup: every model below runs on local Ollama (http://localhost:11434).
+# Each teammate must `ollama pull` these exact tags once — see .continue/README.md.
+models:
+  - name: Qwen2.5-Coder 14B (chat / edit)
+    provider: ollama
+    model: qwen2.5-coder:14b
+    apiBase: http://localhost:11434
+    roles:
+      - chat
+      - edit
+      - apply
+
+  - name: Qwen2.5-Coder 1.5B (autocomplete)
+    provider: ollama
+    model: qwen2.5-coder:1.5b-base
+    apiBase: http://localhost:11434
+    roles:
+      - autocomplete
+    contextLength: 4096
+    autocompleteOptions:
+      debounceDelay: 300
+      maxPromptTokens: 1024
+
+  - name: Llama 3.1 8B (tool-use agent)
+    provider: ollama
+    model: llama3.1:8b
+    apiBase: http://localhost:11434
+    roles:
+      - chat
+    capabilities:
+      - tool_use
+
+  - name: Nomic Embed
+    provider: ollama
+    model: nomic-embed-text
+    apiBase: http://localhost:11434
+    roles:
+      - embed
+
+# @Docs sources — matches the actual stack (Vite + React Router + Vercel + Supabase),
+# not Next.js.
+docs:
+  - name: Supabase
+    startUrl: https://supabase.com/docs
+  - name: Vite
+    startUrl: https://vite.dev/guide/
+  - name: Vercel
+    startUrl: https://vercel.com/docs
+  - name: React Router
+    startUrl: https://reactrouter.com/home
+
+# Same hosted Supabase MCP endpoint already registered as `com.supabase/mcp` in VS Code's
+# native mcp.json — first use will prompt a one-time browser OAuth grant, scoped to whichever
+# Supabase project you authorize. See .continue/rules/00-scope-and-trust.md for the read-mostly
+# guardrail that governs how Continue is allowed to use it.
+mcpServers:
+  - name: Supabase
+    type: streamable-http
+    url: https://mcp.supabase.com/mcp

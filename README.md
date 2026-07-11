@@ -13,7 +13,16 @@ Premium desktop command center for running business operations end-to-end.
 
 > Full setup guide: [docs/VERCEL_SUPABASE_SETUP.md](docs/VERCEL_SUPABASE_SETUP.md)  
 > **Deploy now (5 min):** [docs/DEPLOY_NOW.md](docs/DEPLOY_NOW.md)  
-> **Agent ↔ approver workflow:** [docs/AGENT_WORKFLOW.md](docs/AGENT_WORKFLOW.md)
+> **Agent ↔ approver workflow:** [docs/AGENT_WORKFLOW.md](docs/AGENT_WORKFLOW.md)  
+> **Docs index:** [docs/README.md](docs/README.md)
+
+## Architecture decisions
+
+Architectural decisions are recorded as ADRs under [`docs/decisions/`](docs/decisions/).
+They give agents and approvers a stable reference for *why* the repo is shaped the way
+it is — so new work does not re-litigate settled choices.
+
+- [ADR-001 — Auditor system](docs/decisions/ADR-001-auditor-system.md)
 
 ## Quick start
 
