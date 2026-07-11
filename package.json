@@ -20,6 +20,7 @@
     "librarian:run": "npx tsx scripts/librarian-run.ts",
     "maintenance:run": "npx tsx scripts/maintenance-run.ts",
     "planner:run": "npx tsx scripts/planner-run.ts",
+    "planner:smoke": "tsx scripts/planner-smoke-test.ts",
     "obsidian:log": "npx tsx scripts/obsidian-log.ts",
     "obsidian:setup-vault": "npx tsx scripts/setup-obsidian-vault.ts"
   },
