@@ -3,6 +3,11 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
+  "env": {
+    "development": {
+      "envFiles": [".env.local"]
+    }
+  },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/ingest/static/(.*)", "destination": "https://us-assets.i.posthog.com/static/$1" },
