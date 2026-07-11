@@ -24,13 +24,13 @@ export function requireInternalAuth(
   req: VercelRequest,
   res: VercelResponse,
 ): boolean {
-  // Load .env.local for local development
-  if (process.env.NODE_ENV === "development") {
-    try {
-      process.loadEnvFile(".env.local");
-    } catch {
-      // Ignore if file not found
-    }
+  // Load .env.local for local development. In deployed environments this file
+  // doesn't exist (gitignored, never deployed) so this is a harmless no-op —
+  // real env vars there come from the Vercel platform, not this file.
+  try {
+    process.loadEnvFile(".env.local");
+  } catch {
+    // Ignore if file not found
   }
 
   const expected = process.env.INTERNAL_API_SECRET;
