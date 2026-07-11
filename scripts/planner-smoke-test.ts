@@ -15,6 +15,7 @@ if (!INTERNAL_API_SECRET) {
   process.exit(1);
 }
 
+// Note: Vercel dev may use different ports if 3000/3001 are busy
 const baseUrl = env.PLANNER_RUNTIME_BASE_URL || "http://localhost:3000";
 const url = `${baseUrl}/api/runtime/planner/work-items`;
 
