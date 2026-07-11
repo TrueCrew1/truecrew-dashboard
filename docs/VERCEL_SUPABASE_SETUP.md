@@ -90,7 +90,7 @@ Requires Vercel CLI: `npm i -g vercel`.
 |---|---|---|
 | `/api/health` | GET | Integration status |
 | `/api/data` | GET | All entities from Supabase |
-| `/api/tasks` | GET | Tasks subset (legacy) |
+| `/api/tasks/:id` | PATCH | Update task stage |
 | `/api/github/webhook` | POST | GitHub gate automation |
 
 ## Troubleshooting

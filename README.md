@@ -53,8 +53,8 @@ npm run dev:vercel       # UI + API (requires .env.local)
 | Route | Purpose |
 |---|---|
 | `GET /api/health` | Integration status |
-| `GET /api/data` | Full command center payload |
-| `GET /api/tasks` | Tasks + gates |
+| `GET /api/data` | Full command center payload (tasks, workflows, incidents, and more) |
+| `PATCH /api/tasks/:id` | Update task stage |
 | `POST /api/github/webhook` | PR/CI gate automation |
 
 ## App routes
