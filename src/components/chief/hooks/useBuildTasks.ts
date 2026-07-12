@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
+import { useData } from "@/context/DataContext";
 import { Task, GateCheck, WorkflowStage } from "@/types";
 
 export interface PendingGate {
@@ -56,63 +57,16 @@ export function useBuildTasks(): {
   isLoading: boolean;
   error: string | null;
 } {
-  const [buildGateTasks, setBuildGateTasks] = useState<BuildGateTask[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { tasks, loading, error } = useData();
 
-  useEffect(() => {
-    let mounted = true;
+  const buildGateTasks = useMemo(
+    () =>
+      (tasks as Task[])
+        .filter((task) => task.workflowType === "build" && !TERMINAL_STAGES.includes(task.stage))
+        .map(mapTaskToBuildGateTask)
+        .filter((task): task is BuildGateTask => task !== null),
+    [tasks],
+  );
 
-    async function fetchBuildTasks() {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        const response = await fetch("/api/data");
-        if (!response.ok) {
-          throw new Error(`Failed to fetch build tasks: ${response.statusText}`);
-        }
-
-        // Ensure the response is JSON before attempting to parse
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          throw new Error("Invalid response format: expected JSON");
-        }
-
-        const data = await response.json();
-        const tasks: Task[] = data.tasks || [];
-
-        const mappedTasks = tasks
-          .filter((task) => task.workflowType === "build" && !TERMINAL_STAGES.includes(task.stage))
-          .map(mapTaskToBuildGateTask)
-          .filter((task): task is BuildGateTask => task !== null);
-
-        if (mounted) {
-          setBuildGateTasks(mappedTasks);
-        }
-      } catch (err) {
-        if (mounted) {
-          if (err instanceof SyntaxError) {
-            setError("Failed to load build tasks: Invalid JSON response");
-          } else if (err instanceof Error) {
-            setError(err.message);
-          } else {
-            setError("Unknown error");
-          }
-        }
-      } finally {
-        if (mounted) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    fetchBuildTasks();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  return { buildGateTasks, isLoading, error };
+  return { buildGateTasks, isLoading: loading, error };
 }

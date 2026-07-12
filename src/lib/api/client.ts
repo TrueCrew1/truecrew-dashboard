@@ -50,11 +50,6 @@ export async function fetchCommandCenterData(): Promise<CommandCenterPayload> {
   return response.json() as Promise<CommandCenterPayload>;
 }
 
-export async function fetchTasksFromApi(): Promise<Task[]> {
-  const data = await fetchCommandCenterData();
-  return data.tasks;
-}
-
 export async function patchTaskStage(
   taskId: string,
   stage: WorkflowStage,
