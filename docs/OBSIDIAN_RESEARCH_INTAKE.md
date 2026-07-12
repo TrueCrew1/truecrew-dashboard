@@ -1,5 +1,10 @@
 # Obsidian research intake
 
+> [LEGACY-FROZEN] This document describes the legacy knowledge/-rooted
+> research intake flow. It remains authoritative per
+> docs/OPERATIONS/AGENT_LANE_RECONCILIATION_PLAN.md, which tracks its
+> relationship to the newer docs/SECOND_BRAIN shelf as unresolved.
+
 Docs-only spec. Defines the practical hand-off from a Research finding (per
 [docs/RESEARCH_SECOND_BRAIN_WORKFLOW.md](RESEARCH_SECOND_BRAIN_WORKFLOW.md)) to an
 actual filed note — in `knowledge/` (this repo's git-tracked second brain) and/or the

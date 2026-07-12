@@ -23,6 +23,21 @@ Recommended log entry format:
   - Notes: no code or tests touched; no conflicts resolved; prep work for future Chief/Planner.
 - 2026-07-12 | Chief/Planner (draft) | (local) | Add AGENT_LANE_RECONCILIATION_PLAN.md to define provisional lane split, precedence, open conflicts, and Build-safe follow-up tasks.
 
+## 2026-07-12 — Build: Mark legacy lane and research docs as LEGACY-FROZEN
+
+- **Run type**: Build
+- **Files modified**:
+  - docs/AGENT_LANES_INTERNAL.md
+  - docs/RESEARCH_SECOND_BRAIN_WORKFLOW.md
+  - docs/OBSIDIAN_RESEARCH_INTAKE.md
+  - docs/OPERATIONS/changelog.md
+- **Summary**: Added non-committal LEGACY-FROZEN banners to the legacy lane and
+  knowledge/-rooted second-brain workflow/intake docs, noting that they remain
+  authoritative and that their relationship to the newer docs/SECOND_BRAIN shelf and
+  Chief/Build/Filing lanes is tracked as unresolved in
+  docs/OPERATIONS/AGENT_LANE_RECONCILIATION_PLAN.md.
+- **Vault log**: skipped — OBSIDIAN_VAULT_PATH not set in this session.
+
 ## Guidance
 - Add one line per change; include a PR or commit link where possible.
 - For audits, reference the audit run and the findings ticket.

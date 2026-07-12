@@ -1,5 +1,10 @@
 # Internal Agent Lanes — Chief, Research, Filing/Second Brain
 
+> [LEGACY-FROZEN] This document describes a legacy lane model
+> (Chief/Research/Filing) for the second brain. It remains authoritative
+> per docs/OPERATIONS/AGENT_LANE_RECONCILIATION_PLAN.md, which tracks its
+> relationship to the newer Chief/Build/Filing shelf lanes as unresolved.
+
 Practical, single-place lane definitions for the three agents that touch the second
 brain most directly. This doc doesn't redefine anything in
 [docs/AGENT_RUNBOOK.md](AGENT_RUNBOOK.md) or

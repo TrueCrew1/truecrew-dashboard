@@ -1,5 +1,10 @@
 # Research → Second Brain workflow
 
+> [LEGACY-FROZEN] This document describes the legacy knowledge/-rooted
+> second-brain workflow. It remains authoritative per
+> docs/OPERATIONS/AGENT_LANE_RECONCILIATION_PLAN.md, which tracks its
+> relationship to the newer docs/SECOND_BRAIN shelf as unresolved.
+
 Docs-only spec. Defines how the **Research** agent turns a finding into two things at
 once: an approval-ready packet for **Chief**, and — only when it clears a real bar —
 structured input for the **second brain** (`knowledge/`). This doc does not change any
