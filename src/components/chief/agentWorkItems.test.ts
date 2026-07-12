@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { WorkflowStage } from "@/types";
 import type { Incident, Task } from "@/types";
+import type { PlannerWorkItem } from "@/types/plannerWorkItems";
 import { combineAgentWorkItems } from "./agentWorkItems";
 import type { ApprovalProposal } from "./types";
 
@@ -52,12 +53,28 @@ function pendingApproval(overrides: Partial<ApprovalProposal> = {}): ApprovalPro
   };
 }
 
+function plannerReadyBuildWorkItem(overrides: Partial<PlannerWorkItem> = {}): PlannerWorkItem {
+  return {
+    id: "planner-work-1",
+    title: "Wire the settings page",
+    description: "Backend route exists; needs UI.",
+    status: "new",
+    priority: "medium",
+    assignee: null,
+    dueDate: null,
+    createdAt: "2026-07-10T00:00:00.000Z",
+    updatedAt: "2026-07-10T00:00:00.000Z",
+    ...overrides,
+  };
+}
+
 describe("combineAgentWorkItems", () => {
   it("merges every live source and defaults mockItems to the mock roster", () => {
     const items = combineAgentWorkItems({
       tasks: [buildTask()],
       incidents: [incident()],
       plannerWorkItems: [],
+      plannerReadyBuildWorkItems: [],
       librarianWorkItems: [],
       approvals: [pendingApproval()],
     });
@@ -75,11 +92,37 @@ describe("combineAgentWorkItems", () => {
       tasks: [],
       incidents: [],
       plannerWorkItems: [],
+      plannerReadyBuildWorkItems: [],
       librarianWorkItems: [],
       approvals: [],
       mockItems: [],
     });
 
     expect(items).toEqual([]);
+  });
+
+  it("surfaces planner_work_items as live Build Agent rows", () => {
+    const items = combineAgentWorkItems({
+      tasks: [],
+      incidents: [],
+      plannerWorkItems: [],
+      plannerReadyBuildWorkItems: [plannerReadyBuildWorkItem()],
+      librarianWorkItems: [],
+      approvals: [],
+      mockItems: [],
+    });
+
+    expect(items).toEqual([
+      {
+        id: "agentwork-planner-build-planner-work-1",
+        agent: "Build Agent",
+        task: "Build: Wire the settings page",
+        status: "queued",
+        priority: "medium",
+        note: "Backend route exists; needs UI.",
+        updatedAt: "2026-07-10T00:00:00.000Z",
+        source: "live",
+      },
+    ]);
   });
 });

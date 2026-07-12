@@ -10,6 +10,7 @@ import type { ChiefPanelNavigation } from "@/components/chief/ChiefApprovalsCont
 import type { AgentWorkItem, ApprovalProposal } from "@/components/chief/types";
 import { useLibrarianWorkItems } from "./useLibrarianWorkItems";
 import { usePlannerWorkItems } from "./usePlannerWorkItems";
+import { usePlannerWorkItemsResource } from "./usePlannerWorkItemsResource";
 
 export interface UseAgentWorkDataResult {
   items: AgentWorkItem[];
@@ -30,6 +31,7 @@ export function useAgentWorkData(): UseAgentWorkDataResult {
   const { approvals, navigation } = useChiefApprovals();
   const { items: librarianWorkItems } = useLibrarianWorkItems();
   const { items: plannerWorkItems } = usePlannerWorkItems();
+  const { items: plannerReadyBuildWorkItems } = usePlannerWorkItemsResource();
 
   const items = useMemo(
     () =>
@@ -37,10 +39,18 @@ export function useAgentWorkData(): UseAgentWorkDataResult {
         tasks: data.tasks,
         incidents: data.incidents,
         plannerWorkItems,
+        plannerReadyBuildWorkItems,
         librarianWorkItems,
         approvals,
       }),
-    [data.tasks, data.incidents, plannerWorkItems, librarianWorkItems, approvals],
+    [
+      data.tasks,
+      data.incidents,
+      plannerWorkItems,
+      plannerReadyBuildWorkItems,
+      librarianWorkItems,
+      approvals,
+    ],
   );
 
   const activity = useMemo(

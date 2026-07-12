@@ -39,6 +39,7 @@ import type {
   ChiefResponse,
   ChiefSpecialist,
 } from "./types";
+import type { PlannerWorkItem } from "@/types/plannerWorkItems";
 
 export const CHIEF_BOARD_LANES: ChiefBoardLaneConfig[] = [
   {
@@ -774,6 +775,46 @@ export function derivePlannerAgentWorkItems(
       status,
       priority: plannerWorkItemPriority(status),
       note: plannerWorkItemNote(status, item.latestObsidianPath),
+      updatedAt: item.updatedAt,
+      source: "live",
+    };
+  });
+}
+
+function mapPlannerWorkItemStatusToAgentWorkStatus(
+  status: PlannerWorkItem["status"],
+): AgentWorkItem["status"] {
+  switch (status) {
+    case "new":
+      return "queued";
+    case "in_progress":
+      return "active";
+    case "blocked":
+      return "blocked";
+    case "done":
+      return "completed";
+  }
+}
+
+/**
+ * Live Build Agent rows from the planner_work_items task tracker
+ * (/api/planner/work-items) — operator-created build tasks a builder agent
+ * can pick up. Distinct from derivePlannerAgentWorkItems above, which
+ * reports the agent-runtime Planner/Obsidian filing queue under "Roadmap
+ * Agent"; this is a different resource entirely (see
+ * docs/PLANNER_WORK_ITEMS.md). planner_work_items has no "approved" status
+ * — every item is surfaced, distinguished only by its status.
+ */
+export function derivePlannerReadyBuildWorkItems(workItems: PlannerWorkItem[]): AgentWorkItem[] {
+  return workItems.map((item) => {
+    const status = mapPlannerWorkItemStatusToAgentWorkStatus(item.status);
+    return {
+      id: `agentwork-planner-build-${item.id}`,
+      agent: "Build Agent",
+      task: `Build: ${item.title}`,
+      status,
+      priority: item.priority,
+      note: item.description ?? "No description provided.",
       updatedAt: item.updatedAt,
       source: "live",
     };

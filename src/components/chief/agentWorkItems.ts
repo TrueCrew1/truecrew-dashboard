@@ -1,9 +1,11 @@
 import type { Incident, Task } from "@/types";
+import type { PlannerWorkItem } from "@/types/plannerWorkItems";
 import {
   deriveAgentAwaitingApprovalWorkItems,
   deriveBuildAgentWorkItems,
   deriveLibrarianAgentWorkItems,
   derivePlannerAgentWorkItems,
+  derivePlannerReadyBuildWorkItems,
   deriveResearchAgentWorkItems,
   deriveWorkflowGateAgentWorkItems,
 } from "./chiefLiveContext";
@@ -20,12 +22,14 @@ export function combineAgentWorkItems(input: {
   tasks: Task[];
   incidents: Incident[];
   plannerWorkItems: Parameters<typeof derivePlannerAgentWorkItems>[0];
+  plannerReadyBuildWorkItems: PlannerWorkItem[];
   librarianWorkItems: Parameters<typeof deriveLibrarianAgentWorkItems>[0];
   approvals: ApprovalProposal[];
   mockItems?: AgentWorkItem[];
 }): AgentWorkItem[] {
   return [
     ...deriveBuildAgentWorkItems(input.tasks),
+    ...derivePlannerReadyBuildWorkItems(input.plannerReadyBuildWorkItems),
     ...deriveWorkflowGateAgentWorkItems(input.tasks),
     ...deriveResearchAgentWorkItems(input.incidents),
     ...deriveLibrarianAgentWorkItems(input.librarianWorkItems),
