@@ -31,6 +31,19 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    // Local-verification only: `vite preview` serves the static production
+    // build with no backend of its own. Proxying /api to a running
+    // `vercel dev` instance lets that build exercise live API routes in
+    // environments where `vite dev`'s asset requests can't be reached
+    // directly. Not part of the production deploy path.
+    preview: {
+      proxy: {
+        "/api": {
+          target: env.VITE_PREVIEW_API_PROXY_TARGET || "http://localhost:3000",
+          changeOrigin: true,
+        },
+      },
+    },
     test: {
       environment: "node",
       include: ["src/**/*.test.ts", "api/**/*.test.ts", "lib/**/*.test.ts"],
