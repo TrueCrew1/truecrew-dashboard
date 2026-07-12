@@ -107,12 +107,18 @@ Server env (Vercel): `TODAY_ORG_ID`, `TODAY_ORG_NAME`; optional `TODAY_MEMBERSHI
 `TODAY_MEMBERSHIP_STATUS` (default `Supervisor` / `active`); `SUPABASE_URL`,
 `SUPABASE_SERVICE_ROLE_KEY` (existing convention) gate the real-data path.
 
-### Frontend auth gap (v1)
+### Frontend auth (v1)
 
 - The backend route uses **internal auth** (`x-internal-key` + `INTERNAL_API_SECRET`), same as
   other `/api/*` handlers.
-- The Today frontend live loader calls `fetch("/api/today/work-orders")` with **no**
-  `x-internal-key` — by design; we do not ship the internal secret in the browser bundle.
-- Enabling `VITE_USE_LIVE_API=true` in the browser will **401** against this route until a
-  proper browser-auth path exists (e.g. session JWT). Keep `VITE_USE_LIVE_API` off for Today
-  in production UI; use mock mode or server-side callers with internal auth for v1 verification.
+- The Today frontend live loader (`src/lib/api/todayWorkOrders.ts`) sends `x-internal-key` via
+  `internalApiHeaders()`, the same shared client-auth helper every other internal route uses.
+  `VITE_INTERNAL_KEY` is bundle-visible by design across this whole app (see `.env.example`) —
+  there is no Today-specific secret boundary to preserve.
+- With `VITE_USE_LIVE_API=true` and `TODAY_ORG_ID`/`TODAY_ORG_NAME` configured server-side, this
+  route returns `200` like any other internal route.
+- The **real** gap is the one described in "Request rules" above: session-JWT auth and
+  membership-resolved org scope are still unimplemented. The internal-key gate plus static
+  env-configured org context is the same v1 shortcut used everywhere in this app under
+  [ADR-002](../decisions/ADR-002-auth-trust-boundary.md) — not something unique to Today, and not
+  yet a substitute for real per-user session auth.
