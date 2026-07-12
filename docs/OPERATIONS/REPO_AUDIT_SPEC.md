@@ -20,6 +20,8 @@ On-demand repository audit specification for the second brain and adjacent docs.
 
 - docs/SECOND_BRAIN, docs/AGENT_CONTRACTS, docs/agents, AGENTS.md.
 - Basic scans of src/, docs/, and API surface where applicable (to verify references, not to change code).
+- For current lane/precedence status when auditing agent docs, see
+  [docs/OPERATIONS/AGENT_LANE_RECONCILIATION_PLAN.md](AGENT_LANE_RECONCILIATION_PLAN.md).
 
 ## 3. Snapshot & Baseline
 

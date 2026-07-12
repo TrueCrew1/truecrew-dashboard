@@ -38,6 +38,21 @@ Recommended log entry format:
   docs/OPERATIONS/AGENT_LANE_RECONCILIATION_PLAN.md.
 - **Vault log**: skipped — OBSIDIAN_VAULT_PATH not set in this session.
 
+## 2026-07-12 — Build: Cross-link lanes, SECOND_BRAIN index, and repo audit spec to reconciliation plan
+
+- **Run type**: Build
+- **Files modified**:
+  - docs/agents/Chief.md
+  - docs/agents/Build.md
+  - docs/SECOND_BRAIN/SECOND_BRAIN_INDEX.md
+  - docs/OPERATIONS/REPO_AUDIT_SPEC.md
+  - docs/OPERATIONS/changelog.md
+- **Summary**: Added small cross-link lines from Chief/Build lane docs, the SECOND_BRAIN
+  index, and the repo audit spec to docs/OPERATIONS/AGENT_LANE_RECONCILIATION_PLAN.md, so
+  lane reconciliation, precedence rules, and second-brain conflicts are discoverable from
+  operational docs without changing any policy wording.
+- **Vault log**: skipped — OBSIDIAN_VAULT_PATH not set in this session.
+
 ## Guidance
 - Add one line per change; include a PR or commit link where possible.
 - For audits, reference the audit run and the findings ticket.

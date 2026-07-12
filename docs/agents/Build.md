@@ -40,6 +40,9 @@ Restated from [docs/AGENT_CONTRACTS/SECOND_BRAIN_BUILD_AGENT_CONTRACT.md](../AGE
 
 ## Lane-splitting TODO (for Chief/Planner)
 
+- See [docs/OPERATIONS/AGENT_LANE_RECONCILIATION_PLAN.md](../OPERATIONS/AGENT_LANE_RECONCILIATION_PLAN.md)
+  for the current provisional lane split, precedence rule, and open conflicts this
+  TODO tracks.
 - Coordinate with Chief/Planner to reconcile legacy Chief/Research/Filing lanes
   (`docs/AGENT_LANES_INTERNAL.md`) with new Chief/Build/Filing lanes.
 - Do not assume Build replaces Research; treat current lane definitions as parallel

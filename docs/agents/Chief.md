@@ -26,6 +26,8 @@ Build and Filing act only within guardrails Chief has approved.
 - [docs/AGENT_CONTRACTS/OBSIDIAN_FILING_AGENT_CONTRACT.md](../AGENT_CONTRACTS/OBSIDIAN_FILING_AGENT_CONTRACT.md)
 - [docs/AGENT_CONTRACTS/SECOND_BRAIN_BUILD_AGENT_CONTRACT.md](../AGENT_CONTRACTS/SECOND_BRAIN_BUILD_AGENT_CONTRACT.md)
 - [docs/OPERATIONS/changelog.md](../OPERATIONS/changelog.md)
+- [docs/OPERATIONS/AGENT_LANE_RECONCILIATION_PLAN.md](../OPERATIONS/AGENT_LANE_RECONCILIATION_PLAN.md) —
+  provisional precedence rule and open-conflict tracking for the items below.
 - Existing second-brain / logging docs found in this repo (not authored as part of
   this shelf — see Open conflicts): [docs/RESEARCH_SECOND_BRAIN_WORKFLOW.md](../RESEARCH_SECOND_BRAIN_WORKFLOW.md),
   [docs/OBSIDIAN_RESEARCH_INTAKE.md](../OBSIDIAN_RESEARCH_INTAKE.md),

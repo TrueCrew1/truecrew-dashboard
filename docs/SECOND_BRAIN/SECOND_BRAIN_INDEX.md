@@ -47,3 +47,6 @@ the current repo state and are flagged rather than guessed at:
    [docs/OBSIDIAN_LOGGING.md](../OBSIDIAN_LOGGING.md),
    `lib/obsidian/paths.ts`). Whether "vault/" here is illustrative shorthand or a literal
    path segment is unclear from the draft alone.
+
+See [docs/OPERATIONS/AGENT_LANE_RECONCILIATION_PLAN.md](../OPERATIONS/AGENT_LANE_RECONCILIATION_PLAN.md)
+for the current provisional precedence rule and tracked status of both open items above.
