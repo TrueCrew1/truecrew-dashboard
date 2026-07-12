@@ -1,5 +1,6 @@
 import { todayWorkOrdersMock } from "@/data/todayWorkOrdersMock";
 import { isLiveApiEnabled } from "@/lib/api/client";
+import { internalApiHeaders } from "@/lib/api/librarianRuntime";
 import { parseTodayWorkOrdersResponse } from "@/lib/api/parseTodayWorkOrdersResponse";
 import type { TodayWorkOrdersResponse } from "@/types/todayWorkOrders";
 
@@ -20,7 +21,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 async function fetchTodayWorkOrdersFromApi(): Promise<TodayWorkOrdersResponse> {
-  const response = await fetch(TODAY_WORK_ORDERS_PATH);
+  const response = await fetch(TODAY_WORK_ORDERS_PATH, { headers: internalApiHeaders() });
   const body: unknown = await response.json().catch(() => null);
 
   if (!response.ok) {

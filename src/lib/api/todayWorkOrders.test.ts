@@ -26,6 +26,7 @@ describe("loadTodayWorkOrders", () => {
 
   it("fetches and validates the live endpoint when live API is enabled", async () => {
     vi.stubEnv("VITE_USE_LIVE_API", "true");
+    vi.stubEnv("VITE_INTERNAL_KEY", "test-secret");
     fetchMock.mockResolvedValue({
       ok: true,
       json: async () => todayWorkOrdersMock,
@@ -33,7 +34,9 @@ describe("loadTodayWorkOrders", () => {
 
     const result = await loadTodayWorkOrders();
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/today/work-orders");
+    expect(fetchMock).toHaveBeenCalledWith("/api/today/work-orders", {
+      headers: { "x-internal-key": "test-secret" },
+    });
     expect(result.org_context.org_name).toBe("Demo Field Services");
   });
 

@@ -14,9 +14,13 @@ import type {
   Workflow,
   WorkflowStage,
 } from "@/types";
+import { internalApiHeaders } from "./librarianRuntime";
 
 function apiFetch(input: string, init: RequestInit = {}): Promise<Response> {
-  return fetch(input, init);
+  return fetch(input, {
+    ...init,
+    headers: { ...internalApiHeaders(), ...init.headers },
+  });
 }
 
 export function isLiveApiEnabled(): boolean {
