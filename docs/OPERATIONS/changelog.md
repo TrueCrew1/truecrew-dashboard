@@ -22,6 +22,7 @@ Recommended log entry format:
   - Scope: SECOND_BRAIN index — added note documenting audits/YYYY-MM-DD convention and first audit artifacts; Build lane — added lane-splitting TODO section calling out legacy vs new lanes.
   - Notes: no code or tests touched; no conflicts resolved; prep work for future Chief/Planner.
 - 2026-07-12 | Chief/Planner (draft) | (local) | Add AGENT_LANE_RECONCILIATION_PLAN.md to define provisional lane split, precedence, open conflicts, and Build-safe follow-up tasks.
+- 2026-07-12 | TrueCrew Chief/Docs | (local) | Clarify free/manual Draft/QA tools (Kimi, DeepSeek, free ChatGPT) as non-lane, manual propose-only helpers and note that any Kimi-based drafting aid routes through existing lanes (Planner/Research/Content) under current approvals.
 
 ## 2026-07-12 — Build: Mark legacy lane and research docs as LEGACY-FROZEN
 

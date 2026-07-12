@@ -62,6 +62,11 @@ Explicitly:
 - Filing does not define repo policy — it mirrors what Chief/Build have already
   approved.
 
+Note: a Kimi-based (or similar free-tool) drafting aid is not a new lane in this role
+map. Per `docs/AGENT_RUNBOOK.md`'s Tool Catalog (PROPOSE-ONLY, no repo access), any such
+tool's output is raw material for Planner/Research or Content, routed through their
+existing approval paths — not a standalone execution or precedence-setting role.
+
 ## Precedence rule (provisional)
 
 - **Existing legacy docs remain authoritative** for research/intake behavior

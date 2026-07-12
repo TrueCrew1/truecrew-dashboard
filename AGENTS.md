@@ -40,6 +40,12 @@ shelf (draft status — see the open conflicts in
   [docs/agents/Filing.md](docs/agents/Filing.md)
 - **Planner / Research** — future roles, not fully defined here yet.
 
+Note: free/manual overflow-chat tools (Kimi, DeepSeek, free ChatGPT, etc.) are not a
+lane here — per [docs/AGENT_RUNBOOK.md](docs/AGENT_RUNBOOK.md)'s Tool Catalog they're
+PROPOSE-ONLY, no-repo-access drafting aids whose output (if used) routes through the
+Research/Content track like any other agent output; see
+[docs/EXECUTION_KIT.md](docs/EXECUTION_KIT.md)'s Draft/QA text row.
+
 Shelf specs and contracts these roles operate against:
 - Obsidian vault audit spec → [docs/SECOND_BRAIN/SECOND_BRAIN_OBSIDIAN_AUDIT.md](docs/SECOND_BRAIN/SECOND_BRAIN_OBSIDIAN_AUDIT.md)
 - Repo audit spec → [docs/OPERATIONS/REPO_AUDIT_SPEC.md](docs/OPERATIONS/REPO_AUDIT_SPEC.md)
