@@ -26,6 +26,37 @@ inspection), Build (bounded changes against a written spec), Architecture/spec
 do, and copy-paste kickoff prompts: [docs/EXECUTION_KIT.md](docs/EXECUTION_KIT.md) §3–4.
 If you were not given a lane, assume Build and ask for a spec if one wasn't provided.
 
+## Second-brain shelf roles
+
+Three roles for the `docs/SECOND_BRAIN` / `docs/OPERATIONS` / `docs/AGENT_CONTRACTS`
+shelf (draft status — see the open conflicts in
+[docs/agents/Chief.md](docs/agents/Chief.md) before treating this as settled):
+
+- **Chief** — governs audits and agent behavior; approves/vetoes Filing and Build
+  proposals. [docs/agents/Chief.md](docs/agents/Chief.md)
+- **Build** — maintains shelf structure, applies small safe changes (<30 lines).
+  [docs/agents/Build.md](docs/agents/Build.md)
+- **Filing** — mirrors approved specs into the Obsidian vault safely.
+  [docs/agents/Filing.md](docs/agents/Filing.md)
+- **Planner / Research** — future roles, not fully defined here yet.
+
+Shelf specs and contracts these roles operate against:
+- Obsidian vault audit spec → [docs/SECOND_BRAIN/SECOND_BRAIN_OBSIDIAN_AUDIT.md](docs/SECOND_BRAIN/SECOND_BRAIN_OBSIDIAN_AUDIT.md)
+- Repo audit spec → [docs/OPERATIONS/REPO_AUDIT_SPEC.md](docs/OPERATIONS/REPO_AUDIT_SPEC.md)
+- Obsidian Filing Agent contract → [docs/AGENT_CONTRACTS/OBSIDIAN_FILING_AGENT_CONTRACT.md](docs/AGENT_CONTRACTS/OBSIDIAN_FILING_AGENT_CONTRACT.md)
+- Second Brain Build Agent contract → [docs/AGENT_CONTRACTS/SECOND_BRAIN_BUILD_AGENT_CONTRACT.md](docs/AGENT_CONTRACTS/SECOND_BRAIN_BUILD_AGENT_CONTRACT.md)
+- Operations changelog → [docs/OPERATIONS/changelog.md](docs/OPERATIONS/changelog.md)
+
+Shelf guardrails (in addition to the non-negotiable rules below):
+- Chief is the top-level lane for this shelf — Build and Filing obey Chief's
+  guardrails and approvals.
+- No automatic deletes.
+- Prefer small edits (<30 lines) unless explicitly approved for something larger.
+- Log every shelf change in `docs/OPERATIONS/changelog.md` **or** the existing
+  vault-side log (`npm run obsidian:log`) — the relationship between the two is not
+  yet defined; see the open conflicts in
+  [docs/agents/Chief.md](docs/agents/Chief.md).
+
 ## Non-negotiable rules
 
 - **Check the working tree before editing.** Run `git status --short` first. If it's
