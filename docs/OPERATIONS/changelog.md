@@ -14,6 +14,10 @@ Recommended log entry format:
 
 ## Initial entry
 - 2026-07-12 | TrueCrew Build Agent (draft) | (local) | Create shelf structure and initial audit specs and agent contract stubs.
+- 2026-07-12 | Claude Code (under Chief/Build/Filing) | (local) | repo-audit — first on-demand repo audit under docs/OPERATIONS/REPO_AUDIT_SPEC.md.
+  - Scope: docs shelves, specs, agent lanes.
+  - Artifacts: docs/OPERATIONS/audits/2026-07-12/baseline.md, docs/OPERATIONS/audits/2026-07-12/missing-items.md, docs/OPERATIONS/audits/2026-07-12/audit-report.md
+  - Notes: conflicts not resolved; docs/AGENT_LANES_INTERNAL.md vs AGENTS.md/docs/agents/Chief.md still divergent; vault logging (npm run obsidian:log) vs repo changelog relationship still TBD.
 
 ## Guidance
 - Add one line per change; include a PR or commit link where possible.
