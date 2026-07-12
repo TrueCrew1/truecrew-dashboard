@@ -18,6 +18,9 @@ Recommended log entry format:
   - Scope: docs shelves, specs, agent lanes.
   - Artifacts: docs/OPERATIONS/audits/2026-07-12/baseline.md, docs/OPERATIONS/audits/2026-07-12/missing-items.md, docs/OPERATIONS/audits/2026-07-12/audit-report.md
   - Notes: conflicts not resolved; docs/AGENT_LANES_INTERNAL.md vs AGENTS.md/docs/agents/Chief.md still divergent; vault logging (npm run obsidian:log) vs repo changelog relationship still TBD.
+- 2026-07-12 | Build Agent (Claude Code) | (local) | docs-structure-tweak.
+  - Scope: SECOND_BRAIN index — added note documenting audits/YYYY-MM-DD convention and first audit artifacts; Build lane — added lane-splitting TODO section calling out legacy vs new lanes.
+  - Notes: no code or tests touched; no conflicts resolved; prep work for future Chief/Planner.
 
 ## Guidance
 - Add one line per change; include a PR or commit link where possible.

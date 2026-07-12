@@ -20,6 +20,15 @@ Mirroring targets (examples):
 - Vault path: vault/Operations/Second Brain/* (mirror of docs/SECOND_BRAIN)
 - Repo path: docs/SECOND_BRAIN/* (canonical source-of-truth)
 
+## Audits convention (provisional)
+
+Repo audits (per [docs/OPERATIONS/REPO_AUDIT_SPEC.md](../OPERATIONS/REPO_AUDIT_SPEC.md))
+are filed under `docs/OPERATIONS/audits/YYYY-MM-DD/`. First used 2026-07-12 — not yet
+confirmed as the permanent standard. First run's artifacts:
+- docs/OPERATIONS/audits/2026-07-12/baseline.md
+- docs/OPERATIONS/audits/2026-07-12/missing-items.md
+- docs/OPERATIONS/audits/2026-07-12/audit-report.md
+
 ---
 
 **NOTE (filed as-is, ambiguity flagged per filing instructions — not resolved here):**

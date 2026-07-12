@@ -37,3 +37,12 @@ Restated from [docs/AGENT_CONTRACTS/SECOND_BRAIN_BUILD_AGENT_CONTRACT.md](../AGE
 - Log every change in `docs/OPERATIONS/changelog.md` with date, actor, and PR/commit link.
 - Larger changes (>30 lines or multi-file refactors) require Chief approval and a
   Planner ticket.
+
+## Lane-splitting TODO (for Chief/Planner)
+
+- Coordinate with Chief/Planner to reconcile legacy Chief/Research/Filing lanes
+  (`docs/AGENT_LANES_INTERNAL.md`) with new Chief/Build/Filing lanes.
+- Do not assume Build replaces Research; treat current lane definitions as parallel
+  until Chief decides precedence.
+- Once a reconciliation plan exists, update `AGENTS.md` and `docs/agents/*.md` to
+  reflect the agreed structure (not in this run).
