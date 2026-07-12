@@ -524,16 +524,22 @@
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   background: rgba(10, 11, 13, 0.5);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.chief-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .chief-tab {
-  flex: 1;
-  min-width: 0;
+  flex: 0 0 auto;
+  white-space: nowrap;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 8px 2px;
+  padding: 8px 6px;
   border: none;
   border-bottom: 2px solid transparent;
   border-radius: 0;
