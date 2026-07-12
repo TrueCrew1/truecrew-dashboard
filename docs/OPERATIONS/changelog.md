@@ -21,6 +21,7 @@ Recommended log entry format:
 - 2026-07-12 | Build Agent (Claude Code) | (local) | docs-structure-tweak.
   - Scope: SECOND_BRAIN index — added note documenting audits/YYYY-MM-DD convention and first audit artifacts; Build lane — added lane-splitting TODO section calling out legacy vs new lanes.
   - Notes: no code or tests touched; no conflicts resolved; prep work for future Chief/Planner.
+- 2026-07-12 | Chief/Planner (draft) | (local) | Add AGENT_LANE_RECONCILIATION_PLAN.md to define provisional lane split, precedence, open conflicts, and Build-safe follow-up tasks.
 
 ## Guidance
 - Add one line per change; include a PR or commit link where possible.
