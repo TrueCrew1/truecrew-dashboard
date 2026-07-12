@@ -23,6 +23,12 @@ quick start; use [EXECUTION_KIT.md](EXECUTION_KIT.md) at the start of each agent
 | [PR_SUMMARY_TEMPLATE.md](PR_SUMMARY_TEMPLATE.md) | PR description template |
 | [OBSIDIAN_LOGGING.md](OBSIDIAN_LOGGING.md) | Post-merge vault logging |
 
+## Features
+
+| Doc | Purpose |
+|---|---|
+| [PLANNER_WORK_ITEMS.md](PLANNER_WORK_ITEMS.md) | Planner work items schema, routes, curl examples |
+
 ## Decisions
 
 Architecture Decision Records (ADRs) — durable *why* notes for structural choices.
