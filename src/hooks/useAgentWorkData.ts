@@ -58,9 +58,10 @@ export function useAgentWorkData(): UseAgentWorkDataResult {
       deriveAgentActivityTimeline({
         tasks: data.tasks,
         plannerWorkItems,
+        plannerReadyBuildWorkItems,
         librarianWorkItems,
       }),
-    [data.tasks, plannerWorkItems, librarianWorkItems],
+    [data.tasks, plannerWorkItems, plannerReadyBuildWorkItems, librarianWorkItems],
   );
 
   const proposalByAwaitingWorkId = useMemo(() => {

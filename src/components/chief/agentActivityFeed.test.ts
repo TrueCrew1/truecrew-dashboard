@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { WorkflowStage } from "@/types";
 import type { Task } from "@/types";
+import type { PlannerWorkItem } from "@/types/plannerWorkItems";
 import { deriveAgentActivityTimeline, recentActivityForAgent } from "./agentActivityFeed";
 import type { AgentActivityItem } from "./agentActivityFeed";
 
@@ -43,11 +44,27 @@ function librarianItem(overrides: Record<string, unknown> = {}) {
   };
 }
 
+function plannerReadyBuildItem(overrides: Partial<PlannerWorkItem> = {}): PlannerWorkItem {
+  return {
+    id: "planner-work-1",
+    title: "Wire the settings page",
+    description: "Backend route exists; needs UI.",
+    status: "new",
+    priority: "medium",
+    assignee: null,
+    dueDate: null,
+    createdAt: "2026-07-10T03:00:00.000Z",
+    updatedAt: "2026-07-10T03:00:00.000Z",
+    ...overrides,
+  };
+}
+
 describe("deriveAgentActivityTimeline", () => {
   it("emits a created event for every build task", () => {
     const timeline = deriveAgentActivityTimeline({
       tasks: [buildTask()],
       plannerWorkItems: [],
+      plannerReadyBuildWorkItems: [],
       librarianWorkItems: [],
       mockItems: [],
     });
@@ -68,6 +85,7 @@ describe("deriveAgentActivityTimeline", () => {
     const untouched = deriveAgentActivityTimeline({
       tasks: [buildTask({ id: "untouched" })],
       plannerWorkItems: [],
+      plannerReadyBuildWorkItems: [],
       librarianWorkItems: [],
       mockItems: [],
     });
@@ -83,6 +101,7 @@ describe("deriveAgentActivityTimeline", () => {
         }),
       ],
       plannerWorkItems: [],
+      plannerReadyBuildWorkItems: [],
       librarianWorkItems: [],
       mockItems: [],
     });
@@ -94,6 +113,7 @@ describe("deriveAgentActivityTimeline", () => {
     const timeline = deriveAgentActivityTimeline({
       tasks: [],
       plannerWorkItems: [plannerItem()],
+      plannerReadyBuildWorkItems: [],
       librarianWorkItems: [librarianItem()],
       mockItems: [],
     });
@@ -118,10 +138,32 @@ describe("deriveAgentActivityTimeline", () => {
     ]);
   });
 
+  it("maps planner-ready build work items to labeled Build Agent activity entries", () => {
+    const timeline = deriveAgentActivityTimeline({
+      tasks: [],
+      plannerWorkItems: [],
+      plannerReadyBuildWorkItems: [plannerReadyBuildItem()],
+      librarianWorkItems: [],
+      mockItems: [],
+    });
+
+    expect(timeline).toEqual([
+      {
+        id: "activity-agentwork-planner-build-planner-work-1",
+        agent: "Build Agent",
+        activityType: "queued",
+        description: "Build Agent queued: Build: Wire the settings page",
+        timestamp: "2026-07-10T03:00:00.000Z",
+        source: "live",
+      },
+    ]);
+  });
+
   it("includes mock items tagged with source mock", () => {
     const timeline = deriveAgentActivityTimeline({
       tasks: [],
       plannerWorkItems: [],
+      plannerReadyBuildWorkItems: [],
       librarianWorkItems: [],
       mockItems: [
         {
@@ -153,6 +195,7 @@ describe("deriveAgentActivityTimeline", () => {
     const timeline = deriveAgentActivityTimeline({
       tasks: [buildTask({ id: "t1", createdAt: "2026-07-01T00:00:00.000Z", updatedAt: "2026-07-01T00:00:00.000Z" })],
       plannerWorkItems: [plannerItem({ updatedAt: "2026-07-15T00:00:00.000Z" })],
+      plannerReadyBuildWorkItems: [],
       librarianWorkItems: [librarianItem({ updatedAt: "2026-07-05T00:00:00.000Z" })],
       mockItems: [],
     });

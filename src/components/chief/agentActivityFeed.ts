@@ -1,8 +1,10 @@
 import type { Task } from "@/types";
+import type { PlannerWorkItem } from "@/types/plannerWorkItems";
 import {
   deriveBuildAgentWorkItems,
   deriveLibrarianAgentWorkItems,
   derivePlannerAgentWorkItems,
+  derivePlannerReadyBuildWorkItems,
 } from "./chiefLiveContext";
 import { AGENT_WORK_ITEMS } from "./agentWorkBoardMock";
 import type { AgentWorkAgentName, AgentWorkItem, AgentWorkStatus } from "./types";
@@ -64,6 +66,7 @@ function buildTaskCreatedActivity(task: Task): AgentActivityItem {
 export function deriveAgentActivityTimeline(input: {
   tasks: Task[];
   plannerWorkItems: Parameters<typeof derivePlannerAgentWorkItems>[0];
+  plannerReadyBuildWorkItems: PlannerWorkItem[];
   librarianWorkItems: Parameters<typeof deriveLibrarianAgentWorkItems>[0];
   mockItems?: AgentWorkItem[];
 }): AgentActivityItem[] {
@@ -73,6 +76,7 @@ export function deriveAgentActivityTimeline(input: {
   const events: AgentActivityItem[] = [
     ...buildTasks.map(buildTaskCreatedActivity),
     ...fromWorkItems(deriveBuildAgentWorkItems(changedBuildTasks)),
+    ...fromWorkItems(derivePlannerReadyBuildWorkItems(input.plannerReadyBuildWorkItems)),
     ...fromWorkItems(derivePlannerAgentWorkItems(input.plannerWorkItems)),
     ...fromWorkItems(deriveLibrarianAgentWorkItems(input.librarianWorkItems)),
     ...fromWorkItems(input.mockItems ?? AGENT_WORK_ITEMS),
