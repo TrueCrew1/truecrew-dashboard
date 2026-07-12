@@ -3,11 +3,13 @@ export {
   logBuild,
   logDecision,
   logPr,
+  logResearchFinding,
   updateHotContext,
 } from "./log.js";
 export {
   decisionNotePath,
   HOT_CONTEXT_PATH,
+  researchFindingNotePath,
   ROLLING_LOG_PATHS,
   sanitizeFilenameSegment,
 } from "./paths.js";
@@ -18,4 +20,6 @@ export type {
   ObsidianLogKind,
   ObsidianWriteResult,
   PrLogEntry,
+  ResearchFindingLogEntry,
+  ResearchFindingTier,
 } from "./types.js";

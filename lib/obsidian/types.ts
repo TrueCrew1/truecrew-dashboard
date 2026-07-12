@@ -4,7 +4,8 @@ export type ObsidianLogKind =
   | "pr"
   | "hot-context"
   | "maintenance"
-  | "planning";
+  | "planning"
+  | "research-finding";
 
 export interface BuildLogEntry {
   result: "success" | "failure" | "cancelled" | "unknown";
@@ -49,6 +50,26 @@ export interface PlanningLogEntry {
   description: string;
   context?: string;
   notes?: string;
+  loggedAt?: Date;
+}
+
+/**
+ * One filed Research Finding — see docs/OBSIDIAN_RESEARCH_INTAKE.md's "Fixed-field
+ * template: Research Finding Intake" for the canonical field set this mirrors.
+ */
+export type ResearchFindingTier = "Log" | "Lesson" | "Starter-Pass-candidate";
+
+export interface ResearchFindingLogEntry {
+  title: string;
+  sourcesChecked: string;
+  finding: string;
+  worked?: string;
+  failed?: string;
+  nextTime?: string;
+  tier?: ResearchFindingTier;
+  dedupeCheck?: string;
+  relatedApprovalRequest?: string;
+  relatedPr?: string;
   loggedAt?: Date;
 }
 

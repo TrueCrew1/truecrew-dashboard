@@ -30,3 +30,9 @@ export function planningNotePath(title: string, loggedAt = new Date()): string {
   const safeTitle = sanitizeFilenameSegment(title);
   return `Operations/Planning/${date} — ${safeTitle}.md`;
 }
+
+export function researchFindingNotePath(title: string, loggedAt = new Date()): string {
+  const date = loggedAt.toISOString().slice(0, 10);
+  const safeTitle = sanitizeFilenameSegment(title);
+  return `Research/${date} — ${safeTitle}.md`;
+}

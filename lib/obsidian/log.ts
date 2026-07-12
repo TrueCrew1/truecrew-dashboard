@@ -3,6 +3,7 @@ import {
   HOT_CONTEXT_PATH,
   maintenanceNotePath,
   planningNotePath,
+  researchFindingNotePath,
   ROLLING_LOG_PATHS,
 } from "./paths.js";
 import {
@@ -14,6 +15,7 @@ import {
   renderPlanningNote,
   renderPrLogSection,
   renderPrLogSeed,
+  renderResearchFindingNote,
 } from "./templates.js";
 import type {
   BuildLogEntry,
@@ -23,6 +25,7 @@ import type {
   ObsidianWriteResult,
   PlanningLogEntry,
   PrLogEntry,
+  ResearchFindingLogEntry,
 } from "./types.js";
 import { appendVaultNote, writeVaultNote } from "./write.js";
 
@@ -55,6 +58,14 @@ export async function logMaintenance(entry: MaintenanceLogEntry): Promise<Obsidi
 export async function logPlanning(entry: PlanningLogEntry): Promise<ObsidianWriteResult> {
   const relativePath = planningNotePath(entry.title, entry.loggedAt);
   const absolutePath = await writeVaultNote(relativePath, renderPlanningNote(entry));
+  return toResult(relativePath, absolutePath);
+}
+
+export async function logResearchFinding(
+  entry: ResearchFindingLogEntry,
+): Promise<ObsidianWriteResult> {
+  const relativePath = researchFindingNotePath(entry.title, entry.loggedAt);
+  const absolutePath = await writeVaultNote(relativePath, renderResearchFindingNote(entry));
   return toResult(relativePath, absolutePath);
 }
 

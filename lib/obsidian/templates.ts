@@ -1,3 +1,4 @@
+import { researchFindingNotePath } from "./paths.js";
 import type {
   BuildLogEntry,
   DecisionLogEntry,
@@ -5,6 +6,7 @@ import type {
   MaintenanceLogEntry,
   PlanningLogEntry,
   PrLogEntry,
+  ResearchFindingLogEntry,
 } from "./types.js";
 
 function formatTimestamp(date: Date): string {
@@ -149,6 +151,58 @@ export function renderPlanningNote(entry: PlanningLogEntry): string {
   }
 
   return frontmatter + sections.join("\n");
+}
+
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+}
+
+/**
+ * Research Finding Intake note — one file per finding, filed under Research/.
+ * Field set and order mirror docs/OBSIDIAN_RESEARCH_INTAKE.md's fixed-field
+ * template exactly, so the note is recognizable as the same shape regardless
+ * of where a finding ends up being filed. The `ID`'s `NN` suffix is fixed at
+ * `01` here — same-day dedupe across multiple findings is a filing-clerk
+ * judgment call per that doc, not something this renderer automates.
+ */
+export function renderResearchFindingNote(entry: ResearchFindingLogEntry): string {
+  const loggedAt = entry.loggedAt ?? new Date();
+  const tier = entry.tier ?? "Log";
+  const date = formatDate(loggedAt);
+  const slug = slugify(entry.title) || "finding";
+  const destination = researchFindingNotePath(entry.title, loggedAt);
+
+  const frontmatter = yamlFrontmatter({
+    type: "research-finding",
+    source: "true-crew",
+    logged_at: formatIso(loggedAt),
+    tier: tier.toLowerCase(),
+    ...governedFields(loggedAt),
+  });
+
+  const lines = [
+    `### Research Finding Intake — ${entry.title}`,
+    `- ID: ${date}-${slug}-01`,
+    `- Date: ${date}`,
+    `- Agent: Research`,
+    `- Source(s) checked: ${entry.sourcesChecked}`,
+    `- Finding: ${entry.finding}`,
+    `- Worked: ${entry.worked ?? "none"}`,
+    `- Failed: ${entry.failed ?? "none"}`,
+    `- Next time: ${entry.nextTime ?? "none"}`,
+    `- Tier: ${tier}`,
+    `- Dedupe check: ${entry.dedupeCheck ?? (tier === "Log" ? "n/a for Log tier" : "none")}`,
+    `- Destination: Obsidian — ${destination}`,
+    `- Related approval request: ${entry.relatedApprovalRequest ?? "none"}`,
+    `- Related PR: ${entry.relatedPr ?? "none"}`,
+    "",
+  ];
+
+  return frontmatter + lines.join("\n");
 }
 
 export function renderHotContextNote(entry: HotContextEntry): string {

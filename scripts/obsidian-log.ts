@@ -5,10 +5,14 @@ import {
   logBuild,
   logDecision,
   logPr,
+  logResearchFinding,
   updateHotContext,
 } from "../lib/obsidian/index";
+import type { ResearchFindingTier } from "../lib/obsidian/index";
 
-type Command = "build" | "decision" | "pr" | "hot-context";
+type Command = "build" | "decision" | "pr" | "hot-context" | "research-finding";
+
+const RESEARCH_FINDING_TIERS: ResearchFindingTier[] = ["Log", "Lesson", "Starter-Pass-candidate"];
 
 function usage(): string {
   return `True Crew → Obsidian logging (local-first)
@@ -19,6 +23,7 @@ Usage:
   npm run obsidian:log -- pr --number <n> --title <text> --status <opened|merged|closed|updated> [--url <url>] [--notes <text>]
   npm run obsidian:log -- hot-context --body <text>
   npm run obsidian:log -- hot-context --file <path>
+  npm run obsidian:log -- research-finding --title <text> --sources <text> --finding <text> [--worked <text>] [--failed <text>] [--next-time <text>] [--tier <Log|Lesson|Starter-Pass-candidate>] [--dedupe-check <text>] [--related-approval <text>] [--related-pr <text>]
 
 Environment:
   OBSIDIAN_VAULT_PATH  Absolute path to your local Obsidian vault root
@@ -27,7 +32,10 @@ Environment:
 
 function parseArgs(argv: string[]): { command: Command; flags: Map<string, string> } {
   const [command, ...rest] = argv;
-  if (!command || !["build", "decision", "pr", "hot-context"].includes(command)) {
+  if (
+    !command ||
+    !["build", "decision", "pr", "hot-context", "research-finding"].includes(command)
+  ) {
     throw new Error(`Unknown or missing command: ${command ?? "(none)"}`);
   }
 
@@ -101,6 +109,25 @@ async function main(): Promise<void> {
       if (!body && !file) throw new Error("hot-context requires --body or --file");
       const content = body ?? (await fs.readFile(file!, "utf8"));
       result = await updateHotContext({ body: content });
+      break;
+    }
+    case "research-finding": {
+      const tier = flags.get("tier");
+      if (tier && !RESEARCH_FINDING_TIERS.includes(tier as ResearchFindingTier)) {
+        throw new Error(`--tier must be one of: ${RESEARCH_FINDING_TIERS.join(", ")}`);
+      }
+      result = await logResearchFinding({
+        title: requireFlag(flags, "title"),
+        sourcesChecked: requireFlag(flags, "sources"),
+        finding: requireFlag(flags, "finding"),
+        worked: flags.get("worked"),
+        failed: flags.get("failed"),
+        nextTime: flags.get("next-time"),
+        tier: tier as ResearchFindingTier | undefined,
+        dedupeCheck: flags.get("dedupe-check"),
+        relatedApprovalRequest: flags.get("related-approval"),
+        relatedPr: flags.get("related-pr"),
+      });
       break;
     }
   }

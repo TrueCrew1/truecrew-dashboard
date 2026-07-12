@@ -113,7 +113,7 @@ mechanical "what file, literally" mapping, nothing new:
 
 | Tier | Destination | Who files | Note-update rule |
 |---|---|---|---|
-| **Log** | `knowledge/log.md` line, always. Also the live Obsidian Build Log via `npm run obsidian:log -- build ...` **when a local session is filing** — map Finding + Worked/Failed/Next-time into that command's `--notes` field; there is no dedicated "research finding" CLI command today (see Future Work). | Any Claude Code session (repo access for `log.md`; local-only for the live Build Log) | Always append — never edit a past log line. |
+| **Log** | `knowledge/log.md` line, always. Also the live Obsidian vault via `npm run obsidian:log -- research-finding ...` **when a local session is filing** — writes one dedicated note per finding to `Research/{{date}} — {{title}}.md`, in the fixed-field shape below (see `lib/obsidian/log.ts`'s `logResearchFinding`). This is manual, one finding at a time, same as every other `obsidian:log` command — no automated or scheduled filing. | Any Claude Code session (repo access for `log.md`; local-only for the live vault) | Always append to `log.md` — never edit a past log line. The `Research/` note is one file per finding, not appended. |
 | **Lesson** | `knowledge/lessons/<slug>.md` | Any Claude Code session with repo access, via PR — this is Research's own existing narrow exception in `AGENT_RUNBOOK.md` § Lessons, not a new permission | Prefer updating an existing lesson on the same topic (bump `last_reviewed`) over creating a new file — see Dedupe below. New file only when genuinely distinct. |
 | **Starter-Pass-candidate** | `knowledge/inbox/<slug>.md` — a raw capture staged for the next Starter Pass, **not** a `sources/`/`concepts/`/`decisions/` page itself; only the Starter Pass creates that durable page | Any Claude Code session with repo access | Check `inbox/` first (see Dedupe below): update the existing candidate file if one matches, otherwise create a new one. Never edit `sources/`/`concepts/`/`decisions/` directly at this tier. |
 
@@ -197,14 +197,21 @@ independent outcomes of the same finding.
 
 ## Future work (not built here)
 
-- A dedicated `npm run obsidian:log -- research-finding` CLI command that takes an
-  intake block directly, instead of a filing clerk mapping it onto the existing
-  `build`/`decision`/`pr`/`hot-context` commands by hand.
+- **Built:** `npm run obsidian:log -- research-finding` (see How Tier drives
+  destination → Log, above) takes the intake fields directly as CLI flags and writes
+  one note to the live Obsidian vault. It is still manual, local-only, and one finding
+  at a time — no queue, no scheduling, no unattended writes. `knowledge/` filing
+  (`log.md`, `lessons/`, `inbox/`) is unaffected — still a Claude Code session reading
+  the block and writing the file itself, same as any other repo edit.
 - Any automatic parsing of an intake block into a `knowledge/` file — today, a Claude
   Code session reads the block and writes the file itself, same as any other repo
   edit.
 - Any connector, webhook, or scheduled job that moves findings from Research into
-  Obsidian without a Claude Code session in the loop.
+  Obsidian without a Claude Code session in the loop. This remains true even with the
+  CLI command above — a human still runs it, per finding.
+- A Chief-facing UI surface for filing status or browsing filed research findings —
+  still not proposed or implied; Chief's read boundary to `knowledge/` is unchanged
+  (see Chief and the second brain, above).
 
 ## Copy-paste template
 
