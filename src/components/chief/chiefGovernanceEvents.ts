@@ -9,6 +9,7 @@
  * agent work. Emit is best-effort; failures are swallowed so approvals and
  * board rendering always proceed.
  */
+import { loadSessionState, saveSessionState } from "./chiefSessionStorage";
 import type { ApprovalAction } from "./types";
 
 /** Observability-only — not authorization. Failures must never block approvals. */
@@ -57,13 +58,43 @@ export const CHIEF_GOVERNANCE_EVENT_LOG_LIMIT = 50;
 
 const listeners = new Set<ChiefGovernanceEventListener>();
 
+/** Bump the suffix if the persisted event shape ever changes incompatibly. */
+const GOVERNANCE_EVENTS_STORAGE_KEY = "chief.governanceEvents.v1";
+
+const GOVERNANCE_EVENT_TYPES: ReadonlySet<string> = new Set([
+  "approval_proposal_created",
+  "approval_decision_recorded",
+  "task_reprioritized",
+]);
+
+function isChiefGovernanceEvent(value: unknown): value is ChiefGovernanceEvent {
+  if (!value || typeof value !== "object") return false;
+  const event = value as Record<string, unknown>;
+  return (
+    typeof event.type === "string" &&
+    GOVERNANCE_EVENT_TYPES.has(event.type) &&
+    typeof event.proposalId === "string" &&
+    typeof event.actor === "string" &&
+    typeof event.action === "string" &&
+    typeof event.timestamp === "string" &&
+    (event.rationale === undefined || typeof event.rationale === "string")
+  );
+}
+
+function isChiefGovernanceEventArray(value: unknown): value is ChiefGovernanceEvent[] {
+  return Array.isArray(value) && value.every(isChiefGovernanceEvent);
+}
+
 /**
  * Session-scoped buffer so a panel that mounts after an event fired can
  * still see it via getRecentChiefGovernanceEvents() — without this, an
  * event emitted before the dev Governance tab is opened is lost forever,
- * since listeners only receive events emitted while subscribed.
+ * since listeners only receive events emitted while subscribed. Seeded from
+ * localStorage on load so this history also survives a page reload.
  */
-const recentEvents: ChiefGovernanceEvent[] = [];
+const recentEvents: ChiefGovernanceEvent[] = (
+  loadSessionState(GOVERNANCE_EVENTS_STORAGE_KEY, isChiefGovernanceEventArray) ?? []
+).slice(0, CHIEF_GOVERNANCE_EVENT_LOG_LIMIT);
 
 /**
  * Subscribe to governance events (audit/observability). Returns unsubscribe.
@@ -91,6 +122,7 @@ export function emitChiefGovernanceEvent(event: ChiefGovernanceEvent): void {
     if (recentEvents.length > CHIEF_GOVERNANCE_EVENT_LOG_LIMIT) {
       recentEvents.length = CHIEF_GOVERNANCE_EVENT_LOG_LIMIT;
     }
+    saveSessionState(GOVERNANCE_EVENTS_STORAGE_KEY, recentEvents);
 
     for (const listener of listeners) {
       try {

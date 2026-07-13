@@ -22,6 +22,7 @@ import {
   emitApprovalDecisionRecorded,
   emitApprovalProposalCreated,
 } from "./chiefGovernanceEvents";
+import { loadSessionState, saveSessionState } from "./chiefSessionStorage";
 import {
   buildChiefLiveContext,
   deriveApprovalCandidates,
@@ -61,6 +62,36 @@ interface ChiefApprovalsContextValue {
 
 const ChiefApprovalsContext = createContext<ChiefApprovalsContextValue | null>(null);
 
+/** Bump the suffix if the persisted decision shape ever changes incompatibly. */
+const APPROVAL_DECISIONS_STORAGE_KEY = "chief.approvalDecisions.v1";
+
+const APPROVAL_ACTION_VALUES: ReadonlySet<string> = new Set([
+  "approved",
+  "rejected",
+  "sent_back",
+]);
+
+function isApprovalDecision(value: unknown): value is ApprovalDecision {
+  if (!value || typeof value !== "object") return false;
+  const decision = value as Record<string, unknown>;
+  return (
+    typeof decision.proposalId === "string" &&
+    typeof decision.status === "string" &&
+    APPROVAL_ACTION_VALUES.has(decision.status) &&
+    typeof decision.decidedAt === "string" &&
+    (decision.actor === null || typeof decision.actor === "string")
+  );
+}
+
+function isApprovalDecisionRecord(value: unknown): value is Record<string, ApprovalDecision> {
+  return (
+    !!value &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Object.values(value).every(isApprovalDecision)
+  );
+}
+
 export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
   const { data, source } = useData();
   const liveContext = useMemo(() => buildChiefLiveContext(data), [data]);
@@ -80,8 +111,18 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
     ...REPO_CHANGE_APPROVAL_CARDS,
     ...AGENT_APPROVAL_CARDS,
   ]);
-  const [approvalDecisions, setApprovalDecisions] = useState<Record<string, ApprovalDecision>>({});
+  const [approvalDecisions, setApprovalDecisions] = useState<Record<string, ApprovalDecision>>(
+    () => loadSessionState(APPROVAL_DECISIONS_STORAGE_KEY, isApprovalDecisionRecord) ?? {},
+  );
   const [history, setHistory] = useState<CommandHistoryEntry[]>([]);
+
+  // Persist decisions so approved/rejected/sent-back outcomes (and the
+  // pending counts derived from them) survive a reload. The live-API path
+  // still wins on the next successful fetch below — this only bridges the
+  // gap before that fetch resolves, and is the only state this restores.
+  useEffect(() => {
+    saveSessionState(APPROVAL_DECISIONS_STORAGE_KEY, approvalDecisions);
+  }, [approvalDecisions]);
 
   const liveApi = isLiveApiEnabled();
   const [decisionsHydrated, setDecisionsHydrated] = useState(!liveApi);
