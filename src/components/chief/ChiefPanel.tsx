@@ -64,10 +64,19 @@ export function ChiefPanel() {
   const platformHealth = useMonitorHealth();
   const commandInputRef = useRef<HTMLInputElement>(null);
 
+  // Tracks whether the current `input` text came from a voice transcript
+  // that hasn't since been hand-edited. Read (and cleared) at submit time so
+  // only voice-originated commands trigger auto-speak below.
+  const voiceOriginRef = useRef(false);
+  // Set at submit time for a voice-originated command; consumed once the
+  // matching response arrives so auto-speak fires exactly once per command.
+  const pendingAutoSpeakRef = useRef(false);
+
   // Push-to-talk transcripts land in the same `input` state and command
   // form as typed text — there is no separate voice command path. The
   // operator still reviews/submits via Run, same as any typed command.
   const handleVoiceTranscript = useCallback((transcript: string) => {
+    voiceOriginRef.current = true;
     setInput(transcript);
     commandInputRef.current?.focus();
   }, []);
@@ -88,6 +97,16 @@ export function ChiefPanel() {
       .filter(Boolean)
       .join(". ");
   }, [response]);
+
+  // Auto-speak exactly once per voice-originated command: `pendingAutoSpeakRef`
+  // is only true right after a submit that started from an unedited voice
+  // transcript, and is cleared here immediately so re-renders (and any
+  // persisted response restored on reload) never replay it.
+  useEffect(() => {
+    if (!response || !pendingAutoSpeakRef.current) return;
+    pendingAutoSpeakRef.current = false;
+    speak(speakableResponseText);
+  }, [response, speakableResponseText, speak]);
 
   const openApprovals = useCallback((filter: ApprovalStatusFilter = "all") => {
     setApprovalStatusFilter(filter);
@@ -211,6 +230,9 @@ export function ChiefPanel() {
     const command = input.trim();
     if (!command || isProcessing) return;
 
+    pendingAutoSpeakRef.current = voiceOriginRef.current;
+    voiceOriginRef.current = false;
+
     setIsProcessing(true);
     setActiveTab("command");
     setResponse(null);
@@ -233,6 +255,7 @@ export function ChiefPanel() {
   };
 
   const handleExample = (example: string) => {
+    voiceOriginRef.current = false;
     setInput(example);
   };
 
@@ -551,7 +574,10 @@ export function ChiefPanel() {
             type="text"
             className="chief-input"
             value={input}
-            onChange={(event) => setInput(event.target.value)}
+            onChange={(event) => {
+              voiceOriginRef.current = false;
+              setInput(event.target.value);
+            }}
             placeholder="e.g. What is at risk today?"
             aria-label="Chief command input"
             disabled={isProcessing}
