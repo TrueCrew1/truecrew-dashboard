@@ -1,6 +1,11 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useData } from "@/context/DataContext";
-import { ChiefApprovalConflictError, formatDataSourceLabel } from "@/lib/api/client";
+import {
+  ChiefApprovalConflictError,
+  formatDataSourceLabel,
+  isLiveApiEnabled,
+} from "@/lib/api/client";
+import { useMonitorHealth } from "@/hooks/useMonitorHealth";
 import { ApprovalBoard } from "./ApprovalBoard";
 import { ChiefQueueStrip } from "./ChiefQueueStrip";
 import { CommandHistory } from "./CommandHistory";
@@ -52,6 +57,9 @@ export function ChiefPanel() {
     Record<string, ApprovalActionState>
   >({});
   const [approvalStatusFilter, setApprovalStatusFilter] = useState<ApprovalStatusFilter>("all");
+  const liveApi = isLiveApiEnabled();
+  // Same hook and endpoints Monitor already uses — no new polling or data source.
+  const platformHealth = useMonitorHealth();
 
   const openApprovals = useCallback((filter: ApprovalStatusFilter = "all") => {
     setApprovalStatusFilter(filter);
@@ -320,6 +328,8 @@ export function ChiefPanel() {
               context={liveContext}
               pendingApprovalCount={pendingApprovalCount}
               onOpenApprovals={() => openApprovals("pending")}
+              platformHealth={platformHealth}
+              liveApiEnabled={liveApi}
             />
 
             {!response && !isProcessing ? (
