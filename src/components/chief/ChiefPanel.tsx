@@ -1,7 +1,8 @@
-import { FormEvent, useCallback, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useData } from "@/context/DataContext";
 import { ChiefApprovalConflictError, formatDataSourceLabel } from "@/lib/api/client";
 import { ApprovalBoard } from "./ApprovalBoard";
+import { ChiefQueueStrip } from "./ChiefQueueStrip";
 import { CommandHistory } from "./CommandHistory";
 import { buildApprovalFromResponse, buildHistoryEntry } from "./chiefMock";
 import { approvalActionSuccessMessage, type ApprovalActionState } from "./chiefApproval";
@@ -11,6 +12,8 @@ import { SpecialistCards } from "./SpecialistCards";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
 import { ChiefBoard } from "./ChiefBoard";
 import { AgentWorkBoard } from "./AgentWorkBoard";
+import { GovernanceEventsPanel } from "./GovernanceEventsPanel";
+import { emitTaskReprioritized } from "./chiefGovernanceEvents";
 import type { ApprovalAction, ChiefResponse } from "./types";
 import type { ApprovalStatusFilter } from "./approvalStatus";
 
@@ -22,7 +25,10 @@ const EXAMPLE_COMMANDS = [
   "Show open alerts",
 ];
 
-type ChiefTab = "command" | "board" | "agents" | "approvals" | "history";
+type ChiefTab = "command" | "board" | "agents" | "approvals" | "history" | "governance";
+
+/** Dev-only observability tab — never shown in production builds. */
+const SHOW_GOVERNANCE_TAB = import.meta.env.DEV;
 
 export function ChiefPanel() {
   const { data, loading, source } = useData();
@@ -58,6 +64,30 @@ export function ChiefPanel() {
   );
 
   const boardSignalCount = boardItems.length;
+
+  const needsAttentionTaskId = useMemo(
+    () => boardItems.find((item) => item.needsAttention)?.meta ?? null,
+    [boardItems],
+  );
+
+  const loggedNeedsAttentionTaskId = useRef<string | null>(null);
+
+  // Logs once per task when the overdue-work reprioritization rule promotes
+  // it — not on every board recompute, so re-renders don't spam the log.
+  useEffect(() => {
+    if (!needsAttentionTaskId || loggedNeedsAttentionTaskId.current === needsAttentionTaskId) {
+      return;
+    }
+    loggedNeedsAttentionTaskId.current = needsAttentionTaskId;
+
+    const task = liveContext.overdueTasks.find((entry) => entry.id === needsAttentionTaskId);
+    emitTaskReprioritized(
+      needsAttentionTaskId,
+      task
+        ? `Promoted ${task.id} (${task.title}) to top of At-risk work — overdue since ${task.dueAt}.`
+        : `Promoted ${needsAttentionTaskId} to top of At-risk work — overdue.`,
+    );
+  }, [needsAttentionTaskId, liveContext.overdueTasks]);
 
   const handleApprovalAction = useCallback(
     async (id: string, action: ApprovalAction) => {
@@ -189,6 +219,14 @@ export function ChiefPanel() {
         </div>
       </div>
 
+      <ChiefQueueStrip
+        approvals={approvals}
+        pendingApprovalCount={pendingApprovalCount}
+        onOpenApprovals={() => openApprovals("pending")}
+        overdueTaskCount={liveContext.overdueTasks.length}
+        onOpenBoard={() => setActiveTab("board")}
+      />
+
       <nav className="chief-tabs" aria-label="Chief sections" role="tablist">
         <button
           type="button"
@@ -255,6 +293,19 @@ export function ChiefPanel() {
         >
           History
         </button>
+        {SHOW_GOVERNANCE_TAB ? (
+          <button
+            type="button"
+            role="tab"
+            id="chief-tab-governance"
+            aria-selected={activeTab === "governance"}
+            aria-controls="chief-panel-governance"
+            className={`chief-tab${activeTab === "governance" ? " chief-tab--active" : ""}`}
+            onClick={() => setActiveTab("governance")}
+          >
+            Governance
+          </button>
+        ) : null}
       </nav>
 
       <div className="chief-body">
@@ -420,6 +471,17 @@ export function ChiefPanel() {
             className="chief-tab-panel"
           >
             <CommandHistory entries={history} />
+          </div>
+        ) : null}
+
+        {SHOW_GOVERNANCE_TAB && activeTab === "governance" ? (
+          <div
+            id="chief-panel-governance"
+            role="tabpanel"
+            aria-labelledby="chief-tab-governance"
+            className="chief-tab-panel"
+          >
+            <GovernanceEventsPanel />
           </div>
         ) : null}
       </div>
