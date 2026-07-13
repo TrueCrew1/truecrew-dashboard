@@ -18,6 +18,7 @@ import { ChiefSituationBrief } from "./ChiefSituationBrief";
 import { ChiefBoard } from "./ChiefBoard";
 import { AgentWorkBoard } from "./AgentWorkBoard";
 import { GovernanceEventsPanel } from "./GovernanceEventsPanel";
+import { RecentActivityStrip } from "./RecentActivityStrip";
 import { emitTaskReprioritized } from "./chiefGovernanceEvents";
 import type { ApprovalAction, ChiefResponse } from "./types";
 import type { ApprovalStatusFilter } from "./approvalStatus";
@@ -331,6 +332,8 @@ export function ChiefPanel() {
               platformHealth={platformHealth}
               liveApiEnabled={liveApi}
             />
+
+            <RecentActivityStrip />
 
             {!response && !isProcessing ? (
               <div className="chief-empty">

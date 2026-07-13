@@ -902,6 +902,65 @@ button.chief-brief-metric {
   text-decoration: underline;
 }
 
+.chief-recent-activity {
+  flex-shrink: 0;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.chief-recent-activity-header {
+  margin-bottom: 6px;
+}
+
+.chief-recent-activity-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+}
+
+.chief-recent-activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chief-recent-activity-item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.chief-recent-activity-type {
+  flex-shrink: 0;
+  color: var(--steel-dim);
+  font-weight: 600;
+}
+
+.chief-recent-activity-detail {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--steel);
+  flex: 1;
+}
+
+.chief-recent-activity-time {
+  flex-shrink: 0;
+  color: var(--steel-dim);
+  font-size: 9px;
+}
+
 .chief-board {
   display: flex;
   flex-direction: column;
