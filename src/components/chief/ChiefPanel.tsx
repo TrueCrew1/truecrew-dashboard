@@ -20,6 +20,7 @@ import { AgentWorkBoard } from "./AgentWorkBoard";
 import { GovernanceEventsPanel } from "./GovernanceEventsPanel";
 import { RecentActivityStrip } from "./RecentActivityStrip";
 import { emitTaskReprioritized } from "./chiefGovernanceEvents";
+import { useChiefVoice } from "./useChiefVoice";
 import type { ApprovalAction, ChiefResponse } from "./types";
 import type { ApprovalStatusFilter } from "./approvalStatus";
 
@@ -61,6 +62,32 @@ export function ChiefPanel() {
   const liveApi = isLiveApiEnabled();
   // Same hook and endpoints Monitor already uses — no new polling or data source.
   const platformHealth = useMonitorHealth();
+  const commandInputRef = useRef<HTMLInputElement>(null);
+
+  // Push-to-talk transcripts land in the same `input` state and command
+  // form as typed text — there is no separate voice command path. The
+  // operator still reviews/submits via Run, same as any typed command.
+  const handleVoiceTranscript = useCallback((transcript: string) => {
+    setInput(transcript);
+    commandInputRef.current?.focus();
+  }, []);
+
+  const {
+    speakSupported,
+    speaking,
+    speak,
+    stopSpeaking,
+    inputStatus: voiceInputStatus,
+    startListening,
+    stopListening,
+  } = useChiefVoice({ onTranscript: handleVoiceTranscript });
+
+  const speakableResponseText = useMemo(() => {
+    if (!response) return "";
+    return [response.summary, ...(response.blockers ?? []), response.recommendedAction]
+      .filter(Boolean)
+      .join(". ");
+  }, [response]);
 
   const openApprovals = useCallback((filter: ApprovalStatusFilter = "all") => {
     setApprovalStatusFilter(filter);
@@ -377,7 +404,22 @@ export function ChiefPanel() {
                 <div className="chief-response-section chief-response-section--chief">
                   <div className="chief-speaker-row">
                     <h3 className="chief-response-label">Chief</h3>
-                    <span className="chief-speaker-badge">Response</span>
+                    <div className="chief-speaker-row-actions">
+                      <span className="chief-speaker-badge">Response</span>
+                      {speakSupported ? (
+                        <button
+                          type="button"
+                          className={`chief-speak-btn${speaking ? " chief-speak-btn--active" : ""}`}
+                          onClick={() =>
+                            speaking ? stopSpeaking() : speak(speakableResponseText)
+                          }
+                          aria-pressed={speaking}
+                          title={speaking ? "Stop reading aloud" : "Read this response aloud"}
+                        >
+                          {speaking ? "Stop" : "Speak"}
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
                   <p className="chief-response-text">{response.summary}</p>
                 </div>
@@ -513,7 +555,40 @@ export function ChiefPanel() {
             placeholder="e.g. What is at risk today?"
             aria-label="Chief command input"
             disabled={isProcessing}
+            ref={commandInputRef}
           />
+          <button
+            type="button"
+            className={`chief-mic-btn${voiceInputStatus === "listening" ? " chief-mic-btn--listening" : ""}`}
+            disabled={isProcessing || voiceInputStatus === "unsupported"}
+            aria-pressed={voiceInputStatus === "listening"}
+            aria-label={
+              voiceInputStatus === "unsupported" ? "Speech input unavailable" : "Push to talk"
+            }
+            title={
+              voiceInputStatus === "unsupported"
+                ? "Speech input isn't supported in this browser."
+                : "Push to talk — hold to speak a command."
+            }
+            onPointerDown={() => startListening()}
+            onPointerUp={() => stopListening()}
+            onPointerLeave={() => stopListening()}
+            onPointerCancel={() => stopListening()}
+            onKeyDown={(event) => {
+              if ((event.key === " " || event.key === "Enter") && voiceInputStatus !== "listening") {
+                event.preventDefault();
+                startListening();
+              }
+            }}
+            onKeyUp={(event) => {
+              if (event.key === " " || event.key === "Enter") {
+                event.preventDefault();
+                stopListening();
+              }
+            }}
+          >
+            {voiceInputStatus === "listening" ? "Listening…" : "\u{1F3A4}"}
+          </button>
           <button
             type="submit"
             className="chief-submit"
