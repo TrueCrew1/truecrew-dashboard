@@ -29,6 +29,7 @@ import {
   compareApprovalsByAge,
   getApprovalUrgencyBadge,
   OVERDUE_HOURS,
+  summarizePendingApprovalUrgency,
 } from "./chiefApprovalUrgency";
 import { formatChiefTimestamp } from "./chiefMock";
 import type { ApprovalAction, ApprovalProposal } from "./types";
@@ -39,6 +40,7 @@ interface ApprovalBoardProps {
   onApprovalAction: (id: string, action: ApprovalAction) => void;
   statusFilter?: ApprovalStatusFilter;
   onStatusFilterChange?: (filter: ApprovalStatusFilter) => void;
+  focusProposalId?: string | null;
 }
 
 export function ApprovalBoard({
@@ -47,6 +49,7 @@ export function ApprovalBoard({
   onApprovalAction,
   statusFilter: statusFilterProp,
   onStatusFilterChange,
+  focusProposalId,
 }: ApprovalBoardProps) {
   const [localStatusFilter, setLocalStatusFilter] = useState<ApprovalStatusFilter>("all");
   const statusFilter = statusFilterProp ?? localStatusFilter;
@@ -58,6 +61,13 @@ export function ApprovalBoard({
     [proposals, statusFilter],
   );
   const pendingCount = proposals.filter((p) => p.status === "pending").length;
+  const resolvedCount = proposals.filter((p) => p.status !== "pending").length;
+  // Same urgency tiers as the per-card badges (getApprovalUrgencyBadge) —
+  // reused here at queue level instead of a separate ad hoc threshold.
+  const urgencySummary = useMemo(
+    () => summarizePendingApprovalUrgency(proposals),
+    [proposals],
+  );
   const auditEntries = buildApprovalAuditEntries(proposals);
   const sortedProposals = useMemo(
     () =>
@@ -74,13 +84,137 @@ export function ApprovalBoard({
     [filteredProposals],
   );
 
+  // The single most urgent open item: first pending entry in the already
+  // stale-first sorted list. Marked distinctly from the overdue badge so an
+  // overdue-but-not-oldest item doesn't get confused for the top pick.
+  const topPriorityProposalId = useMemo(
+    () => sortedProposals.find((proposal) => proposal.status === "pending")?.id ?? null,
+    [sortedProposals],
+  );
+
+  // First overdue card in stale-first order — target for the summary
+  // strip's "Overdue" jump-to affordance.
+  const firstOverdueProposalId = useMemo(
+    () =>
+      sortedProposals.find(
+        (proposal) => getApprovalUrgencyBadge(proposal)?.urgency === "overdue",
+      )?.id ?? null,
+    [sortedProposals],
+  );
+
+  // First due-soon card in stale-first order — target for the summary
+  // strip's "Due soon" jump-to affordance.
+  const firstDueSoonProposalId = useMemo(
+    () =>
+      sortedProposals.find(
+        (proposal) => getApprovalUrgencyBadge(proposal)?.urgency === "dueSoon",
+      )?.id ?? null,
+    [sortedProposals],
+  );
+
+  const handleJumpToOverdue = () => {
+    if (!firstOverdueProposalId) return;
+    document
+      .getElementById(`approval-proposal-${firstOverdueProposalId}`)
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
+  const handleJumpToDueSoon = () => {
+    if (!firstDueSoonProposalId) return;
+    document
+      .getElementById(`approval-proposal-${firstDueSoonProposalId}`)
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
+  const handleJumpToTopPriorityDecision = () => {
+    if (!topPriorityProposalId) return;
+    document
+      .getElementById(`approval-decision-${topPriorityProposalId}`)
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
+  // Resets the board back to the standard pending queue after the operator
+  // has jumped to an overdue or top-priority card — reuses the existing
+  // status filter rather than a new pending-only view.
+  const handleShowPendingQueue = () => {
+    setStatusFilter("pending");
+    document
+      .querySelector(".chief-approval-board")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const approvalFooterStyle = {
+    marginTop: 8,
+    display: "flex",
+    gap: 8,
+    alignItems: "center",
+    color: "var(--steel-dim)",
+    fontSize: "0.92em",
+  };
+
   return (
     <div className="chief-approval-tab">
+      <p className="chief-approval-note" role="note">
+        Audit logging follows ADR-001 (observability-only auditor system). Logs are
+        for history and inspection — they do not approve, merge, or deploy. Logging
+        failures do not block approvals.
+      </p>
+
       <ApprovalStatusDashboard
         summary={statusSummary}
         activeFilter={statusFilter}
         onFilterSelect={setStatusFilter}
       />
+
+      {proposals.length > 0 ? (
+        <p className="chief-approval-note chief-approval-summary-strip" role="status">
+          {pendingCount > 0 ? (
+            <button
+              type="button"
+              className="chief-approval-summary-pending"
+              onClick={handleShowPendingQueue}
+              title="Return to the standard pending approvals queue."
+            >
+              Pending <strong>{pendingCount}</strong>
+            </button>
+          ) : (
+            <>
+              Pending <strong>{pendingCount}</strong>
+            </>
+          )}{" "}
+          ·{" "}
+          {urgencySummary.overdue > 0 ? (
+            <button
+              type="button"
+              className="chief-approval-summary-overdue"
+              onClick={handleJumpToOverdue}
+              title="Scroll to the longest-waiting overdue approval."
+            >
+              Overdue <strong>{urgencySummary.overdue}</strong>
+            </button>
+          ) : (
+            <>
+              Overdue <strong>{urgencySummary.overdue}</strong>
+            </>
+          )}{" "}
+          ·{" "}
+          {urgencySummary.dueSoon > 0 ? (
+            <button
+              type="button"
+              className="chief-approval-summary-duesoon"
+              onClick={handleJumpToDueSoon}
+              title="Scroll to the next due-soon approval."
+            >
+              Due soon <strong>{urgencySummary.dueSoon}</strong>
+            </button>
+          ) : (
+            <>
+              Due soon <strong>{urgencySummary.dueSoon}</strong>
+            </>
+          )}{" "}
+          · Resolved <strong>{resolvedCount}</strong>
+        </p>
+      ) : null}
 
       {proposals.length === 0 ? (
         <ApprovalSurfaceEmpty
@@ -123,11 +257,29 @@ export function ApprovalBoard({
           <div className="chief-approval-list">
             {sortedProposals.map((proposal) => {
               const urgencyBadge = getApprovalUrgencyBadge(proposal);
+              const isFocused = focusProposalId === proposal.id;
+              const isTopPriority = proposal.id === topPriorityProposalId;
+              const actionsNode = (
+                <ChiefApprovalActions
+                  proposal={proposal}
+                  actionState={approvalActionStates[proposal.id]}
+                  onAction={onApprovalAction}
+                  variant="card"
+                />
+              );
 
               return (
                 <article
                   key={proposal.id}
-                  className={`chief-approval-card chief-approval-card--${proposal.status}`}
+                  id={`approval-proposal-${proposal.id}`}
+                  className={[
+                    "chief-approval-card",
+                    `chief-approval-card--${proposal.status}`,
+                    urgencyBadge?.urgency === "overdue" ? "chief-approval-card--overdue" : "",
+                    isFocused ? "chief-approval-card--focused" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
                 >
                   <div className="chief-approval-card-header">
                     <h3 className="chief-approval-card-title">{proposal.title}</h3>
@@ -136,19 +288,17 @@ export function ApprovalBoard({
                     </span>
                   </div>
 
-                  {proposal.source || proposal.recommendedDecision || urgencyBadge ? (
+                  {proposal.source || proposal.recommendedDecision || urgencyBadge || isTopPriority ? (
                     <div className="chief-approval-card-tags">
-                      {proposal.source ? (
-                        <span className={`badge ${APPROVAL_SOURCE_BADGE[proposal.source]}`}>
-                          {APPROVAL_SOURCE_LABEL[proposal.source]}
-                        </span>
-                      ) : null}
-                      {proposal.recommendedDecision ? (
-                        <span
-                          className={`badge ${APPROVAL_RECOMMENDED_DECISION_BADGE[proposal.recommendedDecision]}`}
+                      {isTopPriority ? (
+                        <button
+                          type="button"
+                          className="badge badge-orange chief-approval-badge--top-priority chief-approval-badge--clickable"
+                          title="Chief's #1 pick — the longest-waiting pending approval. Click to jump to its decision."
+                          onClick={handleJumpToTopPriorityDecision}
                         >
-                          {APPROVAL_RECOMMENDED_DECISION_LABEL[proposal.recommendedDecision]}
-                        </span>
+                          Top priority
+                        </button>
                       ) : null}
                       {urgencyBadge ? (
                         <span
@@ -160,6 +310,19 @@ export function ApprovalBoard({
                           }
                         >
                           {urgencyBadge.label}
+                        </span>
+                      ) : null}
+                      {proposal.source ? (
+                        <span className={`badge ${APPROVAL_SOURCE_BADGE[proposal.source]}`}>
+                          {APPROVAL_SOURCE_LABEL[proposal.source]}
+                        </span>
+                      ) : null}
+                      {proposal.recommendedDecision ? (
+                        <span
+                          className={`badge ${APPROVAL_RECOMMENDED_DECISION_BADGE[proposal.recommendedDecision]} chief-approval-badge--recommendation`}
+                          title="Chief's suggested call — the operator's decision below is what actually counts."
+                        >
+                          {APPROVAL_RECOMMENDED_DECISION_LABEL[proposal.recommendedDecision]}
                         </span>
                       ) : null}
                     </div>
@@ -198,26 +361,36 @@ export function ApprovalBoard({
                     ) : null}
                   </div>
 
-                  <footer
-                    className={`chief-approval-card-footer${proposal.specialist ? "" : " chief-approval-card-footer--solo"}`}
+                  <div
+                    className="tc-approval-footer"
+                    style={approvalFooterStyle}
                   >
-                    {proposal.specialist ? (
-                      <span className="chief-approval-card-meta">
-                        <span className="chief-approval-card-meta-label">Via</span>
-                        <span className="chief-approval-card-meta-value">{proposal.specialist}</span>
-                      </span>
-                    ) : null}
-                    <time className="chief-approval-card-time" dateTime={proposal.createdAt}>
-                      {formatChiefTimestamp(proposal.createdAt)}
-                    </time>
-                  </footer>
+                    <footer
+                      className={`chief-approval-card-footer${proposal.specialist ? "" : " chief-approval-card-footer--solo"}`}
+                    >
+                      {proposal.specialist ? (
+                        <span className="chief-approval-card-meta">
+                          <span className="chief-approval-card-meta-label">Via</span>
+                          <span className="chief-approval-card-meta-value">{proposal.specialist}</span>
+                        </span>
+                      ) : null}
+                      <time className="chief-approval-card-time" dateTime={proposal.createdAt}>
+                        {formatChiefTimestamp(proposal.createdAt)}
+                      </time>
+                    </footer>
+                  </div>
 
-                  <ChiefApprovalActions
-                    proposal={proposal}
-                    actionState={approvalActionStates[proposal.id]}
-                    onAction={onApprovalAction}
-                    variant="card"
-                  />
+                  {proposal.status === "pending" ? (
+                    <div
+                      id={`approval-decision-${proposal.id}`}
+                      className="chief-approval-decision-zone"
+                    >
+                      <span className="chief-approval-decision-label">Decision required</span>
+                      {actionsNode}
+                    </div>
+                  ) : (
+                    actionsNode
+                  )}
                 </article>
               );
             })}
