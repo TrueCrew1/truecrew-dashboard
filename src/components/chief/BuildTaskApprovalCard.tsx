@@ -23,6 +23,16 @@ export function BuildTaskApprovalCard({ task }: BuildTaskApprovalCardProps) {
           </span>
         )}
       </p>
+      {task.plannerChecklist.length > 0 && (
+        <div className="chief-board-card-checklist">
+          <span className="chief-board-card-checklist-label">Planner checklist</span>
+          <ul className="chief-board-card-checklist-list">
+            {task.plannerChecklist.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       <footer className="chief-board-card-footer">
         <Link to={task.routeTo} className="chief-board-card-route">
           Open {task.routeLabel}
