@@ -140,6 +140,8 @@ export interface ChiefBoardItem {
   timestamp?: string;
   /** Set on approval-lane rows so board actions target the underlying proposal. */
   proposalId?: string;
+  /** Set on the single most-overdue open task promoted to the top of the at-risk lane. */
+  needsAttention?: boolean;
 }
 
 export interface ChiefBoardLaneConfig {

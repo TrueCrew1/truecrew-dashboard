@@ -76,6 +76,19 @@ function isOpenStage(stage: WorkflowStage | string): boolean {
   return OPEN_STAGE_SET.has(stage);
 }
 
+/**
+ * Reprioritization rule: picks the single most overdue open task (earliest
+ * dueAt) out of the existing overdueTasks signal. Ties keep original order
+ * (Array.sort is stable) since the input is already open-task order.
+ */
+export function selectMostOverdueTask(overdueTasks: Task[]): Task | undefined {
+  return [...overdueTasks].sort((a, b) => {
+    const aTime = a.dueAt ? new Date(a.dueAt).getTime() : Number.POSITIVE_INFINITY;
+    const bTime = b.dueAt ? new Date(b.dueAt).getTime() : Number.POSITIVE_INFINITY;
+    return aTime - bTime;
+  })[0];
+}
+
 export interface ChiefLiveContext {
   stats: ReturnType<typeof deriveShiftStats>;
   focusItems: MockData["focusItems"];
@@ -725,6 +738,29 @@ export function deriveChiefBoardItems(
   const focusIds = new Set(ctx.focusItems.map((item) => item.id));
   const focusTitles = new Set(ctx.focusItems.map((item) => item.title.toLowerCase()));
 
+  const unresolvedOverdueTasks = ctx.overdueTasks.filter((entry) => !focusTaskIds.has(entry.id));
+  const mostOverdueTask = selectMostOverdueTask(unresolvedOverdueTasks);
+
+  // Reprioritization rule: the single most overdue open task is promoted
+  // ahead of everything else on the board, including the focus queue below,
+  // so "look here first" always resolves to one place.
+  if (mostOverdueTask) {
+    items.push({
+      id: `board-risk-overdue-${mostOverdueTask.id}`,
+      lane: "at_risk",
+      title: mostOverdueTask.title,
+      detail: mostOverdueTask.dueAt
+        ? `Needs attention — most overdue open task, past due ${mostOverdueTask.dueAt}`
+        : "Needs attention — most overdue open task",
+      routeTo: CHIEF_ROUTES.operationsOverdue,
+      routeLabel: routeLabelForPath(CHIEF_ROUTES.operationsOverdue),
+      meta: mostOverdueTask.id,
+      tone: "critical",
+      timestamp: mostOverdueTask.dueAt ?? mostOverdueTask.updatedAt,
+      needsAttention: true,
+    });
+  }
+
   for (const item of ctx.focusItems) {
     if (blockingTaskIds.has(item.taskId)) continue;
 
@@ -742,7 +778,9 @@ export function deriveChiefBoardItems(
     });
   }
 
-  for (const task of ctx.overdueTasks.filter((entry) => !focusTaskIds.has(entry.id))) {
+  for (const task of unresolvedOverdueTasks) {
+    if (task.id === mostOverdueTask?.id) continue;
+
     items.push({
       id: `board-risk-overdue-${task.id}`,
       lane: "at_risk",
