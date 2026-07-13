@@ -1235,6 +1235,32 @@ button.chief-brief-metric {
   overflow-wrap: anywhere;
 }
 
+.chief-board-card-checklist {
+  margin: 0 0 8px;
+}
+
+.chief-board-card-checklist-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+}
+
+.chief-board-card-checklist-list {
+  margin: 0;
+  padding-left: 14px;
+  font-size: 10.5px;
+  color: var(--steel);
+  line-height: 1.5;
+}
+
+.chief-board-card-checklist-list li {
+  overflow-wrap: anywhere;
+}
+
 .chief-board-card-footer {
   display: flex;
   align-items: center;

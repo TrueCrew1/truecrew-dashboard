@@ -18,6 +18,8 @@ export interface BuildGateTask {
   routeLabel: string;
   timestamp?: string;
   pendingGates: PendingGate[];
+  /** Planner-suggested next steps, derived from this task's own fields — advisory only. */
+  plannerChecklist: string[];
 }
 
 /** Stages a task can no longer meaningfully be "awaiting gates" in. */
@@ -30,6 +32,25 @@ function toPendingGate(gate: GateCheck): PendingGate {
 /** A task's real, required-but-unpassed gates — driven by its own gate data, not a hardcoded list. */
 function getPendingGates(task: Task): PendingGate[] {
   return task.gates.filter((gate) => gate.required && !gate.passed).map(toPendingGate);
+}
+
+function truncate(text: string, max: number): string {
+  if (text.length <= max) return text;
+  return `${text.slice(0, max - 1).trimEnd()}…`;
+}
+
+/**
+ * Short, generic "next steps" checklist for a build task, derived only from
+ * fields already on the task — no new data source. Advisory guidance for the
+ * operator, not an automation trigger.
+ */
+function getPlannerChecklist(task: Task, pendingGates: PendingGate[]): string[] {
+  const scope = task.description || task.title;
+  const steps = [`Scope: ${truncate(scope, 70)}`];
+  pendingGates.forEach((gate) => steps.push(`Clear gate: ${gate.name}`));
+  steps.push("Run lint + tsc + build");
+  steps.push("Verify in browser");
+  return steps;
 }
 
 function mapTaskToBuildGateTask(task: Task): BuildGateTask | null {
@@ -49,6 +70,7 @@ function mapTaskToBuildGateTask(task: Task): BuildGateTask | null {
     routeLabel: "task",
     timestamp: task.updatedAt || task.createdAt,
     pendingGates,
+    plannerChecklist: getPlannerChecklist(task, pendingGates),
   };
 }
 
