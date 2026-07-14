@@ -13,8 +13,13 @@ import {
 import { getApprovalUrgencyBadge, OVERDUE_HOURS } from "./chiefApprovalUrgency";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { useData } from "@/context/DataContext";
+import { getLatestResearchSummary } from "@/lib/knowledge/latestResearchSource";
 import type { AgentWorkItem, AgentWorkStatus, ApprovalProposal } from "./types";
 import type { TaskPriority } from "@/types";
+
+// Build-time read of knowledge/sources/ (see latestResearchSource.ts) — doesn't
+// change per render, computed once when this module loads.
+const LATEST_RESEARCH_SUMMARY = getLatestResearchSummary();
 
 const SPECIALIST_INITIALS: Record<AgentWorkItem["agent"], string> = {
   "Workflow Gate Agent": "WG",
@@ -166,6 +171,19 @@ export function AgentWorkBoard() {
         or pending proposals from the shared Approvals queue; other agents are still mock for this
         slice. Read-only — no actions taken here.
       </p>
+
+      {LATEST_RESEARCH_SUMMARY ? (
+        <section className="agent-latest-research" aria-label="Latest research source">
+          <span className="agent-latest-research-label">Latest research source</span>
+          <p className="agent-latest-research-title">{LATEST_RESEARCH_SUMMARY.title}</p>
+          {LATEST_RESEARCH_SUMMARY.summary ? (
+            <p className="agent-latest-research-summary">{LATEST_RESEARCH_SUMMARY.summary}</p>
+          ) : null}
+          <p className="agent-latest-research-meta">
+            {LATEST_RESEARCH_SUMMARY.createdDate} · {LATEST_RESEARCH_SUMMARY.path}
+          </p>
+        </section>
+      ) : null}
 
       <div className="agent-work-lanes">
         {AGENT_WORK_STATUS_CONFIG.map((laneConfig) => {

@@ -3186,6 +3186,46 @@ button.chief-brief-metric {
   line-height: 1.5;
 }
 
+.agent-latest-research {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.agent-latest-research-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+}
+
+.agent-latest-research-title {
+  margin: 0 0 4px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.35;
+}
+
+.agent-latest-research-summary {
+  margin: 0 0 6px;
+  font-size: 11px;
+  color: var(--steel);
+  line-height: 1.5;
+}
+
+.agent-latest-research-meta {
+  margin: 0;
+  font-size: 9px;
+  color: var(--steel-dim);
+}
+
 .agent-work-lanes {
   display: flex;
   flex-direction: column;
