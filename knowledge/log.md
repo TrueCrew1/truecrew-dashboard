@@ -396,3 +396,12 @@ playbooks. Full reasoning in the Obsidian Build Log entry of the same name.
   `docs/AGENT_WORKFLOW.md`, which already serve that purpose in this repo.
 - No dashboard UI or app code changed; no new VS Code extension was actually
   installed by this pass — governance/docs only.
+
+---
+
+## 2026-07-14 — Research → Filing loop (first real pass)
+
+- 2026-07-14 — created — `sources/research-agent-filing-loop-first-real-pass.md` —
+  from the new `lib/research/fileFinding.ts` helper's bounded example finding, run
+  via `npm run research:file-finding`; first real (non-mock) Research → Filing
+  path writing directly into this vault's `sources/` shelf.
