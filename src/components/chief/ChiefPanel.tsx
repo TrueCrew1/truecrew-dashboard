@@ -19,6 +19,7 @@ import { ChiefBoard } from "./ChiefBoard";
 import { AgentWorkBoard } from "./AgentWorkBoard";
 import { GovernanceEventsPanel } from "./GovernanceEventsPanel";
 import { emitTaskReprioritized } from "./chiefGovernanceEvents";
+import { useChiefVoice } from "./useChiefVoice";
 import type { ApprovalAction, ChiefResponse } from "./types";
 import type { ApprovalStatusFilter } from "./approvalStatus";
 
@@ -60,6 +61,23 @@ export function ChiefPanel() {
   const liveApi = isLiveApiEnabled();
   // Same hook and endpoints Monitor already uses — no new polling or data source.
   const platformHealth = useMonitorHealth();
+
+  const commandInputRef = useRef<HTMLInputElement>(null);
+  const handleVoiceTranscript = useCallback((transcript: string) => {
+    setInput(transcript);
+    commandInputRef.current?.focus();
+  }, []);
+  const {
+    speak,
+    stop: stopSpeaking,
+    startListening,
+    stopListening,
+    isSpeaking,
+    isListening,
+    isSpeechInputSupported,
+    isSpeechOutputSupported,
+    micError,
+  } = useChiefVoice(handleVoiceTranscript);
 
   const openApprovals = useCallback((filter: ApprovalStatusFilter = "all") => {
     setApprovalStatusFilter(filter);
@@ -374,7 +392,21 @@ export function ChiefPanel() {
                 <div className="chief-response-section chief-response-section--chief">
                   <div className="chief-speaker-row">
                     <h3 className="chief-response-label">Chief</h3>
-                    <span className="chief-speaker-badge">Response</span>
+                    <div className="chief-speaker-row-actions">
+                      {isSpeechOutputSupported ? (
+                        <button
+                          type="button"
+                          className="chief-voice-btn chief-speak-btn"
+                          aria-pressed={isSpeaking}
+                          onClick={() =>
+                            isSpeaking ? stopSpeaking() : speak(response.summary)
+                          }
+                        >
+                          {isSpeaking ? "Stop" : "Speak"}
+                        </button>
+                      ) : null}
+                      <span className="chief-speaker-badge">Response</span>
+                    </div>
                   </div>
                   <p className="chief-response-text">{response.summary}</p>
                 </div>
@@ -502,6 +534,7 @@ export function ChiefPanel() {
         </label>
         <div className="chief-input-row">
           <input
+            ref={commandInputRef}
             id="chief-command"
             type="text"
             className="chief-input"
@@ -511,6 +544,19 @@ export function ChiefPanel() {
             aria-label="Chief command input"
             disabled={isProcessing}
           />
+          {isSpeechInputSupported ? (
+            <button
+              type="button"
+              className="chief-voice-btn chief-mic-btn"
+              aria-pressed={isListening}
+              aria-label={isListening ? "Stop voice input" : "Start voice input"}
+              title={isListening ? "Stop voice input" : "Start voice input"}
+              disabled={isProcessing}
+              onClick={() => (isListening ? stopListening() : startListening())}
+            >
+              {isListening ? "●" : "🎤"}
+            </button>
+          ) : null}
           <button
             type="submit"
             className="chief-submit"
@@ -520,6 +566,7 @@ export function ChiefPanel() {
             Run
           </button>
         </div>
+        {micError ? <p className="chief-voice-error">{micError}</p> : null}
       </form>
     </aside>
   );
