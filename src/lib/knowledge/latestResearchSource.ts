@@ -16,6 +16,8 @@ export interface LatestResearchSummary {
   createdDate: string;
   /** Repo-relative path, for traceability only. */
   path: string;
+  /** WorkStoryDefinition.id this note was filed for, if any — absent on older/unlinked notes. */
+  workStoryId?: string;
 }
 
 function extractFrontmatterField(frontmatterBlock: string, key: string): string {
@@ -42,12 +44,15 @@ function parseSourceNote(raw: string, repoPath: string): LatestResearchSummary |
   const createdDate = extractFrontmatterField(frontmatterBlock, "created");
   if (!createdDate) return null;
 
+  const workStoryId = extractFrontmatterField(frontmatterBlock, "work_story_id");
+
   return {
     title: extractFrontmatterField(frontmatterBlock, "title") || repoPath,
     origin: extractSection(body, "Origin"),
     summary: truncate(extractSection(body, "Raw summary"), 220),
     createdDate,
     path: repoPath,
+    workStoryId: workStoryId || undefined,
   };
 }
 
@@ -68,11 +73,21 @@ export function getLatestResearchSummary(): LatestResearchSummary | null {
 }
 
 /**
- * Most recent filed note whose title contains `titleSubstring` (case-insensitive) —
- * how a Work Story resolves "its" latest research without a database, using only
- * the same build-time note set as getLatestResearchSummary.
+ * Most recent filed note whose title contains `titleSubstring` (case-insensitive).
+ * Kept as a compatibility fallback for notes filed before `work_story_id` existed —
+ * prefer findLatestResearchSummaryByWorkStoryId when a note might carry that field.
  */
 export function findLatestResearchSummaryByTitle(titleSubstring: string): LatestResearchSummary | null {
   const needle = titleSubstring.toLowerCase();
   return getAllResearchSummaries().find((note) => note.title.toLowerCase().includes(needle)) ?? null;
+}
+
+/**
+ * Most recent filed note carrying this exact `work_story_id` — the stable,
+ * non-fuzzy way a Work Story resolves "its" latest research. Returns null if no
+ * note has been filed with this id yet (including for notes filed before this
+ * field existed).
+ */
+export function findLatestResearchSummaryByWorkStoryId(workStoryId: string): LatestResearchSummary | null {
+  return getAllResearchSummaries().find((note) => note.workStoryId === workStoryId) ?? null;
 }

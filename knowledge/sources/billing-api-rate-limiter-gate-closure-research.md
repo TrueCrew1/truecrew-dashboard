@@ -2,8 +2,9 @@
 title: Billing API rate limiter — gate-closure research
 type: source
 status: raw
-created: 2026-07-14T03:44:17.242Z
-updated: 2026-07-14T03:44:17.242Z
+created: 2026-07-14T03:55:24.442Z
+updated: 2026-07-14T03:55:24.442Z
+work_story_id: story-billing-rate-limiter
 related_pages: []
 related_prs: []
 related_cards: []

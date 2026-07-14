@@ -13,7 +13,11 @@ import {
 import { getApprovalUrgencyBadge, OVERDUE_HOURS } from "./chiefApprovalUrgency";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { useData } from "@/context/DataContext";
-import { findLatestResearchSummaryByTitle, getLatestResearchSummary } from "@/lib/knowledge/latestResearchSource";
+import {
+  findLatestResearchSummaryByTitle,
+  findLatestResearchSummaryByWorkStoryId,
+  getLatestResearchSummary,
+} from "@/lib/knowledge/latestResearchSource";
 import { getResearchRequests } from "@/lib/research/requests";
 import { getWorkStories } from "@/lib/chief/workStories";
 import { useBuildTasks } from "./hooks/useBuildTasks";
@@ -136,7 +140,10 @@ function WorkStoryPanel({
     : undefined;
   const checklist = linkedTask ? getPlannerChecklist(linkedTask.pendingGates) : [];
   const request = researchRequests.find((candidate) => candidate.id === story.researchRequestId);
-  const latestNote = findLatestResearchSummaryByTitle(story.noteMatchTitle);
+  // Stable id-based resolution first; title match is only a compatibility
+  // fallback for notes filed before work_story_id existed.
+  const latestNote =
+    findLatestResearchSummaryByWorkStoryId(story.id) ?? findLatestResearchSummaryByTitle(story.noteMatchTitle);
   const isLive = Boolean(linkedTask);
 
   return (

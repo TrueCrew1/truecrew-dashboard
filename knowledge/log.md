@@ -453,3 +453,32 @@ playbooks. Full reasoning in the Obsidian Build Log entry of the same name.
 - `sources/billing-api-rate-limiter-gate-closure-research.md` — re-filed via
   the same script (unchanged content aside from timestamp) to confirm the
   refactor didn't regress the first story.
+
+---
+
+## 2026-07-14 — Stable work_story_id linkage for filed research
+
+- `lib/research/fileFinding.ts` — `ResearchFinding` gained an optional
+  `workStoryId`; `renderResearchFindingNote` now writes a `work_story_id:`
+  frontmatter line when present (omitted entirely for findings not tied to a
+  Work Story, so the general `source` note shape is unaffected).
+- `lib/research/fulfillRequest.ts` — `fulfillResearchRequest` now derives the
+  story id generically from `WORK_STORIES` (matching on `researchRequestId`)
+  and attaches it to the filed finding; individual builders don't hardcode
+  their own story id, so this can't drift out of sync with
+  `src/lib/chief/workStories.ts`.
+- `src/lib/knowledge/latestResearchSource.ts` — `LatestResearchSummary` gained
+  `workStoryId` (parsed from frontmatter); added
+  `findLatestResearchSummaryByWorkStoryId`. `findLatestResearchSummaryByTitle`
+  is kept as a compatibility fallback for notes filed before this field
+  existed — general "latest research" behavior is unchanged.
+- `AgentWorkBoard.tsx`'s `WorkStoryPanel` now resolves its latest note by
+  stable id first, falling back to title match only if no id match is found.
+- Re-filed both existing stories via
+  `npm run research:fulfill -- req-billing-rate-limiter` and
+  `npm run research:fulfill -- req-notification-vendor` so
+  `sources/billing-api-rate-limiter-gate-closure-research.md` and
+  `sources/transactional-email-vendor-for-notification-hooks-current-state.md`
+  now carry `work_story_id: story-billing-rate-limiter` and
+  `work_story_id: story-notification-vendor` respectively — both stories now
+  resolve by id, not fuzzy title matching.

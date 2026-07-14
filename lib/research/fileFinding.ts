@@ -19,6 +19,13 @@ export interface ResearchFinding {
   nextStep: string;
   /** Existing knowledge/ page slugs this relates to, if any. */
   relatedPages?: string[];
+  /**
+   * Stable WorkStoryDefinition.id (src/lib/chief/workStories.ts) this finding
+   * belongs to, if any — lets Chief resolve "latest research for this story" by
+   * id instead of fuzzy title matching. Omitted entirely from frontmatter for
+   * findings that aren't tied to a Work Story.
+   */
+  workStoryId?: string;
 }
 
 const KNOWLEDGE_SOURCES_DIR = path.join(process.cwd(), "knowledge", "sources");
@@ -49,6 +56,7 @@ export function renderResearchFindingNote(finding: ResearchFinding, filedAt = ne
     "status: raw",
     `created: ${timestamp}`,
     `updated: ${timestamp}`,
+    ...(finding.workStoryId ? [`work_story_id: ${finding.workStoryId}`] : []),
     `related_pages: [${(finding.relatedPages ?? []).join(", ")}]`,
     "related_prs: []",
     "related_cards: []",

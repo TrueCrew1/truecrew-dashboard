@@ -2,8 +2,9 @@
 title: Transactional email vendor for notification hooks — current state
 type: source
 status: raw
-created: 2026-07-14T03:44:18.107Z
-updated: 2026-07-14T03:44:18.107Z
+created: 2026-07-14T03:55:25.257Z
+updated: 2026-07-14T03:55:25.257Z
+work_story_id: story-notification-vendor
 related_pages: []
 related_prs: []
 related_cards: []

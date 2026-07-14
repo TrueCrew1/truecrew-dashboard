@@ -1,5 +1,6 @@
 import { fileResearchFinding, type ResearchFinding } from "./fileFinding";
 import { getResearchRequests, type ResearchRequest } from "../../src/lib/research/requests";
+import { getWorkStories } from "../../src/lib/chief/workStories";
 
 type FindingBuilder = (request: ResearchRequest) => ResearchFinding;
 
@@ -60,6 +61,10 @@ const FINDING_BUILDERS: Record<string, FindingBuilder> = {
  * Builds and files a finding for a known, already-queued Research request.
  * Returns the written path, or null if the request id isn't queued or has no
  * fulfillment builder yet.
+ *
+ * The Work Story id is derived here, generically, from whichever
+ * WorkStoryDefinition links to this request (via researchRequestId) — builders
+ * above don't need to know or hardcode their own story id.
  */
 export function fulfillResearchRequest(requestId: string): string | null {
   const request = getResearchRequests().find((candidate) => candidate.id === requestId);
@@ -68,5 +73,8 @@ export function fulfillResearchRequest(requestId: string): string | null {
   const builder = FINDING_BUILDERS[requestId];
   if (!builder) return null;
 
-  return fileResearchFinding(builder(request));
+  const story = getWorkStories().find((candidate) => candidate.researchRequestId === requestId);
+  const finding = builder(request);
+
+  return fileResearchFinding({ ...finding, workStoryId: story?.id ?? finding.workStoryId });
 }
