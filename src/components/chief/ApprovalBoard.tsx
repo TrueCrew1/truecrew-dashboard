@@ -14,6 +14,7 @@ import {
   ApprovalSurfaceEmpty,
 } from "./approvalWrappers";
 import { ChiefApprovalActions } from "./ChiefApprovalActions";
+import { useChiefApprovals } from "./ChiefApprovalsContext";
 import {
   APPROVAL_CHECKLIST_STATUS_ICON,
   APPROVAL_RECOMMENDED_DECISION_BADGE,
@@ -51,6 +52,7 @@ export function ApprovalBoard({
   onStatusFilterChange,
   focusProposalId,
 }: ApprovalBoardProps) {
+  const { decisionsHydrated } = useChiefApprovals();
   const [localStatusFilter, setLocalStatusFilter] = useState<ApprovalStatusFilter>("all");
   const statusFilter = statusFilterProp ?? localStatusFilter;
   const setStatusFilter = onStatusFilterChange ?? setLocalStatusFilter;
@@ -216,7 +218,19 @@ export function ApprovalBoard({
         </p>
       ) : null}
 
-      {proposals.length === 0 ? (
+      {!decisionsHydrated ? (
+        <div className="chief-processing-card" aria-live="polite" aria-busy="true">
+          <div className="chief-processing-header">
+            <span className="chief-processing-dot" aria-hidden="true" />
+            Loading saved decisions…
+          </div>
+          <div className="chief-processing-lines" aria-hidden="true">
+            <span className="chief-skeleton-line chief-skeleton-line--long" />
+            <span className="chief-skeleton-line chief-skeleton-line--medium" />
+            <span className="chief-skeleton-line chief-skeleton-line--short" />
+          </div>
+        </div>
+      ) : proposals.length === 0 ? (
         <ApprovalSurfaceEmpty
           lead="No proposals"
           description="Chief will surface actions here when your approval is required."
