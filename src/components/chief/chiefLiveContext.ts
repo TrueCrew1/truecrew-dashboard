@@ -474,6 +474,46 @@ export function deriveBuildAgentWorkItems(tasks: Task[]): AgentWorkItem[] {
 }
 
 /**
+ * Real, not mock: Planner's Agents-tab entries, one per build task with an open
+ * required gate — the same trigger Build Gates already watches (see
+ * useBuildTasks.ts). Planner never executes or approves anything itself, so
+ * status only ever reads "queued" (checklist drafted, ready for Build/Chief to
+ * act on) or "completed" (task cleared, checklist no longer needed) — there's
+ * no live "blocked"/"active"/"awaiting_approval" signal for a suggestion.
+ * The actual checklist steps are computed by getPlannerChecklist (see
+ * plannerSuggestions.ts) from the same pending-gate data, rendered on the
+ * Build Gates card.
+ */
+export function derivePlannerAgentWorkItems(tasks: Task[]): AgentWorkItem[] {
+  return tasks
+    .filter((task) => task.workflowType === "build")
+    .filter((task) => {
+      const isDone = task.stage === WorkflowStage.Done || task.stage === WorkflowStage.Logged;
+      return isDone || getBlockingGates(task.gates).length > 0;
+    })
+    .map((task) => {
+      const blockingGateCount = getBlockingGates(task.gates).length;
+      const isDone = task.stage === WorkflowStage.Done || task.stage === WorkflowStage.Logged;
+
+      const status: AgentWorkItem["status"] = isDone ? "completed" : "queued";
+      const note = isDone
+        ? "Suggested gate checklist no longer needed — task cleared."
+        : `Drafted a checklist to close ${blockingGateCount} remaining gate(s).`;
+
+      return {
+        id: `agentwork-planner-${task.id}`,
+        agent: "Planner Agent",
+        task: `${task.title} — gate checklist`,
+        status,
+        priority: task.priority,
+        note,
+        updatedAt: task.updatedAt,
+        source: "live",
+      };
+    });
+}
+
+/**
  * Real, not mock: derives Workflow Gate Agent's Agents-tab entries the same
  * way deriveBuildAgentWorkItems does — a task's own gates/blocker/stage IS
  * the truthful signal, no separate agent-status source exists. Scoped to

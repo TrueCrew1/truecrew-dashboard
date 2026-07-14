@@ -1187,6 +1187,40 @@ button.chief-brief-metric {
   color: var(--steel);
 }
 
+.chief-board-card-planner {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.chief-board-card-planner-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+}
+
+.chief-board-card-planner-list {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 10px;
+  color: var(--steel);
+  line-height: 1.5;
+}
+
+.chief-board-card-planner-list li {
+  margin-bottom: 2px;
+}
+
+.chief-board-card-planner-list li:last-child {
+  margin-bottom: 0;
+}
+
 .chief-board-card-footer {
   display: flex;
   align-items: center;

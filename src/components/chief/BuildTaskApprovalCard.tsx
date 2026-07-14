@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { formatChiefTimestamp } from "./chiefMock";
+import { getPlannerChecklist } from "./plannerSuggestions";
 import type { BuildGateTask } from "./hooks/useBuildTasks";
 
 interface BuildTaskApprovalCardProps {
@@ -8,6 +9,7 @@ interface BuildTaskApprovalCardProps {
 
 export function BuildTaskApprovalCard({ task }: BuildTaskApprovalCardProps) {
   const gateLabels = task.pendingGates.map((gate) => gate.name).join(", ");
+  const plannerChecklist = getPlannerChecklist(task.pendingGates);
 
   return (
     <article className={`chief-board-card chief-board-card--${task.tone}`}>
@@ -27,6 +29,16 @@ export function BuildTaskApprovalCard({ task }: BuildTaskApprovalCardProps) {
           Pending gates: <strong>{gateLabels}</strong>
         </p>
       )}
+      {plannerChecklist.length > 0 ? (
+        <div className="chief-board-card-planner">
+          <span className="chief-board-card-planner-label">Planner suggests</span>
+          <ol className="chief-board-card-planner-list">
+            {plannerChecklist.map((step, index) => (
+              <li key={index}>{step}</li>
+            ))}
+          </ol>
+        </div>
+      ) : null}
       <footer className="chief-board-card-footer">
         <Link to={task.routeTo} className="chief-board-card-route">
           Open {task.routeLabel}

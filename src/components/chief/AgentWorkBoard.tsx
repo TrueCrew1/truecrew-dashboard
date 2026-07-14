@@ -6,6 +6,7 @@ import {
   deriveAgentAwaitingApprovalWorkItems,
   deriveBuildAgentWorkItems,
   deriveLibrarianAgentWorkItems,
+  derivePlannerAgentWorkItems,
   deriveResearchAgentWorkItems,
   deriveWorkflowGateAgentWorkItems,
 } from "./chiefLiveContext";
@@ -22,6 +23,7 @@ const SPECIALIST_INITIALS: Record<AgentWorkItem["agent"], string> = {
   "Roadmap Agent": "RM",
   "Marketer Agent": "MK",
   "Build Agent": "BD",
+  "Planner Agent": "PL",
 };
 
 const PRIORITY_BADGE_VARIANT: Record<TaskPriority, "red" | "orange" | "yellow" | "steel"> = {
@@ -112,6 +114,7 @@ export function AgentWorkBoard() {
     () => deriveLibrarianAgentWorkItems(data.tasks, data.notes),
     [data.tasks, data.notes],
   );
+  const plannerItems = useMemo(() => derivePlannerAgentWorkItems(data.tasks), [data.tasks]);
   const awaitingApprovalItems = useMemo(
     () => deriveAgentAwaitingApprovalWorkItems(approvals),
     [approvals],
@@ -131,10 +134,11 @@ export function AgentWorkBoard() {
       ...workflowGateItems,
       ...researchItems,
       ...librarianItems,
+      ...plannerItems,
       ...awaitingApprovalItems,
       ...AGENT_WORK_ITEMS,
     ],
-    [buildItems, workflowGateItems, researchItems, librarianItems, awaitingApprovalItems],
+    [buildItems, workflowGateItems, researchItems, librarianItems, plannerItems, awaitingApprovalItems],
   );
 
   if (items.length === 0) {
@@ -157,9 +161,10 @@ export function AgentWorkBoard() {
     >
       <p className="agent-work-board-note">
         Snapshot of what each agent is carrying right now. Build, Workflow Gate, Research,
-        Librarian, and Awaiting approval rows marked <span className="badge badge-green">live</span>{" "}
-        reflect real task/incident/artifact data or pending proposals from the shared Approvals
-        queue; other agents are still mock for this slice. Read-only — no actions taken here.
+        Librarian, Planner, and Awaiting approval rows marked{" "}
+        <span className="badge badge-green">live</span> reflect real task/incident/artifact data
+        or pending proposals from the shared Approvals queue; other agents are still mock for this
+        slice. Read-only — no actions taken here.
       </p>
 
       <div className="agent-work-lanes">

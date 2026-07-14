@@ -153,14 +153,13 @@ export interface ChiefBoardLaneConfig {
 export type AgentWorkStatus = "queued" | "active" | "blocked" | "awaiting_approval" | "completed";
 
 /**
- * Agent names shown on the Agents tab. "Build Agent" isn't part of
- * ChiefSpecialist (that vocabulary attributes build-gate work to
- * "Workflow Gate Agent" instead) — it's added here, scoped to the
- * agent-work board only, so Build can have its own live-derived lane
- * without renaming/rippling ChiefSpecialist across approvals, routing,
- * and specialist-attribution call sites.
+ * Agent names shown on the Agents tab. "Build Agent" and "Planner Agent" aren't
+ * part of ChiefSpecialist ("Roadmap Agent" is the existing, still-mock specialist
+ * closest to Planner) — added here, scoped to the agent-work board only, so each
+ * can have its own live-derived lane without renaming/rippling ChiefSpecialist
+ * across approvals, routing, and specialist-attribution call sites.
  */
-export type AgentWorkAgentName = Exclude<ChiefSpecialist, "Chief"> | "Build Agent";
+export type AgentWorkAgentName = Exclude<ChiefSpecialist, "Chief"> | "Build Agent" | "Planner Agent";
 
 /**
  * A single unit of work an agent is carrying, shown on the Chief "Agents"
