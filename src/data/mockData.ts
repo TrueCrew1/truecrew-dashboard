@@ -93,6 +93,27 @@ export const mockTasks: Task[] = [
     ],
     linkedEntities: [],
   },
+  {
+    id: "task-005",
+    title: "Billing API webhook retries",
+    description:
+      "Add retry/backoff handling for webhook delivery to clear the Webhook Worker's queue backlog.",
+    stage: WorkflowStage.InProgress,
+    workflowType: "build",
+    priority: "high",
+    assignee: "founder",
+    createdAt: iso(48),
+    updatedAt: iso(3),
+    createdBy: "founder",
+    gates: [
+      { id: "g1", label: "Acceptance criteria written", required: true, passed: true },
+      { id: "g2", label: "GitHub branch linked", required: true, passed: false },
+    ],
+    linkedEntities: [
+      { type: "tool", id: "tool-003", label: "Webhook Worker" },
+      { type: "incident", id: "inc-002", label: "Webhook delivery backlog" },
+    ],
+  },
 ];
 
 export const mockWorkflows: Workflow[] = [

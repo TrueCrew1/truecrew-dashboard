@@ -482,3 +482,45 @@ playbooks. Full reasoning in the Obsidian Build Log entry of the same name.
   now carry `work_story_id: story-billing-rate-limiter` and
   `work_story_id: story-notification-vendor` respectively — both stories now
   resolve by id, not fuzzy title matching.
+
+---
+
+## 2026-07-14 — Documented the Work Story system
+
+- 2026-07-14 — updated — `docs/AGENT_RUNBOOK.md` — added a "Work Stories
+  (Agents tab)" subsection under Chief, describing `workStories.ts`'s
+  `WorkStoryDefinition`/`WORK_STORIES`, the Live/Structured honesty signal,
+  the manual Research queue (`requests.ts`), deterministic fulfillment
+  (`fulfillRequest.ts`, `npm run research:fulfill`), filing/`work_story_id`
+  linkage (`fileFinding.ts`), and id-based latest-note resolution
+  (`latestResearchSource.ts`) — docs only, no code changed.
+
+---
+
+## 2026-07-14 — Third live Work Story: Billing API webhook retries
+
+- 2026-07-14 — created — `src/data/mockData.ts` task-005, "Billing API webhook
+  retries" — a second real `workflowType:"build"` task, grounded in existing
+  mock fiction: `mockWorkflows[0]`'s summary already promised "webhook
+  retries" as part of the Billing API v2.4.1 build, and it's linked to the
+  already-existing Webhook Worker tool (`tool-003`, degraded) and open
+  incident (`inc-002`, "Webhook delivery backlog"). One gate passed
+  ("Acceptance criteria written"), one open ("GitHub branch linked").
+- 2026-07-14 — created — `story-webhook-retries` in
+  `src/lib/chief/workStories.ts` — third `WorkStoryDefinition`, `linkedTaskTitle`
+  set to task-005's title, so it resolves as Live with a real Board priority
+  reason and Planner checklist, same as Billing rate limiter.
+- 2026-07-14 — created — `req-webhook-retries` in `src/lib/research/requests.ts`.
+- 2026-07-14 — created — matching `FINDING_BUILDERS` entry in
+  `lib/research/fulfillRequest.ts`, grounded only in task-005's real fields
+  (gate names, linked tool/incident) — no invented facts.
+- 2026-07-14 — created — `sources/billing-api-webhook-retries-gate-closure-research.md` —
+  filed via `npm run research:fulfill -- req-webhook-retries`; confirmed
+  `work_story_id: story-webhook-retries` in frontmatter, derived automatically
+  (not hardcoded in the builder).
+- Manually verified (headless browser): Chief's Agents tab now renders three
+  Work Story panels — Billing rate limiter (Live), notification-vendor
+  (Structured, unchanged), webhook retries (Live, new) — with the new story's
+  "Latest filed research" correctly resolving to its own note by
+  `work_story_id`. Did not touch `AgentWorkBoard.tsx` or `chief.css` — the
+  generic rendering already supported a third story with zero UI changes.

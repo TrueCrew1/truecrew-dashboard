@@ -40,6 +40,18 @@ export const RESEARCH_REQUESTS: ResearchRequest[] = [
       "which billing endpoints are in scope) that need answering before PR #142 can merge.",
     createdAt: "2026-07-13T11:00:00.000Z",
   },
+  {
+    id: "req-webhook-retries",
+    topic: "Billing API webhook retries — retry/backoff approach",
+    whyItMatters:
+      "The Webhook Worker (tool-003) has an open incident (inc-002, queue depth above 5k for 45 " +
+      "minutes) and task-005's \"GitHub branch linked\" gate is still open — Planner's checklist on " +
+      "the Build gates card flags it as the task's blocker.",
+    suggestedOutcome:
+      "A findings note listing the retry/backoff parameters (max attempts, backoff curve, " +
+      "dead-letter handling) that need to be decided before the branch can be opened.",
+    createdAt: "2026-07-13T16:30:00.000Z",
+  },
 ];
 
 export function getResearchRequests(): ResearchRequest[] {

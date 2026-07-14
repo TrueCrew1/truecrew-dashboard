@@ -41,6 +41,17 @@ export const WORK_STORIES: WorkStoryDefinition[] = [
     researchRequestId: "req-notification-vendor",
     noteMatchTitle: "notification",
   },
+  {
+    id: "story-webhook-retries",
+    title: "Billing API webhook retries",
+    summary:
+      "Retry/backoff handling for webhook delivery — the Webhook Worker (tool-003) has an open " +
+      "incident (queue backlog) this build directly addresses. One required gate " +
+      "(\"GitHub branch linked\") still open.",
+    researchRequestId: "req-webhook-retries",
+    linkedTaskTitle: "Billing API webhook retries",
+    noteMatchTitle: "webhook retries",
+  },
 ];
 
 export function getWorkStories(): WorkStoryDefinition[] {
