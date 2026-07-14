@@ -486,6 +486,50 @@ path, not a separate decision surface.
   actions is a documented extension point, not current behavior, until an explicit signoff rule
   for it is approved separately.
 
+### Work Stories (Agents tab)
+
+Chief's Agents tab renders one panel per **Work Story** — a config entry that ties one real
+scenario together across Planner's live checklist context, the manual Research queue, and the
+Research → Filing path, so the operator can see the whole thread for a scenario in one place
+instead of piecing it together from separate tabs.
+
+**Where the config lives:** `src/lib/chief/workStories.ts` exports `WorkStoryDefinition` (`id`,
+`title`, `summary`, `researchRequestId`, optional `linkedTaskTitle`, `noteMatchTitle`) and the
+`WORK_STORIES` array. Adding a new scenario means adding one entry here — the Agents tab renders
+generically from this list, no per-scenario UI code required.
+
+**Live vs. Structured — an honesty signal, not a bug:** if a Work Story's `linkedTaskTitle`
+resolves to a real Build task (via `useBuildTasks`), Chief shows it as **Live** with that task's
+real Planner checklist and priority reason. If `linkedTaskTitle` is unset (no real task backs the
+scenario yet), Chief shows it as **Structured** and says so plainly — the UI never fakes a live
+status for a scenario that doesn't have one yet.
+
+**The manual Research queue:** `src/lib/research/requests.ts` exports `ResearchRequest` (`id`,
+`topic`, `whyItMatters`, `suggestedOutcome`, `createdAt`) and `getResearchRequests()`. This is a
+static, hand-maintained list of things Chief has flagged as worth investigating — read-only and
+non-fulfilling on its own; nothing here auto-runs research.
+
+**Deterministic fulfillment:** `lib/research/fulfillRequest.ts` holds one hand-authored
+`FINDING_BUILDERS` entry per known `ResearchRequest.id`. A human runs
+`npm run research:fulfill -- <request-id>` to build and file a finding for that request — there is
+no AI generation and no autonomous triggering; every finding is written by whoever authored that
+request's builder function.
+
+**Filing and linkage:** `lib/research/fileFinding.ts` writes the finding into
+`knowledge/sources/*.md` using the same frontmatter/section shape as
+`knowledge/templates/source-template.md`. When the fulfilled request maps to a `WorkStoryDefinition`
+(matched via `researchRequestId`), the filed note also gets a `work_story_id` frontmatter field
+set to that story's stable `id` — this is optional and omitted entirely for findings not tied to
+a Work Story.
+
+**Resolving "latest research for this story":** `src/lib/knowledge/latestResearchSource.ts` parses
+every note under `knowledge/sources/` at build time (`import.meta.glob`, no server call) and
+exposes `findLatestResearchSummaryByWorkStoryId(id)` — the stable, non-fuzzy way a Work Story
+panel finds its own latest filed note. `findLatestResearchSummaryByTitle(substring)` remains as a
+compatibility fallback for notes filed before `work_story_id` existed. The Agents tab also still
+shows a separate, unrelated "Latest research source" panel — the single most recent note across
+*all* of `knowledge/sources/`, independent of any Work Story.
+
 ---
 
 ## Incidents, Pauses, and Escalation
