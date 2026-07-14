@@ -9,7 +9,7 @@ Command center for operations and maintenance teams — run the day from the fie
 | **Host** | Vercel — SPA + serverless `/api` routes |
 | **Database** | Supabase Postgres |
 | **GitHub** | Webhooks → automatic gate updates |
-| **Knowledge** | Obsidian Sync (Phase C) |
+| **Knowledge** | Obsidian — local log/read (Phase C) |
 
 > Full setup guide: [docs/VERCEL_SUPABASE_SETUP.md](docs/VERCEL_SUPABASE_SETUP.md)  
 > **Deploy now (5 min):** [docs/DEPLOY_NOW.md](docs/DEPLOY_NOW.md)  
@@ -49,6 +49,10 @@ npm run dev:vercel       # UI + API (requires .env.local)
 | `GET /api/obsidian/notes` | Vault note list (local dev) |
 | `POST /api/librarian/artifacts` | Create task-linked Obsidian artifact index |
 | `GET /api/tasks/:id/artifacts` | List Librarian artifacts for a task |
+| `POST /api/github/webhook` | GitHub webhook receiver → gate/CI updates |
+| `GET /api/monitor/supabase` | Supabase health/connection check |
+| `GET /api/monitor/vercel` | Vercel deployment status check |
+| `GET /api/chief/approvals` / `POST /api/chief/approvals` | Read/create Chief approval decisions |
 
 ## App routes
 
