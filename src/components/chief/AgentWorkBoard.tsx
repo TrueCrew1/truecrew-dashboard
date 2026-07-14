@@ -14,12 +14,16 @@ import { getApprovalUrgencyBadge, OVERDUE_HOURS } from "./chiefApprovalUrgency";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { useData } from "@/context/DataContext";
 import { getLatestResearchSummary } from "@/lib/knowledge/latestResearchSource";
+import { getResearchRequests } from "@/lib/research/requests";
 import type { AgentWorkItem, AgentWorkStatus, ApprovalProposal } from "./types";
 import type { TaskPriority } from "@/types";
 
 // Build-time read of knowledge/sources/ (see latestResearchSource.ts) — doesn't
 // change per render, computed once when this module loads.
 const LATEST_RESEARCH_SUMMARY = getLatestResearchSummary();
+
+// Static example queue (see requests.ts) — manual, not agent-fulfilled.
+const RESEARCH_REQUESTS = getResearchRequests();
 
 const SPECIALIST_INITIALS: Record<AgentWorkItem["agent"], string> = {
   "Workflow Gate Agent": "WG",
@@ -182,6 +186,27 @@ export function AgentWorkBoard() {
           <p className="agent-latest-research-meta">
             {LATEST_RESEARCH_SUMMARY.createdDate} · {LATEST_RESEARCH_SUMMARY.path}
           </p>
+        </section>
+      ) : null}
+
+      {RESEARCH_REQUESTS.length > 0 ? (
+        <section className="agent-research-queue" aria-label="Research queue (manual)">
+          <span className="agent-research-queue-label">Research queue (manual)</span>
+          <p className="agent-research-queue-note">
+            Chief-originated research requests waiting on a human or a future Research agent run
+            — nothing here is auto-fulfilled or auto-filed.
+          </p>
+          <ul className="agent-research-queue-list">
+            {RESEARCH_REQUESTS.map((request) => (
+              <li key={request.id} className="agent-research-queue-item">
+                <p className="agent-research-queue-topic">{request.topic}</p>
+                <p className="agent-research-queue-why">{request.whyItMatters}</p>
+                <time className="agent-research-queue-time" dateTime={request.createdAt}>
+                  {formatChiefTimestamp(request.createdAt)}
+                </time>
+              </li>
+            ))}
+          </ul>
         </section>
       ) : null}
 

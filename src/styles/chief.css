@@ -3226,6 +3226,71 @@ button.chief-brief-metric {
   color: var(--steel-dim);
 }
 
+.agent-research-queue {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.agent-research-queue-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+}
+
+.agent-research-queue-note {
+  margin: 0 0 10px;
+  font-size: 10px;
+  color: var(--steel-dim);
+  line-height: 1.5;
+}
+
+.agent-research-queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agent-research-queue-item {
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.agent-research-queue-item:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.agent-research-queue-topic {
+  margin: 0 0 3px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.35;
+}
+
+.agent-research-queue-why {
+  margin: 0 0 4px;
+  font-size: 11px;
+  color: var(--steel);
+  line-height: 1.5;
+}
+
+.agent-research-queue-time {
+  font-size: 9px;
+  color: var(--steel-dim);
+}
+
 .agent-work-lanes {
   display: flex;
   flex-direction: column;
