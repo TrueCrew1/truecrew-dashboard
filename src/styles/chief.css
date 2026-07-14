@@ -1174,6 +1174,19 @@ button.chief-brief-metric {
   overflow-wrap: anywhere;
 }
 
+.chief-board-card-priority-reason {
+  margin: 0 0 8px;
+  font-size: 10px;
+  color: var(--steel-dim);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.chief-board-card-priority-reason-label {
+  font-weight: 600;
+  color: var(--steel);
+}
+
 .chief-board-card-footer {
   display: flex;
   align-items: center;

@@ -15,14 +15,18 @@ export function BuildTaskApprovalCard({ task }: BuildTaskApprovalCardProps) {
         <span className="chief-board-card-title">{task.title}</span>
         {task.meta ? <span className="chief-board-card-meta">{task.meta}</span> : null}
       </div>
-      <p className="chief-board-card-detail">
-        {task.detail}
-        {gateLabels && (
-          <span className="chief-board-card-gates">
-            Pending gates: <strong>{gateLabels}</strong>
-          </span>
-        )}
-      </p>
+      <p className="chief-board-card-detail">{task.detail}</p>
+      {task.priorityReason ? (
+        <p className="chief-board-card-priority-reason">
+          <span className="chief-board-card-priority-reason-label">Priority reason:</span>{" "}
+          {task.priorityReason}
+        </p>
+      ) : null}
+      {gateLabels && (
+        <p className="chief-board-card-detail chief-board-card-gates">
+          Pending gates: <strong>{gateLabels}</strong>
+        </p>
+      )}
       <footer className="chief-board-card-footer">
         <Link to={task.routeTo} className="chief-board-card-route">
           Open {task.routeLabel}
