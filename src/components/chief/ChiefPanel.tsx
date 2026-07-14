@@ -63,8 +63,12 @@ export function ChiefPanel() {
   const platformHealth = useMonitorHealth();
 
   const commandInputRef = useRef<HTMLInputElement>(null);
+  // True only while the current input content is an untouched voice transcript —
+  // cleared on manual edit/example-fill so auto-speak never fires for typed commands.
+  const voiceOriginRef = useRef(false);
   const handleVoiceTranscript = useCallback((transcript: string) => {
     setInput(transcript);
+    voiceOriginRef.current = true;
     commandInputRef.current?.focus();
   }, []);
   const {
@@ -201,6 +205,10 @@ export function ChiefPanel() {
     const command = input.trim();
     if (!command || isProcessing) return;
 
+    // Consumed for this submission only — never carries over to the next command.
+    const shouldAutoSpeak = voiceOriginRef.current;
+    voiceOriginRef.current = false;
+
     setIsProcessing(true);
     setActiveTab("command");
     setResponse(null);
@@ -209,6 +217,8 @@ export function ChiefPanel() {
       const result = resolveChiefCommand(command, data, liveContext, approvals);
       setResponse(result);
       addHistoryEntry(buildHistoryEntry(command, result));
+
+      if (shouldAutoSpeak) speak(result.summary);
 
       const newApproval = buildApprovalFromResponse(command, result);
       if (newApproval) {
@@ -224,6 +234,7 @@ export function ChiefPanel() {
 
   const handleExample = (example: string) => {
     setInput(example);
+    voiceOriginRef.current = false;
   };
 
   return (
@@ -539,7 +550,10 @@ export function ChiefPanel() {
             type="text"
             className="chief-input"
             value={input}
-            onChange={(event) => setInput(event.target.value)}
+            onChange={(event) => {
+              setInput(event.target.value);
+              voiceOriginRef.current = false;
+            }}
             placeholder="e.g. What is at risk today?"
             aria-label="Chief command input"
             disabled={isProcessing}
