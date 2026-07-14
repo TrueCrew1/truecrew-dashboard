@@ -224,8 +224,8 @@ say explicitly whether the request extends, revises, or is independent of it.
 - Production-impacting refactors generally
 
 **Verification before asking for approval:**
-- Tests actually run (`npm run qa` or equivalent) and the real result recorded — never claim a
-  check ran that didn't
+- `npm run qa` (lint + build — there is no automated test runner yet) actually run and the real
+  result recorded — never claim a check ran that didn't
 - Files touched are listed
 - Risk level assigned (low / medium / high) — and if a precondition is unmet (e.g. a PR says
   "don't merge until X is confirmed"), risk/recommendation must reflect that, not just the code
@@ -446,7 +446,10 @@ degraded/blocked condition worth remembering, using this schema: `title`, `statu
 ## Chief
 
 **Purpose:** Approvals router and summarizer — the only path from any agent's request to the
-operator's decision.
+operator's decision. Operators reach this through Chief's Command tab (free-text queries against
+current task/gate data, with optional mic input and spoken responses) alongside the Board,
+Approvals, and History tabs — voice is an input/output convenience on top of the same command
+path, not a separate decision surface.
 
 **Responsibilities:**
 - Convert every agent approval request into an `ApprovalCard` via the matching

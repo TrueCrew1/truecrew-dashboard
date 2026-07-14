@@ -49,6 +49,10 @@ npm run dev:vercel       # UI + API (requires .env.local)
 | `GET /api/obsidian/notes` | Vault note list (local dev) |
 | `POST /api/librarian/artifacts` | Create task-linked Obsidian artifact index |
 | `GET /api/tasks/:id/artifacts` | List Librarian artifacts for a task |
+| `GET, POST /api/chief/approvals` | Read/record Chief approval decisions |
+| `GET /api/monitor/vercel` | Vercel deployment health for Monitor |
+| `GET /api/monitor/supabase` | Supabase health for Monitor |
+| `POST /api/github/webhook` | GitHub webhook receiver (signature-verified) |
 
 ## App routes
 
