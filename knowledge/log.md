@@ -405,3 +405,22 @@ playbooks. Full reasoning in the Obsidian Build Log entry of the same name.
   from the new `lib/research/fileFinding.ts` helper's bounded example finding, run
   via `npm run research:file-finding`; first real (non-mock) Research → Filing
   path writing directly into this vault's `sources/` shelf.
+
+---
+
+## 2026-07-14 — Billing API rate limiter golden-path work story
+
+- 2026-07-14 — created — `sources/billing-api-rate-limiter-gate-closure-research.md` —
+  filed via the new `fulfillResearchRequest("req-billing-rate-limiter")` path
+  (`lib/research/fulfillRequest.ts`, run via `npm run research:fulfill -- req-billing-rate-limiter`);
+  a deterministic, hand-authored finding grounded in task-001's real gate/githubRef
+  data, not AI-generated.
+- Added `req-billing-rate-limiter` to `src/lib/research/requests.ts` (the manual
+  Research queue), and a "Work story: Billing API rate limiter" panel to Chief's
+  Agents tab (`AgentWorkBoard.tsx`) tying together the Board card's priority
+  reason, Planner's checklist, the queued request, and this filed note — one
+  coherent Chief → Planner → Research → Filing → Chief-visibility loop for a
+  single real scenario.
+- Fixed `renderResearchFindingNote` (`lib/research/fileFinding.ts`) to use a full
+  ISO timestamp for `created`/`updated` instead of a bare date, so Chief's
+  "latest research" resolution can tell same-day filings apart.

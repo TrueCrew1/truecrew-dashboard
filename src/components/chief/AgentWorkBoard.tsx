@@ -15,6 +15,8 @@ import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { useData } from "@/context/DataContext";
 import { getLatestResearchSummary } from "@/lib/knowledge/latestResearchSource";
 import { getResearchRequests } from "@/lib/research/requests";
+import { useBuildTasks } from "./hooks/useBuildTasks";
+import { getPlannerChecklist } from "./plannerSuggestions";
 import type { AgentWorkItem, AgentWorkStatus, ApprovalProposal } from "./types";
 import type { TaskPriority } from "@/types";
 
@@ -24,6 +26,11 @@ const LATEST_RESEARCH_SUMMARY = getLatestResearchSummary();
 
 // Static example queue (see requests.ts) — manual, not agent-fulfilled.
 const RESEARCH_REQUESTS = getResearchRequests();
+
+// The one scenario this session's "work story" panel ties together end to end —
+// see req-billing-rate-limiter in requests.ts and task-001 in mockData.ts.
+const WORK_STORY_SCENARIO_TITLE = "Billing API rate limiter";
+const WORK_STORY_REQUEST_ID = "req-billing-rate-limiter";
 
 const SPECIALIST_INITIALS: Record<AgentWorkItem["agent"], string> = {
   "Workflow Gate Agent": "WG",
@@ -124,6 +131,23 @@ export function AgentWorkBoard() {
     [data.tasks, data.notes],
   );
   const plannerItems = useMemo(() => derivePlannerAgentWorkItems(data.tasks), [data.tasks]);
+  const { buildGateTasks } = useBuildTasks();
+  const workStoryTask = useMemo(
+    () => buildGateTasks.find((task) => task.title === WORK_STORY_SCENARIO_TITLE),
+    [buildGateTasks],
+  );
+  const workStoryChecklist = useMemo(
+    () => (workStoryTask ? getPlannerChecklist(workStoryTask.pendingGates) : []),
+    [workStoryTask],
+  );
+  const workStoryRequest = useMemo(
+    () => RESEARCH_REQUESTS.find((request) => request.id === WORK_STORY_REQUEST_ID),
+    [],
+  );
+  const workStoryLatestResearch =
+    LATEST_RESEARCH_SUMMARY?.title.toLowerCase().includes("billing api rate limiter")
+      ? LATEST_RESEARCH_SUMMARY
+      : null;
   const awaitingApprovalItems = useMemo(
     () => deriveAgentAwaitingApprovalWorkItems(approvals),
     [approvals],
@@ -206,6 +230,33 @@ export function AgentWorkBoard() {
                 </time>
               </li>
             ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {workStoryTask ? (
+        <section className="agent-work-story" aria-label="Chief work story">
+          <span className="agent-work-story-label">Work story: {WORK_STORY_SCENARIO_TITLE}</span>
+          <ul className="agent-work-story-list">
+            <li>
+              <span className="agent-work-story-item-label">Chief (Board):</span>{" "}
+              {workStoryTask.detail} — {workStoryTask.priorityReason}
+            </li>
+            <li>
+              <span className="agent-work-story-item-label">Planner checklist:</span>{" "}
+              {workStoryChecklist.length > 0 ? workStoryChecklist.join(" ") : "No open gates."}
+            </li>
+            <li>
+              <span className="agent-work-story-item-label">Research request:</span>{" "}
+              {workStoryRequest ? workStoryRequest.topic : "Not queued."}
+            </li>
+            <li>
+              <span className="agent-work-story-item-label">Latest filed research:</span>{" "}
+              {workStoryLatestResearch
+                ? `${workStoryLatestResearch.path} (${workStoryLatestResearch.createdDate})`
+                : "Not filed yet — run npm run research:fulfill -- " +
+                  `${WORK_STORY_REQUEST_ID}.`}
+            </li>
           </ul>
         </section>
       ) : null}

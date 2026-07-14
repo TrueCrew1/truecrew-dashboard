@@ -29,6 +29,17 @@ export const RESEARCH_REQUESTS: ResearchRequest[] = [
     suggestedOutcome: "A findings note on pricing tiers and expected sync latency at this team's size.",
     createdAt: "2026-07-12T14:30:00.000Z",
   },
+  {
+    id: "req-billing-rate-limiter",
+    topic: "Billing API rate limiter — what's still open before the gate can close",
+    whyItMatters:
+      "task-001's \"PR opened\" gate is still unpassed even though a githubRef (truecrew/billing-api#142) " +
+      "already exists, and Planner's checklist on the Build gates card flags it as the task's one blocker.",
+    suggestedOutcome:
+      "A findings note listing the specific open questions (per-tenant limit value, burst allowance, " +
+      "which billing endpoints are in scope) that need answering before PR #142 can merge.",
+    createdAt: "2026-07-13T11:00:00.000Z",
+  },
 ];
 
 export function getResearchRequests(): ResearchRequest[] {

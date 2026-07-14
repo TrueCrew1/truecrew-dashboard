@@ -37,15 +37,18 @@ export function researchFindingPath(finding: ResearchFinding): string {
 
 /** Renders the note using the same frontmatter/section shape as knowledge/templates/source-template.md. */
 export function renderResearchFindingNote(finding: ResearchFinding, filedAt = new Date()): string {
-  const date = filedAt.toISOString().slice(0, 10);
+  // Full timestamp, not just a date: same-day filings are a real, expected case
+  // once more than one finding lands per day, and Chief's "latest research"
+  // panel needs to be able to tell them apart.
+  const timestamp = filedAt.toISOString();
 
   const frontmatter = [
     "---",
     `title: ${finding.topic}`,
     "type: source",
     "status: raw",
-    `created: ${date}`,
-    `updated: ${date}`,
+    `created: ${timestamp}`,
+    `updated: ${timestamp}`,
     `related_pages: [${(finding.relatedPages ?? []).join(", ")}]`,
     "related_prs: []",
     "related_cards: []",

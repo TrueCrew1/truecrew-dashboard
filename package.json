@@ -17,7 +17,8 @@
     "db:status": "supabase migration list",
     "obsidian:log": "npx tsx scripts/obsidian-log.ts",
     "obsidian:setup-vault": "npx tsx scripts/setup-obsidian-vault.ts",
-    "research:file-finding": "npx tsx scripts/file-research-finding.ts"
+    "research:file-finding": "npx tsx scripts/file-research-finding.ts",
+    "research:fulfill": "npx tsx scripts/fulfill-research-request.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.8",
