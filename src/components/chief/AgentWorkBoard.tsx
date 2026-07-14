@@ -13,12 +13,16 @@ import {
 import { getApprovalUrgencyBadge, OVERDUE_HOURS } from "./chiefApprovalUrgency";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { useData } from "@/context/DataContext";
-import { getLatestResearchSummary } from "@/lib/knowledge/latestResearchSource";
+import { findLatestResearchSummaryByTitle, getLatestResearchSummary } from "@/lib/knowledge/latestResearchSource";
 import { getResearchRequests } from "@/lib/research/requests";
+import { getWorkStories } from "@/lib/chief/workStories";
 import { useBuildTasks } from "./hooks/useBuildTasks";
+import type { BuildGateTask } from "./hooks/useBuildTasks";
 import { getPlannerChecklist } from "./plannerSuggestions";
 import type { AgentWorkItem, AgentWorkStatus, ApprovalProposal } from "./types";
 import type { TaskPriority } from "@/types";
+import type { ResearchRequest } from "@/lib/research/requests";
+import type { WorkStoryDefinition } from "@/lib/chief/workStories";
 
 // Build-time read of knowledge/sources/ (see latestResearchSource.ts) — doesn't
 // change per render, computed once when this module loads.
@@ -27,10 +31,9 @@ const LATEST_RESEARCH_SUMMARY = getLatestResearchSummary();
 // Static example queue (see requests.ts) — manual, not agent-fulfilled.
 const RESEARCH_REQUESTS = getResearchRequests();
 
-// The one scenario this session's "work story" panel ties together end to end —
-// see req-billing-rate-limiter in requests.ts and task-001 in mockData.ts.
-const WORK_STORY_SCENARIO_TITLE = "Billing API rate limiter";
-const WORK_STORY_REQUEST_ID = "req-billing-rate-limiter";
+// Reusable scenario config (see workStories.ts) — adding a scenario means adding
+// an entry there, not touching this component's render logic.
+const WORK_STORIES = getWorkStories();
 
 const SPECIALIST_INITIALS: Record<AgentWorkItem["agent"], string> = {
   "Workflow Gate Agent": "WG",
@@ -114,6 +117,67 @@ function AgentWorkCard({
   );
 }
 
+/**
+ * One scenario's story, rendered generically from a WorkStoryDefinition — the
+ * only per-scenario logic is the lookups below (linked task, request, filed
+ * note), everything else is the same for every story.
+ */
+function WorkStoryPanel({
+  story,
+  buildGateTasks,
+  researchRequests,
+}: {
+  story: WorkStoryDefinition;
+  buildGateTasks: BuildGateTask[];
+  researchRequests: ResearchRequest[];
+}) {
+  const linkedTask = story.linkedTaskTitle
+    ? buildGateTasks.find((task) => task.title === story.linkedTaskTitle)
+    : undefined;
+  const checklist = linkedTask ? getPlannerChecklist(linkedTask.pendingGates) : [];
+  const request = researchRequests.find((candidate) => candidate.id === story.researchRequestId);
+  const latestNote = findLatestResearchSummaryByTitle(story.noteMatchTitle);
+  const isLive = Boolean(linkedTask);
+
+  return (
+    <section className="agent-work-story" aria-label={`Work story: ${story.title}`}>
+      <div className="agent-work-story-header">
+        <span className="agent-work-story-label">Work story: {story.title}</span>
+        <span className={`badge ${isLive ? "badge-green" : "badge-steel"}`}>
+          {isLive ? "Live" : "Structured"}
+        </span>
+      </div>
+      <p className="agent-work-story-summary">{story.summary}</p>
+      <ul className="agent-work-story-list">
+        <li>
+          <span className="agent-work-story-item-label">Chief (Board):</span>{" "}
+          {linkedTask
+            ? `${linkedTask.detail} — ${linkedTask.priorityReason}`
+            : "No live Build gates task for this story yet."}
+        </li>
+        <li>
+          <span className="agent-work-story-item-label">Planner checklist:</span>{" "}
+          {checklist.length > 0
+            ? checklist.join(" ")
+            : linkedTask
+              ? "No open gates."
+              : "Not applicable — no live task to derive a checklist from."}
+        </li>
+        <li>
+          <span className="agent-work-story-item-label">Research request:</span>{" "}
+          {request ? request.topic : "Not queued."}
+        </li>
+        <li>
+          <span className="agent-work-story-item-label">Latest filed research:</span>{" "}
+          {latestNote
+            ? `${latestNote.path} (${latestNote.createdDate})`
+            : `Not filed yet — run npm run research:fulfill -- ${story.researchRequestId}.`}
+        </li>
+      </ul>
+    </section>
+  );
+}
+
 export function AgentWorkBoard() {
   const { data } = useData();
   const { approvals } = useChiefApprovals();
@@ -132,22 +196,6 @@ export function AgentWorkBoard() {
   );
   const plannerItems = useMemo(() => derivePlannerAgentWorkItems(data.tasks), [data.tasks]);
   const { buildGateTasks } = useBuildTasks();
-  const workStoryTask = useMemo(
-    () => buildGateTasks.find((task) => task.title === WORK_STORY_SCENARIO_TITLE),
-    [buildGateTasks],
-  );
-  const workStoryChecklist = useMemo(
-    () => (workStoryTask ? getPlannerChecklist(workStoryTask.pendingGates) : []),
-    [workStoryTask],
-  );
-  const workStoryRequest = useMemo(
-    () => RESEARCH_REQUESTS.find((request) => request.id === WORK_STORY_REQUEST_ID),
-    [],
-  );
-  const workStoryLatestResearch =
-    LATEST_RESEARCH_SUMMARY?.title.toLowerCase().includes("billing api rate limiter")
-      ? LATEST_RESEARCH_SUMMARY
-      : null;
   const awaitingApprovalItems = useMemo(
     () => deriveAgentAwaitingApprovalWorkItems(approvals),
     [approvals],
@@ -234,32 +282,14 @@ export function AgentWorkBoard() {
         </section>
       ) : null}
 
-      {workStoryTask ? (
-        <section className="agent-work-story" aria-label="Chief work story">
-          <span className="agent-work-story-label">Work story: {WORK_STORY_SCENARIO_TITLE}</span>
-          <ul className="agent-work-story-list">
-            <li>
-              <span className="agent-work-story-item-label">Chief (Board):</span>{" "}
-              {workStoryTask.detail} — {workStoryTask.priorityReason}
-            </li>
-            <li>
-              <span className="agent-work-story-item-label">Planner checklist:</span>{" "}
-              {workStoryChecklist.length > 0 ? workStoryChecklist.join(" ") : "No open gates."}
-            </li>
-            <li>
-              <span className="agent-work-story-item-label">Research request:</span>{" "}
-              {workStoryRequest ? workStoryRequest.topic : "Not queued."}
-            </li>
-            <li>
-              <span className="agent-work-story-item-label">Latest filed research:</span>{" "}
-              {workStoryLatestResearch
-                ? `${workStoryLatestResearch.path} (${workStoryLatestResearch.createdDate})`
-                : "Not filed yet — run npm run research:fulfill -- " +
-                  `${WORK_STORY_REQUEST_ID}.`}
-            </li>
-          </ul>
-        </section>
-      ) : null}
+      {WORK_STORIES.map((story) => (
+        <WorkStoryPanel
+          key={story.id}
+          story={story}
+          buildGateTasks={buildGateTasks}
+          researchRequests={RESEARCH_REQUESTS}
+        />
+      ))}
 
       <div className="agent-work-lanes">
         {AGENT_WORK_STATUS_CONFIG.map((laneConfig) => {

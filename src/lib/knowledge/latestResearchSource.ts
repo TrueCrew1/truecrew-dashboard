@@ -51,15 +51,28 @@ function parseSourceNote(raw: string, repoPath: string): LatestResearchSummary |
   };
 }
 
-/** Most recent knowledge/sources/ note by its `created` frontmatter date; null if none parse. */
-export function getLatestResearchSummary(): LatestResearchSummary | null {
-  const notes = Object.entries(SOURCE_NOTE_MODULES)
+/** All parsed knowledge/sources/ notes, most recent (`created`) first. */
+export function getAllResearchSummaries(): LatestResearchSummary[] {
+  return Object.entries(SOURCE_NOTE_MODULES)
     .map(([modulePath, raw]) => {
       const repoPath = modulePath.replace(/^.*(knowledge\/sources\/)/, "$1");
       return parseSourceNote(raw, repoPath);
     })
     .filter((note): note is LatestResearchSummary => note !== null)
     .sort((a, b) => (a.createdDate < b.createdDate ? 1 : a.createdDate > b.createdDate ? -1 : a.path < b.path ? 1 : -1));
+}
 
-  return notes[0] ?? null;
+/** Most recent knowledge/sources/ note by its `created` frontmatter date; null if none parse. */
+export function getLatestResearchSummary(): LatestResearchSummary | null {
+  return getAllResearchSummaries()[0] ?? null;
+}
+
+/**
+ * Most recent filed note whose title contains `titleSubstring` (case-insensitive) —
+ * how a Work Story resolves "its" latest research without a database, using only
+ * the same build-time note set as getLatestResearchSummary.
+ */
+export function findLatestResearchSummaryByTitle(titleSubstring: string): LatestResearchSummary | null {
+  const needle = titleSubstring.toLowerCase();
+  return getAllResearchSummaries().find((note) => note.title.toLowerCase().includes(needle)) ?? null;
 }

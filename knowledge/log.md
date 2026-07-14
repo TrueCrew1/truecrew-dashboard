@@ -424,3 +424,32 @@ playbooks. Full reasoning in the Obsidian Build Log entry of the same name.
 - Fixed `renderResearchFindingNote` (`lib/research/fileFinding.ts`) to use a full
   ISO timestamp for `created`/`updated` instead of a bare date, so Chief's
   "latest research" resolution can tell same-day filings apart.
+
+---
+
+## 2026-07-14 — Generalized Billing golden path into a reusable Work Story model
+
+- Added `src/lib/chief/workStories.ts` — a small `WorkStoryDefinition` config
+  (id, title, summary, `researchRequestId`, optional `linkedTaskTitle`,
+  `noteMatchTitle`) replacing the hardcoded Billing-only constants previously
+  inline in `AgentWorkBoard.tsx`. Adding a scenario is now one config entry,
+  not a UI-code change.
+- Added a second entry: "Transactional email vendor for notification hooks" —
+  deliberately left `linkedTaskTitle` unset (no real Build task backs it), so
+  Chief's Agents tab marks it "Structured" rather than "Live", telling the
+  truth about its lower maturity next to Billing's "Live" badge.
+- `AgentWorkBoard.tsx` now renders one `WorkStoryPanel` per entry in
+  `WORK_STORIES` generically, instead of one hand-written block.
+- `src/lib/knowledge/latestResearchSource.ts` gained `getAllResearchSummaries`
+  and `findLatestResearchSummaryByTitle` so each story can resolve its own
+  latest filed note by title match, alongside the existing global "latest
+  research" panel (unchanged).
+- `lib/research/fulfillRequest.ts` gained a second, honestly-scoped builder for
+  `req-notification-vendor` — grounded only in repo facts (no vendor names,
+  pricing, or benchmarks), explicitly stating it's a structural placeholder.
+- `sources/transactional-email-vendor-for-notification-hooks-current-state.md`
+  — created via `npm run research:fulfill -- req-notification-vendor`, proving
+  the fulfillment path is reusable, not Billing-specific.
+- `sources/billing-api-rate-limiter-gate-closure-research.md` — re-filed via
+  the same script (unchanged content aside from timestamp) to confirm the
+  refactor didn't regress the first story.

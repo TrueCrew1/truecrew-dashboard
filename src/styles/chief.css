@@ -3299,14 +3299,27 @@ button.chief-brief-metric {
   background: rgba(255, 122, 26, 0.05);
 }
 
-.agent-work-story-label {
-  display: block;
+.agent-work-story-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   margin-bottom: 6px;
+}
+
+.agent-work-story-label {
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--orange);
+}
+
+.agent-work-story-summary {
+  margin: 0 0 8px;
+  font-size: 11px;
+  color: var(--steel-dim);
+  line-height: 1.5;
 }
 
 .agent-work-story-list {

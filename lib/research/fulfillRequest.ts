@@ -32,6 +32,28 @@ const FINDING_BUILDERS: Record<string, FindingBuilder> = {
     nextStep: request.suggestedOutcome,
     relatedPages: [],
   }),
+  "req-notification-vendor": (request) => ({
+    topic: "Transactional email vendor for notification hooks — current state",
+    origin:
+      `Chief Research queue request \`${request.id}\` — raised because ChiefPanel's notification ` +
+      "hooks are stubbed with no vendor wired in.",
+    summary:
+      "This is a structural placeholder, not vendor research: it exists to prove the Work Story " +
+      "model is reusable across more than one scenario, not to claim a vendor decision has been " +
+      "made. No vendor names, pricing, or benchmarks are asserted anywhere in this note — that " +
+      "comparison is exactly what a real Research agent pass still needs to produce.",
+    facts: [
+      "ChiefPanel.tsx's handleSubmit has an extension-point comment noting a future \"card created\" " +
+        "notification hook alongside real approval sources, but no outbound-email vendor call exists " +
+        "anywhere in the repo yet.",
+      "No workflowType:\"build\" task in mockData.ts represents this work — unlike the Billing API " +
+        "rate limiter story, this scenario has no live Board card or Planner checklist yet.",
+      "Chief's Work Story panel (Agents tab) marks this story \"Structured\" rather than \"Live\" for " +
+        "exactly this reason.",
+    ],
+    nextStep: request.suggestedOutcome,
+    relatedPages: [],
+  }),
 };
 
 /**
