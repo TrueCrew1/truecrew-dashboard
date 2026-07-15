@@ -1,11 +1,13 @@
 import { FormEvent, useCallback, useMemo, useState } from "react";
 import { useData } from "@/context/DataContext";
-import { ChiefApprovalConflictError, formatDataSourceLabel } from "@/lib/api/client";
+import { ChiefApprovalConflictError, formatDataSourceLabel, isChiefAiUiEnabled } from "@/lib/api/client";
+import { formatChiefAiRouteLabel } from "../../../lib/chief-ai/types";
 import { ApprovalBoard } from "./ApprovalBoard";
 import { CommandHistory } from "./CommandHistory";
 import { buildApprovalFromResponse, buildHistoryEntry } from "./chiefMock";
 import { approvalActionSuccessMessage, type ApprovalActionState } from "./chiefApproval";
-import { deriveChiefBoardItems, resolveChiefCommand } from "./chiefLiveContext";
+import { deriveChiefBoardItems } from "./chiefLiveContext";
+import { resolveChiefCommandWithAiFallback } from "./chiefAiFallback";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { SpecialistCards } from "./SpecialistCards";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
@@ -13,6 +15,13 @@ import { ChiefBoard } from "./ChiefBoard";
 import { AgentWorkBoard } from "./AgentWorkBoard";
 import type { ApprovalAction, ChiefResponse } from "./types";
 import type { ApprovalStatusFilter } from "./approvalStatus";
+
+/** Preserves the pre-AI-fallback UX feel (a brief "Routing command…" beat) even though resolution may now be a real network call. */
+function withMinDelay<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.all([promise, new Promise<void>((resolve) => setTimeout(resolve, ms))]).then(
+    ([result]) => result,
+  );
+}
 
 const EXAMPLE_COMMANDS = [
   "What is at risk today?",
@@ -149,8 +158,10 @@ export function ChiefPanel() {
     setActiveTab("command");
     setResponse(null);
 
-    window.setTimeout(() => {
-      const result = resolveChiefCommand(command, data, liveContext, approvals);
+    void withMinDelay(
+      resolveChiefCommandWithAiFallback(command, data, liveContext, approvals),
+      480,
+    ).then((result) => {
       setResponse(result);
       addHistoryEntry(buildHistoryEntry(command, result));
 
@@ -163,7 +174,7 @@ export function ChiefPanel() {
       }
 
       setIsProcessing(false);
-    }, 480);
+    });
   };
 
   const handleExample = (example: string) => {
@@ -316,6 +327,18 @@ export function ChiefPanel() {
                     <span className="chief-speaker-badge">Response</span>
                   </div>
                   <p className="chief-response-text">{response.summary}</p>
+                  {isChiefAiUiEnabled() && response.aiRoute ? (
+                    <div className="chief-ai-route-row">
+                      <span className="chief-ai-route-label">Answered via</span>
+                      <span
+                        className={`chief-ai-route-badge${
+                          response.aiDegraded ? " chief-ai-route-badge--degraded" : ""
+                        }`}
+                      >
+                        {formatChiefAiRouteLabel(response.aiRoute)}
+                      </span>
+                    </div>
+                  ) : null}
                 </div>
 
                 {response.blockers && response.blockers.length > 0 ? (

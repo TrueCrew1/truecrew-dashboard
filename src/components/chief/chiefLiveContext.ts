@@ -1242,5 +1242,6 @@ export function resolveChiefCommand(
   return {
     ...DEFAULT_RESPONSE,
     summary: `Received: "${trimmed}". No specialist match — Chief handled this directly against live queue state (${ctx.openTaskCount} open tasks).`,
+    unmatched: true,
   };
 }

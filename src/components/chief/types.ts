@@ -1,4 +1,7 @@
 import type { Persona, TaskPriority } from "@/types";
+import type { ChiefAiRoute } from "../../../lib/chief-ai/types";
+
+export type { ChiefAiRoute };
 
 export type ChiefSpecialist =
   | "Workflow Gate Agent"
@@ -122,6 +125,18 @@ export interface ChiefResponse {
   riskNote?: string;
   routedTo: ChiefSpecialist;
   specialists?: SpecialistContribution[];
+  /**
+   * Set only by resolveChiefCommand's final catch-all — every specific
+   * resolver (resolveBlocked, resolveIncidents, etc.) leaves this unset.
+   * Marks "deterministic routing found no specific match," the one signal
+   * chiefAiFallback.ts uses to decide whether AI fallback is even worth
+   * attempting for this query.
+   */
+  unmatched?: boolean;
+  /** Which path actually produced this response — set by resolveChiefCommandWithAiFallback, absent when AI fallback wasn't attempted. */
+  aiRoute?: ChiefAiRoute;
+  /** True when aiRoute is a degraded/fallback path (canned fallback, or the AI call failed and deterministic was reused). */
+  aiDegraded?: boolean;
 }
 
 export type ChiefBoardLane = "at_risk" | "blocked" | "missing_context" | "approval";
