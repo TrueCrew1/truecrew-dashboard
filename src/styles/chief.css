@@ -512,6 +512,37 @@
   background: rgba(255, 122, 26, 0.2);
 }
 
+.chief-voice-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.chief-voice-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+}
+
+.chief-voice-control input[type="file"] {
+  font-size: 10px;
+  color: var(--text-dim);
+  max-width: 100%;
+}
+
+.chief-voice-status {
+  font-size: 10px;
+  color: var(--steel-dim);
+}
+
+.chief-voice-status--error {
+  color: var(--red);
+}
+
 .chief-ai-route-row {
   display: flex;
   align-items: center;
@@ -542,6 +573,34 @@
   color: var(--red);
   background: rgba(255, 68, 68, 0.12);
   border-color: rgba(255, 68, 68, 0.35);
+}
+
+.chief-speak-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.chief-speak-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.chief-speak-btn:hover:not(:disabled) {
+  border-color: var(--border-hover);
+  color: var(--text);
+}
+
+.chief-speak-audio {
+  height: 28px;
+  max-width: 100%;
 }
 
 .chief-submit:disabled {

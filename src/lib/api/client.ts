@@ -58,6 +58,10 @@ export function isChiefAiUiEnabled(): boolean {
   return import.meta.env.VITE_CHIEF_AI_UI_ENABLED === "true";
 }
 
+export function isChiefVoiceUiEnabled(): boolean {
+  return import.meta.env.VITE_CHIEF_VOICE_UI_ENABLED === "true";
+}
+
 export interface CommandCenterPayload {
   tasks: Task[];
   workflows: Workflow[];
@@ -366,4 +370,59 @@ export async function askChiefAi(
   }
 
   return response.json() as Promise<ChiefAiResult>;
+}
+
+export class ChiefVoiceError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ChiefVoiceError";
+  }
+}
+
+/** Voice v1 — file-upload transcription (no microphone streaming). Throws ChiefVoiceError if voice isn't enabled server-side. */
+export async function transcribeAudio(audioBase64: string, mimeType: string): Promise<string> {
+  const response = await apiFetch("/api/chief/transcribe", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ audioBase64, mimeType }),
+  });
+
+  const body = (await response.json().catch(() => ({}))) as { text?: string; error?: string };
+
+  if (!response.ok) {
+    throw new ChiefVoiceError(body.error ?? `Transcription returned ${response.status}`);
+  }
+
+  if (!body.text) {
+    throw new ChiefVoiceError("Transcription returned no text");
+  }
+
+  return body.text;
+}
+
+/** Voice v1 — text-to-speech. Throws ChiefVoiceError if voice isn't enabled server-side. */
+export async function synthesizeSpeech(
+  text: string,
+): Promise<{ audioBase64: string; mimeType: string }> {
+  const response = await apiFetch("/api/chief/speak", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text }),
+  });
+
+  const body = (await response.json().catch(() => ({}))) as {
+    audioBase64?: string;
+    mimeType?: string;
+    error?: string;
+  };
+
+  if (!response.ok) {
+    throw new ChiefVoiceError(body.error ?? `Speech synthesis returned ${response.status}`);
+  }
+
+  if (!body.audioBase64 || !body.mimeType) {
+    throw new ChiefVoiceError("Speech synthesis returned no audio");
+  }
+
+  return { audioBase64: body.audioBase64, mimeType: body.mimeType };
 }
