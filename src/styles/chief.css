@@ -322,6 +322,13 @@
   font-weight: 500;
 }
 
+.chief-response-enhancing {
+  margin: 6px 0 0;
+  font-size: 11px;
+  font-style: italic;
+  color: var(--steel-dim);
+}
+
 .chief-blocker-list {
   margin: 0;
   padding-left: 16px;

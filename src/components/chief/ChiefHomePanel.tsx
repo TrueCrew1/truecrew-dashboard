@@ -1,9 +1,10 @@
 import { FormEvent, useMemo, useRef, useState } from "react";
 import { Panel } from "@/components/ui";
 import { useData } from "@/context/DataContext";
+import { askChiefAiFallback, isChiefAiFallbackEnabled } from "@/lib/api/client";
 import { buildApprovalFromResponse, buildHistoryEntry } from "./chiefMock";
 import { deriveChiefBoardItems } from "./chiefApprovalBoard";
-import { resolveChiefCommand } from "./chiefCommandRouter";
+import { buildChiefContextSummary, resolveChiefCommand } from "./chiefCommandRouter";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
 import type { ChiefResponse } from "./types";
@@ -44,6 +45,10 @@ export function ChiefHomePanel() {
   const [command, setCommand] = useState("");
   const [response, setResponse] = useState<ChiefResponse | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isEnhancing, setIsEnhancing] = useState(false);
+  // Guards against a stale AI fallback response landing after a newer
+  // command has already been submitted.
+  const enhanceRequestIdRef = useRef(0);
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -63,6 +68,27 @@ export function ChiefHomePanel() {
     }
 
     setIsProcessing(false);
+
+    // No specialist matched — optionally ask the Azure AI fallback for a
+    // better answer than the canned DEFAULT_RESPONSE. Off by default
+    // (VITE_CHIEF_AI_FALLBACK_ENABLED); silently keeps the deterministic
+    // response on any failure or if a newer command supersedes this one.
+    if (result.isGenericFallback && isChiefAiFallbackEnabled()) {
+      const requestId = ++enhanceRequestIdRef.current;
+      setIsEnhancing(true);
+      askChiefAiFallback(trimmed, buildChiefContextSummary(liveContext))
+        .then((fallback) => {
+          if (enhanceRequestIdRef.current !== requestId) return;
+          setIsEnhancing(false);
+          if (!fallback) return;
+          setResponse((prev) =>
+            prev && prev.isGenericFallback ? { ...prev, summary: fallback.summary } : prev,
+          );
+        })
+        .catch(() => {
+          if (enhanceRequestIdRef.current === requestId) setIsEnhancing(false);
+        });
+    }
   };
 
   return (
@@ -102,6 +128,9 @@ export function ChiefHomePanel() {
           {response ? (
             <div className="chief-home-response" aria-live="polite">
               <p className="chief-home-response-summary">{response.summary}</p>
+              {isEnhancing ? (
+                <p className="chief-response-enhancing">Checking with AI for a better answer…</p>
+              ) : null}
               <p className="chief-home-response-action">
                 <span className="chief-home-response-label">Recommended:</span>{" "}
                 {response.recommendedAction}
