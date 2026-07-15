@@ -4,12 +4,17 @@ type: source
 status: raw
 created: 
 updated: 
+work_story_id: 
 related_pages: []
 related_prs: []
 related_cards: []
 ---
 
 # {Title}
+
+*Optional: set `work_story_id` above to the matching `WorkStoryDefinition.id`
+(`src/lib/chief/workStories.ts`) when this note files a finding for a specific
+Work Story / research request — omit it if this note isn't tied to one.*
 
 ## Origin
 
