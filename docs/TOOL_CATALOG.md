@@ -222,6 +222,26 @@ enumerate tools in code.
   its deployment env var is skipped, not an error; a model that errors is logged
   (`lib/chief-ai/log.ts`, secret-free) and the chain moves to the next tier.
 
+### chief-voice-azure-speech
+- name: Azure AI Speech — Chief voice v1 (transcribe/speak)
+- category: ai
+- owner_agent: Chief (`lib/chief-ai/voice.ts`, `api/chief/transcribe.ts`,
+  `api/chief/speak.ts`)
+- access_type: write (server-side API calls)
+- interface: api
+- launch_target: n/a — server-to-server only
+- model_type: Azure AI Speech (short-audio REST STT + TTS, `en-US-GuyNeural`)
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live;
+  no real Azure Speech resource has been provisioned/verified against this repo yet)
+- status: partially-wired — file-upload-only v1 (no microphone streaming/realtime),
+  gated `CHIEF_VOICE_ENABLED=false` by default; fails closed with a clear 503 when
+  unconfigured rather than fabricating a transcript or audio
+- approval_required: yes — same "external API" gate as `chief-ai-azure-fallback`
+- notes: intentionally scoped to voice v1 — a file-upload widget in the Chief
+  panel (`ChiefVoiceControl.tsx`) posts base64 audio, gets text back, and the
+  operator reviews/edits it before submitting (never auto-submitted). No
+  realtime/streaming voice in this pass.
+
 ### continue-dev
 - name: Continue.dev
 - category: ai

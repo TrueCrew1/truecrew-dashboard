@@ -521,17 +521,25 @@ unconfigured, unreachable, or errors:
 output are ever logged. This is the mechanism for "which path answered" — read server logs, don't
 guess from the response text.
 
+**Voice v1** (`lib/chief-ai/voice.ts`, `api/chief/transcribe.ts`, `api/chief/speak.ts`): file-upload
+only, no microphone streaming or realtime voice. `ChiefVoiceControl.tsx` posts a base64-encoded
+audio file to `/api/chief/transcribe`, fills the command input with the transcript for the operator
+to review/edit, and only submits when the operator hits Run — a transcription error never becomes a
+silent query. `ChiefSpeakButton.tsx` is an on-demand "Listen" button (no autoplay) that calls
+`/api/chief/speak` to read back Chief's response. Both routes fail closed with a `503` when
+`CHIEF_VOICE_ENABLED` is false or `AZURE_SPEECH_KEY`/`AZURE_SPEECH_REGION` are unset — never a
+fabricated transcript or audio clip. Gated separately from the text AI fallback
+(`VITE_CHIEF_VOICE_UI_ENABLED`), since voice is useful even purely for dictating into deterministic
+Chief.
+
 **Status as of this pass:** all of the above is real, working code — deterministic-first is
 preserved, every flag defaults off, and every provider fails closed with a logged reason. What
-is **not** verified: an actual live call to a real Azure AI Foundry resource — no credentials exist
-in this repo's environments, so "does the Azure tier actually answer" is unverified pending David
-provisioning a resource and setting the env vars in `.env.example`. Ollama tiers are exercised the
-same way the Librarian's existing Tier 1 refinement is (real HTTP call to a local Ollama server,
-fails closed if unreachable) — same trust level as that existing integration, not independently
-re-verified live in this pass.
-
-**Voice v1** (transcribe/speak) is a separate follow-on slice — see its own PR/section once landed;
-this section covers the text AI fallback chain only.
+is **not** verified: an actual live call to a real Azure AI Foundry or Azure Speech resource — no
+credentials for either exist in this repo's environments, so "does the Azure tier actually answer"
+is unverified pending David provisioning a resource and setting the env vars in `.env.example`.
+Ollama tiers are exercised the same way the Librarian's existing Tier 1 refinement is (real HTTP
+call to a local Ollama server, fails closed if unreachable) — same trust level as that existing
+integration, not independently re-verified live in this pass.
 
 ---
 

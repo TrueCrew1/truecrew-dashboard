@@ -4,6 +4,8 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [
+    { "source": "/api/chief/transcribe", "destination": "/api/chief/ask?route=transcribe" },
+    { "source": "/api/chief/speak", "destination": "/api/chief/ask?route=speak" },
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],

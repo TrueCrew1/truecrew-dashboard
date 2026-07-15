@@ -16,6 +16,10 @@ export function isChiefAiLocalOnly(): boolean {
   return process.env.CHIEF_AI_LOCAL_ONLY_MODE === "true";
 }
 
+export function isChiefVoiceEnabled(): boolean {
+  return process.env.CHIEF_VOICE_ENABLED === "true";
+}
+
 export interface AzureModelConfig {
   endpoint: string;
   apiKey: string;
@@ -37,4 +41,16 @@ export function getOllamaHost(): string {
 
 export function getOllamaChiefModel(envVar: string, fallback: string): string {
   return process.env[envVar]?.trim() || fallback;
+}
+
+export interface AzureSpeechConfig {
+  key: string;
+  region: string;
+}
+
+export function getAzureSpeechConfig(): AzureSpeechConfig | null {
+  const key = process.env.AZURE_SPEECH_KEY?.trim();
+  const region = process.env.AZURE_SPEECH_REGION?.trim();
+  if (!key || !region) return null;
+  return { key, region };
 }

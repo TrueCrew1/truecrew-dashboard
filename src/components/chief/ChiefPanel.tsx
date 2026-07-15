@@ -13,6 +13,8 @@ import { SpecialistCards } from "./SpecialistCards";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
 import { ChiefBoard } from "./ChiefBoard";
 import { AgentWorkBoard } from "./AgentWorkBoard";
+import { ChiefVoiceControl } from "./ChiefVoiceControl";
+import { ChiefSpeakButton } from "./ChiefSpeakButton";
 import type { ApprovalAction, ChiefResponse } from "./types";
 import type { ApprovalStatusFilter } from "./approvalStatus";
 
@@ -181,6 +183,10 @@ export function ChiefPanel() {
     setInput(example);
   };
 
+  const handleVoiceTranscribed = (text: string) => {
+    setInput(text);
+  };
+
   return (
     <aside className="chief-panel" aria-label="Chief command layer">
       <div className="chief-header">
@@ -339,6 +345,7 @@ export function ChiefPanel() {
                       </span>
                     </div>
                   ) : null}
+                  <ChiefSpeakButton text={response.summary} />
                 </div>
 
                 {response.blockers && response.blockers.length > 0 ? (
@@ -451,6 +458,7 @@ export function ChiefPanel() {
         <label className="chief-input-label" htmlFor="chief-command">
           Command
         </label>
+        <ChiefVoiceControl disabled={isProcessing} onTranscribed={handleVoiceTranscribed} />
         <div className="chief-input-row">
           <input
             id="chief-command"
