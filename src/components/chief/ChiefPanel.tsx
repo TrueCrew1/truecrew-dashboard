@@ -1,8 +1,10 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useData } from "@/context/DataContext";
 import {
+  askChiefAiFallback,
   ChiefApprovalConflictError,
   formatDataSourceLabel,
+  isChiefAiFallbackEnabled,
   isLiveApiEnabled,
 } from "@/lib/api/client";
 import { useMonitorHealth } from "@/hooks/useMonitorHealth";
@@ -12,7 +14,7 @@ import { CommandHistory } from "./CommandHistory";
 import { buildApprovalFromResponse, buildHistoryEntry } from "./chiefMock";
 import { approvalActionSuccessMessage, type ApprovalActionState } from "./chiefApproval";
 import { deriveChiefBoardItems } from "./chiefApprovalBoard";
-import { resolveChiefCommand } from "./chiefCommandRouter";
+import { buildChiefContextSummary, resolveChiefCommand } from "./chiefCommandRouter";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { SpecialistCards } from "./SpecialistCards";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
@@ -56,6 +58,10 @@ export function ChiefPanel() {
   const [input, setInput] = useState("");
   const [response, setResponse] = useState<ChiefResponse | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isEnhancing, setIsEnhancing] = useState(false);
+  // Guards against a stale AI fallback response landing after a newer
+  // command has already been submitted.
+  const enhanceRequestIdRef = useRef(0);
   const [approvalActionStates, setApprovalActionStates] = useState<
     Record<string, ApprovalActionState>
   >({});
@@ -253,6 +259,27 @@ export function ChiefPanel() {
     }
 
     setIsProcessing(false);
+
+    // No specialist matched — optionally ask the Azure AI fallback for a
+    // better answer than the canned DEFAULT_RESPONSE. Off by default
+    // (VITE_CHIEF_AI_FALLBACK_ENABLED); silently keeps the deterministic
+    // response on any failure or if a newer command supersedes this one.
+    if (result.isGenericFallback && isChiefAiFallbackEnabled()) {
+      const requestId = ++enhanceRequestIdRef.current;
+      setIsEnhancing(true);
+      askChiefAiFallback(command, buildChiefContextSummary(liveContext))
+        .then((fallback) => {
+          if (enhanceRequestIdRef.current !== requestId) return;
+          setIsEnhancing(false);
+          if (!fallback) return;
+          setResponse((prev) =>
+            prev && prev.isGenericFallback ? { ...prev, summary: fallback.summary } : prev,
+          );
+        })
+        .catch(() => {
+          if (enhanceRequestIdRef.current === requestId) setIsEnhancing(false);
+        });
+    }
   };
 
   const handleExample = (example: string) => {
@@ -446,6 +473,11 @@ export function ChiefPanel() {
                     </div>
                   </div>
                   <p className="chief-response-text">{response.summary}</p>
+                  {isEnhancing ? (
+                    <p className="chief-response-enhancing" aria-live="polite">
+                      Checking with AI for a better answer…
+                    </p>
+                  ) : null}
                 </div>
 
                 {response.blockers && response.blockers.length > 0 ? (

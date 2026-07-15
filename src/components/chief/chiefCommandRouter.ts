@@ -343,6 +343,14 @@ function resolveKnowledge(data: MockData, input: string): ChiefResponse {
   };
 }
 
+/** One-line live-ops summary, passed as context to the optional AI fallback. */
+export function buildChiefContextSummary(ctx: ChiefLiveContext): string {
+  return (
+    `${ctx.openTaskCount} open tasks, ${ctx.activeIncidents.length} active Sev 1-2 incident(s), ` +
+    `${ctx.blockingTasks.length} blocked task(s), ${ctx.overdueTasks.length} overdue task(s)`
+  );
+}
+
 export function resolveChiefCommand(
   input: string,
   data: MockData,
@@ -389,5 +397,6 @@ export function resolveChiefCommand(
   return {
     ...DEFAULT_RESPONSE,
     summary: `Received: "${trimmed}". No specialist match — Chief handled this directly against live queue state (${ctx.openTaskCount} open tasks).`,
+    isGenericFallback: true,
   };
 }

@@ -272,6 +272,43 @@ export async function fetchTaskArtifacts(taskId: string): Promise<Artifact[]> {
   return body.artifacts ?? [];
 }
 
+export interface ChiefAiFallbackResult {
+  summary: string;
+  model: string;
+}
+
+export function isChiefAiFallbackEnabled(): boolean {
+  return import.meta.env.VITE_CHIEF_AI_FALLBACK_ENABLED === "true";
+}
+
+/**
+ * Asks the Azure AI Foundry fallback model for a response when
+ * resolveChiefCommand couldn't match a specialist. Returns null (rather than
+ * throwing) on any failure or when the backend feature flag is off, so
+ * callers can silently keep the deterministic response.
+ */
+export async function askChiefAiFallback(
+  query: string,
+  contextSummary?: string,
+): Promise<ChiefAiFallbackResult | null> {
+  try {
+    const response = await apiFetch("/api/chief/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query, contextSummary }),
+    });
+
+    if (!response.ok) return null;
+
+    const body = (await response.json()) as { summary?: string; model?: string };
+    if (!body.summary) return null;
+
+    return { summary: body.summary, model: body.model ?? "unknown" };
+  } catch {
+    return null;
+  }
+}
+
 export function mergeWithMockFallback(live: Partial<CommandCenterPayload>): MockData {
   return {
     tasks: (live.tasks as Task[])?.length ? (live.tasks as Task[]) : mockData.tasks,

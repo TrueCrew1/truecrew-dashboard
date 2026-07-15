@@ -122,6 +122,12 @@ export interface ChiefResponse {
   riskNote?: string;
   routedTo: ChiefSpecialist;
   specialists?: SpecialistContribution[];
+  /**
+   * True only on resolveChiefCommand's final no-specialist-match branch.
+   * Lets callers optionally follow up with an async AI fallback without
+   * changing resolveChiefCommand's synchronous contract.
+   */
+  isGenericFallback?: boolean;
 }
 
 export type ChiefBoardLane = "at_risk" | "blocked" | "missing_context" | "approval";
