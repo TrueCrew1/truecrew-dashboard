@@ -166,25 +166,61 @@ enumerate tools in code.
 ### ollama-local
 - name: Ollama (local)
 - category: ai
-- owner_agent: — (David's own tooling, not a Chief-system agent)
-- access_type: launch-only
+- owner_agent: — (David's own tooling, not a Chief-system agent); also Chief's
+  optional local AI-fallback tier (`lib/chief-ai/router.ts`) and the Librarian's
+  Tier 1 refinement (`lib/librarian/refine.ai.ts`) — both off by default
+- access_type: launch-only (Continue.dev autocomplete); read (Chief/Librarian call
+  its local HTTP API when their own flags are enabled)
 - interface: cli / local
 - launch_target: local machine
-- model_type: local open models
+- model_type: local open models (`llama3`/`deepseek-r1` for Chief, `llama3.2` for
+  Librarian, `qwen2.5-coder` for Continue.dev — independently configured)
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
-- status: launch-only
+- status: launch-only (Continue.dev); partially-wired (Chief AI fallback, Librarian
+  Tier 1) — both gated `CHIEF_AI_FALLBACK_ENABLED`/`LIBRARIAN_AI_ENABLED`, default
+  false, fail closed to deterministic/canned output if Ollama is unreachable
 - approval_required: no
-- notes: powers Continue.dev autocomplete per `CLAUDE.md` — not wired to any
-  Planner/Build/Research/Content/Chief workflow. Research note (2026-07-04, non-binding
-  — no config change made): the currently-configured `qwen2.5-coder:7b`/`14b` (see
-  `continue-dev` below) is still a solid, well-benchmarked choice, but Qwen3-Coder
-  (community default now at 14B, Q4_K_M quantization, ~12GB VRAM) benchmarks ahead of
-  Qwen2.5-Coder at the same size on repo-level coding tasks as of 2026. Worth an
-  eventual `ollama pull` evaluation on David's own hardware before switching — not
-  proposed as an immediate change. DeepSeek-Coder-V3 benchmarks highest of the three
-  overall but needs ~140GB VRAM even at INT4 — not feasible on typical local hardware.
+- notes: powers Continue.dev autocomplete per `CLAUDE.md`. As of the Chief AI
+  fallback work (see `chief-ai-azure-fallback` below), also the last tier in
+  Chief's routing chain (and the sole tier when `CHIEF_AI_LOCAL_ONLY_MODE=true`) —
+  still not a Planner/Build/Research/Content workflow dependency. Research note
+  (2026-07-04, non-binding — no config change made): the currently-configured
+  `qwen2.5-coder:7b`/`14b` (see `continue-dev` below) is still a solid,
+  well-benchmarked choice, but Qwen3-Coder (community default now at 14B, Q4_K_M
+  quantization, ~12GB VRAM) benchmarks ahead of Qwen2.5-Coder at the same size on
+  repo-level coding tasks as of 2026. Worth an eventual `ollama pull` evaluation on
+  David's own hardware before switching — not proposed as an immediate change.
+  DeepSeek-Coder-V3 benchmarks highest of the three overall but needs ~140GB VRAM
+  even at INT4 — not feasible on typical local hardware.
   Source: [best local coding LLM 2026 comparison](https://runlocalmodel.com/best-local-coding-llm-2026.html),
   [Qwen3-Coder-Next guide](https://dev.to/sienna/qwen3-coder-next-the-complete-2026-guide-to-running-powerful-ai-coding-agents-locally-1k95).
+
+### chief-ai-azure-fallback
+- name: Azure AI Foundry — Chief AI fallback (GPT-5 mini / DeepSeek V4 Pro / Kimi K2.6)
+- category: ai
+- owner_agent: Chief (`lib/chief-ai/router.ts`, `api/chief/ask.ts`)
+- access_type: write (server-side API calls, one shared endpoint/key across all
+  three deployments)
+- interface: api
+- launch_target: n/a — server-to-server only, no console/dashboard access from
+  this repo's agents
+- model_type: Azure-hosted GPT-5 mini, DeepSeek V4 Pro, Kimi K2.6 (deployment
+  names configured per-model via env, see `.env.example`)
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live;
+  no real Azure resource has been provisioned/verified against this repo yet)
+- status: partially-wired — real routing/observability/fail-closed code exists,
+  gated `CHIEF_AI_FALLBACK_ENABLED=false` by default; genuinely untested against a
+  live Azure endpoint (no credentials configured in this repo's environments)
+- approval_required: yes — "any work affecting security/auth or external APIs"
+  (Build's gate, `docs/AGENT_RUNBOOK.md`); enabling in production is a config
+  change David makes, not something an agent flips on its own
+- notes: last-resort tier only — deterministic routing (`resolveChiefCommand`)
+  always runs first and answers directly whenever it has a specific match; this
+  tier is only reached for the catch-all "no specialist match" case, and only
+  when explicitly enabled. Order and precedence documented in
+  `docs/AGENT_RUNBOOK.md` § Chief AI Fallback and `.env.example`. A model missing
+  its deployment env var is skipped, not an error; a model that errors is logged
+  (`lib/chief-ai/log.ts`, secret-free) and the chain moves to the next tier.
 
 ### continue-dev
 - name: Continue.dev

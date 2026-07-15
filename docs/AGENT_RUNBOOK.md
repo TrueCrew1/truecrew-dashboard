@@ -485,6 +485,56 @@ operator's decision.
 
 ---
 
+## Chief AI Fallback
+
+Chief's command input (`ChiefPanel.tsx`) is **deterministic-first, always**:
+`resolveChiefCommand()` (`src/components/chief/chiefLiveContext.ts`) runs first, against real
+dashboard state, and its result is returned as-is for every query it can specifically answer
+(blockers, approvals, incidents, alerts, missing context, knowledge search, risk/today). The AI
+fallback chain below is only reached for the catch-all "no specialist match" case — deterministic
+routing is never bypassed, skipped, or raced against the AI tier.
+
+**Routing order** (`lib/chief-ai/router.ts`), each tier tried only if the previous one is
+unconfigured, unreachable, or errors:
+
+1. Deterministic (`resolveChiefCommand`) — always first, no flag required.
+2. If `CHIEF_AI_FALLBACK_ENABLED` is not `"true"` — stop here. This is the default.
+3. Azure GPT-5 mini → Azure DeepSeek V4 Pro → Azure Kimi K2.6 — skipped entirely if
+   `CHIEF_AI_LOCAL_ONLY_MODE=true`, or per-model if that model's deployment env var is unset.
+4. Ollama llama3 → Ollama deepseek-r1 — local, same host as the Librarian's Tier 1 refinement
+   (`OLLAMA_HOST`), independently configured models.
+5. Canned fallback — a fixed advisory message; this tier never fails, so `routeChiefAiRequest()`
+   always resolves and the UI never has to handle an unhandled AI error.
+
+**Feature flags and precedence** (see `.env.example` for the full list with defaults):
+- `CHIEF_AI_FALLBACK_ENABLED` (server) — master gate for the whole AI tier. Default `false`.
+- `CHIEF_AI_LOCAL_ONLY_MODE` (server) — restricts an enabled fallback chain to Ollama only,
+  for cost/privacy. Default `false`.
+- `VITE_CHIEF_AI_UI_ENABLED` (browser-visible) — purely a UI gate: whether the browser bothers
+  calling `/api/chief/ask` at all, and whether the "Answered via" route badge renders. **Not a
+  security boundary** — `/api/chief/ask` re-checks `CHIEF_AI_FALLBACK_ENABLED` server-side
+  regardless of what the client sends, per the Reliability/fail-closed principle elsewhere in
+  this runbook.
+
+**Observability:** every provider attempt logs a structured, secret-free line (`lib/chief-ai/log.ts`)
+— route, ok/fail, latency, and (on failure) a short error string. No API keys, prompts, or model
+output are ever logged. This is the mechanism for "which path answered" — read server logs, don't
+guess from the response text.
+
+**Status as of this pass:** all of the above is real, working code — deterministic-first is
+preserved, every flag defaults off, and every provider fails closed with a logged reason. What
+is **not** verified: an actual live call to a real Azure AI Foundry resource — no credentials exist
+in this repo's environments, so "does the Azure tier actually answer" is unverified pending David
+provisioning a resource and setting the env vars in `.env.example`. Ollama tiers are exercised the
+same way the Librarian's existing Tier 1 refinement is (real HTTP call to a local Ollama server,
+fails closed if unreachable) — same trust level as that existing integration, not independently
+re-verified live in this pass.
+
+**Voice v1** (transcribe/speak) is a separate follow-on slice — see its own PR/section once landed;
+this section covers the text AI fallback chain only.
+
+---
+
 ## Incidents, Pauses, and Escalation
 
 **Agents must stop and escalate to Chief immediately when:**
