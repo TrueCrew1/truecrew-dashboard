@@ -18,8 +18,35 @@ import type {
   WorkItem,
 } from "@/types";
 
+let warnedMissingInternalKey = false;
+
+/**
+ * Every /api route except the GitHub webhook is gated by requireInternalAuth
+ * (lib/auth.ts), which fails closed on a missing/mismatched x-internal-key.
+ * Without this header attached here, every browser request 401s in live mode
+ * regardless of how correctly the server side is configured.
+ */
+function internalAuthHeaders(): HeadersInit {
+  const key = import.meta.env.VITE_INTERNAL_KEY;
+  if (!key) {
+    if (isLiveApiEnabled() && !warnedMissingInternalKey) {
+      warnedMissingInternalKey = true;
+      console.error(
+        "[api/client] VITE_USE_LIVE_API is true but VITE_INTERNAL_KEY is not set — " +
+          "every internal-auth API call will fail closed with 401. Set VITE_INTERNAL_KEY " +
+          "to match the server's INTERNAL_API_SECRET (see .env.example).",
+      );
+    }
+    return {};
+  }
+  return { "x-internal-key": key };
+}
+
 function apiFetch(input: string, init: RequestInit = {}): Promise<Response> {
-  return fetch(input, init);
+  return fetch(input, {
+    ...init,
+    headers: { ...internalAuthHeaders(), ...init.headers },
+  });
 }
 
 export function isLiveApiEnabled(): boolean {
