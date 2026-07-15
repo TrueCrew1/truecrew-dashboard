@@ -17,6 +17,7 @@ import type {
   WorkflowStage,
   WorkItem,
 } from "@/types";
+import type { ChiefAiResult } from "../../../lib/chief-ai/types";
 
 let warnedMissingInternalKey = false;
 
@@ -51,6 +52,10 @@ function apiFetch(input: string, init: RequestInit = {}): Promise<Response> {
 
 export function isLiveApiEnabled(): boolean {
   return import.meta.env.VITE_USE_LIVE_API === "true";
+}
+
+export function isChiefAiUiEnabled(): boolean {
+  return import.meta.env.VITE_CHIEF_AI_UI_ENABLED === "true";
 }
 
 export interface CommandCenterPayload {
@@ -338,4 +343,27 @@ export function formatDataSourceLabel(source: DataSourceKind): string {
     default:
       return "mock";
   }
+}
+
+/**
+ * Asks the server-side Chief AI fallback chain (Azure -> Ollama -> canned,
+ * per CHIEF_AI_FALLBACK_ENABLED) to answer a query deterministic routing
+ * couldn't. Only called when isChiefAiUiEnabled() is true — see
+ * chiefAiFallback.ts, the sole call site.
+ */
+export async function askChiefAi(
+  query: string,
+  deterministicSummary?: string,
+): Promise<ChiefAiResult> {
+  const response = await apiFetch("/api/chief/ask", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query, deterministicSummary }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Chief AI ask returned ${response.status}`);
+  }
+
+  return response.json() as Promise<ChiefAiResult>;
 }
