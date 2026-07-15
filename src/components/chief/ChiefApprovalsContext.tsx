@@ -14,21 +14,15 @@ import {
   isLiveApiEnabled,
   recordChiefApprovalDecision,
 } from "@/lib/api/client";
-import { AGENT_APPROVAL_CARDS } from "./agentApprovalGates";
-import { MOCK_PR_APPROVAL_CARDS } from "./chiefApprovalCardMocks";
-import { REPO_CHANGE_APPROVAL_CARDS } from "./repoChangeApprovals";
+import { getSeedApprovalCards } from "./chiefApprovalSeeds";
 import { APPROVAL_ACTION_DELAY_MS, approvalActionToStatus } from "./chiefApproval";
 import {
   emitApprovalDecisionRecorded,
   emitApprovalProposalCreated,
 } from "./chiefGovernanceEvents";
 import { loadSessionState, saveSessionState } from "./chiefSessionStorage";
-import {
-  buildChiefLiveContext,
-  deriveApprovalCandidates,
-  mergeApprovalSources,
-  type ChiefLiveContext,
-} from "./chiefLiveContext";
+import { buildChiefLiveContext, type ChiefLiveContext } from "./chiefLiveContext";
+import { deriveApprovalCandidates, mergeApprovalSources } from "./chiefApprovalBoard";
 import type {
   ApprovalAction,
   ApprovalDecision,
@@ -100,17 +94,15 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
     [data, liveContext],
   );
 
-  // Seeded with demo PR cards (chiefApprovalCardMocks.ts), the one real
-  // wired source (pending local repo changes, repoChangeApprovals.ts), and
-  // one example request per agent (agentApprovalGates.ts) — so every
-  // approval, from any source or surface, routes through this one shared
-  // queue. See agentApprovalGates.ts's header and docs/AGENT_WORKFLOW.md
-  // for the single-queue rule this preserves.
-  const [commandApprovals, setCommandApprovals] = useState<ApprovalProposal[]>([
-    ...MOCK_PR_APPROVAL_CARDS,
-    ...REPO_CHANGE_APPROVAL_CARDS,
-    ...AGENT_APPROVAL_CARDS,
-  ]);
+  // Seeded via getSeedApprovalCards() — demo PR cards
+  // (chiefApprovalCardMocks.ts), the one real wired source (pending local
+  // repo changes, repoChangeApprovals.ts), and one example request per
+  // agent (agentApprovalGates.ts) — so every approval, from any source or
+  // surface, routes through this one shared queue. See
+  // agentApprovalGates.ts's header and docs/AGENT_WORKFLOW.md for the
+  // single-queue rule this preserves.
+  const [commandApprovals, setCommandApprovals] =
+    useState<ApprovalProposal[]>(getSeedApprovalCards);
   const [approvalDecisions, setApprovalDecisions] = useState<Record<string, ApprovalDecision>>(
     () => loadSessionState(APPROVAL_DECISIONS_STORAGE_KEY, isApprovalDecisionRecord) ?? {},
   );

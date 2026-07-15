@@ -7,7 +7,7 @@ import {
 } from "./approvalWrappers";
 import { getApprovalUrgencyBadge, OVERDUE_HOURS } from "./chiefApprovalUrgency";
 import { formatChiefTimestamp } from "./chiefMock";
-import { CHIEF_BOARD_LANES } from "./chiefLiveContext";
+import { CHIEF_BOARD_LANES } from "./chiefApprovalBoard";
 import { useBuildTasks } from "./hooks/useBuildTasks";
 import { BuildTaskApprovalCard } from "./BuildTaskApprovalCard";
 import type { ApprovalActionState } from "./chiefApproval";

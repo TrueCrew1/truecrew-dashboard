@@ -8,12 +8,34 @@ import {
   deriveLibrarianAgentWorkItems,
   deriveResearchAgentWorkItems,
   deriveWorkflowGateAgentWorkItems,
-} from "./chiefLiveContext";
+} from "./chiefApprovalBoard";
 import { getApprovalUrgencyBadge, OVERDUE_HOURS } from "./chiefApprovalUrgency";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { useData } from "@/context/DataContext";
+import { useBuildTasks } from "./hooks/useBuildTasks";
+import type { BuildGateTask } from "./hooks/useBuildTasks";
+import {
+  findLatestResearchSummaryByTitle,
+  findLatestResearchSummaryByWorkStoryId,
+  getAllResearchSummaries,
+  getLatestResearchSummary,
+} from "@/lib/knowledge/latestResearchSource";
+import { getResearchRequests } from "@/lib/research/requests";
+import type { ResearchRequest } from "@/lib/research/requests";
+import { getWorkStories } from "@/lib/chief/workStories";
+import type { WorkStoryDefinition } from "@/lib/chief/workStories";
 import type { AgentWorkItem, AgentWorkStatus, ApprovalProposal } from "./types";
 import type { TaskPriority } from "@/types";
+
+// Build-time read of knowledge/sources/ (see latestResearchSource.ts) and the
+// static manual queue (see requests.ts) — neither changes per render.
+const LATEST_RESEARCH_SUMMARY = getLatestResearchSummary();
+const RESEARCH_REQUESTS = getResearchRequests();
+const HAS_FILED_RESEARCH = getAllResearchSummaries().length > 0;
+
+// Reusable Work Story scenarios (see workStories.ts) — adding a scenario means
+// adding an entry there, not touching this component's render logic.
+const WORK_STORIES = getWorkStories();
 
 const SPECIALIST_INITIALS: Record<AgentWorkItem["agent"], string> = {
   "Workflow Gate Agent": "WG",
@@ -96,6 +118,101 @@ function AgentWorkCard({
   );
 }
 
+/**
+ * One Work Story, rendered generically from a WorkStoryDefinition — the only
+ * per-scenario logic is the lookups below (linked task, request, filed note);
+ * everything else is identical for every story. "Live" vs "Structured" reflects
+ * whether a real Build task backs this story yet, not wishful status.
+ */
+function WorkStoryPanel({
+  story,
+  buildGateTasks,
+  buildGateTasksLoading,
+  researchRequests,
+}: {
+  story: WorkStoryDefinition;
+  buildGateTasks: BuildGateTask[];
+  buildGateTasksLoading: boolean;
+  researchRequests: ResearchRequest[];
+}) {
+  const linkedTask = story.linkedTaskTitle
+    ? buildGateTasks.find((task) => task.title === story.linkedTaskTitle)
+    : undefined;
+  const request = researchRequests.find((candidate) => candidate.id === story.researchRequestId);
+  // Stable id-based resolution first; title match is only a compatibility
+  // fallback for notes filed before work_story_id existed.
+  const latestNote =
+    findLatestResearchSummaryByWorkStoryId(story.id) ?? findLatestResearchSummaryByTitle(story.noteMatchTitle);
+  const isLive = Boolean(linkedTask);
+
+  return (
+    <section className="agent-work-story" aria-label={`Work story: ${story.title}`}>
+      <div className="agent-work-story-header">
+        <span className="agent-work-story-label">Work story: {story.title}</span>
+        {/* Same isLoading source and honesty rule as ChiefBoard's Build gates lane
+            (useBuildTasks) — don't assert Live/Structured off placeholder data. */}
+        <span className={`badge ${isLive ? "badge-green" : "badge-steel"}`}>
+          {story.linkedTaskTitle && buildGateTasksLoading ? "Checking…" : isLive ? "Live" : "Structured"}
+        </span>
+      </div>
+      <p className="agent-work-story-summary">{story.summary}</p>
+      <ul className="agent-work-story-list">
+        <li>
+          <span className="agent-work-story-item-label">Planner:</span>{" "}
+          {story.linkedTaskTitle && buildGateTasksLoading
+            ? "Checking Planner status…"
+            : linkedTask
+              ? linkedTask.plannerChecklist.join(" ")
+              : "No Planner checklist yet — no live Build task backs this story."}
+        </li>
+        <li>
+          <span className="agent-work-story-item-label">Research request:</span>{" "}
+          {request ? request.topic : "Not queued."}
+        </li>
+        <li>
+          <span className="agent-work-story-item-label">Latest filed research:</span>{" "}
+          {latestNote
+            ? `${latestNote.title} — updated ${latestNote.createdDate} (${latestNote.path})`
+            : request
+              ? "Queued, but no research note filed yet."
+              : "Not filed yet."}
+        </li>
+      </ul>
+    </section>
+  );
+}
+
+type LaneActivityStatus = "active" | "idle" | "loading";
+
+function AgentActivityStatusRow({
+  plannerStatus,
+  researchStatus,
+  librarianStatus,
+}: {
+  plannerStatus: LaneActivityStatus;
+  researchStatus: LaneActivityStatus;
+  librarianStatus: LaneActivityStatus;
+}) {
+  const lanes: Array<{ label: string; status: LaneActivityStatus }> = [
+    { label: "Planner", status: plannerStatus },
+    { label: "Research", status: researchStatus },
+    { label: "Librarian", status: librarianStatus },
+  ];
+
+  return (
+    <ul className="agent-activity-status-row" aria-label="Agent lane status">
+      {lanes.map((lane) => (
+        <li key={lane.label} className="agent-activity-status-item">
+          <span className="agent-activity-status-label">{lane.label}</span>
+          <span className={`badge ${lane.status === "active" ? "badge-green" : "badge-steel"}`}>
+            {lane.status === "active" ? "Active" : lane.status === "loading" ? "Loading…" : "Idle"}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function AgentWorkBoard() {
   const { data } = useData();
   const { approvals } = useChiefApprovals();
@@ -112,6 +229,26 @@ export function AgentWorkBoard() {
     () => deriveLibrarianAgentWorkItems(data.tasks, data.notes),
     [data.tasks, data.notes],
   );
+  // Same useData()-backed loading flag ChiefBoard's Build gates lane already
+  // guards on for this exact hook — Planner/Librarian below derive from the
+  // same underlying task/note data, so they share the same "don't assert a
+  // status off placeholder data" rule.
+  const { buildGateTasks, isLoading: buildGateTasksLoading } = useBuildTasks();
+  const anyWorkStoryHasLiveTask = WORK_STORIES.some(
+    (story) => story.linkedTaskTitle && buildGateTasks.some((task) => task.title === story.linkedTaskTitle),
+  );
+  const plannerLaneStatus: LaneActivityStatus = buildGateTasksLoading
+    ? "loading"
+    : anyWorkStoryHasLiveTask
+      ? "active"
+      : "idle";
+  const researchLaneStatus: LaneActivityStatus =
+    RESEARCH_REQUESTS.length > 0 || HAS_FILED_RESEARCH ? "active" : "idle";
+  const librarianLaneStatus: LaneActivityStatus = buildGateTasksLoading
+    ? "loading"
+    : librarianItems.length > 0
+      ? "active"
+      : "idle";
   const awaitingApprovalItems = useMemo(
     () => deriveAgentAwaitingApprovalWorkItems(approvals),
     [approvals],
@@ -161,6 +298,61 @@ export function AgentWorkBoard() {
         reflect real task/incident/artifact data or pending proposals from the shared Approvals
         queue; other agents are still mock for this slice. Read-only — no actions taken here.
       </p>
+
+      <section className="agent-activity-panel" aria-label="Agent activity">
+        <div className="agent-activity-panel-header">
+          <span className="agent-activity-panel-label">Agent activity</span>
+          <AgentActivityStatusRow
+            plannerStatus={plannerLaneStatus}
+            researchStatus={researchLaneStatus}
+            librarianStatus={librarianLaneStatus}
+          />
+        </div>
+
+        {LATEST_RESEARCH_SUMMARY ? (
+          <section className="agent-latest-research" aria-label="Latest research source">
+            <span className="agent-latest-research-label">Latest research source</span>
+            <p className="agent-latest-research-title">{LATEST_RESEARCH_SUMMARY.title}</p>
+            {LATEST_RESEARCH_SUMMARY.summary ? (
+              <p className="agent-latest-research-summary">{LATEST_RESEARCH_SUMMARY.summary}</p>
+            ) : null}
+            <p className="agent-latest-research-meta">
+              {LATEST_RESEARCH_SUMMARY.createdDate} · {LATEST_RESEARCH_SUMMARY.path}
+            </p>
+          </section>
+        ) : null}
+
+        {RESEARCH_REQUESTS.length > 0 ? (
+          <section className="agent-research-queue" aria-label="Research queue (manual)">
+            <span className="agent-research-queue-label">Research queue (manual)</span>
+            <p className="agent-research-queue-note">
+              Chief-originated research requests waiting on a human or a future Research agent run
+              — nothing here is auto-fulfilled or auto-filed.
+            </p>
+            <ul className="agent-research-queue-list">
+              {RESEARCH_REQUESTS.map((request) => (
+                <li key={request.id} className="agent-research-queue-item">
+                  <p className="agent-research-queue-topic">{request.topic}</p>
+                  <p className="agent-research-queue-why">{request.whyItMatters}</p>
+                  <time className="agent-research-queue-time" dateTime={request.createdAt}>
+                    {formatChiefTimestamp(request.createdAt)}
+                  </time>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        {WORK_STORIES.map((story) => (
+          <WorkStoryPanel
+            key={story.id}
+            story={story}
+            buildGateTasks={buildGateTasks}
+            buildGateTasksLoading={buildGateTasksLoading}
+            researchRequests={RESEARCH_REQUESTS}
+          />
+        ))}
+      </section>
 
       <div className="agent-work-lanes">
         {AGENT_WORK_STATUS_CONFIG.map((laneConfig) => {
