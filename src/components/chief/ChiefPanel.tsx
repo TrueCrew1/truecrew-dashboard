@@ -11,7 +11,8 @@ import { ChiefQueueStrip } from "./ChiefQueueStrip";
 import { CommandHistory } from "./CommandHistory";
 import { buildApprovalFromResponse, buildHistoryEntry } from "./chiefMock";
 import { approvalActionSuccessMessage, type ApprovalActionState } from "./chiefApproval";
-import { deriveChiefBoardItems, resolveChiefCommand } from "./chiefLiveContext";
+import { deriveChiefBoardItems } from "./chiefApprovalBoard";
+import { resolveChiefCommand } from "./chiefCommandRouter";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { SpecialistCards } from "./SpecialistCards";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
@@ -237,21 +238,21 @@ export function ChiefPanel() {
     setActiveTab("command");
     setResponse(null);
 
-    window.setTimeout(() => {
-      const result = resolveChiefCommand(command, data, liveContext, approvals);
-      setResponse(result);
-      addHistoryEntry(buildHistoryEntry(command, result));
+    // resolveChiefCommand is synchronous (regex/keyword dispatch against
+    // already-loaded live context, no I/O) — no artificial delay needed.
+    const result = resolveChiefCommand(command, data, liveContext, approvals);
+    setResponse(result);
+    addHistoryEntry(buildHistoryEntry(command, result));
 
-      const newApproval = buildApprovalFromResponse(command, result);
-      if (newApproval) {
-        // Extension point: a "card created" notification hook would fire
-        // here too, alongside any future real approval sources (GitHub PRs,
-        // agent job queue) that push a new ApprovalCard into this list.
-        addCommandApproval(newApproval);
-      }
+    const newApproval = buildApprovalFromResponse(command, result);
+    if (newApproval) {
+      // Extension point: a "card created" notification hook would fire
+      // here too, alongside any future real approval sources (GitHub PRs,
+      // agent job queue) that push a new ApprovalCard into this list.
+      addCommandApproval(newApproval);
+    }
 
-      setIsProcessing(false);
-    }, 480);
+    setIsProcessing(false);
   };
 
   const handleExample = (example: string) => {

@@ -2,7 +2,8 @@ import { FormEvent, useMemo, useRef, useState } from "react";
 import { Panel } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import { buildApprovalFromResponse, buildHistoryEntry } from "./chiefMock";
-import { deriveChiefBoardItems, resolveChiefCommand } from "./chiefLiveContext";
+import { deriveChiefBoardItems } from "./chiefApprovalBoard";
+import { resolveChiefCommand } from "./chiefCommandRouter";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
 import type { ChiefResponse } from "./types";
@@ -50,18 +51,18 @@ export function ChiefHomePanel() {
     if (!trimmed || isProcessing) return;
 
     setIsProcessing(true);
-    window.setTimeout(() => {
-      const result = resolveChiefCommand(trimmed, data, liveContext, approvals);
-      setResponse(result);
-      addHistoryEntry(buildHistoryEntry(trimmed, result));
+    // resolveChiefCommand is synchronous (regex/keyword dispatch against
+    // already-loaded live context, no I/O) — no artificial delay needed.
+    const result = resolveChiefCommand(trimmed, data, liveContext, approvals);
+    setResponse(result);
+    addHistoryEntry(buildHistoryEntry(trimmed, result));
 
-      const newApproval = buildApprovalFromResponse(trimmed, result);
-      if (newApproval) {
-        addCommandApproval(newApproval);
-      }
+    const newApproval = buildApprovalFromResponse(trimmed, result);
+    if (newApproval) {
+      addCommandApproval(newApproval);
+    }
 
-      setIsProcessing(false);
-    }, 320);
+    setIsProcessing(false);
   };
 
   return (

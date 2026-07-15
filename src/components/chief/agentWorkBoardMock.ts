@@ -14,7 +14,7 @@ export const AGENT_WORK_STATUS_CONFIG: AgentWorkStatusConfig[] = [
 
 // Mock only — see AgentWorkItem in types.ts for the extension point once
 // agents report real status. Workflow Gate, Research, and Librarian entries
-// are now derived from real data (see chiefLiveContext.ts), same as Build.
+// are now derived from real data (see chiefApprovalBoard.ts), same as Build.
 export const AGENT_WORK_ITEMS: AgentWorkItem[] = [
   {
     id: "agentwork-roadmap-1",

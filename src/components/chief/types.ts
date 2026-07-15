@@ -168,7 +168,7 @@ export type AgentWorkAgentName = Exclude<ChiefSpecialist, "Chief"> | "Build Agen
  * agent's current task and status, not an operator decision or a live
  * dashboard signal. Mock data for most agents still (see
  * agentWorkBoardMock.ts); Build is the first real source — see
- * deriveBuildAgentWorkItems in chiefLiveContext.ts. Extension point: back
+ * deriveBuildAgentWorkItems in chiefApprovalBoard.ts. Extension point: back
  * the remaining agents with real status once they report it somewhere.
  */
 export interface AgentWorkItem {
