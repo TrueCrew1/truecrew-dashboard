@@ -285,6 +285,43 @@ obvious answer, not a comparison or a recommendation) — if it's worth a
 `testsOrChecksDone`, `requestedAction`, `alternativesConsidered`, `createdAt` — through
 `createApprovalCardFromResearchRequest()`.
 
+**Filing a finding:** a research finding is filed as a repo-internal note in
+`knowledge/sources/`, using `knowledge/templates/source-template.md`. This is
+distinct from Librarian's filing path, which writes Task work items to the
+external Obsidian vault — Research findings never leave the repo.
+
+### How to file one research finding (manual, first run)
+
+No script or AI call is required for any of this — every step is a human
+copying/writing markdown by hand.
+
+1. **Capture the topic in Obsidian.** Add an entry under **Queued** in the
+   vault's `Chief/Research Queue.md` (seeded from
+   `docs/vault-templates/Chief/Research Queue.md`): topic, added date, why it
+   matters, status.
+2. **Do the research, paste the raw output into `drafts/`.** Create a new file
+   at the repo root in `drafts/` (e.g. `drafts/2026-07-14-<topic>.md`) and
+   paste the raw findings there, uncritically — this is scratch space, not
+   part of `knowledge/`.
+3. **Turn it into a source note.** Copy `knowledge/templates/source-template.md`
+   to a new file in `knowledge/sources/` (e.g. `knowledge/sources/<topic>.md`).
+   Fill in the frontmatter (`title`, `created`/`updated`, and `work_story_id`
+   if this finding is tied to a `WorkStoryDefinition` in
+   `src/lib/chief/workStories.ts`) and the **Origin** / **Raw summary** /
+   **Extracted facts** sections from what you pasted into `drafts/` in step 2.
+4. **Move the Research Queue entry to Filed.** In `Chief/Research Queue.md`,
+   move the topic from **Queued** to **Filed** with the filed date, a one-line
+   result, and a link to the new `knowledge/sources/` note.
+5. **Confirm Chief sees it.** The dashboard's Agents tab reads filed notes at
+   build time via `src/lib/knowledge/latestResearchSource.ts` (a Vite
+   build-time glob over `knowledge/sources/*.md`), matched to a Work Story via
+   `work_story_id` or title as defined in `src/lib/chief/workStories.ts`. Run
+   `npm run dev` (or rebuild) and check that the Work Story panel on Chief's
+   Agents tab shows the new note as its latest research source.
+
+There is no `fileFinding.ts` or automated filing pipeline yet — this manual
+path is the only way to close the loop today.
+
 ---
 
 ## Content Agent
