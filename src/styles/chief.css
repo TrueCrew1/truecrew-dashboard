@@ -409,6 +409,35 @@
   font-weight: 600;
 }
 
+/* Compact queue-level recap (Pending/Overdue/Due soon/Resolved) — sits
+   below the Approval status dashboard as a quick at-a-glance line, styled
+   as a thin bordered strip so it reads as a distinct summary rather than
+   another footnote paragraph. */
+.chief-approval-summary-strip {
+  margin-top: 10px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-panel);
+}
+
+.chief-approval-summary-overdue,
+.chief-approval-summary-pending,
+.chief-approval-summary-duesoon {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.chief-approval-summary-overdue:hover,
+.chief-approval-summary-pending:hover,
+.chief-approval-summary-duesoon:hover {
+  text-decoration: underline;
+}
+
 .chief-approval-link {
   display: inline-flex;
   align-items: center;
@@ -524,16 +553,22 @@
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   background: rgba(10, 11, 13, 0.5);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.chief-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .chief-tab {
-  flex: 1;
-  min-width: 0;
+  flex: 0 0 auto;
+  white-space: nowrap;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 8px 2px;
+  padding: 8px 6px;
   border: none;
   border-bottom: 2px solid transparent;
   border-radius: 0;
@@ -573,6 +608,163 @@
   font-size: 9px;
   font-weight: 700;
   line-height: 16px;
+}
+
+.chief-queue-strip {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(10, 11, 13, 0.85);
+}
+
+.chief-queue-strip-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chief-queue-strip-current {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.chief-queue-strip-label {
+  flex-shrink: 0;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+}
+
+.chief-queue-strip-current-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.chief-queue-strip-current-title:hover {
+  color: var(--orange);
+  text-decoration: underline;
+}
+
+.chief-queue-strip-current-title--empty {
+  color: var(--steel-dim);
+  cursor: default;
+}
+
+.chief-queue-strip-pending {
+  flex-shrink: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-panel);
+  cursor: pointer;
+}
+
+.chief-queue-strip-pending:hover:not(:disabled) {
+  border-color: var(--orange-border);
+  background: rgba(255, 122, 26, 0.04);
+}
+
+.chief-queue-strip-pending:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.chief-queue-strip-pending-count {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--orange);
+  line-height: 1;
+}
+
+.chief-queue-strip-pending-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+}
+
+.chief-queue-strip-health {
+  display: block;
+  margin: 6px 0 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 10px;
+  color: var(--steel-dim);
+  text-align: left;
+  cursor: pointer;
+}
+
+.chief-queue-strip-health:hover {
+  color: var(--orange);
+  text-decoration: underline;
+}
+
+.chief-queue-strip-health strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.chief-queue-strip-health--empty {
+  cursor: default;
+}
+
+.chief-queue-strip-health--empty:hover {
+  color: var(--steel-dim);
+  text-decoration: none;
+}
+
+.chief-queue-strip-recent {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.chief-queue-strip-recent-item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 10px;
+  line-height: 1.4;
+  overflow: hidden;
+}
+
+.chief-queue-strip-recent-status {
+  flex-shrink: 0;
+  color: var(--steel-dim);
+  font-weight: 600;
+}
+
+.chief-queue-strip-recent-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--steel);
 }
 
 .chief-brief {
@@ -677,6 +869,22 @@ button.chief-brief-metric {
   line-height: 1.2;
 }
 
+.chief-brief-metric-sublabel {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--red);
+  line-height: 1.2;
+  text-align: center;
+}
+
+.chief-brief-metric--critical .chief-brief-metric-sublabel {
+  color: var(--red);
+}
+
+.chief-brief-metric--warn .chief-brief-metric-sublabel {
+  color: var(--yellow);
+}
+
 .chief-brief-footnote {
   margin: 10px 0 0;
   font-size: 10px;
@@ -692,6 +900,53 @@ button.chief-brief-metric {
 
 .chief-brief-link:hover {
   text-decoration: underline;
+}
+
+.chief-recent-activity {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.chief-recent-activity-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+}
+
+.chief-recent-activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chief-recent-activity-item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 10px;
+}
+
+.chief-recent-activity-summary {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.chief-recent-activity-time {
+  flex-shrink: 0;
+  font-size: 9px;
+  color: var(--steel-dim);
 }
 
 .chief-board {
@@ -772,6 +1027,38 @@ button.chief-brief-metric {
   font-weight: 600;
 }
 
+.chief-board-lane-note--link {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.chief-board-lane-note--link:hover {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.chief-approval-card--focused {
+  animation: chief-approval-focus-pulse 2s ease-out;
+  outline: 2px solid var(--orange-border);
+  outline-offset: 2px;
+}
+
+@keyframes chief-approval-focus-pulse {
+  0% {
+    background: rgba(255, 122, 26, 0.14);
+    outline-color: var(--orange);
+  }
+  100% {
+    background: transparent;
+    outline-color: var(--orange-border);
+  }
+}
+
 .chief-board-list {
   margin: 0;
   padding: 0;
@@ -805,6 +1092,16 @@ button.chief-brief-metric {
 
 .chief-board-card--critical {
   border-left: 3px solid var(--orange);
+}
+
+/* Marks the single most-overdue open task promoted to the top of the
+   at-risk lane — distinct from the shared critical/overdue tone so the
+   "look here first" pick doesn't blend into the rest of the overdue stack.
+   Mirrors chief-approval-badge--top-priority's box-shadow treatment. */
+.chief-board-card--needs-attention {
+  border-left-width: 4px;
+  border-left-color: var(--red);
+  box-shadow: 0 0 0 1px rgba(255, 68, 68, 0.2);
 }
 
 .chief-board-card--actionable {
@@ -1063,6 +1360,46 @@ button.chief-brief-metric {
   background: rgba(245, 158, 11, 0.04);
 }
 
+/* Overrides the generic pending styling above so the longest-waiting
+   approvals visually stand out from the rest of the pending stack, not
+   just via a badge buried in the tag row. */
+.chief-approval-card--overdue {
+  border-left: 3px solid var(--red);
+  background: rgba(255, 68, 68, 0.06);
+}
+
+/* Marks the single longest-waiting pending card — distinct from the
+   overdue/due-soon urgency badges, so Chief's "look here first" pick
+   doesn't blend into age-based severity coloring. Reuses badge-orange's
+   existing token instead of introducing a new color. */
+.chief-approval-badge--top-priority {
+  font-weight: 700;
+  border-color: var(--orange);
+  box-shadow: 0 0 0 1px rgba(255, 122, 26, 0.15);
+}
+
+/* Top priority badge doubles as a jump-to-decision affordance — reset the
+   native button chrome it picks up so it still reads as a badge. */
+.chief-approval-badge--clickable {
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.chief-approval-badge--clickable:hover {
+  box-shadow: 0 0 0 1px rgba(255, 122, 26, 0.35);
+}
+
+/* Recommendation badges reuse the same green/yellow/red classes as the
+   urgency badges above, which let a decision suggestion compete visually
+   with Overdue/Due soon. Dropping the filled background keeps the
+   approve/hold/needs-changes color coding readable while making it read
+   as secondary guidance rather than another severity signal. */
+.badge.chief-approval-badge--recommendation {
+  background: transparent;
+  font-weight: 500;
+}
+
 .chief-approval-card--approved {
   border-left: 3px solid var(--green);
   opacity: 0.82;
@@ -1219,6 +1556,30 @@ button.chief-brief-metric {
   margin-top: 12px;
 }
 
+/* Frames the action row as a distinct decision zone on pending cards, so
+   the operator's actual next move reads as separate from the read-only
+   summary/checklist content above it — quieter than the overdue/top-
+   priority badges, just a label and a rule line. */
+.chief-approval-decision-zone {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.chief-approval-decision-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+}
+
+.chief-approval-decision-zone .chief-approval-card-actions {
+  margin-top: 0;
+}
+
 .chief-approval-card-actions .chief-btn-primary,
 .chief-approval-card-actions .chief-btn-danger {
   flex: 1;
@@ -1287,6 +1648,86 @@ button.chief-brief-metric {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.chief-governance {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chief-governance-note {
+  margin: 0;
+  font-size: 10px;
+  color: var(--steel-dim);
+  line-height: 1.45;
+}
+
+.chief-governance-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chief-governance-card {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(148, 163, 184, 0.04);
+}
+
+.chief-governance-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.chief-governance-card-type {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.chief-governance-meta {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chief-governance-meta-row {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.chief-governance-meta-row dt {
+  margin: 0;
+  font-weight: 600;
+  color: var(--steel-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.chief-governance-meta-row dd {
+  margin: 0;
+  color: var(--steel);
+  min-width: 0;
+}
+
+.chief-governance-proposal-id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 9px;
+  word-break: break-all;
 }
 
 .chief-approval-risk {
@@ -2574,6 +3015,24 @@ button.chief-brief-metric {
   line-height: 1.45;
 }
 
+.agent-activity-day-group {
+  margin-top: 16px;
+}
+
+.agent-activity-day-group:first-of-type {
+  margin-top: 10px;
+}
+
+.agent-activity-day-header {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--steel-dim);
+}
+
 /* Approval status dashboard */
 .chief-approval-tab {
   display: flex;
@@ -2769,6 +3228,20 @@ button.chief-brief-metric {
   min-width: 0;
 }
 
+.agent-work-card-agent--clickable {
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.agent-work-card-agent--clickable:hover .agent-work-card-agent-name {
+  color: var(--orange);
+}
+
 .agent-work-card-avatar {
   flex-shrink: 0;
   display: inline-flex;
@@ -2825,6 +3298,256 @@ button.chief-brief-metric {
 .agent-work-card-time {
   font-size: 9px;
   color: var(--steel-dim);
+}
+
+.agent-overview-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.agent-overview-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.agent-overview-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  transition: opacity 0.15s ease;
+}
+
+.agent-overview-pill:not(.active) {
+  opacity: 0.5;
+}
+
+.agent-overview-pill:hover {
+  opacity: 0.85;
+}
+
+.agent-overview-pill.active:hover {
+  opacity: 1;
+}
+
+.agent-overview-pill-visibility {
+  flex-shrink: 0;
+  display: inline-flex;
+  cursor: pointer;
+}
+
+.agent-overview-pill-visibility input {
+  cursor: pointer;
+}
+
+.agent-overview-pill-open {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.agent-overview-pill-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.agent-overview-pill-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.agent-overview-pill-summary {
+  font-size: 9px;
+  color: var(--steel-dim);
+  white-space: nowrap;
+}
+
+.agent-work-lane-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.agent-work-lane-heading:hover .agent-work-lane-title {
+  color: var(--orange);
+}
+
+.agent-work-lane-heading-text {
+  min-width: 0;
+}
+
+.agent-work-lane-description {
+  margin: 2px 0 0;
+  font-size: 10px;
+  color: var(--steel-dim);
+  line-height: 1.4;
+}
+
+.agent-work-lane-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.agent-detail-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 26;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.agent-detail-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--chief-width);
+  z-index: 27;
+  background: rgba(10, 11, 13, 0.98);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  box-shadow: -12px 0 32px rgba(0, 0, 0, 0.45);
+  animation: agent-detail-drawer-in 160ms ease-out;
+}
+
+.app-shell.rail-open .agent-detail-drawer {
+  right: var(--rail-width);
+}
+
+@keyframes agent-detail-drawer-in {
+  from {
+    transform: translateX(16px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.agent-detail-drawer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.agent-detail-drawer-identity {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.agent-detail-drawer-avatar {
+  width: 26px;
+  height: 26px;
+  font-size: 10px;
+}
+
+.agent-detail-drawer-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.agent-detail-drawer-description {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: var(--steel-dim);
+  line-height: 1.5;
+}
+
+.agent-detail-drawer-close {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--steel);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.agent-detail-drawer-close:hover {
+  border-color: var(--orange-border);
+  color: var(--text);
+}
+
+.agent-detail-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.agent-detail-drawer-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.agent-detail-drawer-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.agent-detail-drawer-filtered-note {
+  margin-bottom: 12px;
+}
+
+.agent-detail-drawer-section-title {
+  margin: 20px 0 8px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--steel-dim);
+}
+
+.agent-detail-drawer-section-title:first-of-type {
+  margin-top: 0;
 }
 
 .chief-home-panel {

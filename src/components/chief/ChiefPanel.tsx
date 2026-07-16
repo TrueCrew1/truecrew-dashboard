@@ -1,7 +1,13 @@
-import { FormEvent, useCallback, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useData } from "@/context/DataContext";
-import { ChiefApprovalConflictError, formatDataSourceLabel } from "@/lib/api/client";
+import {
+  ChiefApprovalConflictError,
+  formatDataSourceLabel,
+  isLiveApiEnabled,
+} from "@/lib/api/client";
+import { useMonitorHealth } from "@/hooks/useMonitorHealth";
 import { ApprovalBoard } from "./ApprovalBoard";
+import { ChiefQueueStrip } from "./ChiefQueueStrip";
 import { CommandHistory } from "./CommandHistory";
 import { buildApprovalFromResponse, buildHistoryEntry } from "./chiefMock";
 import { approvalActionSuccessMessage, type ApprovalActionState } from "./chiefApproval";
@@ -11,8 +17,13 @@ import { SpecialistCards } from "./SpecialistCards";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
 import { ChiefBoard } from "./ChiefBoard";
 import { AgentWorkBoard } from "./AgentWorkBoard";
+import { GovernanceEventsPanel } from "./GovernanceEventsPanel";
+import { chiefLog } from "./chiefLog";
 import type { ApprovalAction, ChiefResponse } from "./types";
 import type { ApprovalStatusFilter } from "./approvalStatus";
+
+/** Dev-only observability tab — never shown in production builds. */
+const SHOW_GOVERNANCE_EVENTS_TAB = import.meta.env.DEV;
 
 const EXAMPLE_COMMANDS = [
   "What is at risk today?",
@@ -22,7 +33,7 @@ const EXAMPLE_COMMANDS = [
   "Show open alerts",
 ];
 
-type ChiefTab = "command" | "board" | "agents" | "approvals" | "history";
+type ChiefTab = "command" | "board" | "agents" | "approvals" | "history" | "dev";
 
 export function ChiefPanel() {
   const { data, loading, source } = useData();
@@ -46,6 +57,9 @@ export function ChiefPanel() {
     Record<string, ApprovalActionState>
   >({});
   const [approvalStatusFilter, setApprovalStatusFilter] = useState<ApprovalStatusFilter>("all");
+  const liveApi = isLiveApiEnabled();
+  // Same hook and endpoints Monitor already uses — no new polling or data source.
+  const platformHealth = useMonitorHealth();
 
   const openApprovals = useCallback((filter: ApprovalStatusFilter = "all") => {
     setApprovalStatusFilter(filter);
@@ -58,6 +72,30 @@ export function ChiefPanel() {
   );
 
   const boardSignalCount = boardItems.length;
+
+  const needsAttentionTaskId = useMemo(
+    () => boardItems.find((item) => item.needsAttention)?.meta ?? null,
+    [boardItems],
+  );
+
+  const loggedNeedsAttentionTaskId = useRef<string | null>(null);
+
+  // Logs once per task when the overdue-work reprioritization rule promotes
+  // it — not on every board recompute, so re-renders don't spam the log.
+  useEffect(() => {
+    if (!needsAttentionTaskId || loggedNeedsAttentionTaskId.current === needsAttentionTaskId) {
+      return;
+    }
+    loggedNeedsAttentionTaskId.current = needsAttentionTaskId;
+
+    const task = liveContext.overdueTasks.find((entry) => entry.id === needsAttentionTaskId);
+    chiefLog.taskReprioritized(
+      needsAttentionTaskId,
+      task
+        ? `Promoted ${task.id} (${task.title}) to top of At-risk work — overdue since ${task.dueAt}.`
+        : `Promoted ${needsAttentionTaskId} to top of At-risk work — overdue.`,
+    );
+  }, [needsAttentionTaskId, liveContext.overdueTasks]);
 
   const handleApprovalAction = useCallback(
     async (id: string, action: ApprovalAction) => {
@@ -189,6 +227,14 @@ export function ChiefPanel() {
         </div>
       </div>
 
+      <ChiefQueueStrip
+        approvals={approvals}
+        pendingApprovalCount={pendingApprovalCount}
+        onOpenApprovals={() => openApprovals("pending")}
+        overdueTaskCount={liveContext.overdueTasks.length}
+        onOpenBoard={() => setActiveTab("board")}
+      />
+
       <nav className="chief-tabs" aria-label="Chief sections" role="tablist">
         <button
           type="button"
@@ -255,6 +301,19 @@ export function ChiefPanel() {
         >
           History
         </button>
+        {SHOW_GOVERNANCE_EVENTS_TAB ? (
+          <button
+            type="button"
+            role="tab"
+            id="chief-tab-dev"
+            aria-selected={activeTab === "dev"}
+            aria-controls="chief-panel-dev"
+            className={`chief-tab${activeTab === "dev" ? " chief-tab--active" : ""}`}
+            onClick={() => setActiveTab("dev")}
+          >
+            Dev
+          </button>
+        ) : null}
       </nav>
 
       <div className="chief-body">
@@ -269,6 +328,8 @@ export function ChiefPanel() {
               context={liveContext}
               pendingApprovalCount={pendingApprovalCount}
               onOpenApprovals={() => openApprovals("pending")}
+              platformHealth={platformHealth}
+              liveApiEnabled={liveApi}
             />
 
             {!response && !isProcessing ? (
@@ -420,6 +481,17 @@ export function ChiefPanel() {
             className="chief-tab-panel"
           >
             <CommandHistory entries={history} />
+          </div>
+        ) : null}
+
+        {activeTab === "dev" && SHOW_GOVERNANCE_EVENTS_TAB ? (
+          <div
+            id="chief-panel-dev"
+            role="tabpanel"
+            aria-labelledby="chief-tab-dev"
+            className="chief-tab-panel"
+          >
+            <GovernanceEventsPanel />
           </div>
         ) : null}
       </div>

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui";
 import { ApprovalAlertsPanel } from "@/components/chief/ApprovalAlertsPanel";
 import { enqueueResearchAgentTestProposal } from "@/components/chief/researchAgentTestProposal";
+import { proposeResearchIncidentPacket } from "@/components/chief/researchIncidentProposal";
 import { useChiefApprovals } from "@/components/chief/ChiefApprovalsContext";
 import { PlatformHealthCard } from "@/components/monitor/PlatformHealthCard";
 import { useData } from "@/context/DataContext";
@@ -25,6 +26,7 @@ import {
 } from "../../lib/queries/dashboard-stats";
 
 type ResearchAgentTestFeedback = "queued" | "already_pending" | null;
+type ResearchIncidentFeedback = "queued" | "already_pending" | null;
 
 const statusVariant = (status: string) => {
   if (status === "healthy") return "green" as const;
@@ -36,9 +38,11 @@ const statusVariant = (status: string) => {
 export function MonitorPage() {
   const { selectedEntityId, setSelectedEntityId } = useSelection();
   const { data } = useData();
-  const { approvals, addCommandApproval } = useChiefApprovals();
+  const { liveContext, approvals, addCommandApproval } = useChiefApprovals();
   const [researchAgentTestFeedback, setResearchAgentTestFeedback] =
     useState<ResearchAgentTestFeedback>(null);
+  const [researchIncidentFeedback, setResearchIncidentFeedback] =
+    useState<ResearchIncidentFeedback>(null);
   const [searchParams] = useSearchParams();
 
   function handleProposeResearchAgentTest() {
@@ -49,6 +53,19 @@ export function MonitorPage() {
     }
     addCommandApproval(result.card);
     setResearchAgentTestFeedback("queued");
+  }
+
+  const activeIncidentForResearch = liveContext.activeIncidents[0] ?? null;
+
+  function handleProposeResearchIncidentPacket() {
+    if (!activeIncidentForResearch) return;
+    const result = proposeResearchIncidentPacket(activeIncidentForResearch, approvals);
+    if (result.outcome === "blocked") {
+      setResearchIncidentFeedback("already_pending");
+      return;
+    }
+    addCommandApproval(result.card);
+    setResearchIncidentFeedback("queued");
   }
   const filter = searchParams.get("filter");
   const health = useMonitorHealth();
@@ -149,6 +166,44 @@ export function MonitorPage() {
           {researchAgentTestFeedback === "already_pending" ? (
             <p className="cell-muted" role="status">
               Already awaiting approval — review the pending test proposal on Chief → Approvals.
+            </p>
+          ) : null}
+        </Panel>
+
+        <Panel
+          title="Research packet: active incident"
+          action={
+            activeIncidentForResearch ? (
+              <button
+                type="button"
+                className="empty-state-link"
+                onClick={handleProposeResearchIncidentPacket}
+              >
+                Propose Research packet
+              </button>
+            ) : undefined
+          }
+        >
+          {activeIncidentForResearch ? (
+            <p className="cell-muted">
+              Flags the active incident &quot;{activeIncidentForResearch.title}&quot; (Sev{" "}
+              {activeIncidentForResearch.severity}, {activeIncidentForResearch.status}) to
+              Research and queues a real recommendation on Chief&apos;s approval queue — not a QA
+              fixture. Review on Chief → Approvals.
+            </p>
+          ) : (
+            <p className="cell-muted">
+              No active incident to propose a Research packet for right now.
+            </p>
+          )}
+          {researchIncidentFeedback === "queued" ? (
+            <p className="cell-muted" role="status">
+              Queued for operator approval — open Chief → Approvals to decide.
+            </p>
+          ) : null}
+          {researchIncidentFeedback === "already_pending" ? (
+            <p className="cell-muted" role="status">
+              Already awaiting approval — review the pending proposal on Chief → Approvals.
             </p>
           ) : null}
         </Panel>
