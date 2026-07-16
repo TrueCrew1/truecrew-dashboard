@@ -11,7 +11,6 @@ language: en-US
 
 reviews:
   profile: chill
-  request_changes_workflow: false
   high_level_summary: true
   review_status: true
   auto_review:
@@ -26,20 +25,23 @@ reviews:
         the lines actually changed in this PR.
     - path: "lib/obsidian/read.ts"
       instructions: >
-        DB type and vault frontmatter type may intentionally differ (for
-        example DB type: "ticket" vs vault type: maintenance), so this is
-        not automatically a bug. Treat changes to NOTE_TYPES,
-        inferNoteType, and path-based fallback logic as high-risk because
-        silent mislabeling is easy here. Preserve existing Librarian
-        note-type behavior while reviewing Maintenance taxonomy changes.
+        This file reconciles vault note "type" taxonomy against Supabase's
+        notes.type values. A DB type and a vault frontmatter type
+        intentionally differing (e.g. DB "ticket" vs vault "maintenance")
+        is not automatically a bug — check whether the split is documented
+        (see issues #97/#98) before flagging it as an inconsistency. Watch
+        closely for changes to NOTE_TYPES, inferNoteType, or the path-based
+        fallback logic, since an incorrect fallback silently mislabels
+        notes.
     - path: "lib/{librarian,maintenance}/**/*.ts"
       instructions: >
-        Prioritize correctness, regression risk, and type-safety over
-        style. Watch established fail-open vs hard-fail behavior
-        carefully. Vault writes may intentionally fail-open when vault is
-        unavailable, but database/index writes and post-success audit
-        semantics should not be casually weakened. Flag changes that
-        alter which errors are swallowed vs propagated.
+        These modules follow an established fail-open vs. hard-fail
+        contract (e.g. vault writes may be skipped/fail-open when the
+        vault isn't configured, but Supabase index writes and audit events
+        after a successful write are hard-fail and should propagate
+        errors). If a change alters which errors are swallowed vs.
+        propagated, flag it explicitly and check whether existing tests
+        encode the current contract.
     - path: "lib/mappers/**/*.ts"
       instructions: >
         These mappers are the client-visible taxonomy boundary — they
@@ -59,12 +61,11 @@ reviews:
         matched by an equivalent update to the mapper and any filters.
     - path: "**/*.test.ts"
       instructions: >
-        Focus on whether tests actually prove runtime behavior. Prefer
-        catching missing edge cases over naming/style comments. Watch
-        especially for: misconfiguration branches, unsupported HTTP
-        methods/input kinds, whitespace-only required fields treated as
-        missing, audit events firing only after successful writes,
-        taxonomy assertions (DB/vault consistency or intentional split).
+        Favor correctness of the runtime behavior under test over test
+        code style. Flag missing edge cases (misconfiguration, unsupported
+        input/method, whitespace-only required fields treated as missing,
+        audit events firing only after successful writes) more than
+        formatting or naming nitpicks.
 
 chat:
   auto_reply: true

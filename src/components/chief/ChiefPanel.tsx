@@ -11,6 +11,7 @@ import { ChiefQueueStrip } from "./ChiefQueueStrip";
 import { CommandHistory } from "./CommandHistory";
 import { buildApprovalFromResponse, buildHistoryEntry } from "./chiefMock";
 import { approvalActionSuccessMessage, type ApprovalActionState } from "./chiefApproval";
+import { classifyChiefEvaluation, evaluationInputFromChiefResponse } from "./chiefDecisionTier";
 import { deriveChiefBoardItems, resolveChiefCommand } from "./chiefLiveContext";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { SpecialistCards } from "./SpecialistCards";
@@ -188,7 +189,16 @@ export function ChiefPanel() {
     setResponse(null);
 
     window.setTimeout(() => {
-      const result = resolveChiefCommand(command, data, liveContext, approvals);
+      const resolved = resolveChiefCommand(command, data, liveContext, approvals);
+      // Read-only operating-layer classification — chiefDecisionTier.ts never
+      // executes or writes anything, it only tags this response with a tier
+      // and (when escalating) the reasoning behind it.
+      const evaluation = classifyChiefEvaluation(evaluationInputFromChiefResponse(resolved));
+      const result: ChiefResponse = {
+        ...resolved,
+        decisionTier: evaluation.tier,
+        approvalPacket: evaluation.approvalPacket,
+      };
       setResponse(result);
       addHistoryEntry(buildHistoryEntry(command, result));
 
@@ -408,6 +418,35 @@ export function ChiefPanel() {
                     </p>
                     {response.riskNote ? (
                       <p className="chief-approval-risk">{response.riskNote}</p>
+                    ) : null}
+                    {response.approvalPacket ? (
+                      <div>
+                        <p className="chief-response-text">
+                          <strong>Recommendation:</strong> {response.approvalPacket.recommendation}
+                        </p>
+                        <p className="chief-response-text">
+                          <strong>Risk level:</strong> {response.approvalPacket.riskLevel}
+                        </p>
+                        <p className="chief-response-text">
+                          <strong>Rationale:</strong> {response.approvalPacket.rationale}
+                        </p>
+                        {response.approvalPacket.evidence.length > 0 ? (
+                          <ul className="chief-blocker-list">
+                            {response.approvalPacket.evidence.map((item) => (
+                              <li key={item}>{item}</li>
+                            ))}
+                          </ul>
+                        ) : null}
+                        <p className="chief-response-text">
+                          <strong>Next action:</strong> {response.approvalPacket.nextAction}
+                        </p>
+                        {response.approvalPacket.improvementsMade.length > 0 ? (
+                          <p className="chief-response-text">
+                            <strong>Already filtered by Chief:</strong>{" "}
+                            {response.approvalPacket.improvementsMade.join("; ")}
+                          </p>
+                        ) : null}
+                      </div>
                     ) : null}
                     <button
                       type="button"
