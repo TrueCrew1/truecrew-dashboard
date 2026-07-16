@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { CHIEF_ROUTES } from "./chiefRoutes";
+import { RecentActivityStrip } from "./RecentActivityStrip";
 import type { ChiefLiveContext } from "./chiefLiveContext";
 
 interface ChiefSituationBriefProps {
@@ -133,6 +134,8 @@ export function ChiefSituationBrief({
           </Link>
         </p>
       ) : null}
+
+      <RecentActivityStrip />
     </section>
   );
 }

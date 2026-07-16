@@ -11,8 +11,12 @@ import { SpecialistCards } from "./SpecialistCards";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
 import { ChiefBoard } from "./ChiefBoard";
 import { AgentWorkBoard } from "./AgentWorkBoard";
+import { GovernanceEventsPanel } from "./GovernanceEventsPanel";
 import type { ApprovalAction, ChiefResponse } from "./types";
 import type { ApprovalStatusFilter } from "./approvalStatus";
+
+/** Dev-only observability tab — never shown in production builds. */
+const SHOW_GOVERNANCE_EVENTS_TAB = import.meta.env.DEV;
 
 const EXAMPLE_COMMANDS = [
   "What is at risk today?",
@@ -22,7 +26,7 @@ const EXAMPLE_COMMANDS = [
   "Show open alerts",
 ];
 
-type ChiefTab = "command" | "board" | "agents" | "approvals" | "history";
+type ChiefTab = "command" | "board" | "agents" | "approvals" | "history" | "dev";
 
 export function ChiefPanel() {
   const { data, loading, source } = useData();
@@ -255,6 +259,19 @@ export function ChiefPanel() {
         >
           History
         </button>
+        {SHOW_GOVERNANCE_EVENTS_TAB ? (
+          <button
+            type="button"
+            role="tab"
+            id="chief-tab-dev"
+            aria-selected={activeTab === "dev"}
+            aria-controls="chief-panel-dev"
+            className={`chief-tab${activeTab === "dev" ? " chief-tab--active" : ""}`}
+            onClick={() => setActiveTab("dev")}
+          >
+            Dev
+          </button>
+        ) : null}
       </nav>
 
       <div className="chief-body">
@@ -420,6 +437,17 @@ export function ChiefPanel() {
             className="chief-tab-panel"
           >
             <CommandHistory entries={history} />
+          </div>
+        ) : null}
+
+        {activeTab === "dev" && SHOW_GOVERNANCE_EVENTS_TAB ? (
+          <div
+            id="chief-panel-dev"
+            role="tabpanel"
+            aria-labelledby="chief-tab-dev"
+            className="chief-tab-panel"
+          >
+            <GovernanceEventsPanel />
           </div>
         ) : null}
       </div>
