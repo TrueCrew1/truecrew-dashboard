@@ -27,7 +27,7 @@ health states, transition rules, and the event format that feeds this file.
 ## Vercel Preview missing INTERNAL_API_SECRET
 
 - **title:** Vercel Preview missing `INTERNAL_API_SECRET` — production/preview env mismatch
-- **status:** active (condition still present, decision pending)
+- **status:** deprecated (decision made — this is now expected, documented behavior, not an active condition to watch for)
 - **system_or_tool:** Vercel Preview deployments — `/api/*` routes requiring
   `requireInternalAuth`
 - **symptoms:** ~43 runtime errors on Preview deployments specifically; Production
@@ -39,19 +39,18 @@ health states, transition rules, and the event format that feeds this file.
   requirement shipped, and never back-filled to Preview.
 - **failed_attempts:** none — this was caught by a read-only check, not by trying
   and failing to fix it first.
-- **successful_fix_or_workaround:** not yet applied — three options on the table
-  (add secret to Preview scope; leave as-is; leave as-is and document as expected
-  noise). See `decisions/vercel-preview-secret-scope.md`.
+- **successful_fix_or_workaround:** decided via issue #89: Preview stays
+  unauthenticated; these 401s are known noise, not incidents. No code change —
+  documentation only. See `decisions/vercel-preview-secret-scope.md`.
 - **fallback_used:** none — every browser verification this session ran in mock-data
-  mode, never against a live Preview deployment, so the gap hasn't blocked real work
-  yet.
-- **when_to_use_fallback:** if a live-API Preview verification is ever needed before
-  this decision resolves, verify against Production instead (mock mode is also a
-  valid fallback for anything that doesn't specifically need live-API behavior).
-- **when_to_retry_primary:** once `decisions/vercel-preview-secret-scope.md` is
-  resolved either way (secret added, or documented as accepted noise) — re-run the
-  same `get_runtime_errors` check to confirm the state matches the decision.
-- **confidence:** high (root cause confirmed, not guessed)
+  mode, never against a live Preview deployment, so the gap hasn't blocked real work.
+- **when_to_use_fallback:** if a live-API Preview verification is ever needed, verify
+  against Production instead (mock mode is also a valid fallback for anything that
+  doesn't specifically need live-API behavior).
+- **when_to_retry_primary:** n/a — this is accepted, permanent behavior, not a
+  condition to "retry primary" out of. Re-open only if Preview genuinely needs
+  live-API auth in the future (would require re-deciding, not just re-checking).
+- **confidence:** high (root cause confirmed, not guessed; decision ratified in #89)
 - **related_pages:** [decisions/vercel-preview-secret-scope](../decisions/vercel-preview-secret-scope.md), [concepts/vercel-status-checks](../concepts/vercel-status-checks.md)
 - **related_prs:** #78
 
