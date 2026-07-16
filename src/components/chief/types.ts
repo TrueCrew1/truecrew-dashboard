@@ -122,6 +122,45 @@ export interface ChiefResponse {
   riskNote?: string;
   routedTo: ChiefSpecialist;
   specialists?: SpecialistContribution[];
+  /** Set by chiefDecisionTier.ts's classifier — see that file for the tier rules. Absent means classification wasn't run for this response. */
+  decisionTier?: ChiefDecisionTier;
+  /** Only present when decisionTier is "approve" — the structured escalation behind the card, not the card itself. */
+  approvalPacket?: ChiefApprovalPacket;
+}
+
+/**
+ * Chief's operating layer: before something becomes a full ApprovalCard,
+ * Chief classifies it into one of three tiers (see chiefDecisionTier.ts,
+ * the sole producer, for the deterministic rules):
+ * - "decide"  — Chief can settle this itself; no operator action needed.
+ * - "notify"  — the operator should know, but there's nothing to decide.
+ * - "approve" — needs a real decision; Chief produces a ChiefApprovalPacket.
+ * Read-only/stdout-only for now — this classifies and explains, it never
+ * executes, writes, or triggers anything on its own.
+ */
+export type ChiefDecisionTier = "decide" | "notify" | "approve";
+
+/** Same three-value risk scale used by agentApprovalGates.ts's AgentApprovalRiskLevel — kept as its own alias here to avoid a cross-file type dependency for one small union. */
+export type ChiefRiskLevel = "low" | "medium" | "high";
+
+/**
+ * The structured escalation Chief produces when an item's tier is "approve".
+ * Distinct from ApprovalCard (the operator-facing card shape rendered in the
+ * Approvals tab) — this is the reasoning *behind* an escalation, produced
+ * before (and independent of) however it eventually gets rendered as a card.
+ */
+export interface ChiefApprovalPacket {
+  /** Plain-language recommended call, e.g. "Approve — low blast radius, easily reversible." */
+  recommendation: string;
+  riskLevel: ChiefRiskLevel;
+  /** Why this was escalated rather than decided/notified. */
+  rationale: string;
+  /** Supporting facts Chief already gathered. */
+  evidence: string[];
+  /** Plain-language next step for the operator. */
+  nextAction: string;
+  /** What Chief already filtered, bundled, or discarded before escalating — so the operator isn't re-deriving Chief's own triage work. */
+  improvementsMade: string[];
 }
 
 export type ChiefBoardLane = "at_risk" | "blocked" | "missing_context" | "approval";
