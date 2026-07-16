@@ -2,6 +2,13 @@
 
 Command center for operations and maintenance teams — run the day from the field.
 
+## License and usage
+
+This repository's code is provided for viewing and reference only.
+Copyright © 2026 True Crew LLC. All rights reserved.
+No permission is granted to use, copy, modify, or redistribute this code,
+in whole or in part, without explicit written consent from the owner.
+
 ## Stack (canonical)
 
 | Layer | Technology |

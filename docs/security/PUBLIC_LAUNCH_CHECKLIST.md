@@ -51,16 +51,18 @@ isn't unusual.
 
 ## 5. License check
 
-**Status: missing — flagged, not invented.** No `LICENSE` file exists, and
-`package.json` has no `"license"` field (it does have `"private": true`, which is
-npm's "don't publish to the npm registry" flag — unrelated to GitHub repo
-visibility; don't confuse the two). Without a license file, GitHub's default
-all-rights-reserved copyright applies once public: visitors can view and fork, but
-have no legal right to use, modify, or redistribute the code. If that's the intent
-(e.g. "public for visibility, not for reuse"), no action is needed — just know
-that's the effective default. If you want to explicitly allow (or explicitly
-restrict) reuse, add a `LICENSE` file — but the choice of license is a business/
-legal decision this review isn't making for you.
+**Status: decided — no open-source LICENSE file, by design.** No `LICENSE` file
+exists, and `package.json` has no `"license"` field (it does have `"private":
+true`, which is npm's "don't publish to the npm registry" flag — unrelated to
+GitHub repo visibility; don't confuse the two). This is intentional: the repo will
+be public for viewing/reference, but usage rights remain restricted. Without a
+LICENSE file, GitHub's and copyright law's default applies — all rights reserved,
+visitors can view and fork, but have no legal right to use, modify, or redistribute
+the code. `README.md`'s new **License and usage** section states this explicitly
+so it isn't left to the default going unnoticed. No `LICENSE` file was added or
+should be added for this to work — adding a standard OSS license (MIT/Apache/GPL)
+would be the thing that *grants* those rights, which is the opposite of the intent
+here.
 
 ## 6. README / public-facing docs check
 
@@ -122,6 +124,8 @@ the default one.
 
 ## Summary verdict
 
-**Safe to make public from a secrets perspective.** Remaining items (license
-choice, stale-branch/PR cleanup, CI quota) are operational/business decisions, not
-security blockers.
+**Safe to make public from a secrets perspective.** Remaining items (stale-branch/
+PR cleanup, CI quota) are operational decisions, not security blockers.
+
+- License: intentionally no open-source license; `README.md` clarifies that the
+  code is view-only and all rights reserved.

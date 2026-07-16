@@ -12,7 +12,9 @@ been remediated (untracked, `.gitignore` hardened). A separate branch/PR hygiene
 audit and the full pre-launch checklist — including the exact GitHub steps to
 change visibility — now live in `docs/security/BRANCH_AUDIT_REPORT.md` and
 `docs/security/PUBLIC_LAUNCH_CHECKLIST.md`. `SECURITY.md` has also been added.
-Nothing in this follow-up pass changes the secrets verdict above.
+License: intentionally no open-source license; `README.md` clarifies that the code
+is view-only and all rights reserved. Nothing in this follow-up pass changes the
+secrets verdict above.
 
 ## What was scanned
 
