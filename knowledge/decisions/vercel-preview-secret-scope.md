@@ -1,25 +1,33 @@
 ---
 title: Should INTERNAL_API_SECRET be added to Vercel's Preview scope?
 type: decision
-status: pending
-confidence: medium
-last_reviewed: 2026-07-04
+status: decided
+confidence: high
+last_reviewed: 2026-07-16
 created: 2026-07-04
-updated: 2026-07-04
+updated: 2026-07-16
 related_pages: [vercel-status-checks, tool-catalog]
 related_prs: [78]
+related_issues: [89]
 related_cards: []
 ---
 
 # Should INTERNAL_API_SECRET be added to Vercel's Preview scope?
 
-**Status: pending**
+**Status: decided — option (c)**
 
 ## What was decided
 
-Nothing yet — PR #78 is still open, awaiting David's call between three options:
-(a) add `INTERNAL_API_SECRET` to Vercel's Preview environment scope, (b) leave as-is
-(gap stays), or (c) leave as-is and explicitly document it as expected noise.
+Ratified in [issue #89](https://github.com/TrueCrew1/truecrew-dashboard/issues/89):
+Preview remains unauthenticated. 401s from `INTERNAL_API_SECRET` checks in Preview
+are treated as known noise, not incidents. This is option (c) below, matching
+Chief's original recommendation. PR #78 (which first surfaced the gap) predates
+this decision and can be closed as resolved by #89 rather than merged.
+
+Follow-ups from #89, tracked here:
+- [x] Document the behavior (this note + the repair-playbook entry below).
+- [ ] Exclude/downgrade these 401s in alerting rules — no alerting system exists in
+  this repo yet, so there's nothing to configure; revisit if/when one is added.
 
 ## Why
 
@@ -42,7 +50,10 @@ Least-privilege, and it prevents future Build Health Checks from re-flagging the
 
 ## Related PRs / cards
 
-- PRs: #78 (open, undecided)
+- PRs: #78 (open; decision resolved via issue #89 instead — recommend closing #78
+  as resolved rather than merging it)
+- Issues: #89 (open — decision recorded; alerting follow-up has no system to wire
+  to yet, tracked above)
 - ApprovalCards: the Vercel Preview secret-scope card in `agentApprovalGates.ts`
   (ships on PR #78; title falls back to the gate label since `main` doesn't yet have
   the optional `title` override field from still-open PR #70)

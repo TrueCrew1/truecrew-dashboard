@@ -232,6 +232,12 @@ enumerate tools in code.
 - approval_required: no (read); n/a — human-only (config)
 - notes: deploy-status read access already exercised for real this session. See §
   Tool Catalog, § Dashboards & analytics.
+- **known noise (decided, issue #89):** `INTERNAL_API_SECRET` is intentionally not
+  set in Vercel's Preview environment scope (Production only). Preview deployments
+  will show `requireInternalAuth` 401s on every internal `/api/*` call — this is
+  expected, not an incident. See `knowledge/decisions/vercel-preview-secret-scope.md`.
+  No alerting rule exists in this repo to exclude these from yet; revisit if one is
+  added.
 
 ### supabase
 - name: Supabase
