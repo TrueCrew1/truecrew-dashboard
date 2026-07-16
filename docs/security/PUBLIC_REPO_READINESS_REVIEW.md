@@ -7,6 +7,13 @@ and targeted manual pattern checks gitleaks' generic rules can miss (Supabase JW
 provider token prefixes, private-key blocks, connection strings).
 **Verdict: safe to make public from a secrets perspective** — see caveats below.
 
+**Follow-up (2026-07-16, same day):** this review's `supabase/.temp/` finding has
+been remediated (untracked, `.gitignore` hardened). A separate branch/PR hygiene
+audit and the full pre-launch checklist — including the exact GitHub steps to
+change visibility — now live in `docs/security/BRANCH_AUDIT_REPORT.md` and
+`docs/security/PUBLIC_LAUNCH_CHECKLIST.md`. `SECURITY.md` has also been added.
+Nothing in this follow-up pass changes the secrets verdict above.
+
 ## What was scanned
 
 1. **Current working tree** — `gitleaks dir .` (no findings) plus a manual pass over
