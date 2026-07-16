@@ -39,6 +39,8 @@ interface ChiefApprovalsContextValue {
   pendingApprovalCount: number;
   proposalsById: Map<string, ApprovalProposal>;
   decisionsHydrated: boolean;
+  /** Set when the last saved-decisions refresh failed; cleared on the next successful one. Approvals shown may not reflect current server state while this is set. */
+  decisionsHydrationError: string | null;
   liveApi: boolean;
   addCommandApproval: (proposal: ApprovalProposal) => void;
   /** Shared command history — the one source both ChiefPanel's History tab and the homepage panel's intake write to. */
@@ -80,6 +82,7 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
 
   const liveApi = isLiveApiEnabled();
   const [decisionsHydrated, setDecisionsHydrated] = useState(!liveApi);
+  const [decisionsHydrationError, setDecisionsHydrationError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!liveApi) return;
@@ -103,10 +106,17 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
             ]),
           ),
         );
+        setDecisionsHydrationError(null);
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         // Leave previously hydrated/optimistic decisions in place — a failed
         // refetch shouldn't erase decisions the operator already recorded.
+        // Surface the failure so the operator knows the list may be stale
+        // rather than silently trusting an unrefreshed queue.
+        if (cancelled) return;
+        setDecisionsHydrationError(
+          error instanceof Error ? error.message : "Failed to refresh saved decisions",
+        );
       })
       .finally(() => {
         if (!cancelled) setDecisionsHydrated(true);
@@ -147,6 +157,8 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
 
   const addCommandApproval = useCallback((proposal: ApprovalProposal) => {
     setCommandApprovals((prev) => [proposal, ...prev]);
+    // Canonical Chief observability event (see chiefLog.ts / chiefGovernanceEvents.ts) — observability-only, must not block enqueue.
+    chiefLog.cardCreated(proposal);
   }, []);
 
   const addHistoryEntry = useCallback((entry: CommandHistoryEntry) => {
@@ -202,6 +214,7 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
       pendingApprovalCount,
       proposalsById,
       decisionsHydrated,
+      decisionsHydrationError,
       liveApi,
       addCommandApproval,
       recordDecision,
@@ -214,6 +227,7 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
       pendingApprovalCount,
       proposalsById,
       decisionsHydrated,
+      decisionsHydrationError,
       liveApi,
       addCommandApproval,
       recordDecision,

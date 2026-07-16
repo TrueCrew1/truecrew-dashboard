@@ -10,7 +10,11 @@
  * this rather than replacing it.
  */
 
-export type ChiefGovernanceEventType = "packet_created" | "card_created" | "card_decided";
+export type ChiefGovernanceEventType =
+  | "packet_created"
+  | "card_created"
+  | "card_decided"
+  | "task_reprioritized";
 
 export interface ChiefGovernanceEvent {
   id: string;

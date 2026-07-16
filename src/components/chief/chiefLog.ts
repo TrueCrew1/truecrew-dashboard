@@ -37,4 +37,15 @@ export const chiefLog = {
       timestamp: new Date().toISOString(),
     });
   },
+
+  /** Logs that the overdue-work reprioritization rule promoted a task to the top of At-risk work. */
+  taskReprioritized(taskId: string, rationale: string, timestamp: string = new Date().toISOString()): void {
+    emitChiefGovernanceEvent({
+      id: `evt-task-${taskId}-reprioritized-${timestamp}`,
+      type: "task_reprioritized",
+      summary: rationale,
+      detail: { taskId },
+      timestamp,
+    });
+  },
 };
