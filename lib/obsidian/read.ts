@@ -2,6 +2,17 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import matter from "gray-matter";
 
+/**
+ * "maintenance" is a vault-only type: the Supabase `notes.type` CHECK
+ * constraint has no "maintenance" value (see #97), so
+ * `lib/maintenance/create.ts` persists the DB row as `type: "ticket"` while
+ * the vault frontmatter it writes (`lib/maintenance/templates.ts`) records
+ * `type: maintenance`. The reader is the taxonomy layer that reconciles
+ * this: it must recognize "maintenance" so vault-side notes aren't
+ * misclassified as "decision" by the path-based fallback below (#98).
+ * `agent: "maintenance"` remains the canonical discriminator across both
+ * the DB row and the vault frontmatter — that value is unchanged either way.
+ */
 const NOTE_TYPES = [
   "build",
   "deploy",
@@ -9,6 +20,7 @@ const NOTE_TYPES = [
   "ticket",
   "decision",
   "onboarding",
+  "maintenance",
 ] as const;
 
 export type ObsidianNoteType = (typeof NOTE_TYPES)[number];
@@ -45,6 +57,9 @@ function inferNoteType(relativePath: string, frontmatter: Record<string, unknown
 
   if (normalized.includes("/deploys/") || normalized.startsWith("operations/deploys/")) {
     return "deploy";
+  }
+  if (normalized.includes("/maintenance/") || normalized.startsWith("operations/maintenance/")) {
+    return "maintenance";
   }
   if (normalized.includes("/decisions/") || normalized.startsWith("decisions/")) {
     return "decision";

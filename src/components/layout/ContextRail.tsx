@@ -209,6 +209,74 @@ function TaskArtifactsRail({ task }: { task: Task }) {
   );
 }
 
+function TaskMaintenanceRail({ task }: { task: Task }) {
+  const { getTaskMaintenanceNotes, createMaintenanceNote, isMaintenanceNoteCreating } =
+    useData();
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const notes = getTaskMaintenanceNotes(task.id);
+  const creating = isMaintenanceNoteCreating(task.id);
+  const hasNote = notes.length > 0;
+
+  const handleCreate = async () => {
+    setError(null);
+    setSuccess(null);
+    try {
+      const result = await createMaintenanceNote(task.id);
+      setSuccess(
+        result.vaultWritten
+          ? "Maintenance note indexed and written to vault"
+          : "Maintenance note indexed (vault not available here)",
+      );
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Create failed");
+    }
+  };
+
+  return (
+    <div className="rail-section">
+      <div className="rail-section-title">Maintenance</div>
+      {notes.length === 0 ? (
+        <div className="rail-item">
+          <div className="rail-item-meta">
+            No maintenance note filed for this task yet.
+          </div>
+        </div>
+      ) : (
+        notes.map((note) => (
+          <div key={note.id} className="rail-item">
+            <div className="rail-item-title">{note.title}</div>
+            <div className="rail-item-meta mono">{note.targetPath}</div>
+            <span className="stage-select-status saved" aria-live="polite">
+              Filed
+            </span>
+            <Link to="/knowledge" className="empty-state-link">
+              View in Knowledge
+            </Link>
+          </div>
+        ))
+      )}
+      {!hasNote ? (
+        <AdvanceButton
+          label="Create maintenance note"
+          onClick={handleCreate}
+          disabled={creating}
+          loading={creating}
+          error={error}
+        />
+      ) : null}
+      {success ? (
+        <span className="stage-select-status saved" aria-live="polite">
+          {success}
+        </span>
+      ) : null}
+      {error && hasNote ? <span className="stage-select-error">{error}</span> : null}
+    </div>
+  );
+}
+
 function EntityRailContent({ entityId, data }: { entityId: string; data: MockData }) {
   const task = data.tasks.find((t) => t.id === entityId);
   if (task) {
@@ -247,6 +315,7 @@ function EntityRailContent({ entityId, data }: { entityId: string; data: MockDat
           </div>
         ) : null}
         <TaskArtifactsRail task={task} />
+        <TaskMaintenanceRail task={task} />
       </>
     );
   }

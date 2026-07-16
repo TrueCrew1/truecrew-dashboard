@@ -9,6 +9,7 @@ import {
 import { mockData, type MockData } from "@/data/mockData";
 import {
   ArtifactExistsError,
+  createMaintenanceNote as createMaintenanceNoteApi,
   createTaskArtifact as createTaskArtifactApi,
   fetchCommandCenterData,
   isLiveApiEnabled,
@@ -19,6 +20,7 @@ import {
   createMockArtifact,
   listMockArtifactsForTask,
 } from "@/lib/librarian/mockCreate";
+import { noteToMaintenanceNote } from "../../lib/maintenance/artifact";
 import type { Artifact, Persona, WorkflowStage, WorkItem } from "@/types";
 
 function applyTaskStage(data: MockData, taskId: string, stage: WorkflowStage): MockData {
@@ -50,6 +52,12 @@ interface DataContextValue {
     options?: { useAi?: boolean; actor?: Persona },
   ) => Promise<{ workItem: WorkItem; artifact: Artifact; vaultWritten: boolean }>;
   isArtifactCreating: (taskId: string) => boolean;
+  getTaskMaintenanceNotes: (taskId: string) => Artifact[];
+  createMaintenanceNote: (
+    taskId: string,
+    options?: { actor?: Persona },
+  ) => Promise<{ workItem: WorkItem; note: Artifact; vaultWritten: boolean }>;
+  isMaintenanceNoteCreating: (taskId: string) => boolean;
 }
 
 const DataContext = createContext<DataContextValue | null>(null);
@@ -63,6 +71,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [creatingArtifactTaskIds, setCreatingArtifactTaskIds] = useState<Set<string>>(
     new Set(),
   );
+  const [creatingMaintenanceNoteTaskIds, setCreatingMaintenanceNoteTaskIds] = useState<
+    Set<string>
+  >(new Set());
 
   const refresh = useCallback(async () => {
     if (!isLiveApiEnabled()) {
@@ -127,6 +138,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     [data.notes],
   );
 
+  const getTaskMaintenanceNotes = useCallback(
+    (taskId: string) =>
+      data.notes
+        .map((note) => noteToMaintenanceNote(note))
+        .filter(
+          (note): note is Artifact => note !== null && note.workItemId === taskId,
+        ),
+    [data.notes],
+  );
+
   const createTaskArtifact = useCallback(
     async (taskId: string, options: { useAi?: boolean; actor?: Persona } = {}) => {
       setCreatingArtifactTaskIds((prev) => new Set(prev).add(taskId));
@@ -171,6 +192,33 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     [data.notes, data.tasks, refresh],
   );
 
+  const createMaintenanceNote = useCallback(
+    async (taskId: string, options: { actor?: Persona } = {}) => {
+      setCreatingMaintenanceNoteTaskIds((prev) => new Set(prev).add(taskId));
+
+      try {
+        if (!isLiveApiEnabled()) {
+          throw new Error("Maintenance note creation requires the live API");
+        }
+
+        const result = await createMaintenanceNoteApi(taskId, options);
+        await refresh();
+        return {
+          workItem: result.workItem,
+          note: result.note,
+          vaultWritten: result.vaultWritten,
+        };
+      } finally {
+        setCreatingMaintenanceNoteTaskIds((prev) => {
+          const next = new Set(prev);
+          next.delete(taskId);
+          return next;
+        });
+      }
+    },
+    [refresh],
+  );
+
   const isTaskUpdating = useCallback(
     (taskId: string) => updatingTaskIds.has(taskId),
     [updatingTaskIds],
@@ -179,6 +227,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const isArtifactCreating = useCallback(
     (taskId: string) => creatingArtifactTaskIds.has(taskId),
     [creatingArtifactTaskIds],
+  );
+
+  const isMaintenanceNoteCreating = useCallback(
+    (taskId: string) => creatingMaintenanceNoteTaskIds.has(taskId),
+    [creatingMaintenanceNoteTaskIds],
   );
 
   useEffect(() => {
@@ -198,6 +251,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       getTaskArtifacts,
       createTaskArtifact,
       isArtifactCreating,
+      getTaskMaintenanceNotes,
+      createMaintenanceNote,
+      isMaintenanceNoteCreating,
     }),
     [
       data,
@@ -210,6 +266,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       getTaskArtifacts,
       createTaskArtifact,
       isArtifactCreating,
+      getTaskMaintenanceNotes,
+      createMaintenanceNote,
+      isMaintenanceNoteCreating,
     ],
   );
 
