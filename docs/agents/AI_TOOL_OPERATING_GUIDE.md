@@ -399,6 +399,23 @@ Do not treat this as an active workflow until a real transcription tool is added
 - If a tool's `health_state` in `docs/TOOL_CATALOG.md` is `DEGRADED`/`BLOCKED`, use
   the documented fallback in `knowledge/reference/tool-fallbacks.md` or disclose the
   degradation — don't silently proceed on a known-bad tool.
+- **CI/infra failures get escalated, not worked around.** If a check fails for
+  reasons that don't trace to the actual diff (see `docs/AGENT_RUNBOOK.md` §
+  Incidents, Pauses, and Escalation — "tests or build fail and the cause isn't a
+  trivial, obvious fix"), the fix is never to disable the check, skip it, or bypass
+  the gate. Verify locally with the pinned dependencies first; if the failure
+  reproduces there, it's real and in-scope to fix. If it doesn't reproduce locally
+  but still fails in CI, re-run once, then stop and escalate to David/Chief with the
+  diagnosis — don't keep re-triggering blindly, and don't touch unrelated repo
+  config (e.g. `.github/workflows/*`, Actions/runner settings) to route around it.
+  **Worked example:** PR #131 hit exactly this — `build` failed on GitHub Actions in
+  ~4 seconds with no runner ever assigned, while `npm ci && npm run test && npm run
+  build` passed cleanly and locally with the pinned dependencies (171/171 tests,
+  clean build). Checking `main`'s own workflow history showed every run failing the
+  same way since well before the PR existed — a runner-availability/config issue at
+  the account level, not a code regression. That diagnosis got reported to David as
+  a blocker outside this lane's authority to fix, instead of being "solved" by
+  editing CI config or silently merging past a red check.
 
 ## J. Reality checks / no-fake-integrations
 
