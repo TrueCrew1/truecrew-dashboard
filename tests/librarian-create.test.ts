@@ -197,4 +197,15 @@ describe("createTaskArtifact", () => {
     expect(result.workItem.status).toBe("filed");
     expect(result.artifact.workItemId).toBe(result.workItem.id);
   });
+
+  it("hard-fails when the audit event write rejects, even though the note was already created and linked (governance: consistent with Maintenance's createMaintenanceNote, audit failure is not fail-open here)", async () => {
+    writeAuditEventMock.mockRejectedValue(new Error("audit sink unreachable"));
+
+    await expect(createTaskArtifact({ taskId: "task-1" })).rejects.toThrow(
+      "audit sink unreachable",
+    );
+
+    expect(upsertNoteByPathMock).toHaveBeenCalledTimes(1);
+    expect(setTaskObsidianNoteIdMock).toHaveBeenCalledTimes(1);
+  });
 });

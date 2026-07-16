@@ -42,6 +42,23 @@ reviews:
         errors). If a change alters which errors are swallowed vs.
         propagated, flag it explicitly and check whether existing tests
         encode the current contract.
+    - path: "lib/mappers/**/*.ts"
+      instructions: >
+        These mappers are the client-visible taxonomy boundary — they
+        decide which DB fields (notably `agent`) survive into the
+        client-side Note/Artifact shape. Collapsing a real agent value
+        (e.g. "maintenance") to undefined here silently makes a domain
+        invisible client-side (this was the root cause of #97). Flag any
+        change that narrows, drops, or hardcodes `agent`/`type` handling
+        instead of preserving known values.
+    - path: "src/types/index.ts"
+      instructions: >
+        `Note.agent` and `Note.type` are the client-side taxonomy
+        discriminators shared by Librarian and Maintenance (#97/#98).
+        Narrowing either union, or removing a variant, can silently break
+        mapping/filtering logic elsewhere (lib/mappers, lib/*/artifact.ts,
+        KnowledgePage). Treat such changes as high-risk and check they're
+        matched by an equivalent update to the mapper and any filters.
     - path: "**/*.test.ts"
       instructions: >
         Favor correctness of the runtime behavior under test over test

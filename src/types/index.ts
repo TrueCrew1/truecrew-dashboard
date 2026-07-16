@@ -209,8 +209,14 @@ export interface Note extends EntityBase {
   syncedAt: string;
   tags?: string[];
   refinementSource?: "deterministic" | "ai";
-  agent?: "librarian";
-  /** Canonical artifact fields when agent === "librarian". */
+  /**
+   * Canonical discriminator across DB and vault sinks (see #97/#98). Note
+   * that `type` above stays the DB-persisted taxonomy value (e.g.
+   * Maintenance notes always persist `type: "ticket"` here) — `agent` is
+   * what actually distinguishes a Maintenance note from an unrelated ticket.
+   */
+  agent?: "librarian" | "maintenance";
+  /** Canonical artifact fields when agent is "librarian" or "maintenance". */
   workItemId?: string;
   artifactType?: "obsidian_note";
   targetPath?: string;

@@ -172,7 +172,12 @@ export async function fetchHealth(): Promise<{
 
 export interface ObsidianNote {
   title: string;
-  type: Note["type"];
+  /**
+   * "maintenance" is a vault-only type the DB's Note["type"] union doesn't
+   * carry (see #97/#98) — the vault reader (lib/obsidian/read.ts) can
+   * legitimately return it for vault-only Maintenance notes.
+   */
+  type: Note["type"] | "maintenance";
   obsidianPath: string;
   summary?: string;
   syncedAt?: string;
@@ -276,6 +281,46 @@ export async function createTaskArtifact(
     ok: true,
     workItem: body.workItem,
     artifact: body.artifact,
+    vaultWritten: body.vaultWritten === true,
+  };
+}
+
+export interface CreateMaintenanceNoteResult {
+  ok: boolean;
+  workItem: WorkItem;
+  note: Artifact;
+  vaultWritten: boolean;
+}
+
+export async function createMaintenanceNote(
+  taskId: string,
+  options: { actor?: Persona } = {},
+): Promise<CreateMaintenanceNoteResult> {
+  const response = await apiFetch("/api/maintenance/notes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      taskId,
+      actor: options.actor,
+    }),
+  });
+
+  const body = (await response.json().catch(() => ({}))) as {
+    ok?: boolean;
+    error?: string;
+    workItem?: WorkItem;
+    note?: Artifact;
+    vaultWritten?: boolean;
+  };
+
+  if (!response.ok || !body.note || !body.workItem) {
+    throw new Error(body.error ?? `Create maintenance note returned ${response.status}`);
+  }
+
+  return {
+    ok: true,
+    workItem: body.workItem,
+    note: body.note,
     vaultWritten: body.vaultWritten === true,
   };
 }
