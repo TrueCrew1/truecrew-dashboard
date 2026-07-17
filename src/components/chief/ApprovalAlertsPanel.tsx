@@ -3,10 +3,7 @@ import { APPROVAL_STATUS_BADGE, APPROVAL_STATUS_LABEL } from "./chiefApproval";
 import { ApprovalSectionShell, ApprovalSurfaceEmpty } from "./approvalWrappers";
 
 export function ApprovalAlertsPanel() {
-  const { decisions, isLoading, error } = useApprovalAlerts();
-
-  // TODO: swap for useApprovalAlerts()'s own refetch once the hook exposes one.
-  const handleRetry = () => window.location.reload();
+  const { decisions, isLoading, error, refetch } = useApprovalAlerts();
 
   return (
     <ApprovalSectionShell
@@ -30,7 +27,7 @@ export function ApprovalAlertsPanel() {
         <div className="chief-section-empty" role="alert">
           <p className="chief-section-empty-lead">Couldn't load approval alerts</p>
           <p className="chief-section-empty-desc">{error}</p>
-          <button type="button" className="chief-approval-filter-clear" onClick={handleRetry}>
+          <button type="button" className="chief-approval-filter-clear" onClick={refetch}>
             Retry
           </button>
         </div>
