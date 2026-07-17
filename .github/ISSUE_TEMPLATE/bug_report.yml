@@ -31,7 +31,7 @@ body:
   - type: textarea
     id: repro
     attributes:
-      label: Repro steps
+      label: Steps to reproduce
       description: Steps to reproduce the issue.
       placeholder: |
         1. Go to...
@@ -44,15 +44,15 @@ body:
     id: environment
     attributes:
       label: Environment
-      description: Browser/OS, deployment (prod/preview/local), and any other relevant environment detail.
-      placeholder: "e.g. Chrome 126 / macOS, Vercel preview deploy"
+      description: Branch, deployment (local/preview/prod), browser, and OS.
+      placeholder: "e.g. chore/my-branch, Vercel preview, Chrome 126 / macOS"
     validations:
       required: false
 
   - type: input
     id: related
     attributes:
-      label: Related PR / branch / story (optional)
+      label: Related PR / branch (optional)
     validations:
       required: false
 
@@ -61,5 +61,5 @@ body:
     attributes:
       label: Checklist
       options:
-        - label: I confirm no secrets, tokens, or credentials are included in any screenshots or logs above.
+        - label: I confirm no secrets, tokens, `.env` content, or credentials are included in screenshots or logs above.
           required: true

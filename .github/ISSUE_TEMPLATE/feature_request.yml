@@ -31,14 +31,16 @@ body:
   - type: input
     id: workflow-context
     attributes:
-      label: Related workflow / approval context
-      description: Related PR, issue, or Chief approval context, if any.
+      label: Workflow context
+      description: Where in True Crew does this belong? (route, agent, dashboard area)
+      placeholder: "e.g. Today view, Build agent, Monitor page"
     validations:
       required: false
 
   - type: textarea
     id: links
     attributes:
-      label: Supporting links (optional)
+      label: Links / screenshots (optional)
+      description: Related issues, PRs, mockups, or screenshots.
     validations:
       required: false

@@ -16,9 +16,10 @@
 
 ## Workflow alignment
 
-- [ ] Aligns with `docs/AGENT_RUNBOOK.md`
-- [ ] Aligns with `docs/TOOL_CATALOG.md`
-- [ ] No secrets added
+- [ ] Read relevant code and docs before changing anything
+- [ ] Followed `docs/AGENT_RUNBOOK.md`
+- [ ] Checked `docs/TOOL_CATALOG.md` (if tools or integrations changed)
+- [ ] Confirmed no `.env`, secrets, tokens, or sensitive values were added
 
 ## Related (optional)
 
