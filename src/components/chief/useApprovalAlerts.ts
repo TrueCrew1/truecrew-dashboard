@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   fetchChiefApprovalDecisions,
@@ -19,11 +19,17 @@ export function useApprovalAlerts(): UseApprovalAlertsResult {
   const [decisions, setDecisions] = useState<ChiefApprovalDecisionPayload[]>([]);
   const [isLoading, setIsLoading] = useState(liveApi);
   const [error, setError] = useState<string | null>(null);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!liveApi) return;
-
-    let isMounted = true;
 
     const loadDecisions = async () => {
       setIsLoading(true);
@@ -32,25 +38,21 @@ export function useApprovalAlerts(): UseApprovalAlertsResult {
       try {
         const payload = await fetchChiefApprovalDecisions();
 
-        if (isMounted) {
+        if (isMountedRef.current) {
           setDecisions(payload);
         }
       } catch (err) {
-        if (isMounted) {
+        if (isMountedRef.current) {
           setError(err instanceof Error ? err.message : "Failed to load approval alerts.");
         }
       } finally {
-        if (isMounted) {
+        if (isMountedRef.current) {
           setIsLoading(false);
         }
       }
     };
 
     void loadDecisions();
-
-    return () => {
-      isMounted = false;
-    };
   }, [liveApi]);
 
   const refetch = useCallback(() => {
@@ -60,12 +62,20 @@ export function useApprovalAlerts(): UseApprovalAlertsResult {
     setError(null);
 
     fetchChiefApprovalDecisions()
-      .then(setDecisions)
+      .then((payload) => {
+        if (isMountedRef.current) {
+          setDecisions(payload);
+        }
+      })
       .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : "Failed to load approval alerts.");
+        if (isMountedRef.current) {
+          setError(err instanceof Error ? err.message : "Failed to load approval alerts.");
+        }
       })
       .finally(() => {
-        setIsLoading(false);
+        if (isMountedRef.current) {
+          setIsLoading(false);
+        }
       });
   }, [liveApi]);
 
