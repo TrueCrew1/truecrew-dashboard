@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security issue (private)
+    url: mailto:contact@truecrewllc.com
+    about: Please report security vulnerabilities privately rather than via a public issue.
+  - name: Repo usage / license questions
+    url: https://github.com/TrueCrew1/truecrew-dashboard/blob/main/README.md
+    about: See the README for repo purpose, setup, and usage terms.

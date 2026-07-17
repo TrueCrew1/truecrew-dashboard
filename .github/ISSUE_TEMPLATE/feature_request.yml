@@ -1,0 +1,44 @@
+name: Feature request
+description: Propose a new feature or improvement.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / opportunity
+      description: What problem does this solve, or what opportunity does it address?
+    validations:
+      required: true
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: What should be true once this is done?
+    validations:
+      required: true
+
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints / risks
+      description: Any known constraints, risks, or trade-offs to be aware of.
+    validations:
+      required: false
+
+  - type: input
+    id: workflow-context
+    attributes:
+      label: Related workflow / approval context
+      description: Related PR, issue, or Chief approval context, if any.
+    validations:
+      required: false
+
+  - type: textarea
+    id: links
+    attributes:
+      label: Supporting links (optional)
+    validations:
+      required: false
