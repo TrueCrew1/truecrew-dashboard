@@ -396,3 +396,16 @@ playbooks. Full reasoning in the Obsidian Build Log entry of the same name.
   `docs/AGENT_WORKFLOW.md`, which already serve that purpose in this repo.
 - No dashboard UI or app code changed; no new VS Code extension was actually
   installed by this pass — governance/docs only.
+
+---
+
+## 2026-07-18 — Research v1 lane stood up
+
+- 2026-07-18 — created — `templates/research-template.md` — structured template for
+  Research output files: research question, options considered, comparison table,
+  advisory recommendation, sources checked, open questions, next action.
+- 2026-07-18 — created — `reference/research-workflow.md` — the minimal v1 Research
+  workflow: iterative loop (plan→gather→critique→gap-fill→synthesize→verify), output
+  format, filing rules, Chief ↔ Research handoff, and a manual verification checklist.
+- 2026-07-18 — updated — `index.md` — incremented Reference count to 5, added
+  research-workflow.md link, removed "(Research pattern: none yet)" note.
