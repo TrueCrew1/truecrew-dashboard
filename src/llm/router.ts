@@ -1,20 +1,20 @@
 /**
- * LLM Router — lane + complexity → Azure deployment selection
+ * LLM Router — lane + complexity → model selection
  *
- * All-Azure setup using startup credits:
- *   | Lane     | low         | medium      | high        |
- *   |----------|-------------|-------------|-------------|
- *   | research | gpt-4o-mini | gpt-4o-mini | gpt-4o      |
- *   | builder  | gpt-4o-mini | gpt-5-mini  | gpt-5-mini  |
- *   | chief    | gpt-4o-mini | gpt-4o-mini | gpt-5-mini  |
+ * Azure setup using startup credits:
+ *   | Lane     | low        | medium     | high       |
+ *   |----------|------------|------------|------------|
+ *   | research | gpt-5-mini | gpt-5-mini | Kimi-K2.6  |
+ *   | builder  | gpt-5-mini | gpt-5-mini | gpt-5-mini |
+ *   | chief    | gpt-5-mini | gpt-5-mini | Kimi-K2.6  |
  *
  * Tiers:
- *   - gpt-4o-mini: budget (cheap, routine tasks)
- *   - gpt-4o: long-context (128K window)
- *   - gpt-5-mini: quality (important reasoning)
+ *   - gpt-5-mini: default (Azure OpenAI)
+ *   - Kimi-K2.6: long-context (Azure AI Foundry)
  */
 
-import { callAzure, type AzureDeployment } from "./azureClient";
+import { callAzure } from "./azureClient";
+import { callFoundry, type FoundryModel } from "./mistralClient";
 import {
   type Lane,
   type Complexity,
@@ -23,29 +23,24 @@ import {
   getMaxTokens,
 } from "./types";
 
+type RouterModel = FoundryModel | "gpt-5-mini";
+
 export function pickModel(input: { lane: Lane; complexity: Complexity }): ModelName {
-  const deployment = pickDeployment(input);
-  if (deployment === "gpt-4o-mini") return "deepseek";
-  if (deployment === "gpt-4o") return "kimi";
+  const model = pickRouterModel(input);
+  if (model === "Kimi-K2.6") return "kimi";
   return "gpt5mini";
 }
 
-function pickDeployment(input: { lane: Lane; complexity: Complexity }): AzureDeployment {
+function pickRouterModel(input: { lane: Lane; complexity: Complexity }): RouterModel {
   const { lane, complexity } = input;
 
-  if (lane === "research") {
-    if (complexity === "high") return "gpt-4o";
-    return "gpt-4o-mini";
+  // Use Kimi-K2.6 for high-complexity research and chief (long context)
+  if (complexity === "high" && (lane === "research" || lane === "chief")) {
+    return "Kimi-K2.6";
   }
 
-  if (lane === "builder") {
-    if (complexity === "low") return "gpt-4o-mini";
-    return "gpt-5-mini";
-  }
-
-  // chief lane
-  if (complexity === "high") return "gpt-5-mini";
-  return "gpt-4o-mini";
+  // Default to gpt-5-mini for everything else
+  return "gpt-5-mini";
 }
 
 export async function runTask(input: {
@@ -53,26 +48,29 @@ export async function runTask(input: {
   complexity: Complexity;
   prompt: string;
 }): Promise<LLMResponse> {
-  const deployment = pickDeployment(input);
+  const model = pickRouterModel(input);
   const maxTokens = getMaxTokens(input.complexity);
 
-  return callAzure(deployment, input.prompt, maxTokens);
+  if (model === "gpt-5-mini") {
+    return callAzure("gpt-5-mini", input.prompt, maxTokens);
+  }
+
+  return callFoundry(model, input.prompt, maxTokens);
 }
 
 export function describeRouting(): string {
   return `
-Lane/Complexity → Azure Deployment:
+Lane/Complexity → Model:
 
-  Lane     | low         | medium      | high
-  ---------|-------------|-------------|-------------
-  research | gpt-4o-mini | gpt-4o-mini | gpt-4o
-  builder  | gpt-4o-mini | gpt-5-mini  | gpt-5-mini
-  chief    | gpt-4o-mini | gpt-4o-mini | gpt-5-mini
+  Lane     | low        | medium     | high
+  ---------|------------|------------|----------
+  research | gpt-5-mini | gpt-5-mini | Kimi-K2.6
+  builder  | gpt-5-mini | gpt-5-mini | gpt-5-mini
+  chief    | gpt-5-mini | gpt-5-mini | Kimi-K2.6
 
 Tiers:
-  - gpt-4o-mini: budget (routine tasks)
-  - gpt-4o: long-context (128K)
-  - gpt-5-mini: quality (reasoning)
+  - gpt-5-mini: default (Azure OpenAI)
+  - Kimi-K2.6: long-context (Azure AI Foundry)
 
 Token limits:  low=400, medium=600, high=800
 Timeout:       30s
