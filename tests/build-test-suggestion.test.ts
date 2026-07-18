@@ -5,7 +5,7 @@ import {
   buildSuggestTestsPrompt,
   parseSuggestTestsResponse,
   toSuggestionResult,
-} from "../src/llm/buildTestSuggestion";
+} from "../lib/llm/buildTestSuggestion.js";
 
 describe("buildTestSuggestion", () => {
   it("uses builder medium routing defaults", () => {

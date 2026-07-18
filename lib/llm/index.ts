@@ -1,11 +1,18 @@
 /**
- * Serverless-safe re-exports for the LLM router.
- * API routes should import from here (not src/llm) so Vercel bundles consistently.
+ * LLM Router module — serverless-safe location under lib/llm.
+ * src/llm re-exports here for CLI and tests.
  */
 
-export { runTask } from "../../src/llm/router.js";
+export { type Lane, type Complexity, type ModelName, type LLMResponse } from "./types.js";
+export { pickModel, runTask, describeRouting } from "./router.js";
+export { callAzure, type AzureDeployment } from "./azureClient.js";
+export { callFoundry, type FoundryModel } from "./mistralClient.js";
 export {
   buildSuggestTestsPrompt,
+  parseSuggestTestsResponse,
   toSuggestionResult,
+  BUILD_TEST_SUGGESTION_LANE,
+  BUILD_TEST_SUGGESTION_COMPLEXITY,
   type BuildTestSuggestionInput,
-} from "../../src/llm/buildTestSuggestion.js";
+  type BuildTestSuggestionResult,
+} from "./buildTestSuggestion.js";
