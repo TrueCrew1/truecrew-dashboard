@@ -1027,6 +1027,28 @@ change updates the table it's reasoned in here **and** the row in
 - **EXECUTE-WITH-APPROVAL** — agent may execute the change itself, but only after a cleared
   `ApprovalCard`.
 
+### Tool lanes and AI routing
+
+[docs/AGENT_TOOL_LANES.md](AGENT_TOOL_LANES.md) is the authoritative, single-table matrix
+summary of the lane classifications reasoned through in this section and § External
+Services Tool Catalog below — check it first for a fast "what lane is tool X in" lookup;
+these two sections remain the reasoning those lanes derive from.
+[docs/internal/tool-model-routing-standard.md](internal/tool-model-routing-standard.md)
+defines which *model* (not just which tool) a task should route to first — task → tool →
+model, by tier — layered on top of the lanes here, not a replacement for them.
+
+Core policy:
+
+- Default to the cheapest capable tier (Ollama/local, via Continue.dev) for routine,
+  low-risk tasks.
+- Escalate to a frontier/hosted model (Tier 2–3) only when risk or complexity requires
+  it — auth, RLS, CI security, production migrations, or cross-service architecture, per
+  the routing standard's escalation triggers.
+- Escalating the *model* never escalates the *lane*: execution — git writes, migrations,
+  deploys — still only happens through a governed lane (Claude Code, CI, an approved
+  workflow), per every gate already defined above. A Tier 3 model recommending a change
+  doesn't skip Build's merge gate any more than a Tier 1 one does.
+
 ### Code & repo tools
 
 | Tool | Classification | Suggested agent(s) | Access | Gate / notes |
