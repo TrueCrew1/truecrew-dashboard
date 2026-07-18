@@ -20,7 +20,7 @@ function useMonitorHealth() {
 
     async function fetchVercel() {
       try {
-        const response = await fetch("/api/monitor/vercel");
+        const response = await fetch("/api/monitor?target=vercel");
         const data = (await response.json()) as VercelMonitorResponse;
         if (mountedRef.current) {
           setState((prev) => ({
@@ -44,7 +44,7 @@ function useMonitorHealth() {
 
     async function fetchSupabase() {
       try {
-        const response = await fetch("/api/monitor/supabase");
+        const response = await fetch("/api/monitor?target=supabase");
         const data = (await response.json()) as SupabaseMonitorResponse;
         if (mountedRef.current) {
           setState((prev) => ({
