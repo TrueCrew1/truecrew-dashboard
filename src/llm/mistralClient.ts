@@ -5,10 +5,9 @@
  */
 
 import { DEFAULT_CONFIG, type LLMResponse, type ModelName } from "./types.js";
+import { resolveFoundryEndpoint } from "./foundryConfig.js";
 
 const API_KEY = process.env.AZURE_OPENAI_API_KEY;
-// Azure AI Foundry resource endpoint (without /api/projects/... path)
-const RESOURCE_ENDPOINT = process.env.AZURE_AI_RESOURCE_ENDPOINT;
 
 interface FoundryChatResponse {
   choices: Array<{
@@ -35,12 +34,15 @@ export async function callFoundry(
   if (!API_KEY) {
     throw new Error("AZURE_OPENAI_API_KEY not configured");
   }
-  if (!RESOURCE_ENDPOINT) {
-    throw new Error("AZURE_AI_RESOURCE_ENDPOINT not configured");
+  const resourceEndpoint = resolveFoundryEndpoint();
+  if (!resourceEndpoint) {
+    throw new Error(
+      "AZURE_AI_RESOURCE_ENDPOINT not configured (or derivable from AZURE_OPENAI_ENDPOINT)"
+    );
   }
 
   // Try v1 API which supports cross-provider models
-  const url = `${RESOURCE_ENDPOINT}/openai/v1/chat/completions`;
+  const url = `${resourceEndpoint}/openai/v1/chat/completions`;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), DEFAULT_CONFIG.timeoutMs);
