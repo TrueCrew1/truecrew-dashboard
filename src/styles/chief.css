@@ -3712,6 +3712,81 @@ button.chief-brief-metric {
   color: var(--steel-dim);
 }
 
+.chief-home-lanes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 1100px) {
+  .chief-home-lanes {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chief-home-lane {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-panel);
+}
+
+.chief-home-lane--warn {
+  border-left: 3px solid var(--yellow);
+}
+
+.chief-home-lane--critical {
+  border-left: 3px solid var(--orange);
+}
+
+.chief-home-lane-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.chief-home-lane-name {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+}
+
+.chief-home-lane-status {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.chief-home-lane-detail {
+  margin: 0;
+  font-size: 11px;
+  color: var(--steel);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.chief-home-lane-link {
+  margin-top: 2px;
+  align-self: flex-start;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--orange);
+  text-decoration: none;
+}
+
+.chief-home-lane-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .agent-work-card-badges {
   flex-shrink: 0;
   display: inline-flex;

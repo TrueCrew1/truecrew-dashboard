@@ -1,13 +1,90 @@
 import { FormEvent, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { Panel } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import { buildApprovalFromResponse, buildHistoryEntry } from "./chiefMock";
-import { deriveChiefBoardItems, resolveChiefCommand } from "./chiefLiveContext";
+import {
+  deriveChiefBoardItems,
+  deriveResearchAgentWorkItems,
+  resolveChiefCommand,
+} from "./chiefLiveContext";
+import { CHIEF_ROUTES } from "./chiefRoutes";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
+import { useBuildTasks, type BuildGateTask } from "./hooks/useBuildTasks";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
-import type { ChiefResponse } from "./types";
+import type { AgentWorkItem, ApprovalProposal, ChiefBoardItem, ChiefResponse } from "./types";
 
 const SNAPSHOT_LIMIT = 4;
+
+interface LaneSummary {
+  status: string;
+  detail: string;
+  tone: "neutral" | "warn" | "critical";
+  count: number;
+}
+
+function buildChiefLaneSummary(
+  pendingApprovals: ApprovalProposal[],
+  blockedItems: ChiefBoardItem[],
+): LaneSummary {
+  const approvalCount = pendingApprovals.length;
+  const blockedCount = blockedItems.length;
+  const status =
+    approvalCount === 0 && blockedCount === 0
+      ? "Queue clear · no blockers"
+      : [
+          approvalCount > 0 ? `${approvalCount} approval${approvalCount === 1 ? "" : "s"}` : null,
+          blockedCount > 0 ? `${blockedCount} blocker${blockedCount === 1 ? "" : "s"}` : null,
+        ]
+          .filter((part): part is string => part !== null)
+          .join(" · ");
+  return {
+    status,
+    detail:
+      pendingApprovals[0]?.title ?? blockedItems[0]?.title ?? "All caught up — nothing waiting on you.",
+    tone: approvalCount > 0 ? "critical" : blockedCount > 0 ? "warn" : "neutral",
+    count: approvalCount + blockedCount,
+  };
+}
+
+function buildBuilderLaneSummary(buildGateTasks: BuildGateTask[]): LaneSummary {
+  if (buildGateTasks.length === 0) {
+    return {
+      status: "Build queue clear",
+      detail: "No build tasks are waiting on required gates.",
+      tone: "neutral",
+      count: 0,
+    };
+  }
+  const hasCritical = buildGateTasks.some((task) => task.tone === "critical");
+  const top = buildGateTasks[0];
+  const detail =
+    buildGateTasks.length > 1 ? `${top.title} +${buildGateTasks.length - 1} more` : top.title;
+  return {
+    status: hasCritical ? "Gate overdue" : "Gated build work",
+    detail,
+    tone: hasCritical ? "critical" : "warn",
+    count: buildGateTasks.length,
+  };
+}
+
+function buildResearchLaneSummary(
+  activeResearchItems: AgentWorkItem[],
+  researchApprovals: ApprovalProposal[],
+): LaneSummary {
+  const total = activeResearchItems.length + researchApprovals.length;
+  const topLabel = activeResearchItems[0]?.task ?? researchApprovals[0]?.title;
+  return {
+    status: total === 0 ? "No active research" : "Research active",
+    detail: topLabel
+      ? total > 1
+        ? `${topLabel} +${total - 1} more`
+        : topLabel
+      : "No active incidents or research proposals right now.",
+    tone: total === 0 ? "neutral" : "warn",
+    count: total,
+  };
+}
 
 export function ChiefHomePanel() {
   const { data } = useData();
@@ -38,6 +115,31 @@ export function ChiefHomePanel() {
         (item) => item.lane === "blocked" && item.id.startsWith("board-blocked-task-"),
       ),
     [boardItems],
+  );
+
+  const { buildGateTasks } = useBuildTasks();
+
+  const researchWorkItems = useMemo(
+    () => deriveResearchAgentWorkItems(liveContext.activeIncidents),
+    [liveContext.activeIncidents],
+  );
+  const activeResearchItems = useMemo(
+    () => researchWorkItems.filter((item) => item.status === "active"),
+    [researchWorkItems],
+  );
+  const researchApprovals = useMemo(
+    () => pendingApprovals.filter((proposal) => proposal.specialist === "Research Agent"),
+    [pendingApprovals],
+  );
+
+  const chiefLane = useMemo(
+    () => buildChiefLaneSummary(pendingApprovals, blockedItems),
+    [pendingApprovals, blockedItems],
+  );
+  const builderLane = useMemo(() => buildBuilderLaneSummary(buildGateTasks), [buildGateTasks]);
+  const researchLane = useMemo(
+    () => buildResearchLaneSummary(activeResearchItems, researchApprovals),
+    [activeResearchItems, researchApprovals],
   );
 
   const [command, setCommand] = useState("");
@@ -74,6 +176,50 @@ export function ChiefHomePanel() {
             approvalSnapshotRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
           }
         />
+
+        <div className="chief-home-lanes">
+          <div className={`chief-home-lane chief-home-lane--${chiefLane.tone}`}>
+            <header className="chief-home-lane-header">
+              <span className="chief-home-lane-name">Chief</span>
+              <span className="chief-board-lane-count">{chiefLane.count}</span>
+            </header>
+            <p className="chief-home-lane-status">{chiefLane.status}</p>
+            <p className="chief-home-lane-detail">{chiefLane.detail}</p>
+            <button
+              type="button"
+              className="chief-home-lane-link chief-board-lane-note--link"
+              onClick={() =>
+                approvalSnapshotRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+              }
+            >
+              Review approvals →
+            </button>
+          </div>
+
+          <div className={`chief-home-lane chief-home-lane--${builderLane.tone}`}>
+            <header className="chief-home-lane-header">
+              <span className="chief-home-lane-name">Builder</span>
+              <span className="chief-board-lane-count">{builderLane.count}</span>
+            </header>
+            <p className="chief-home-lane-status">{builderLane.status}</p>
+            <p className="chief-home-lane-detail">{builderLane.detail}</p>
+            <Link to={CHIEF_ROUTES.builds} className="chief-home-lane-link">
+              Open Builds →
+            </Link>
+          </div>
+
+          <div className={`chief-home-lane chief-home-lane--${researchLane.tone}`}>
+            <header className="chief-home-lane-header">
+              <span className="chief-home-lane-name">Research</span>
+              <span className="chief-board-lane-count">{researchLane.count}</span>
+            </header>
+            <p className="chief-home-lane-status">{researchLane.status}</p>
+            <p className="chief-home-lane-detail">{researchLane.detail}</p>
+            <Link to={CHIEF_ROUTES.knowledge} className="chief-home-lane-link">
+              Open Knowledge →
+            </Link>
+          </div>
+        </div>
 
         <form className="chief-home-intake" onSubmit={handleSubmit}>
           <label className="chief-home-intake-label" htmlFor="chief-home-command">
