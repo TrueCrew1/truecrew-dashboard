@@ -209,6 +209,7 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
         evaluatedProposal.confidence ?? 0,
         policyResult.reason,
         policyResult.missingSignals,
+        policyResult.evidenceSummary,
       );
     },
     [],
@@ -232,6 +233,7 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
         evaluatedProposal.confidence ?? 0,
         policyResult.reason,
         policyResult.missingSignals,
+        policyResult.evidenceSummary,
       );
 
       return policyResult;

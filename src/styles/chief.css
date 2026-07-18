@@ -1476,6 +1476,21 @@ button.chief-brief-metric {
   color: var(--steel-dim);
 }
 
+.chief-approval-evidence-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chief-approval-evidence-item {
+  font-size: 11px;
+  color: var(--steel);
+  line-height: 1.45;
+}
+
 .chief-approval-card-details {
   display: flex;
   flex-direction: column;

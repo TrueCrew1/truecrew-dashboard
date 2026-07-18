@@ -15,6 +15,7 @@ import {
 } from "./approvalWrappers";
 import { BuildTestSuggestionHelper } from "./BuildTestSuggestionHelper";
 import { ChiefApprovalActions } from "./ChiefApprovalActions";
+import { describeEvidence } from "./chiefApprovalPolicy";
 import {
   APPROVAL_CHECKLIST_STATUS_ICON,
   APPROVAL_RECOMMENDED_DECISION_BADGE,
@@ -50,11 +51,21 @@ function formatConfidence(confidence: number | undefined): string {
   return `${Math.round(confidence * 100)}%`;
 }
 
-function getConfidenceBadgeClass(confidence: number | undefined): string {
+/**
+ * High confidence (>= 90%) only reads as "verified" green when authoritative
+ * evidence backs it — an unbacked high-confidence claim shows orange, the
+ * same "needs attention" tone as the dedicated "Needs evidence" badge.
+ */
+function getConfidenceBadgeClass(confidence: number | undefined, needsEvidence: boolean): string {
   if (confidence === undefined) return "badge-steel";
-  if (confidence >= 0.9) return "badge-green";
+  if (confidence >= 0.9) return needsEvidence ? "badge-orange" : "badge-green";
   if (confidence >= 0.7) return "badge-yellow";
   return "badge-red";
+}
+
+function formatConfidenceLabel(confidence: number | undefined, needsEvidence: boolean): string {
+  const pct = formatConfidence(confidence);
+  return needsEvidence ? `${pct} confidence (unverified)` : `${pct} confidence`;
 }
 
 interface ApprovalBoardProps {
@@ -282,6 +293,10 @@ export function ApprovalBoard({
               const urgencyBadge = getApprovalUrgencyBadge(proposal);
               const isFocused = focusProposalId === proposal.id;
               const isTopPriority = proposal.id === topPriorityProposalId;
+              // Chief only claims >= 90% confidence when authoritative evidence
+              // backs it — this signal is set exactly when that's not the case.
+              const needsEvidence =
+                proposal.missingSignals?.includes("high_confidence_without_evidence") ?? false;
               const actionsNode = (
                 <ChiefApprovalActions
                   proposal={proposal}
@@ -337,10 +352,22 @@ export function ApprovalBoard({
                       ) : null}
                       {proposal.confidence !== undefined ? (
                         <span
-                          className={`badge ${getConfidenceBadgeClass(proposal.confidence)}`}
-                          title={`Confidence score: ${formatConfidence(proposal.confidence)}. Chief requires ≥90% to forward for approval.`}
+                          className={`badge ${getConfidenceBadgeClass(proposal.confidence, needsEvidence)}`}
+                          title={
+                            needsEvidence
+                              ? `Confidence score: ${formatConfidence(proposal.confidence)}, but no authoritative evidence is linked. Chief will not forward a high-confidence claim without evidence.`
+                              : `Confidence score: ${formatConfidence(proposal.confidence)}. Chief requires ≥90% to forward for approval.`
+                          }
                         >
-                          {formatConfidence(proposal.confidence)} confidence
+                          {formatConfidenceLabel(proposal.confidence, needsEvidence)}
+                        </span>
+                      ) : null}
+                      {needsEvidence ? (
+                        <span
+                          className="badge badge-orange"
+                          title="Confidence is ≥90%, but no authoritative evidence (linked PR/issue, or runbook/doc) backs it. Chief cannot forward this without evidence."
+                        >
+                          Needs evidence
                         </span>
                       ) : null}
                       {urgencyBadge ? (
@@ -397,6 +424,19 @@ export function ApprovalBoard({
                                 {APPROVAL_CHECKLIST_STATUS_ICON[item.status]}
                               </span>
                               {item.label}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+
+                    {proposal.confidence !== undefined ? (
+                      <div className="chief-approval-card-field">
+                        <span className="chief-approval-card-label">Evidence</span>
+                        <ul className="chief-approval-evidence-list">
+                          {describeEvidence(proposal).map((line) => (
+                            <li key={line} className="chief-approval-evidence-item">
+                              {line}
                             </li>
                           ))}
                         </ul>

@@ -1,6 +1,7 @@
 import type {
   ApprovalCard,
   ApprovalChecklistItem,
+  ApprovalEvidence,
   ApprovalRecommendedDecision,
   ApprovalSource,
 } from "./types";
@@ -87,15 +88,14 @@ interface BaseAgentApprovalRequest {
   createdAt: string;
   /**
    * Confidence score (0–1) from the originating agent or heuristic.
-   * Chief requires >= 0.9 to forward for approval.
+   * Chief requires >= 0.9 to forward for approval — and, per
+   * chiefApprovalPolicy.ts's hardening rule, that claim is only honored
+   * when `evidence` also clears the category-specific evidence bar (linked
+   * PR/issue for code gates, linked runbook/doc for process gates).
    */
   confidence?: number;
-  /** Linked PR number or URL, if this relates to a code change. */
-  linkedPr?: string | number;
-  /** Linked task ID, if this relates to a tracked task. */
-  linkedTask?: string;
-  /** URL or path to supporting evidence (workflow doc, second-brain note). */
-  evidenceRef?: string;
+  /** Authoritative evidence backing `confidence` — see ApprovalEvidence in types.ts. */
+  evidence?: ApprovalEvidence;
 }
 
 export interface PlannerApprovalRequest extends BaseAgentApprovalRequest {
@@ -133,6 +133,7 @@ function baseCardFields(
     recommendedDecision: RISK_TO_RECOMMENDATION[request.riskLevel],
     checklist: request.testsOrChecksDone,
     confidence: request.confidence,
+    evidence: request.evidence,
   };
 }
 
@@ -173,6 +174,12 @@ export function createApprovalCardFromContentRequest(request: ContentApprovalReq
 
 // --- Requests: Build is real (below); Planner/Research/Content are illustrative examples ---
 
+/**
+ * Demonstrates: confidence below 0.9, evidence present anyway (a linked
+ * runbook). Chief still returns this for refinement — but only for the
+ * confidence gap, not for missing evidence. See
+ * chiefApprovalPolicy.test.ts's "medium confidence with evidence" cases.
+ */
 export const EXAMPLE_PLANNER_REQUEST: PlannerApprovalRequest = {
   id: "apr-planner-example-phase4",
   gate: APPROVAL_GATES.planner[1],
@@ -188,8 +195,7 @@ export const EXAMPLE_PLANNER_REQUEST: PlannerApprovalRequest = {
   affectedPhases: ["Phase 4 — Alerts & Escalation"],
   createdAt: "2026-07-04T12:00:00.000Z",
   confidence: 0.75,
-  linkedTask: "task-roadmap-phase4",
-  evidenceRef: "knowledge/decisions/chief-approvals-roadmap.md",
+  evidence: { linkedRunbookSlug: "knowledge/decisions/chief-approvals-roadmap.md" },
 };
 
 /**
@@ -200,6 +206,9 @@ export const EXAMPLE_PLANNER_REQUEST: PlannerApprovalRequest = {
  * Verified via `gh pr diff 57` / `gh pr diff 58` (empty `diff` between the
  * two) and `gh pr view` for CI status. Merging both would double-apply the
  * same fix; one needs to merge and the other needs to close.
+ *
+ * Demonstrates: confidence >= 0.9 backed by real authoritative evidence
+ * (linked PR #58, passing tests) — this is Chief's "forwarded" example.
  */
 export const BUILD_REQUEST_DUPLICATE_AUTH_FIX: BuildApprovalRequest = {
   id: "apr-build-duplicate-auth-prs",
@@ -215,8 +224,7 @@ export const BUILD_REQUEST_DUPLICATE_AUTH_FIX: BuildApprovalRequest = {
   filesOrAreas: ["lib/auth.ts"],
   createdAt: "2026-07-04T07:20:01.000Z",
   confidence: 0.95,
-  linkedPr: 58,
-  evidenceRef: "gh pr diff 57 / gh pr diff 58",
+  evidence: { linkedPrId: 58, testStatusSummary: "pass" },
 };
 
 export const EXAMPLE_RESEARCH_REQUEST: ResearchApprovalRequest = {
@@ -233,10 +241,15 @@ export const EXAMPLE_RESEARCH_REQUEST: ResearchApprovalRequest = {
   alternativesConsidered: ["Resend", "Postmark"],
   createdAt: "2026-07-04T12:10:00.000Z",
   confidence: 0.82,
-  linkedTask: "task-notification-integration",
-  evidenceRef: "knowledge/research/email-vendor-comparison.md",
+  evidence: { linkedRunbookSlug: "knowledge/research/email-vendor-comparison.md" },
 };
 
+/**
+ * Demonstrates: confidence >= 0.9 claimed with NO authoritative evidence
+ * linked (no runbook/governance doc — only informal review notes). Chief
+ * must return this for refinement despite the high confidence score, per
+ * the "no >= 90% confidence without evidence" rule.
+ */
 export const EXAMPLE_CONTENT_REQUEST: ContentApprovalRequest = {
   id: "apr-content-example-homepage-hero",
   gate: APPROVAL_GATES.content[0],
@@ -251,8 +264,6 @@ export const EXAMPLE_CONTENT_REQUEST: ContentApprovalRequest = {
   audience: "public",
   createdAt: "2026-07-04T12:15:00.000Z",
   confidence: 0.92,
-  linkedTask: "task-homepage-copy-update",
-  evidenceRef: "knowledge/content/homepage-hero-draft.md",
 };
 
 export const AGENT_APPROVAL_CARDS: ApprovalCard[] = [

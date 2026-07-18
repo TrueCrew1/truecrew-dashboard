@@ -45,47 +45,56 @@ export const chiefLog = {
 
   /**
    * Logs that Chief forwarded a card for operator approval (confidence >= 0.9,
-   * checklist passed).
+   * checklist passed, and — per the evidence-hardening rule — authoritative
+   * evidence backing that confidence claim).
    */
   cardForwarded(
     card: ApprovalCard,
     confidence: number,
     reason: string,
+    evidenceSummary: string,
   ): void {
     emitChiefGovernanceEvent({
       id: `evt-${card.id}-forwarded`,
       type: "card_forwarded",
-      summary: `Card forwarded for approval (${(confidence * 100).toFixed(0)}%): ${card.title}`,
+      summary: `Card forwarded for approval (${(confidence * 100).toFixed(0)}%): ${card.title} — evidence: ${evidenceSummary}`,
       detail: {
         cardId: card.id,
         confidence,
         reason,
         source: card.source,
+        evidenceSummary,
       },
       timestamp: new Date().toISOString(),
     });
   },
 
   /**
-   * Logs that Chief returned a card for refinement (below confidence threshold
-   * or checklist failed).
+   * Logs that Chief returned a card for refinement (below confidence
+   * threshold, checklist failed, or — per the evidence-hardening rule — a
+   * >= 0.9 confidence claim with no authoritative evidence behind it).
    */
   cardReturnedForRefinement(
     card: ApprovalCard,
     confidence: number,
     missingSignals: ApprovalMissingSignal[],
     reason: string,
+    evidenceSummary: string,
   ): void {
+    const isHighConfidenceEvidenceGap = missingSignals.includes("high_confidence_without_evidence");
     emitChiefGovernanceEvent({
       id: `evt-${card.id}-returned`,
       type: "card_returned_for_refinement",
-      summary: `Card returned for refinement (${(confidence * 100).toFixed(0)}%): ${card.title}`,
+      summary: isHighConfidenceEvidenceGap
+        ? `High-confidence proposal returned due to missing evidence (${(confidence * 100).toFixed(0)}%): ${card.title}`
+        : `Card returned for refinement (${(confidence * 100).toFixed(0)}%): ${card.title}`,
       detail: {
         cardId: card.id,
         confidence,
         missingSignals,
         reason,
         source: card.source,
+        evidenceSummary,
       },
       timestamp: new Date().toISOString(),
     });
@@ -99,12 +108,13 @@ export const chiefLog = {
     disposition: ChiefRoutingDisposition,
     confidence: number,
     reason: string,
-    missingSignals?: ApprovalMissingSignal[],
+    missingSignals: ApprovalMissingSignal[],
+    evidenceSummary: string,
   ): void {
     if (disposition === "forwarded") {
-      this.cardForwarded(card, confidence, reason);
+      this.cardForwarded(card, confidence, reason, evidenceSummary);
     } else {
-      this.cardReturnedForRefinement(card, confidence, missingSignals ?? [], reason);
+      this.cardReturnedForRefinement(card, confidence, missingSignals, reason, evidenceSummary);
     }
   },
 
