@@ -2,6 +2,7 @@ node_modules
 dist
 .netlify
 *.local
+.env
 .env.local.bak.*
 .DS_Store
 tsconfig.tsbuildinfo

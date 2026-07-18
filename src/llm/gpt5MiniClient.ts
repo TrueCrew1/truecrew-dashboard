@@ -38,8 +38,7 @@ export async function callGpt5Mini(
       },
       body: JSON.stringify({
         messages: [{ role: "user", content: prompt }],
-        max_tokens: maxTokens,
-        temperature: DEFAULT_CONFIG.defaultTemperature,
+        max_completion_tokens: maxTokens,
       }),
       signal: controller.signal,
     });
