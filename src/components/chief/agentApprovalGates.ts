@@ -85,6 +85,17 @@ interface BaseAgentApprovalRequest {
   testsOrChecksDone: ApprovalChecklistItem[];
   requestedAction: string;
   createdAt: string;
+  /**
+   * Confidence score (0–1) from the originating agent or heuristic.
+   * Chief requires >= 0.9 to forward for approval.
+   */
+  confidence?: number;
+  /** Linked PR number or URL, if this relates to a code change. */
+  linkedPr?: string | number;
+  /** Linked task ID, if this relates to a tracked task. */
+  linkedTask?: string;
+  /** URL or path to supporting evidence (workflow doc, second-brain note). */
+  evidenceRef?: string;
 }
 
 export interface PlannerApprovalRequest extends BaseAgentApprovalRequest {
@@ -121,6 +132,7 @@ function baseCardFields(
     source,
     recommendedDecision: RISK_TO_RECOMMENDATION[request.riskLevel],
     checklist: request.testsOrChecksDone,
+    confidence: request.confidence,
   };
 }
 
@@ -175,6 +187,9 @@ export const EXAMPLE_PLANNER_REQUEST: PlannerApprovalRequest = {
   requestedAction: "Approve starting Phase 4 planning, or hold until Phase 3 (Persistence) ships.",
   affectedPhases: ["Phase 4 — Alerts & Escalation"],
   createdAt: "2026-07-04T12:00:00.000Z",
+  confidence: 0.75,
+  linkedTask: "task-roadmap-phase4",
+  evidenceRef: "knowledge/decisions/chief-approvals-roadmap.md",
 };
 
 /**
@@ -199,6 +214,9 @@ export const BUILD_REQUEST_DUPLICATE_AUTH_FIX: BuildApprovalRequest = {
   requestedAction: "Approve merging PR #58 and closing #57 as a duplicate (or vice versa).",
   filesOrAreas: ["lib/auth.ts"],
   createdAt: "2026-07-04T07:20:01.000Z",
+  confidence: 0.95,
+  linkedPr: 58,
+  evidenceRef: "gh pr diff 57 / gh pr diff 58",
 };
 
 export const EXAMPLE_RESEARCH_REQUEST: ResearchApprovalRequest = {
@@ -214,6 +232,9 @@ export const EXAMPLE_RESEARCH_REQUEST: ResearchApprovalRequest = {
   requestedAction: "Approve a vendor to unblock the notification-hook build, or hold for a wider survey.",
   alternativesConsidered: ["Resend", "Postmark"],
   createdAt: "2026-07-04T12:10:00.000Z",
+  confidence: 0.82,
+  linkedTask: "task-notification-integration",
+  evidenceRef: "knowledge/research/email-vendor-comparison.md",
 };
 
 export const EXAMPLE_CONTENT_REQUEST: ContentApprovalRequest = {
@@ -229,6 +250,9 @@ export const EXAMPLE_CONTENT_REQUEST: ContentApprovalRequest = {
   requestedAction: "Approve copy for publish, or send back with edits.",
   audience: "public",
   createdAt: "2026-07-04T12:15:00.000Z",
+  confidence: 0.92,
+  linkedTask: "task-homepage-copy-update",
+  evidenceRef: "knowledge/content/homepage-hero-draft.md",
 };
 
 export const AGENT_APPROVAL_CARDS: ApprovalCard[] = [

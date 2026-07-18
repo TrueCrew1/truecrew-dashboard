@@ -33,7 +33,29 @@ import {
   summarizePendingApprovalUrgency,
 } from "./chiefApprovalUrgency";
 import { formatChiefTimestamp } from "./chiefMock";
-import type { ApprovalAction, ApprovalProposal } from "./types";
+import type { ApprovalAction, ApprovalProposal, ChiefRoutingDisposition } from "./types";
+
+const ROUTING_DISPOSITION_LABEL: Record<ChiefRoutingDisposition, string> = {
+  forwarded: "Forwarded",
+  needs_refinement: "Needs refinement",
+};
+
+const ROUTING_DISPOSITION_BADGE: Record<ChiefRoutingDisposition, string> = {
+  forwarded: "badge-green",
+  needs_refinement: "badge-yellow",
+};
+
+function formatConfidence(confidence: number | undefined): string {
+  if (confidence === undefined) return "—";
+  return `${Math.round(confidence * 100)}%`;
+}
+
+function getConfidenceBadgeClass(confidence: number | undefined): string {
+  if (confidence === undefined) return "badge-steel";
+  if (confidence >= 0.9) return "badge-green";
+  if (confidence >= 0.7) return "badge-yellow";
+  return "badge-red";
+}
 
 interface ApprovalBoardProps {
   proposals: ApprovalProposal[];
@@ -289,7 +311,7 @@ export function ApprovalBoard({
                     </span>
                   </div>
 
-                  {proposal.source || proposal.recommendedDecision || urgencyBadge || isTopPriority ? (
+                  {proposal.source || proposal.recommendedDecision || urgencyBadge || isTopPriority || proposal.confidence !== undefined || proposal.routingDisposition ? (
                     <div className="chief-approval-card-tags">
                       {isTopPriority ? (
                         <button
@@ -300,6 +322,26 @@ export function ApprovalBoard({
                         >
                           Top priority
                         </button>
+                      ) : null}
+                      {proposal.routingDisposition ? (
+                        <span
+                          className={`badge ${ROUTING_DISPOSITION_BADGE[proposal.routingDisposition]}`}
+                          title={
+                            proposal.routingDisposition === "forwarded"
+                              ? "Chief forwarded this for approval — confidence and checklist passed."
+                              : "Chief returned this for refinement — see guidance below."
+                          }
+                        >
+                          {ROUTING_DISPOSITION_LABEL[proposal.routingDisposition]}
+                        </span>
+                      ) : null}
+                      {proposal.confidence !== undefined ? (
+                        <span
+                          className={`badge ${getConfidenceBadgeClass(proposal.confidence)}`}
+                          title={`Confidence score: ${formatConfidence(proposal.confidence)}. Chief requires ≥90% to forward for approval.`}
+                        >
+                          {formatConfidence(proposal.confidence)} confidence
+                        </span>
                       ) : null}
                       {urgencyBadge ? (
                         <span
@@ -362,6 +404,31 @@ export function ApprovalBoard({
                     ) : null}
 
                     <BuildTestSuggestionHelper proposal={proposal} />
+
+                    {proposal.routingDisposition === "needs_refinement" && proposal.refinementGuidance ? (
+                      <div className="chief-approval-card-field chief-approval-card-field--refinement">
+                        <span className="chief-approval-card-label">Refinement guidance</span>
+                        <div className="chief-approval-refinement-guidance">
+                          {proposal.refinementGuidance.split("\n").map((line, idx) => (
+                            <p key={idx} className="chief-approval-refinement-line">
+                              {line}
+                            </p>
+                          ))}
+                        </div>
+                        {proposal.missingSignals && proposal.missingSignals.length > 0 ? (
+                          <div className="chief-approval-missing-signals">
+                            <span className="chief-approval-missing-signals-label">Missing signals:</span>
+                            <ul className="chief-approval-missing-signals-list">
+                              {proposal.missingSignals.map((signal) => (
+                                <li key={signal} className="chief-approval-missing-signal">
+                                  {signal.replace(/_/g, " ")}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </div>
 
                   <div

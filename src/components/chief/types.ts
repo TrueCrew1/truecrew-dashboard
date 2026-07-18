@@ -66,6 +66,27 @@ export type ApprovalSource =
   | "research_agent"
   | "content_agent";
 
+/**
+ * Chief's routing disposition: whether Chief forwarded a proposal for approval
+ * or returned it to the originating agent/lane for refinement.
+ * - "forwarded" — confidence and checklist both passed; operator will decide.
+ * - "needs_refinement" — below 0.9 confidence or checklist failed; returned to
+ *   originating agent with guidance.
+ */
+export type ChiefRoutingDisposition = "forwarded" | "needs_refinement";
+
+/**
+ * Machine-readable signals missing from a proposal that caused Chief to return
+ * it for refinement rather than forwarding for approval.
+ */
+export type ApprovalMissingSignal =
+  | "confidence_below_threshold"
+  | "missing_linked_pr_or_task"
+  | "missing_evidence_or_reference"
+  | "missing_test_status"
+  | "risk_level_too_high"
+  | "checklist_items_failing";
+
 export interface ApprovalProposal {
   id: string;
   title: string;
@@ -86,6 +107,18 @@ export interface ApprovalProposal {
   /** Chief's suggested call, distinct from the operator's actual decision (`status`). */
   recommendedDecision?: ApprovalRecommendedDecision;
   source?: ApprovalSource;
+  /**
+   * Confidence score (0–1) from the originating agent or heuristic. Chief
+   * requires >= 0.9 to forward for approval; below that, Chief returns the
+   * item for refinement with guidance.
+   */
+  confidence?: number;
+  /** Chief's routing disposition — set when Chief evaluates whether to forward or return for refinement. */
+  routingDisposition?: ChiefRoutingDisposition;
+  /** Machine-readable list of missing signals when routingDisposition is "needs_refinement". */
+  missingSignals?: ApprovalMissingSignal[];
+  /** Human-readable refinement guidance when routingDisposition is "needs_refinement". */
+  refinementGuidance?: string;
 }
 
 /**

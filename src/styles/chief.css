@@ -3793,3 +3793,62 @@ button.chief-brief-metric {
   align-items: center;
   gap: 4px;
 }
+
+/* Chief approval refinement guidance */
+.chief-approval-card-field--refinement {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--bg-hover);
+  border-radius: 6px;
+  border-left: 3px solid var(--yellow);
+}
+
+.chief-approval-refinement-guidance {
+  margin: 8px 0;
+}
+
+.chief-approval-refinement-line {
+  margin: 0 0 6px 0;
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.chief-approval-refinement-line:last-child {
+  margin-bottom: 0;
+}
+
+.chief-approval-missing-signals {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.chief-approval-missing-signals-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+}
+
+.chief-approval-missing-signals-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chief-approval-missing-signal {
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--steel);
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
