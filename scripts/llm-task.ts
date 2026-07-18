@@ -9,12 +9,7 @@
  *   npm run llm -- --env-check
  */
 
-import dotenv from "dotenv";
-
-// Match repo convention: secrets in .env.local (see README, docs/AI_STACK.md).
-dotenv.config();
-dotenv.config({ path: ".env.local", override: true });
-
+import "./load-llm-env.js";
 import { runTask, describeRouting, type Lane, type Complexity } from "../src/llm";
 
 const VALID_LANES: Lane[] = ["research", "builder", "chief"];
