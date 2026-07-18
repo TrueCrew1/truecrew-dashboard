@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { pickModel } from "../src/llm/router";
-import { getMaxTokens } from "../src/llm/types";
+import { pickModel } from "../lib/llm/router.js";
+import { getMaxTokens } from "../lib/llm/types.js";
 
 describe("llm router — pickModel", () => {
   it("routes research lane by complexity", () => {

@@ -3,6 +3,7 @@ dist
 .netlify
 *.local
 .env
+.env.local
 .env.local.bak.*
 .DS_Store
 tsconfig.tsbuildinfo
