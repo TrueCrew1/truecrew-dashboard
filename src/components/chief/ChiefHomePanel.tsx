@@ -1,7 +1,11 @@
 import { FormEvent, useMemo, useRef, useState } from "react";
 import { Panel } from "@/components/ui";
 import { useData } from "@/context/DataContext";
-import { askChiefAiFallback, isChiefAiFallbackEnabled } from "@/lib/api/client";
+import {
+  askChiefAiFallback,
+  isChiefAiFallbackEnabled,
+  isChiefLocalOnlyModeDefault,
+} from "@/lib/api/client";
 import { buildApprovalFromResponse, buildHistoryEntry } from "./chiefMock";
 import { deriveChiefBoardItems } from "./chiefApprovalBoard";
 import { buildChiefContextSummary, resolveChiefCommand } from "./chiefCommandRouter";
@@ -46,6 +50,7 @@ export function ChiefHomePanel() {
   const [response, setResponse] = useState<ChiefResponse | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isEnhancing, setIsEnhancing] = useState(false);
+  const [preferLocalOnly, setPreferLocalOnly] = useState(isChiefLocalOnlyModeDefault);
   // Guards against a stale AI fallback response landing after a newer
   // command has already been submitted.
   const enhanceRequestIdRef = useRef(0);
@@ -76,7 +81,7 @@ export function ChiefHomePanel() {
     if (result.isGenericFallback && isChiefAiFallbackEnabled()) {
       const requestId = ++enhanceRequestIdRef.current;
       setIsEnhancing(true);
-      askChiefAiFallback(trimmed, buildChiefContextSummary(liveContext))
+      askChiefAiFallback(trimmed, buildChiefContextSummary(liveContext), preferLocalOnly)
         .then((fallback) => {
           if (enhanceRequestIdRef.current !== requestId) return;
           setIsEnhancing(false);
@@ -124,6 +129,17 @@ export function ChiefHomePanel() {
               {isProcessing ? "Running…" : "Run"}
             </button>
           </div>
+
+          {isChiefAiFallbackEnabled() ? (
+            <label className="chief-local-only-toggle">
+              <input
+                type="checkbox"
+                checked={preferLocalOnly}
+                onChange={(event) => setPreferLocalOnly(event.target.checked)}
+              />
+              Prefer local only (Ollama, no cloud calls)
+            </label>
+          ) : null}
 
           {response ? (
             <div className="chief-home-response" aria-live="polite">

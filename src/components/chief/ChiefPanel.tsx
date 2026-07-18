@@ -5,9 +5,11 @@ import {
   ChiefApprovalConflictError,
   formatDataSourceLabel,
   isChiefAiFallbackEnabled,
+  isChiefLocalOnlyModeDefault,
   isLiveApiEnabled,
 } from "@/lib/api/client";
 import { useMonitorHealth } from "@/hooks/useMonitorHealth";
+import { ApprovalAlertsPanel } from "./ApprovalAlertsPanel";
 import { ApprovalBoard } from "./ApprovalBoard";
 import { ChiefQueueStrip } from "./ChiefQueueStrip";
 import { CommandHistory } from "./CommandHistory";
@@ -59,6 +61,7 @@ export function ChiefPanel() {
   const [response, setResponse] = useState<ChiefResponse | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isEnhancing, setIsEnhancing] = useState(false);
+  const [preferLocalOnly, setPreferLocalOnly] = useState(isChiefLocalOnlyModeDefault);
   // Guards against a stale AI fallback response landing after a newer
   // command has already been submitted.
   const enhanceRequestIdRef = useRef(0);
@@ -267,7 +270,7 @@ export function ChiefPanel() {
     if (result.isGenericFallback && isChiefAiFallbackEnabled()) {
       const requestId = ++enhanceRequestIdRef.current;
       setIsEnhancing(true);
-      askChiefAiFallback(command, buildChiefContextSummary(liveContext))
+      askChiefAiFallback(command, buildChiefContextSummary(liveContext), preferLocalOnly)
         .then((fallback) => {
           if (enhanceRequestIdRef.current !== requestId) return;
           setIsEnhancing(false);
@@ -571,6 +574,7 @@ export function ChiefPanel() {
               statusFilter={approvalStatusFilter}
               onStatusFilterChange={setApprovalStatusFilter}
             />
+            <ApprovalAlertsPanel />
           </div>
         ) : null}
 
@@ -657,6 +661,17 @@ export function ChiefPanel() {
             Run
           </button>
         </div>
+
+        {isChiefAiFallbackEnabled() ? (
+          <label className="chief-local-only-toggle">
+            <input
+              type="checkbox"
+              checked={preferLocalOnly}
+              onChange={(event) => setPreferLocalOnly(event.target.checked)}
+            />
+            Prefer local only (Ollama, no cloud calls)
+          </label>
+        ) : null}
       </form>
     </aside>
   );
