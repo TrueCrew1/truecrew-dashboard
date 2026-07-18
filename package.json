@@ -18,11 +18,13 @@
     "db:reset": "supabase db reset",
     "db:status": "supabase migration list",
     "obsidian:log": "npx tsx scripts/obsidian-log.ts",
-    "obsidian:setup-vault": "npx tsx scripts/setup-obsidian-vault.ts"
+    "obsidian:setup-vault": "npx tsx scripts/setup-obsidian-vault.ts",
+    "llm": "npx tsx scripts/llm-task.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.8",
     "@vercel/node": "^5.1.14",
+    "dotenv": "^17.4.2",
     "gray-matter": "^4.0.3",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

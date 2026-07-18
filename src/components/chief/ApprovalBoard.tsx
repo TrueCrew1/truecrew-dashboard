@@ -13,6 +13,7 @@ import {
   ApprovalSectionShell,
   ApprovalSurfaceEmpty,
 } from "./approvalWrappers";
+import { BuildTestSuggestionHelper } from "./BuildTestSuggestionHelper";
 import { ChiefApprovalActions } from "./ChiefApprovalActions";
 import {
   APPROVAL_CHECKLIST_STATUS_ICON,
@@ -359,6 +360,8 @@ export function ApprovalBoard({
                         </ul>
                       </div>
                     ) : null}
+
+                    <BuildTestSuggestionHelper proposal={proposal} />
                   </div>
 
                   <div
