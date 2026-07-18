@@ -18,6 +18,9 @@ approval card).
 | Obsidian | READ-ONLY / PROPOSE-ONLY | Notes, research vault | `docs/AGENT_WORKFLOW.md` |
 | CodeRabbit | READ-ONLY / PROPOSE-ONLY | PR review comments only | `.coderabbit.yaml` |
 | Supabase migration PR check | READ-ONLY | Lints migrations on PR, no `db push` | `.github/workflows/supabase-migration-pr-check.yml` |
+| Ollama (local) | READ-ONLY / PROPOSE-ONLY | Local-first default AI tier — editor autocomplete/chat, optional Librarian refinement; advisory/suggestion only, never a direct repo write | `docs/internal/tool-model-routing-standard.md` |
 
 Descriptions here are intentionally short — see `docs/AGENT_RUNBOOK.md` for the
-actual policy each lane enforces.
+actual policy each lane enforces, and `docs/internal/tool-model-routing-standard.md`
+for AI-model routing specifically (which tier is the default vs. opt-in
+escalation).
