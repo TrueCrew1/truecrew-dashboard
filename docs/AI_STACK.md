@@ -112,7 +112,19 @@ On pending **Build** approval cards (Chief → Approvals), operators can click *
 
 The Vercel MCP server provides deployment and project management tools.
 
-**Auth required:** Must authenticate in Cursor Desktop before tools are available.
+**Config** (`.cursor/mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "vercel": {
+      "url": "https://mcp.vercel.com"
+    }
+  }
+}
+```
+
+**Auth required:** Must authenticate in Cursor Desktop before tools are available (`needsAuth` until login completes).
 
 **Safety rules:**
 - Read-only commands (list projects, view deployments) are preferred initially
