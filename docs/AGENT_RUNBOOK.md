@@ -509,10 +509,12 @@ No agent — Chief included — has been wired into any tool as **AGENT-ELIGIBLE
 Tool Catalog above): these are governance classifications, a prerequisite for wiring,
 not an active grant. Reliability remains reserved and not wired; every `health_state` in
 `docs/TOOL_CATALOG.md` defaults to `HEALTHY` for that reason, not because health has
-been verified. (The Ollama/Continue.dev entry in the access-links list just below states
-directional intent for local-first drafting; `docs/TOOL_CATALOG.md`'s `ollama-local` row
-does not yet list Chief as `owner_agent`, so treat that entry as intent, not a recorded
-grant.)
+been verified. (The Ollama/Continue.dev entry in the access-links list just below is
+directional intent — a candidate local-first model layer, not yet wired as a
+Chief-owned tool in `docs/TOOL_CATALOG.md`: that row's `owner_agent` still reads
+`— (David's own tooling, not a Chief-system agent)`. `docs/TOOL_CATALOG.md` remains the
+source of truth for `owner_agent`; this section describes planned direction, not
+current wiring.)
 
 **Chief access links — phase 1.** The only access surfaces intentionally
 formalized for Chief right now, under strict least-privilege governance:
