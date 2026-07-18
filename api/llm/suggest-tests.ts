@@ -12,9 +12,9 @@ import { requireInternalAuth } from "../../lib/auth.js";
 import {
   buildSuggestTestsPrompt,
   toSuggestionResult,
+  runTask,
   type BuildTestSuggestionInput,
-} from "../../src/llm/buildTestSuggestion";
-import { runTask } from "../../src/llm/router";
+} from "../../lib/llm/index.js";
 
 function parseInput(body: unknown): BuildTestSuggestionInput | null {
   if (!body || typeof body !== "object") return null;
