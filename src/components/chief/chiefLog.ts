@@ -1,6 +1,6 @@
 import { emitChiefGovernanceEvent } from "./chiefGovernanceEvents";
 import type { AgentPacket, AgentPacketRequest } from "./agentPacket";
-import type { ApprovalAction, ApprovalCard } from "./types";
+import type { ApprovalAction, ApprovalCard, ApprovalMissingSignal, ChiefRoutingDisposition } from "./types";
 
 /** Packet-observability logging. Extends chiefGovernanceEvents.ts — it does not replace it. */
 export const chiefLog = {
@@ -22,7 +22,12 @@ export const chiefLog = {
       id: `evt-${card.id}-card-created`,
       type: "card_created",
       summary: `Card created: ${card.title}`,
-      detail: { cardId: card.id, source: card.source, title: card.title },
+      detail: {
+        cardId: card.id,
+        source: card.source,
+        title: card.title,
+        confidence: card.confidence,
+      },
       timestamp: new Date().toISOString(),
     });
   },
@@ -33,9 +38,84 @@ export const chiefLog = {
       id: `evt-${card.id}-card-decided-${action}`,
       type: "card_decided",
       summary: `Card decided (${action}): ${card.title}`,
-      detail: { cardId: card.id, action, title: card.title },
+      detail: { cardId: card.id, action, title: card.title, confidence: card.confidence },
       timestamp: new Date().toISOString(),
     });
+  },
+
+  /**
+   * Logs that Chief forwarded a card for operator approval (confidence >= 0.9,
+   * checklist passed, and — per the evidence-hardening rule — authoritative
+   * evidence backing that confidence claim).
+   */
+  cardForwarded(
+    card: ApprovalCard,
+    confidence: number,
+    reason: string,
+    evidenceSummary: string,
+  ): void {
+    emitChiefGovernanceEvent({
+      id: `evt-${card.id}-forwarded`,
+      type: "card_forwarded",
+      summary: `Card forwarded for approval (${(confidence * 100).toFixed(0)}%): ${card.title} — evidence: ${evidenceSummary}`,
+      detail: {
+        cardId: card.id,
+        confidence,
+        reason,
+        source: card.source,
+        evidenceSummary,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  },
+
+  /**
+   * Logs that Chief returned a card for refinement (below confidence
+   * threshold, checklist failed, or — per the evidence-hardening rule — a
+   * >= 0.9 confidence claim with no authoritative evidence behind it).
+   */
+  cardReturnedForRefinement(
+    card: ApprovalCard,
+    confidence: number,
+    missingSignals: ApprovalMissingSignal[],
+    reason: string,
+    evidenceSummary: string,
+  ): void {
+    const isHighConfidenceEvidenceGap = missingSignals.includes("high_confidence_without_evidence");
+    emitChiefGovernanceEvent({
+      id: `evt-${card.id}-returned`,
+      type: "card_returned_for_refinement",
+      summary: isHighConfidenceEvidenceGap
+        ? `High-confidence proposal returned due to missing evidence (${(confidence * 100).toFixed(0)}%): ${card.title}`
+        : `Card returned for refinement (${(confidence * 100).toFixed(0)}%): ${card.title}`,
+      detail: {
+        cardId: card.id,
+        confidence,
+        missingSignals,
+        reason,
+        source: card.source,
+        evidenceSummary,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  },
+
+  /**
+   * Logs a routing decision (forwarded or returned) for a card.
+   */
+  cardRouted(
+    card: ApprovalCard,
+    disposition: ChiefRoutingDisposition,
+    confidence: number,
+    reason: string,
+    missingSignals: ApprovalMissingSignal[],
+    evidenceSummary: string,
+  ): void {
+    if (disposition === "forwarded") {
+      this.cardForwarded(card, confidence, reason, evidenceSummary);
+    } else {
+      this.cardReturnedForRefinement(card, confidence, missingSignals, reason, evidenceSummary);
+    }
   },
 
   /** Logs that the overdue-work reprioritization rule promoted a task to the top of At-risk work. */

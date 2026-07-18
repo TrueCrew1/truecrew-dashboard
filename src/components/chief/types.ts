@@ -66,6 +66,64 @@ export type ApprovalSource =
   | "research_agent"
   | "content_agent";
 
+/**
+ * Chief's routing disposition: whether Chief forwarded a proposal for approval
+ * or returned it to the originating agent/lane for refinement.
+ * - "forwarded" — confidence and checklist both passed; operator will decide.
+ * - "needs_refinement" — below 0.9 confidence or checklist failed; returned to
+ *   originating agent with guidance.
+ */
+export type ChiefRoutingDisposition = "forwarded" | "needs_refinement";
+
+/**
+ * Machine-readable signals missing from a proposal that caused Chief to return
+ * it for refinement rather than forwarding for approval.
+ */
+export type ApprovalMissingSignal =
+  | "confidence_below_threshold"
+  | "missing_linked_pr_or_issue"
+  | "missing_linked_runbook_or_doc"
+  | "missing_evidence_or_reference"
+  | "missing_test_status"
+  | "risk_level_too_high"
+  | "checklist_items_failing"
+  /**
+   * Confidence >= 0.9 was claimed but no authoritative evidence (PR/issue for
+   * code proposals, runbook/doc for governance proposals) backs it. See
+   * chiefApprovalPolicy.ts's CHIEF_CONFIDENCE_THRESHOLD rule — a high
+   * confidence score must never be "just a number".
+   */
+  | "high_confidence_without_evidence";
+
+/**
+ * Which authoritative-evidence bar a proposal's confidence claim is checked
+ * against, based on its ApprovalSource:
+ * - "code" — PR/issue-driven work ("pr", "agent_build", "repo_change").
+ * - "governance" — process/decision work ("planner_agent", "research_agent",
+ *   "content_agent", "ops_change", or any unrecognized source — the safer,
+ *   doc-based default).
+ */
+export type ApprovalEvidenceCategory = "code" | "governance";
+
+/**
+ * Machine-checkable evidence backing a proposal's confidence score. Chief
+ * will not forward a proposal at confidence >= 0.9 unless at least one
+ * authoritative field here is populated for the proposal's evidence
+ * category — see evaluateApprovalPolicy in chiefApprovalPolicy.ts.
+ */
+export interface ApprovalEvidence {
+  /** PR number, key, or URL — authoritative evidence for code proposals. */
+  linkedPrId?: string | number;
+  /** Issue/ticket number, key, or URL — alternative authoritative evidence for code proposals. */
+  linkedIssueId?: string | number;
+  /** Runbook, policy, or governance-doc slug/path — authoritative evidence for governance proposals. */
+  linkedRunbookSlug?: string;
+  /** Known lint/test/build status, when relevant to the proposal. */
+  testStatusSummary?: "pass" | "fail" | "pending" | "unknown";
+  /** Known environment/deploy status, when relevant to the proposal. */
+  environmentStatusSummary?: string;
+}
+
 export interface ApprovalProposal {
   id: string;
   title: string;
@@ -86,6 +144,22 @@ export interface ApprovalProposal {
   /** Chief's suggested call, distinct from the operator's actual decision (`status`). */
   recommendedDecision?: ApprovalRecommendedDecision;
   source?: ApprovalSource;
+  /**
+   * Confidence score (0–1) from the originating agent or heuristic. Chief
+   * requires >= 0.9 to forward for approval; below that, Chief returns the
+   * item for refinement with guidance. A confidence >= 0.9 claim is only
+   * honored when `evidence` also clears the category-specific bar — see
+   * evaluateApprovalPolicy in chiefApprovalPolicy.ts.
+   */
+  confidence?: number;
+  /** Authoritative evidence backing `confidence` — see ApprovalEvidence. */
+  evidence?: ApprovalEvidence;
+  /** Chief's routing disposition — set when Chief evaluates whether to forward or return for refinement. */
+  routingDisposition?: ChiefRoutingDisposition;
+  /** Machine-readable list of missing signals when routingDisposition is "needs_refinement". */
+  missingSignals?: ApprovalMissingSignal[];
+  /** Human-readable refinement guidance when routingDisposition is "needs_refinement". */
+  refinementGuidance?: string;
 }
 
 /**

@@ -15,6 +15,7 @@ import {
 } from "./approvalWrappers";
 import { BuildTestSuggestionHelper } from "./BuildTestSuggestionHelper";
 import { ChiefApprovalActions } from "./ChiefApprovalActions";
+import { describeEvidence } from "./chiefApprovalPolicy";
 import {
   APPROVAL_CHECKLIST_STATUS_ICON,
   APPROVAL_RECOMMENDED_DECISION_BADGE,
@@ -33,7 +34,39 @@ import {
   summarizePendingApprovalUrgency,
 } from "./chiefApprovalUrgency";
 import { formatChiefTimestamp } from "./chiefMock";
-import type { ApprovalAction, ApprovalProposal } from "./types";
+import type { ApprovalAction, ApprovalProposal, ChiefRoutingDisposition } from "./types";
+
+const ROUTING_DISPOSITION_LABEL: Record<ChiefRoutingDisposition, string> = {
+  forwarded: "Forwarded",
+  needs_refinement: "Needs refinement",
+};
+
+const ROUTING_DISPOSITION_BADGE: Record<ChiefRoutingDisposition, string> = {
+  forwarded: "badge-green",
+  needs_refinement: "badge-yellow",
+};
+
+function formatConfidence(confidence: number | undefined): string {
+  if (confidence === undefined) return "—";
+  return `${Math.round(confidence * 100)}%`;
+}
+
+/**
+ * High confidence (>= 90%) only reads as "verified" green when authoritative
+ * evidence backs it — an unbacked high-confidence claim shows orange, the
+ * same "needs attention" tone as the dedicated "Needs evidence" badge.
+ */
+function getConfidenceBadgeClass(confidence: number | undefined, needsEvidence: boolean): string {
+  if (confidence === undefined) return "badge-steel";
+  if (confidence >= 0.9) return needsEvidence ? "badge-orange" : "badge-green";
+  if (confidence >= 0.7) return "badge-yellow";
+  return "badge-red";
+}
+
+function formatConfidenceLabel(confidence: number | undefined, needsEvidence: boolean): string {
+  const pct = formatConfidence(confidence);
+  return needsEvidence ? `${pct} confidence (unverified)` : `${pct} confidence`;
+}
 
 interface ApprovalBoardProps {
   proposals: ApprovalProposal[];
@@ -260,6 +293,10 @@ export function ApprovalBoard({
               const urgencyBadge = getApprovalUrgencyBadge(proposal);
               const isFocused = focusProposalId === proposal.id;
               const isTopPriority = proposal.id === topPriorityProposalId;
+              // Chief only claims >= 90% confidence when authoritative evidence
+              // backs it — this signal is set exactly when that's not the case.
+              const needsEvidence =
+                proposal.missingSignals?.includes("high_confidence_without_evidence") ?? false;
               const actionsNode = (
                 <ChiefApprovalActions
                   proposal={proposal}
@@ -289,7 +326,7 @@ export function ApprovalBoard({
                     </span>
                   </div>
 
-                  {proposal.source || proposal.recommendedDecision || urgencyBadge || isTopPriority ? (
+                  {proposal.source || proposal.recommendedDecision || urgencyBadge || isTopPriority || proposal.confidence !== undefined || proposal.routingDisposition ? (
                     <div className="chief-approval-card-tags">
                       {isTopPriority ? (
                         <button
@@ -300,6 +337,38 @@ export function ApprovalBoard({
                         >
                           Top priority
                         </button>
+                      ) : null}
+                      {proposal.routingDisposition ? (
+                        <span
+                          className={`badge ${ROUTING_DISPOSITION_BADGE[proposal.routingDisposition]}`}
+                          title={
+                            proposal.routingDisposition === "forwarded"
+                              ? "Chief forwarded this for approval — confidence and checklist passed."
+                              : "Chief returned this for refinement — see guidance below."
+                          }
+                        >
+                          {ROUTING_DISPOSITION_LABEL[proposal.routingDisposition]}
+                        </span>
+                      ) : null}
+                      {proposal.confidence !== undefined ? (
+                        <span
+                          className={`badge ${getConfidenceBadgeClass(proposal.confidence, needsEvidence)}`}
+                          title={
+                            needsEvidence
+                              ? `Confidence score: ${formatConfidence(proposal.confidence)}, but no authoritative evidence is linked. Chief will not forward a high-confidence claim without evidence.`
+                              : `Confidence score: ${formatConfidence(proposal.confidence)}. Chief requires ≥90% to forward for approval.`
+                          }
+                        >
+                          {formatConfidenceLabel(proposal.confidence, needsEvidence)}
+                        </span>
+                      ) : null}
+                      {needsEvidence ? (
+                        <span
+                          className="badge badge-orange"
+                          title="Confidence is ≥90%, but no authoritative evidence (linked PR/issue, or runbook/doc) backs it. Chief cannot forward this without evidence."
+                        >
+                          Needs evidence
+                        </span>
                       ) : null}
                       {urgencyBadge ? (
                         <span
@@ -361,7 +430,45 @@ export function ApprovalBoard({
                       </div>
                     ) : null}
 
+                    {proposal.confidence !== undefined ? (
+                      <div className="chief-approval-card-field">
+                        <span className="chief-approval-card-label">Evidence</span>
+                        <ul className="chief-approval-evidence-list">
+                          {describeEvidence(proposal).map((line) => (
+                            <li key={line} className="chief-approval-evidence-item">
+                              {line}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+
                     <BuildTestSuggestionHelper proposal={proposal} />
+
+                    {proposal.routingDisposition === "needs_refinement" && proposal.refinementGuidance ? (
+                      <div className="chief-approval-card-field chief-approval-card-field--refinement">
+                        <span className="chief-approval-card-label">Refinement guidance</span>
+                        <div className="chief-approval-refinement-guidance">
+                          {proposal.refinementGuidance.split("\n").map((line, idx) => (
+                            <p key={idx} className="chief-approval-refinement-line">
+                              {line}
+                            </p>
+                          ))}
+                        </div>
+                        {proposal.missingSignals && proposal.missingSignals.length > 0 ? (
+                          <div className="chief-approval-missing-signals">
+                            <span className="chief-approval-missing-signals-label">Missing signals:</span>
+                            <ul className="chief-approval-missing-signals-list">
+                              {proposal.missingSignals.map((signal) => (
+                                <li key={signal} className="chief-approval-missing-signal">
+                                  {signal.replace(/_/g, " ")}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </div>
 
                   <div

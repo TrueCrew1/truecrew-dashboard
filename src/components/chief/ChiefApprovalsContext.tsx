@@ -20,6 +20,12 @@ import { MOCK_PR_APPROVAL_CARDS } from "./chiefApprovalCardMocks";
 import { REPO_CHANGE_APPROVAL_CARDS } from "./repoChangeApprovals";
 import { APPROVAL_ACTION_DELAY_MS, approvalActionToStatus } from "./chiefApproval";
 import {
+  evaluateApprovalPolicy,
+  applyPolicyToProposal,
+  type ApprovalPolicyContext,
+  type ApprovalPolicyResult,
+} from "./chiefApprovalPolicy";
+import {
   buildChiefLiveContext,
   deriveApprovalCandidates,
   mergeApprovalSources,
@@ -36,13 +42,22 @@ interface ChiefApprovalsContextValue {
   liveContext: ChiefLiveContext;
   /** Fully merged, decision-applied approval queue — the one source both ChiefPanel and the homepage panel read. */
   approvals: ApprovalProposal[];
+  /** Proposals forwarded for approval (passed confidence threshold and checklist). */
+  forwardedApprovals: ApprovalProposal[];
+  /** Proposals returned for refinement (below confidence threshold or checklist failed). */
+  refinementQueue: ApprovalProposal[];
   pendingApprovalCount: number;
   proposalsById: Map<string, ApprovalProposal>;
   decisionsHydrated: boolean;
   /** Set when the last saved-decisions refresh failed; cleared on the next successful one. Approvals shown may not reflect current server state while this is set. */
   decisionsHydrationError: string | null;
   liveApi: boolean;
-  addCommandApproval: (proposal: ApprovalProposal) => void;
+  /**
+   * Adds a proposal and evaluates it against Chief's approval policy.
+   * If confidence >= 0.9 and checklist passes, it's forwarded for approval.
+   * Otherwise, it's returned for refinement with guidance.
+   */
+  addCommandApproval: (proposal: ApprovalProposal, ctx?: Partial<ApprovalPolicyContext>) => void;
   /** Shared command history — the one source both ChiefPanel's History tab and the homepage panel's intake write to. */
   history: CommandHistoryEntry[];
   addHistoryEntry: (entry: CommandHistoryEntry) => void;
@@ -54,6 +69,11 @@ interface ChiefApprovalsContextValue {
    * so every surface reading `approvals` sees the same thing.
    */
   recordDecision: (id: string, action: ApprovalAction) => Promise<ApprovalDecision>;
+  /**
+   * Re-evaluates a proposal that was previously returned for refinement.
+   * Returns the updated policy result.
+   */
+  reEvaluateProposal: (id: string, ctx?: Partial<ApprovalPolicyContext>) => ApprovalPolicyResult | null;
 }
 
 const ChiefApprovalsContext = createContext<ChiefApprovalsContextValue | null>(null);
@@ -135,19 +155,39 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
     const merged = mergeApprovalSources(derivedApprovals, commandApprovals);
     return merged.map((proposal) => {
       const decision = approvalDecisions[proposal.id];
-      if (!decision) return proposal;
-      return {
-        ...proposal,
-        status: decision.status,
-        decidedAt: decision.decidedAt,
-        decidedBy: decision.actor ?? undefined,
-      };
+      let updated = proposal;
+
+      if (decision) {
+        updated = {
+          ...updated,
+          status: decision.status,
+          decidedAt: decision.decidedAt,
+          decidedBy: decision.actor ?? undefined,
+        };
+      }
+
+      if (!updated.routingDisposition) {
+        const policyResult = evaluateApprovalPolicy({ proposal: updated });
+        updated = applyPolicyToProposal(updated, policyResult);
+      }
+
+      return updated;
     });
   }, [derivedApprovals, commandApprovals, approvalDecisions]);
 
-  const pendingApprovalCount = useMemo(
-    () => approvals.filter((proposal) => proposal.status === "pending").length,
+  const forwardedApprovals = useMemo(
+    () => approvals.filter((p) => p.routingDisposition === "forwarded"),
     [approvals],
+  );
+
+  const refinementQueue = useMemo(
+    () => approvals.filter((p) => p.routingDisposition === "needs_refinement"),
+    [approvals],
+  );
+
+  const pendingApprovalCount = useMemo(
+    () => forwardedApprovals.filter((proposal) => proposal.status === "pending").length,
+    [forwardedApprovals],
   );
 
   const proposalsById = useMemo(
@@ -155,11 +195,51 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
     [approvals],
   );
 
-  const addCommandApproval = useCallback((proposal: ApprovalProposal) => {
-    setCommandApprovals((prev) => [proposal, ...prev]);
-    // Canonical Chief observability event (see chiefLog.ts / chiefGovernanceEvents.ts) — observability-only, must not block enqueue.
-    chiefLog.cardCreated(proposal);
-  }, []);
+  const addCommandApproval = useCallback(
+    (proposal: ApprovalProposal, ctx?: Partial<ApprovalPolicyContext>) => {
+      const policyResult = evaluateApprovalPolicy({ proposal, ...ctx });
+      const evaluatedProposal = applyPolicyToProposal(proposal, policyResult);
+
+      setCommandApprovals((prev) => [evaluatedProposal, ...prev]);
+
+      chiefLog.cardCreated(evaluatedProposal);
+      chiefLog.cardRouted(
+        evaluatedProposal,
+        policyResult.disposition,
+        evaluatedProposal.confidence ?? 0,
+        policyResult.reason,
+        policyResult.missingSignals,
+        policyResult.evidenceSummary,
+      );
+    },
+    [],
+  );
+
+  const reEvaluateProposal = useCallback(
+    (id: string, ctx?: Partial<ApprovalPolicyContext>): ApprovalPolicyResult | null => {
+      const proposal = proposalsById.get(id);
+      if (!proposal) return null;
+
+      const policyResult = evaluateApprovalPolicy({ proposal, ...ctx });
+      const evaluatedProposal = applyPolicyToProposal(proposal, policyResult);
+
+      setCommandApprovals((prev) =>
+        prev.map((p) => (p.id === id ? evaluatedProposal : p)),
+      );
+
+      chiefLog.cardRouted(
+        evaluatedProposal,
+        policyResult.disposition,
+        evaluatedProposal.confidence ?? 0,
+        policyResult.reason,
+        policyResult.missingSignals,
+        policyResult.evidenceSummary,
+      );
+
+      return policyResult;
+    },
+    [proposalsById],
+  );
 
   const addHistoryEntry = useCallback((entry: CommandHistoryEntry) => {
     setHistory((prev) => [entry, ...prev]);
@@ -211,6 +291,8 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
     () => ({
       liveContext,
       approvals,
+      forwardedApprovals,
+      refinementQueue,
       pendingApprovalCount,
       proposalsById,
       decisionsHydrated,
@@ -220,10 +302,13 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
       recordDecision,
       history,
       addHistoryEntry,
+      reEvaluateProposal,
     }),
     [
       liveContext,
       approvals,
+      forwardedApprovals,
+      refinementQueue,
       pendingApprovalCount,
       proposalsById,
       decisionsHydrated,
@@ -233,6 +318,7 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
       recordDecision,
       history,
       addHistoryEntry,
+      reEvaluateProposal,
     ],
   );
 

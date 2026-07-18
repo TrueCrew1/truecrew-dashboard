@@ -11,6 +11,8 @@ const EVENT_TYPE_LABEL: Record<ChiefGovernanceEvent["type"], string> = {
   packet_created: "Packet created",
   card_created: "Card created",
   card_decided: "Card decided",
+  card_forwarded: "Card forwarded",
+  card_returned_for_refinement: "Card returned",
   task_reprioritized: "Task reprioritized",
 };
 
