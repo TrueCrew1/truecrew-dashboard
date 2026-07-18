@@ -9,9 +9,19 @@ concurrency:
   group: vercel-production
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Production-only deploy — scope the environment here rather than
+    # putting production secrets at the workflow level.
+    # Required reviewers and deployment-branch restrictions for this
+    # environment are configured in GitHub repo Settings → Environments →
+    # production, not here — this key only opts the job into whatever
+    # protection rules exist there.
+    environment: production
     steps:
       - uses: actions/checkout@v4
 

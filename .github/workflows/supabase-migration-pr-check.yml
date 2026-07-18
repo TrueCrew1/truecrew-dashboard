@@ -1,0 +1,56 @@
+name: Supabase migration PR check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "supabase/migrations/**"
+      - "supabase/combined_migration.sql"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-migrations:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Setup Supabase CLI
+        # Pinned to the immutable commit SHA behind the `v1` tag — `v1` is a
+        # mutable ref and doesn't guarantee the same action code on every run.
+        uses: supabase/setup-cli@ab058987d8d6c725971f6cf9d0b5c98467e30bd1
+        with:
+          version: "1.177.8"
+
+      # This workflow is READ-ONLY and never runs `supabase db push` — it
+      # only lints/diffs against a non-production schema so a bad migration
+      # fails the PR before it can reach the real push-to-main migrate
+      # workflow. Lint and diff are separate steps (no `||`) so a lint
+      # failure can't be masked by diff succeeding; `--fail-on warning`
+      # makes lint fail-closed since its own default (`--fail-on none`)
+      # always exits 0. `--db-url` and `--linked` are mutually exclusive
+      # per the Supabase CLI, so only `--db-url` is passed once it's set.
+      - name: Lint migrations (READ-ONLY)
+        run: supabase db lint --db-url "$SUPABASE_DB_URL" --fail-on warning
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          # Scoped to a non-production dev schema — never the prod DB URL.
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DEV_DB_URL }}
+
+      # `db diff` has no `--dry-run` flag (it isn't a real option for this
+      # command) — it's read-only by nature, printing the schema diff to
+      # stdout/the job log rather than applying anything, so no extra
+      # output-target flag is needed for CI.
+      - name: Diff migrations (READ-ONLY)
+        run: supabase db diff --db-url "$SUPABASE_DB_URL"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DEV_DB_URL }}
