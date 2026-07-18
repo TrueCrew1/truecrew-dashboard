@@ -244,11 +244,17 @@ them as a checklist to confirm in the GitHub UI, not an assumption:
 Settings and facts that cannot be confirmed from repo evidence alone — check
 in GitHub UI/admin settings before treating any of them as decided:
 
-1. **Is `.coderabbit.yaml` actually configured at the GitHub App / org level**
-   with no local file needed, or is the CodeRabbit integration referenced in
-   five docs but not actually installed? This is the single biggest
-   discrepancy this audit found — worth resolving before writing any more
-   docs that assume CodeRabbit is live.
+1. ~~Is `.coderabbit.yaml` actually configured...~~ **Resolved** — yes.
+   `.coderabbit.yaml` was added to `main` by PR #106
+   ("Add CodeRabbit repo configuration"), after this doc's original audit
+   was branched — it wasn't visible from that branch's working tree, which
+   is why the original pass flagged it as unconfirmed. Confirmed present
+   with `auto_review.enabled: true` and a `chill` profile as of this
+   revision (see the CodeRabbit entry in Current bots/workflows above).
+   Still open: whether any org/App-level settings beyond this file (review
+   profile restrictions, base-branch scope) are also in effect — the file's
+   own header notes some settings are inherited from the CodeRabbit
+   Organization/Repository UI and aren't visible from the repo at all.
 2. **What is this repo's actual branch protection / ruleset configuration
    on `main`?** Not visible from any checked-in file — confirm required
    reviewers, required status checks, and force-push/delete restrictions
@@ -299,11 +305,12 @@ to run against this repo:
 ### CodeRabbit (review bot)
 
 - **Name:** CodeRabbit
-- **Workflow / config file:** `.coderabbit.yaml` — referenced in
-  `CONTRIBUTING.md` and `docs/agents/CHIEF_OPERATING_SYSTEM.md` as a live PR
-  review gate, but the config file itself is not present in this repo
-  checkout (see Open Question 1 above) — treat its exact scope as
-  unconfirmed until that's resolved.
+- **Workflow / config file:** `.coderabbit.yaml` — present on `main` (added
+  by PR #106, after this doc's original audit branch point — see the
+  correction to Open Question 1 above). `auto_review.enabled: true`,
+  `profile: chill`, plus path-specific review instructions for
+  `lib/obsidian/read.ts`, `lib/{librarian,maintenance}/**`,
+  `lib/mappers/**`, `src/types/index.ts`, and `**/*.test.ts`.
 - **Triggers:** GitHub App webhook on PR open/update — not a workflow file,
   not GITHUB_TOKEN-based.
 - **GITHUB_TOKEN permissions:** N/A — authenticates as its own GitHub App
@@ -373,3 +380,14 @@ to run against this repo:
 - **Approval / ownership:** Build agent implements; merge to `main` is the
   approval gate; production secrets are scoped to the `production`
   environment, not the repo/workflow default.
+
+## See also
+
+- `docs/AGENT_TOOL_LANES.md` — the concise lane matrix (READ-ONLY /
+  PROPOSE-ONLY / EXECUTE-WITH-APPROVAL) this doc's per-bot entries above map
+  onto.
+- `docs/internal/tool-model-routing-standard.md` — the standard for
+  AI-model/tool routing specifically (Ollama as the local-first default
+  tier, Chief's Azure fallback chain, manual web-chat tools). This doc
+  covers *bot/workflow* compliance; that one covers *which model or tool
+  answers a given request* — related but distinct questions.
