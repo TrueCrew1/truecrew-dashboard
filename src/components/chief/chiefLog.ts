@@ -143,24 +143,72 @@ export const chiefLog = {
 
     const { mission } = record;
     emitChiefGovernanceEvent({
-      id: `evt-${mission.missionId}-${phase}-${record.updatedAt}`,
+      id: `evt-${mission.missionId}-${phase}-a${record.attempt}-${record.updatedAt}`,
       type,
       summary:
         phase === "queued"
-          ? `Builder mission queued: ${mission.objective}`
+          ? `Builder mission queued (attempt ${record.attempt}): ${mission.objective}`
           : phase === "started"
-            ? `Builder mission started: ${mission.objective}`
+            ? `Builder mission started (attempt ${record.attempt}): ${mission.objective}`
             : phase === "completed"
-              ? `Builder mission completed: ${record.result?.summary ?? mission.objective}`
-              : `Builder mission failed: ${record.result?.artifacts?.failureReason ?? mission.objective}`,
+              ? `Builder mission completed (attempt ${record.attempt}): ${record.result?.summary ?? mission.objective}`
+              : `Builder mission failed (attempt ${record.attempt}): ${record.lastError ?? record.result?.artifacts?.failureReason ?? mission.objective}`,
       detail: {
         missionId: mission.missionId,
         workStoryId: mission.workStoryId,
         proposalId: mission.proposalId,
         status: record.status,
+        attempt: record.attempt,
         evidenceSummary: mission.context?.evidenceSummary,
         resultSummary: record.result?.summary,
-        failureReason: record.result?.artifacts?.failureReason,
+        failureReason: record.lastError ?? record.result?.artifacts?.failureReason,
+        priorAttempts: record.previousResults.length,
+      },
+      timestamp: record.updatedAt,
+    });
+  },
+
+  /** Operator explicitly requested another attempt after a failed mission. */
+  missionRetryRequested(record: BuilderMissionRecord): void {
+    const { mission } = record;
+    emitChiefGovernanceEvent({
+      id: `evt-${mission.missionId}-retry-a${record.attempt}-${record.updatedAt}`,
+      type: "mission_retry_requested",
+      summary: `Builder mission retry requested (attempt ${record.attempt}): ${mission.objective}`,
+      detail: {
+        missionId: mission.missionId,
+        workStoryId: mission.workStoryId,
+        proposalId: mission.proposalId,
+        attempt: record.attempt,
+        priorAttempts: record.previousResults.length,
+      },
+      timestamp: record.updatedAt,
+    });
+  },
+
+  /** Duplicate launch suppressed — existing mission reused. */
+  missionReusedExisting(
+    record: BuilderMissionRecord,
+    reason: "in_flight" | "already_completed" | "already_failed",
+  ): void {
+    const { mission } = record;
+    const reasonLabel =
+      reason === "in_flight"
+        ? "already queued or running"
+        : reason === "already_completed"
+          ? "already completed"
+          : "already failed (use Retry for another attempt)";
+    emitChiefGovernanceEvent({
+      id: `evt-${mission.missionId}-reused-${reason}-${record.updatedAt}`,
+      type: "mission_reused_existing",
+      summary: `Builder mission reused (${reasonLabel}): ${mission.objective}`,
+      detail: {
+        missionId: mission.missionId,
+        workStoryId: mission.workStoryId,
+        proposalId: mission.proposalId,
+        status: record.status,
+        attempt: record.attempt,
+        reuseReason: reason,
       },
       timestamp: record.updatedAt,
     });

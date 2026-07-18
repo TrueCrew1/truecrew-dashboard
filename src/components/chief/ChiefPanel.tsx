@@ -48,6 +48,7 @@ export function ChiefPanel() {
     addCommandApproval,
     recordDecision,
     launchBuilderMission,
+    retryBuilderMission,
     history,
     addHistoryEntry,
   } = useChiefApprovals();
@@ -513,6 +514,9 @@ export function ChiefPanel() {
               builderMissions={builderMissions}
               onLaunchBuilderMission={(proposalId) => {
                 launchBuilderMission(proposalId);
+              }}
+              onRetryBuilderMission={(proposalId) => {
+                retryBuilderMission(proposalId);
               }}
             />
           </div>

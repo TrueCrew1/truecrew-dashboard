@@ -17,6 +17,8 @@ const EVENT_TYPE_LABEL: Record<ChiefGovernanceEvent["type"], string> = {
   mission_started: "Mission started",
   mission_completed: "Mission completed",
   mission_failed: "Mission failed",
+  mission_retry_requested: "Mission retry requested",
+  mission_reused_existing: "Mission reused (duplicate suppressed)",
   task_reprioritized: "Task reprioritized",
 };
 

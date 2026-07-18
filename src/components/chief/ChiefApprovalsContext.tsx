@@ -29,7 +29,9 @@ import {
   BUILDER_MISSION_COMPLETE_DELAY_MS,
   BUILDER_MISSION_START_DELAY_MS,
   completeBuilderMission,
-  queueBuilderMissionFromProposal,
+  decideBuilderMissionStart,
+  findMissionForProposal,
+  materializeQueuedMission,
   startBuilderMission,
   upsertBuilderMission,
   type BuilderMissionLaunchResult,
@@ -93,8 +95,14 @@ interface ChiefApprovalsContextValue {
   /**
    * Manual Builder mission launch for an already-approved, forwardable
    * Build proposal. Same eligibility rules as the auto-launch on approve.
+   * Idempotent: reuses an existing in-flight or terminal mission.
    */
   launchBuilderMission: (proposalId: string) => BuilderMissionLaunchResult;
+  /**
+   * Explicit retry for a failed Builder mission. Preserves prior attempt
+   * history and increments attempt count. Still gated by policy.
+   */
+  retryBuilderMission: (proposalId: string) => BuilderMissionLaunchResult;
 }
 
 const ChiefApprovalsContext = createContext<ChiefApprovalsContextValue | null>(null);
@@ -268,43 +276,116 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   /**
-   * Progressive stub runner: store queued immediately so the operator can
-   * see it, then advance to running and completed|failed on short delays.
-   * Returns the initial queued launch result (or blocked).
+   * Progressive stub runner with atomic decide-and-queue inside setState so
+   * double-clicks / approve replay cannot create a second in-flight mission.
+   * Advances queued → running → completed|failed on short delays.
    */
   const beginProgressiveBuilderMission = useCallback(
-    (proposal: ApprovalProposal): BuilderMissionLaunchResult => {
-      const launch = queueBuilderMissionFromProposal(proposal, builderMissions);
-      if (launch.outcome !== "launched") return launch;
+    (
+      proposal: ApprovalProposal,
+      options: { explicitRetry?: boolean } = {},
+    ): BuilderMissionLaunchResult => {
+      // Holder avoids TS narrowing `let` across the setState callback.
+      const holder: {
+        result: BuilderMissionLaunchResult;
+        queued: BuilderMissionRecord | null;
+        wasRetry: boolean;
+      } = {
+        result: { outcome: "blocked", reason: "not_forwardable" },
+        queued: null,
+        wasRetry: false,
+      };
 
-      const queued = launch.record;
+      // Decision + insert happen in one updater — no stale "check then create".
+      setBuilderMissions((prev) => {
+        const decision = decideBuilderMissionStart(proposal, prev, options);
+        if (decision.kind === "blocked") {
+          holder.result = { outcome: "blocked", reason: decision.reason };
+          return prev;
+        }
+        if (decision.kind === "reuse_existing") {
+          holder.result = {
+            outcome: "reused",
+            record: decision.record,
+            reason: decision.reason,
+          };
+          return prev;
+        }
+
+        const queued = materializeQueuedMission(decision);
+        if (!queued) {
+          holder.result = { outcome: "blocked", reason: "not_forwardable" };
+          return prev;
+        }
+
+        holder.queued = queued;
+        holder.wasRetry = decision.kind === "retry";
+        holder.result = holder.wasRetry
+          ? { outcome: "retried", record: queued }
+          : {
+              outcome: "launched",
+              record: queued,
+              steps: { queued, running: queued, final: queued },
+            };
+        return upsertBuilderMission(prev, queued);
+      });
+
+      if (holder.result.outcome === "reused") {
+        chiefLog.missionReusedExisting(holder.result.record, holder.result.reason);
+        return holder.result;
+      }
+      if (holder.result.outcome === "blocked" || !holder.queued) {
+        return holder.result;
+      }
+
+      const queued = holder.queued;
+      if (holder.wasRetry) {
+        chiefLog.missionRetryRequested(queued);
+      }
       chiefLog.missionLifecycle(queued, "queued");
-      setBuilderMissions((prev) => upsertBuilderMission(prev, queued));
+
+      const proposalId = proposal.id;
+      const attempt = queued.attempt;
 
       window.setTimeout(() => {
-        const running = startBuilderMission(queued);
-        chiefLog.missionLifecycle(running, "started");
-        setBuilderMissions((prev) => upsertBuilderMission(prev, running));
+        setBuilderMissions((prev) => {
+          const current = findMissionForProposal(prev, proposalId);
+          // Ignore stale timers after a newer attempt or if already advanced.
+          if (
+            !current ||
+            current.status !== "queued" ||
+            current.attempt !== attempt
+          ) {
+            return prev;
+          }
+          const running = startBuilderMission(current);
+          chiefLog.missionLifecycle(running, "started");
+          return upsertBuilderMission(prev, running);
+        });
 
         window.setTimeout(() => {
-          const final = completeBuilderMission(running);
-          chiefLog.missionLifecycle(
-            final,
-            final.status === "failed" ? "failed" : "completed",
-          );
-          setBuilderMissions((prev) => upsertBuilderMission(prev, final));
+          setBuilderMissions((prev) => {
+            const current = findMissionForProposal(prev, proposalId);
+            if (
+              !current ||
+              current.status !== "running" ||
+              current.attempt !== attempt
+            ) {
+              return prev;
+            }
+            const final = completeBuilderMission(current);
+            chiefLog.missionLifecycle(
+              final,
+              final.status === "failed" ? "failed" : "completed",
+            );
+            return upsertBuilderMission(prev, final);
+          });
         }, BUILDER_MISSION_COMPLETE_DELAY_MS);
       }, BUILDER_MISSION_START_DELAY_MS);
 
-      // Surface the queued record + synthetic steps so callers/tests that
-      // inspect the launch result still see a stable shape.
-      return {
-        outcome: "launched",
-        record: queued,
-        steps: { queued, running: queued, final: queued },
-      };
+      return holder.result;
     },
-    [builderMissions],
+    [],
   );
 
   const tryLaunchBuilderMission = useCallback(
@@ -327,6 +408,21 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
         return { outcome: "blocked", reason: "not_approved" };
       }
       return beginProgressiveBuilderMission(proposal);
+    },
+    [proposalsById, beginProgressiveBuilderMission],
+  );
+
+  const retryBuilderMission = useCallback(
+    (proposalId: string): BuilderMissionLaunchResult => {
+      const proposal = proposalsById.get(proposalId);
+      if (!proposal) {
+        return { outcome: "blocked", reason: "not_approved" };
+      }
+      // Retry only when the card is already approved — do not silently approve.
+      if (proposal.status !== "approved") {
+        return { outcome: "blocked", reason: "not_approved" };
+      }
+      return beginProgressiveBuilderMission(proposal, { explicitRetry: true });
     },
     [proposalsById, beginProgressiveBuilderMission],
   );
@@ -401,6 +497,7 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
       addHistoryEntry,
       reEvaluateProposal,
       launchBuilderMission,
+      retryBuilderMission,
     }),
     [
       liveContext,
@@ -419,6 +516,7 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
       addHistoryEntry,
       reEvaluateProposal,
       launchBuilderMission,
+      retryBuilderMission,
     ],
   );
 

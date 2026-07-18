@@ -20,6 +20,8 @@ export type ChiefGovernanceEventType =
   | "mission_started"
   | "mission_completed"
   | "mission_failed"
+  | "mission_retry_requested"
+  | "mission_reused_existing"
   | "task_reprioritized";
 
 export interface ChiefGovernanceEvent {

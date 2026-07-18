@@ -19,7 +19,7 @@ export interface BuilderMission {
   missionId: string;
   /** Stable work-story / work-item id for this lane — today derived from the proposal. */
   workStoryId: string;
-  /** Approval card this mission was launched from. */
+  /** Approval card this mission was launched from — uniqueness key for idempotency. */
   proposalId: string;
   objective: string;
   acceptanceCriteria: string[];
@@ -29,7 +29,7 @@ export interface BuilderMission {
     researchSummary?: string;
     playbookId?: string;
   };
-  /** When the mission was queued. */
+  /** When the mission was first created (attempt 1). */
   createdAt: string;
 }
 
@@ -40,6 +40,8 @@ export interface BuilderMissionResult {
   missionId: string;
   status: Extract<BuilderMissionStatus, "completed" | "failed">;
   summary: string;
+  /** Which attempt produced this result (1-based). */
+  attempt: number;
   artifacts?: {
     branchName?: string;
     prUrl?: string;
@@ -52,30 +54,93 @@ export interface BuilderMissionResult {
 }
 
 /**
+ * A prior terminal attempt kept when retrying — history is never overwritten.
+ */
+export interface BuilderMissionAttemptHistory {
+  attempt: number;
+  status: Extract<BuilderMissionStatus, "completed" | "failed">;
+  summary: string;
+  failureReason?: string;
+  artifacts?: BuilderMissionResult["artifacts"];
+  completedAt: string;
+}
+
+/**
  * In-session record of a mission through its lifecycle. Session-scoped —
  * same durability bar as proposal bodies (decisions may persist; missions
- * for this slice do not).
+ * for this slice do not). Uniqueness: one record per proposalId.
  */
 export interface BuilderMissionRecord {
   mission: BuilderMission;
   status: BuilderMissionStatus;
-  result?: BuilderMissionResult;
-  startedAt?: string;
+  /** Current attempt number (1-based). Increments on each retry. */
+  attempt: number;
+  /** First creation time for this proposal's mission. */
+  createdAt: string;
   updatedAt: string;
+  startedAt?: string;
+  /** Latest terminal result, if any. */
+  result?: BuilderMissionResult;
+  /** Latest failure reason (mirrors result.artifacts.failureReason when failed). */
+  lastError?: string;
+  /** Prior terminal attempts preserved across retries. */
+  previousResults: BuilderMissionAttemptHistory[];
 }
 
-export type BuilderMissionLaunchBlockReason =
+export type BuilderMissionPolicyBlockReason =
   | "not_builder_source"
   | "not_approved"
-  | "not_forwardable"
-  | "already_launched";
+  | "not_forwardable";
+
+export type BuilderMissionReuseReason =
+  | "in_flight"
+  | "already_completed"
+  | "already_failed";
+
+export type BuilderMissionLaunchBlockReason =
+  | BuilderMissionPolicyBlockReason
+  | "already_launched"
+  | "not_retryable";
+
+/**
+ * Centralized start decision — the single place launch / reuse / retry /
+ * block are decided. Callers must not invent parallel check-then-create paths.
+ */
+export type BuilderMissionStartDecision =
+  | { kind: "launch"; proposal: ApprovalProposal; policy: ApprovalPolicyResult }
+  | {
+      kind: "retry";
+      proposal: ApprovalProposal;
+      policy: ApprovalPolicyResult;
+      previous: BuilderMissionRecord;
+    }
+  | {
+      kind: "reuse_existing";
+      record: BuilderMissionRecord;
+      reason: BuilderMissionReuseReason;
+    }
+  | { kind: "blocked"; reason: BuilderMissionLaunchBlockReason };
 
 export type BuilderMissionLaunchResult =
   | {
       outcome: "launched";
       record: BuilderMissionRecord;
-      /** Intermediate lifecycle snapshots for logging/UI — queued → running → final. */
-      steps: {
+      /** Intermediate lifecycle snapshots when available. */
+      steps?: {
+        queued: BuilderMissionRecord;
+        running: BuilderMissionRecord;
+        final: BuilderMissionRecord;
+      };
+    }
+  | {
+      outcome: "reused";
+      record: BuilderMissionRecord;
+      reason: BuilderMissionReuseReason;
+    }
+  | {
+      outcome: "retried";
+      record: BuilderMissionRecord;
+      steps?: {
         queued: BuilderMissionRecord;
         running: BuilderMissionRecord;
         final: BuilderMissionRecord;
@@ -102,16 +167,26 @@ export function workStoryIdForProposal(proposalId: string): string {
   return stableChiefId("ws-build", proposalId);
 }
 
+/** Find the single mission record for a proposal (uniqueness key). */
+export function findMissionForProposal(
+  missions: readonly BuilderMissionRecord[],
+  proposalId: string,
+): BuilderMissionRecord | undefined {
+  const missionId = builderMissionIdForProposal(proposalId);
+  return missions.find((record) => record.mission.missionId === missionId);
+}
+
+export function isMissionInFlight(record: BuilderMissionRecord): boolean {
+  return record.status === "queued" || record.status === "running";
+}
+
 /**
- * Whether a proposal is eligible to launch a Builder mission.
- * Requires: Builder source, operator-approved status, and Chief policy
- * forwardable (confidence + evidence + checklist). Does not bypass
- * evidence checks.
+ * Policy-only eligibility (source / approved / forwardable). Does not
+ * consider existing missions — use decideBuilderMissionStart for that.
  */
-export function canLaunchBuilderMission(
+export function passesBuilderMissionPolicy(
   proposal: ApprovalProposal,
-  existingMissions: readonly BuilderMissionRecord[] = [],
-): { ok: true } | { ok: false; reason: BuilderMissionLaunchBlockReason } {
+): { ok: true; policy: ApprovalPolicyResult } | { ok: false; reason: BuilderMissionPolicyBlockReason } {
   if (!proposal.source || !BUILDER_MISSION_SOURCES.has(proposal.source)) {
     return { ok: false, reason: "not_builder_source" };
   }
@@ -120,28 +195,114 @@ export function canLaunchBuilderMission(
     return { ok: false, reason: "not_approved" };
   }
 
-  // Prefer the disposition already stamped by Chief; fall back to a fresh
-  // policy eval so launch still respects evidence/confidence when a card
-  // somehow lacks a disposition.
+  const policy = evaluateApprovalPolicy({ proposal });
   const forwardable =
-    proposal.routingDisposition === "forwarded" ||
-    evaluateApprovalPolicy({ proposal }).canApprove;
+    proposal.routingDisposition === "forwarded" || policy.canApprove;
 
   if (!forwardable) {
     return { ok: false, reason: "not_forwardable" };
   }
 
-  const missionId = builderMissionIdForProposal(proposal.id);
-  if (existingMissions.some((record) => record.mission.missionId === missionId)) {
-    return { ok: false, reason: "already_launched" };
+  return { ok: true, policy };
+}
+
+/**
+ * Whether a failed mission may be retried under current policy.
+ * Completed missions are not retryable in this slice — only failed ones.
+ */
+export function canRetryBuilderMission(
+  proposal: ApprovalProposal,
+  record: BuilderMissionRecord,
+): { ok: true; policy: ApprovalPolicyResult } | { ok: false; reason: BuilderMissionLaunchBlockReason } {
+  if (record.status !== "failed") {
+    return { ok: false, reason: "not_retryable" };
+  }
+  const policyCheck = passesBuilderMissionPolicy(proposal);
+  if (!policyCheck.ok) return policyCheck;
+  return { ok: true, policy: policyCheck.policy };
+}
+
+/**
+ * Centralized launch / reuse / retry decision. Pure and race-safe when
+ * called inside a single setState updater over the missions list.
+ *
+ * Rules (keyed by proposalId → stable missionId):
+ * 1. Policy must pass (builder source, approved, forwardable + evidence).
+ * 2. No existing mission → launch (attempt 1).
+ * 3. Existing queued/running → reuse (suppress duplicate).
+ * 4. Existing completed → reuse (no silent re-run).
+ * 5. Existing failed + explicitRetry → retry (increment attempt, keep history).
+ * 6. Existing failed without explicitRetry → reuse (suppress duplicate;
+ *    caller must use the retry path to start another attempt).
+ */
+export function decideBuilderMissionStart(
+  proposal: ApprovalProposal,
+  existingMissions: readonly BuilderMissionRecord[],
+  options: { explicitRetry?: boolean } = {},
+): BuilderMissionStartDecision {
+  const policyCheck = passesBuilderMissionPolicy(proposal);
+  if (!policyCheck.ok) {
+    return { kind: "blocked", reason: policyCheck.reason };
   }
 
-  return { ok: true };
+  const existing = findMissionForProposal(existingMissions, proposal.id);
+
+  if (!existing) {
+    return { kind: "launch", proposal, policy: policyCheck.policy };
+  }
+
+  if (isMissionInFlight(existing)) {
+    return { kind: "reuse_existing", record: existing, reason: "in_flight" };
+  }
+
+  if (existing.status === "completed") {
+    return { kind: "reuse_existing", record: existing, reason: "already_completed" };
+  }
+
+  // failed
+  if (options.explicitRetry) {
+    const retryCheck = canRetryBuilderMission(proposal, existing);
+    if (!retryCheck.ok) {
+      return { kind: "blocked", reason: retryCheck.reason };
+    }
+    return {
+      kind: "retry",
+      proposal,
+      policy: retryCheck.policy,
+      previous: existing,
+    };
+  }
+
+  // Failed without explicit retry — suppress duplicate launches from
+  // approve replay / double-click; UI must call the retry path.
+  return {
+    kind: "reuse_existing",
+    record: existing,
+    reason: "already_failed",
+  };
+}
+
+/**
+ * Legacy helper used by older tests: policy gate + "no existing mission".
+ * Prefer decideBuilderMissionStart for new code.
+ */
+export function canLaunchBuilderMission(
+  proposal: ApprovalProposal,
+  existingMissions: readonly BuilderMissionRecord[] = [],
+): { ok: true } | { ok: false; reason: BuilderMissionLaunchBlockReason } {
+  const decision = decideBuilderMissionStart(proposal, existingMissions);
+  if (decision.kind === "launch") return { ok: true };
+  if (decision.kind === "blocked") return { ok: false, reason: decision.reason };
+  if (decision.kind === "reuse_existing") {
+    return { ok: false, reason: "already_launched" };
+  }
+  // retry requires explicitRetry — without it, treat as not launchable here
+  return { ok: false, reason: "already_launched" };
 }
 
 /**
  * Builds a typed BuilderMission from an approved proposal. Caller must
- * have already passed canLaunchBuilderMission.
+ * have already passed policy checks.
  */
 export function createBuilderMissionFromProposal(
   proposal: ApprovalProposal,
@@ -172,7 +333,7 @@ export function createBuilderMissionFromProposal(
 }
 
 /**
- * Queues a mission record (status: queued). Does not run it.
+ * Queues a brand-new mission record (attempt 1). Does not run it.
  */
 export function queueBuilderMission(
   mission: BuilderMission,
@@ -181,7 +342,44 @@ export function queueBuilderMission(
   return {
     mission,
     status: "queued",
+    attempt: 1,
+    createdAt: mission.createdAt,
     updatedAt,
+    previousResults: [],
+  };
+}
+
+/**
+ * Prepare a failed mission for retry: archive the latest result into
+ * previousResults, increment attempt, reset to queued. Does not start work.
+ */
+export function prepareBuilderMissionRetry(
+  record: BuilderMissionRecord,
+  now: string = new Date().toISOString(),
+): BuilderMissionRecord {
+  if (record.status !== "failed") return record;
+
+  const previousResults = [...record.previousResults];
+  if (record.result) {
+    previousResults.push({
+      attempt: record.result.attempt,
+      status: record.result.status,
+      summary: record.result.summary,
+      failureReason: record.result.artifacts?.failureReason ?? record.lastError,
+      artifacts: record.result.artifacts,
+      completedAt: record.result.completedAt,
+    });
+  }
+
+  return {
+    ...record,
+    status: "queued",
+    attempt: record.attempt + 1,
+    result: undefined,
+    lastError: undefined,
+    startedAt: undefined,
+    previousResults,
+    updatedAt: now,
   };
 }
 
@@ -232,14 +430,16 @@ export function completeBuilderMission(
   const fail = missionShouldFail(mission);
 
   if (fail) {
+    const failureReason =
+      "Deterministic stub failure — mission payload requested a fail path.";
     const result: BuilderMissionResult = {
       missionId: mission.missionId,
       status: "failed",
-      summary: `Builder mission failed: ${mission.objective}`,
+      summary: `Builder mission failed (attempt ${record.attempt}): ${mission.objective}`,
+      attempt: record.attempt,
       artifacts: {
-        failureReason:
-          "Deterministic stub failure — mission payload requested a fail path.",
-        notes: "No external agent was invoked. Re-run after adjusting the objective.",
+        failureReason,
+        notes: "No external agent was invoked. Use Retry Builder mission to try again.",
       },
       completedAt,
     };
@@ -247,6 +447,7 @@ export function completeBuilderMission(
       ...record,
       status: "failed",
       result,
+      lastError: failureReason,
       updatedAt: completedAt,
     };
   }
@@ -255,12 +456,14 @@ export function completeBuilderMission(
   const result: BuilderMissionResult = {
     missionId: mission.missionId,
     status: "completed",
-    summary: `Builder completed: ${mission.objective}`,
+    summary: `Builder completed (attempt ${record.attempt}): ${mission.objective}`,
+    attempt: record.attempt,
     artifacts: {
       branchName: `builder/${branchSlug}`,
       testsSummary: "Stub run — lint/test/build not invoked in this slice.",
       notes:
-        mission.context?.evidenceSummary && mission.context.evidenceSummary !== "none linked (needs PR/issue)"
+        mission.context?.evidenceSummary &&
+        mission.context.evidenceSummary !== "none linked (needs PR/issue)"
           ? `Evidence carried forward: ${mission.context.evidenceSummary}`
           : "Completed under approved Chief mission contract.",
     },
@@ -271,6 +474,7 @@ export function completeBuilderMission(
     ...record,
     status: "completed",
     result,
+    lastError: undefined,
     updatedAt: completedAt,
   };
 }
@@ -308,49 +512,123 @@ export function runBuilderMissionSteps(
 }
 
 /**
- * Launch path used by Chief after an approve decision: eligibility check,
- * mission creation, stub run. Returns blocked reasons without throwing.
- * Pure — logging is the caller's job (see ChiefApprovalsContext).
- *
- * For the operator-visible progressive path (queued → running → final with
- * delays), use queueBuilderMissionFromProposal + start/complete instead.
+ * Apply a start decision to produce the next queued record (launch or retry).
+ * Returns null for reuse/blocked — those do not create new work.
+ */
+export function materializeQueuedMission(
+  decision: BuilderMissionStartDecision,
+  now: string = new Date().toISOString(),
+): BuilderMissionRecord | null {
+  if (decision.kind === "launch") {
+    const mission = createBuilderMissionFromProposal(
+      decision.proposal,
+      decision.policy,
+      now,
+    );
+    return queueBuilderMission(mission, now);
+  }
+  if (decision.kind === "retry") {
+    return prepareBuilderMissionRetry(decision.previous, now);
+  }
+  return null;
+}
+
+/**
+ * Sync full-lifecycle launch used by unit tests. Production UI path uses
+ * decideBuilderMissionStart + materializeQueuedMission + progressive runner.
  */
 export function launchBuilderMissionFromProposal(
   proposal: ApprovalProposal,
   existingMissions: readonly BuilderMissionRecord[] = [],
   now: () => string = () => new Date().toISOString(),
 ): BuilderMissionLaunchResult {
-  const eligibility = canLaunchBuilderMission(proposal, existingMissions);
-  if (!eligibility.ok) {
-    return { outcome: "blocked", reason: eligibility.reason };
+  const decision = decideBuilderMissionStart(proposal, existingMissions);
+  if (decision.kind === "blocked") {
+    return { outcome: "blocked", reason: decision.reason };
+  }
+  if (decision.kind === "reuse_existing") {
+    return {
+      outcome: "reused",
+      record: decision.record,
+      reason: decision.reason,
+    };
+  }
+  if (decision.kind === "retry") {
+    // Sync helper does not implicit-retry — require explicit path.
+    return { outcome: "blocked", reason: "not_retryable" };
   }
 
-  const policy = evaluateApprovalPolicy({ proposal });
-  const mission = createBuilderMissionFromProposal(proposal, policy, now());
+  const mission = createBuilderMissionFromProposal(
+    decision.proposal,
+    decision.policy,
+    now(),
+  );
   const steps = runBuilderMissionSteps(mission, now);
   return { outcome: "launched", record: steps.final, steps };
 }
 
 /**
- * Eligibility + create a queued mission only. Used by the Chief context so
- * the operator can actually see queued → running → completed|failed instead
- * of jumping straight to the final state in one render.
+ * Explicit retry path (sync). Used by tests; UI uses progressive runner.
+ */
+export function retryBuilderMissionFromProposal(
+  proposal: ApprovalProposal,
+  existingMissions: readonly BuilderMissionRecord[],
+  now: () => string = () => new Date().toISOString(),
+): BuilderMissionLaunchResult {
+  const decision = decideBuilderMissionStart(proposal, existingMissions, {
+    explicitRetry: true,
+  });
+  if (decision.kind === "blocked") {
+    return { outcome: "blocked", reason: decision.reason };
+  }
+  if (decision.kind === "reuse_existing") {
+    return {
+      outcome: "reused",
+      record: decision.record,
+      reason: decision.reason,
+    };
+  }
+  if (decision.kind !== "retry") {
+    return { outcome: "blocked", reason: "not_retryable" };
+  }
+
+  const queued = prepareBuilderMissionRetry(decision.previous, now());
+  const running = startBuilderMission(queued, now());
+  const final = completeBuilderMission(running, now());
+  return {
+    outcome: "retried",
+    record: final,
+    steps: { queued, running, final },
+  };
+}
+
+/**
+ * Eligibility + create a queued mission only (attempt 1). Respects
+ * idempotency — returns reused/blocked instead of duplicating.
  */
 export function queueBuilderMissionFromProposal(
   proposal: ApprovalProposal,
   existingMissions: readonly BuilderMissionRecord[] = [],
   now: () => string = () => new Date().toISOString(),
-):
-  | { outcome: "launched"; record: BuilderMissionRecord }
-  | { outcome: "blocked"; reason: BuilderMissionLaunchBlockReason } {
-  const eligibility = canLaunchBuilderMission(proposal, existingMissions);
-  if (!eligibility.ok) {
-    return { outcome: "blocked", reason: eligibility.reason };
+): BuilderMissionLaunchResult {
+  const decision = decideBuilderMissionStart(proposal, existingMissions);
+  if (decision.kind === "blocked") {
+    return { outcome: "blocked", reason: decision.reason };
+  }
+  if (decision.kind === "reuse_existing") {
+    return {
+      outcome: "reused",
+      record: decision.record,
+      reason: decision.reason,
+    };
+  }
+  if (decision.kind === "retry") {
+    return { outcome: "blocked", reason: "not_retryable" };
   }
 
-  const policy = evaluateApprovalPolicy({ proposal });
-  const mission = createBuilderMissionFromProposal(proposal, policy, now());
-  return { outcome: "launched", record: queueBuilderMission(mission, now()) };
+  const queued = materializeQueuedMission(decision, now());
+  if (!queued) return { outcome: "blocked", reason: "not_forwardable" };
+  return { outcome: "launched", record: queued };
 }
 
 /** Perceptible stub delays so queued/running are visible in the UI. */
@@ -392,12 +670,16 @@ export function missionStatusToAgentWorkStatus(
 }
 
 export function missionRecordToAgentWorkNote(record: BuilderMissionRecord): string {
+  const attemptLabel = `attempt ${record.attempt}`;
+  const retryable = record.status === "failed" ? " · retryable" : "";
+
   if (record.status === "failed") {
-    return (
+    const reason =
+      record.lastError ??
       record.result?.artifacts?.failureReason ??
       record.result?.summary ??
-      "Builder mission failed."
-    );
+      "Builder mission failed.";
+    return `${attemptLabel}${retryable}: ${reason}`;
   }
   if (record.status === "completed") {
     const artifacts = record.result?.artifacts;
@@ -406,10 +688,41 @@ export function missionRecordToAgentWorkNote(record: BuilderMissionRecord): stri
       artifacts?.branchName ? `branch ${artifacts.branchName}` : null,
       artifacts?.testsSummary,
     ].filter(Boolean);
-    return bits.join(" — ") || "Builder mission completed.";
+    return `${attemptLabel}: ${bits.join(" — ") || "Builder mission completed."}`;
   }
   if (record.status === "running") {
-    return `Running: ${record.mission.objective}`;
+    return `${attemptLabel}: Running — ${record.mission.objective}`;
   }
-  return `Queued from approval ${record.mission.proposalId}`;
+  return `${attemptLabel}: Queued from approval ${record.mission.proposalId}`;
+}
+
+/** Compact detail lines for approval-card / agent inspection. */
+export function describeBuilderMissionDetails(record: BuilderMissionRecord): string[] {
+  const lines: string[] = [
+    `Status: ${record.status}`,
+    `Attempt: ${record.attempt}`,
+    `Mission: ${record.mission.missionId}`,
+    `Created: ${record.createdAt}`,
+    `Updated: ${record.updatedAt}`,
+  ];
+  if (record.startedAt) lines.push(`Started: ${record.startedAt}`);
+  if (record.lastError) lines.push(`Last error: ${record.lastError}`);
+  if (record.result?.artifacts?.branchName) {
+    lines.push(`Branch: ${record.result.artifacts.branchName}`);
+  }
+  if (record.result?.artifacts?.testsSummary) {
+    lines.push(`Tests: ${record.result.artifacts.testsSummary}`);
+  }
+  if (record.previousResults.length > 0) {
+    lines.push(`Prior attempts: ${record.previousResults.length}`);
+    for (const prior of record.previousResults) {
+      lines.push(
+        `  · #${prior.attempt} ${prior.status}${prior.failureReason ? ` — ${prior.failureReason}` : ""}`,
+      );
+    }
+  }
+  if (record.status === "failed") {
+    lines.push("Retryable: yes (use Retry Builder mission)");
+  }
+  return lines;
 }

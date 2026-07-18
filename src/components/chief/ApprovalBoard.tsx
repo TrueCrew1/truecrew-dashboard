@@ -16,8 +16,9 @@ import {
 import { BuildTestSuggestionHelper } from "./BuildTestSuggestionHelper";
 import { ChiefApprovalActions } from "./ChiefApprovalActions";
 import {
-  builderMissionIdForProposal,
   canLaunchBuilderMission,
+  canRetryBuilderMission,
+  describeBuilderMissionDetails,
   type BuilderMissionRecord,
   type BuilderMissionStatus,
 } from "./builderMission";
@@ -97,8 +98,10 @@ interface ApprovalBoardProps {
   focusProposalId?: string | null;
   /** Session Builder missions — shown as status chips on linked approval cards. */
   builderMissions?: BuilderMissionRecord[];
-  /** Manual launch for an already-approved, forwardable Builder card. */
+  /** Manual launch for an already-approved, forwardable Builder card (idempotent). */
   onLaunchBuilderMission?: (proposalId: string) => void;
+  /** Explicit retry for a failed Builder mission on an approved card. */
+  onRetryBuilderMission?: (proposalId: string) => void;
 }
 
 export function ApprovalBoard({
@@ -110,6 +113,7 @@ export function ApprovalBoard({
   focusProposalId,
   builderMissions = [],
   onLaunchBuilderMission,
+  onRetryBuilderMission,
 }: ApprovalBoardProps) {
   const [localStatusFilter, setLocalStatusFilter] = useState<ApprovalStatusFilter>("all");
   const statusFilter = statusFilterProp ?? localStatusFilter;
@@ -335,6 +339,13 @@ export function ApprovalBoard({
               const canManualLaunch =
                 Boolean(onLaunchBuilderMission) &&
                 canLaunchBuilderMission(proposal, builderMissions).ok;
+              const canRetryMission =
+                Boolean(onRetryBuilderMission) &&
+                linkedMission != null &&
+                canRetryBuilderMission(proposal, linkedMission).ok;
+              const missionDetailLines = linkedMission
+                ? describeBuilderMissionDetails(linkedMission)
+                : [];
               const actionsNode = (
                 <ChiefApprovalActions
                   proposal={proposal}
@@ -411,9 +422,10 @@ export function ApprovalBoard({
                       {linkedMission ? (
                         <span
                           className={`badge ${MISSION_STATUS_BADGE[linkedMission.status]}`}
-                          title={`Builder mission ${linkedMission.mission.missionId} (${builderMissionIdForProposal(proposal.id)})`}
+                          title={`Builder mission ${linkedMission.mission.missionId} · attempt ${linkedMission.attempt}`}
                         >
                           {MISSION_STATUS_LABEL[linkedMission.status]}
+                          {linkedMission.attempt > 1 ? ` · #${linkedMission.attempt}` : ""}
                         </span>
                       ) : null}
                       {urgencyBadge ? (
@@ -521,6 +533,7 @@ export function ApprovalBoard({
                         <span className="chief-approval-card-label">Builder mission</span>
                         <p className="chief-approval-card-value">
                           {MISSION_STATUS_LABEL[linkedMission.status]}
+                          {` · attempt ${linkedMission.attempt}`}
                           {linkedMission.result?.summary
                             ? ` — ${linkedMission.result.summary}`
                             : ` — ${linkedMission.mission.objective}`}
@@ -530,10 +543,22 @@ export function ApprovalBoard({
                             Branch: {linkedMission.result.artifacts.branchName}
                           </p>
                         ) : null}
-                        {linkedMission.result?.artifacts?.failureReason ? (
+                        {linkedMission.lastError ||
+                        linkedMission.result?.artifacts?.failureReason ? (
                           <p className="chief-approval-mission-meta chief-approval-mission-meta--fail">
-                            {linkedMission.result.artifacts.failureReason}
+                            {linkedMission.lastError ??
+                              linkedMission.result?.artifacts?.failureReason}
                           </p>
+                        ) : null}
+                        {missionDetailLines.length > 0 ? (
+                          <details className="chief-approval-mission-details">
+                            <summary>Mission details</summary>
+                            <ul className="chief-approval-mission-details-list">
+                              {missionDetailLines.map((line) => (
+                                <li key={line}>{line}</li>
+                              ))}
+                            </ul>
+                          </details>
                         ) : null}
                       </div>
                     ) : null}
@@ -546,6 +571,18 @@ export function ApprovalBoard({
                           onClick={() => onLaunchBuilderMission?.(proposal.id)}
                         >
                           Run Builder mission
+                        </button>
+                      </div>
+                    ) : null}
+
+                    {canRetryMission ? (
+                      <div className="chief-approval-card-field">
+                        <button
+                          type="button"
+                          className="chief-btn chief-btn-secondary chief-btn--compact"
+                          onClick={() => onRetryBuilderMission?.(proposal.id)}
+                        >
+                          Retry Builder mission
                         </button>
                       </div>
                     ) : null}

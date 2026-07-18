@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { ApprovalSectionHeader, ApprovalSectionShell, ApprovalSurfaceEmpty } from "./approvalWrappers";
 import { AGENT_WORK_ITEMS, AGENT_WORK_STATUS_CONFIG } from "./agentWorkBoardMock";
 import {
+  describeBuilderMissionDetails,
   missionRecordToAgentWorkNote,
   missionStatusToAgentWorkStatus,
   type BuilderMissionRecord,
@@ -21,16 +22,19 @@ import type { AgentWorkItem, AgentWorkStatus, ApprovalProposal } from "./types";
 import type { TaskPriority } from "@/types";
 
 function builderMissionsToWorkItems(missions: BuilderMissionRecord[]): AgentWorkItem[] {
-  return missions.map((record) => ({
-    id: `agentwork-mission-${record.mission.missionId}`,
-    agent: "Build Agent" as const,
-    task: record.mission.objective,
-    status: missionStatusToAgentWorkStatus(record.status),
-    priority: "high" as const,
-    note: missionRecordToAgentWorkNote(record),
-    updatedAt: record.updatedAt,
-    source: "live" as const,
-  }));
+  return missions.map((record) => {
+    const detail = describeBuilderMissionDetails(record).slice(0, 4).join(" · ");
+    return {
+      id: `agentwork-mission-${record.mission.missionId}`,
+      agent: "Build Agent" as const,
+      task: record.mission.objective,
+      status: missionStatusToAgentWorkStatus(record.status),
+      priority: "high" as const,
+      note: `${missionRecordToAgentWorkNote(record)} · ${detail}`,
+      updatedAt: record.updatedAt,
+      source: "live" as const,
+    };
+  });
 }
 
 const SPECIALIST_INITIALS: Record<AgentWorkItem["agent"], string> = {
@@ -211,6 +215,8 @@ export function AgentWorkBoard() {
             ).length
           }{" "}
           in flight
+          {" · "}
+          {builderMissions.filter((m) => m.status === "failed").length} retryable
         </p>
       ) : null}
 
