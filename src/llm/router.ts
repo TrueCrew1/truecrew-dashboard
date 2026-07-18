@@ -14,15 +14,15 @@
  *   - Kimi-K2.6: long-context via Azure AI Foundry
  */
 
-import { callAzure } from "./azureClient";
-import { callFoundry, type FoundryModel } from "./mistralClient";
+import { callAzure } from "./azureClient.js";
+import { callFoundry, type FoundryModel } from "./mistralClient.js";
 import {
   type Lane,
   type Complexity,
   type ModelName,
   type LLMResponse,
   getMaxTokens,
-} from "./types";
+} from "./types.js";
 
 type RouterModel = FoundryModel | "gpt-5-mini";
 
