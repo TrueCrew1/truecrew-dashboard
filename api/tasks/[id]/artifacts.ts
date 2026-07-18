@@ -1,16 +1,10 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { errorMessage, requireMethod, requireSupabase } from "../../../lib/http";
 import { listTaskArtifacts } from "../../../lib/librarian/create";
-import { isSupabaseConfigured } from "../../../lib/supabase/admin";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== "GET") {
-    res.setHeader("Allow", "GET");
-    return res.status(405).json({ ok: false, error: "Method not allowed" });
-  }
-
-  if (!isSupabaseConfigured()) {
-    return res.status(503).json({ ok: false, error: "Database not configured" });
-  }
+  if (!requireMethod(req, res, "GET")) return;
+  if (!requireSupabase(res)) return;
 
   const taskId = req.query.id;
   if (typeof taskId !== "string" || !taskId) {
@@ -27,7 +21,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error("Failed to list task artifacts", error);
     return res.status(500).json({
       ok: false,
-      error: error instanceof Error ? error.message : "Failed to list artifacts",
+      error: errorMessage(error, "Failed to list artifacts"),
     });
   }
 }

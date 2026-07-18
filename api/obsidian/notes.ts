@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { requireInternalAuth } from "../../lib/auth.js";
+import { errorMessage, requireMethod } from "../../lib/http.js";
 import { getVaultPath } from "../../lib/obsidian/config.js";
 import {
   assertVaultReadable,
@@ -9,11 +10,7 @@ import {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!requireInternalAuth(req, res)) return;
-
-  if (req.method !== "GET") {
-    res.setHeader("Allow", "GET");
-    return res.status(405).json({ ok: false, error: "Method not allowed" });
-  }
+  if (!requireMethod(req, res, "GET")) return;
 
   const vaultPath = getVaultPath();
   if (!vaultPath) {
@@ -31,7 +28,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(503).json({
       ok: false,
       configured: false,
-      error: error instanceof Error ? error.message : "Vault path is missing or unreadable",
+      error: errorMessage(error, "Vault path is missing or unreadable"),
     });
   }
 
@@ -68,7 +65,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(500).json({
       ok: false,
-      error: error instanceof Error ? error.message : "Failed to read notes",
+      error: errorMessage(error, "Failed to read notes"),
     });
   }
 }

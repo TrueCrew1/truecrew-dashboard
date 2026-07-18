@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { buffer } from "node:stream/consumers";
+import { errorMessage, requireMethod } from "../../lib/http.js";
 import { dispatchGithubEvent } from "../../lib/github/handlers.js";
 import { verifyGithubSignature } from "../../lib/github/verify.js";
 import {
@@ -14,9 +15,7 @@ export const config = {
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+  if (!requireMethod(req, res, "POST")) return;
 
   const secret = process.env.GITHUB_WEBHOOK_SECRET;
   if (!secret) {
@@ -72,7 +71,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error("GitHub webhook processing failed", error);
     return res.status(500).json({
       error: "Webhook processing failed",
-      message: error instanceof Error ? error.message : "Unknown error",
+      message: errorMessage(error),
     });
   }
 }

@@ -1,15 +1,12 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { requireInternalAuth } from "../../lib/auth.js";
+import { errorMessage, requireSupabase } from "../../lib/http.js";
 import { mapCommandCenterData } from "../../lib/mappers/index.js";
 import { fetchRawCommandCenterRows } from "../../lib/supabase/queries.js";
-import { isSupabaseConfigured } from "../../lib/supabase/admin.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!requireInternalAuth(req, res)) return;
-
-  if (!isSupabaseConfigured()) {
-    return res.status(503).json({ error: "Database not configured" });
-  }
+  if (!requireSupabase(res)) return;
 
   try {
     const raw = await fetchRawCommandCenterRows();
@@ -19,7 +16,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error("Failed to fetch tasks", error);
     return res.status(500).json({
       error: "Failed to fetch tasks",
-      message: error instanceof Error ? error.message : "Unknown error",
+      message: errorMessage(error),
     });
   }
 }

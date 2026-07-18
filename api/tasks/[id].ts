@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { requireInternalAuth } from "../../lib/auth.js";
+import { errorMessage, requireMethod, requireSupabase } from "../../lib/http.js";
 import { mapDbTaskToClient } from "../../lib/mappers/tasks.js";
-import { isSupabaseConfigured } from "../../lib/supabase/admin.js";
 import { updateTaskStage } from "../../lib/supabase/queries.js";
 
 const VALID_STAGES = [
@@ -17,14 +17,8 @@ const VALID_STAGES = [
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!requireInternalAuth(req, res)) return;
-
-  if (req.method !== "PATCH") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
-  if (!isSupabaseConfigured()) {
-    return res.status(503).json({ error: "Database not configured" });
-  }
+  if (!requireMethod(req, res, "PATCH")) return;
+  if (!requireSupabase(res)) return;
 
   const taskId = req.query.id;
   if (typeof taskId !== "string" || !taskId) {
@@ -51,7 +45,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error("Failed to update task stage", error);
     return res.status(500).json({
       error: "Failed to update task",
-      message: error instanceof Error ? error.message : "Unknown error",
+      message: errorMessage(error),
     });
   }
 }

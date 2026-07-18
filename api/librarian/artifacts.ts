@@ -1,16 +1,10 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { errorMessage, requireMethod, requireSupabase } from "../../lib/http";
 import { createTaskArtifact } from "../../lib/librarian/create";
-import { isSupabaseConfigured } from "../../lib/supabase/admin";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== "POST") {
-    res.setHeader("Allow", "POST");
-    return res.status(405).json({ ok: false, error: "Method not allowed" });
-  }
-
-  if (!isSupabaseConfigured()) {
-    return res.status(503).json({ ok: false, error: "Database not configured" });
-  }
+  if (!requireMethod(req, res, "POST")) return;
+  if (!requireSupabase(res)) return;
 
   const body = req.body as { taskId?: unknown; useAi?: unknown; actor?: unknown };
   if (typeof body?.taskId !== "string" || !body.taskId.trim()) {
@@ -45,7 +39,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error("Failed to create librarian artifact", error);
     return res.status(500).json({
       ok: false,
-      error: error instanceof Error ? error.message : "Failed to create artifact",
+      error: errorMessage(error, "Failed to create artifact"),
     });
   }
 }
