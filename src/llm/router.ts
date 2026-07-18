@@ -10,11 +10,10 @@
  *
  * Tiers:
  *   - DeepSeek-V3.2: budget (routine tasks) via Azure AI Foundry
- *   - gpt-5-mini: quality (reasoning) via Azure OpenAI
+ *   - gpt-5-mini: quality (reasoning) via Azure AI Foundry
  *   - Kimi-K2.6: long-context via Azure AI Foundry
  */
 
-import { callAzure } from "./azureClient.js";
 import { callFoundry, type FoundryModel } from "./mistralClient.js";
 import {
   type Lane,
@@ -24,7 +23,7 @@ import {
   getMaxTokens,
 } from "./types.js";
 
-type RouterModel = FoundryModel | "gpt-5-mini";
+type RouterModel = FoundryModel;
 
 export function pickModel(input: { lane: Lane; complexity: Complexity }): ModelName {
   const model = pickRouterModel(input);
@@ -58,10 +57,6 @@ export async function runTask(input: {
 }): Promise<LLMResponse> {
   const model = pickRouterModel(input);
   const maxTokens = getMaxTokens(input.complexity);
-
-  if (model === "gpt-5-mini") {
-    return callAzure("gpt-5-mini", input.prompt, maxTokens);
-  }
 
   return callFoundry(model, input.prompt, maxTokens);
 }

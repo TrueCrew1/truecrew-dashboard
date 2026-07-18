@@ -22,22 +22,15 @@ const VALID_COMPLEXITIES: Complexity[] = ["low", "medium", "high"];
 
 function printEnvCheck(): void {
   const azureKey = process.env.AZURE_OPENAI_API_KEY ? "configured" : "missing";
-  const azureEndpoint = process.env.AZURE_OPENAI_ENDPOINT ? "configured" : "missing";
   const aiFoundryEndpoint = process.env.AZURE_AI_RESOURCE_ENDPOINT ? "configured" : "missing";
 
-  const gpt5Ready = azureKey === "configured" && azureEndpoint === "configured";
-  const mistralReady = azureKey === "configured" && aiFoundryEndpoint === "configured";
+  const routerReady = azureKey === "configured" && aiFoundryEndpoint === "configured";
 
   console.log("LLM Router environment check:\n");
-  console.log("  Azure OpenAI (GPT-5 mini):");
-  console.log(`    AZURE_OPENAI_API_KEY:  ${azureKey}`);
-  console.log(`    AZURE_OPENAI_ENDPOINT: ${azureEndpoint}`);
-  console.log(`    Status: ${gpt5Ready ? "ready" : "incomplete"}`);
-  console.log("");
-  console.log("  Azure AI Foundry (DeepSeek / Kimi):");
+  console.log("  Azure AI Foundry (all models):");
   console.log(`    AZURE_OPENAI_API_KEY:       ${azureKey}`);
   console.log(`    AZURE_AI_RESOURCE_ENDPOINT: ${aiFoundryEndpoint}`);
-  console.log(`    Status: ${mistralReady ? "ready" : "incomplete"}`);
+  console.log(`    Status: ${routerReady ? "ready" : "incomplete"}`);
   console.log("");
 }
 

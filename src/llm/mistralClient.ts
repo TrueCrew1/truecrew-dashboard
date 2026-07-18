@@ -1,7 +1,7 @@
 /**
  * Azure AI Foundry client
  *
- * Uses the Azure AI Foundry v1 API for models like Kimi.
+ * Uses the Azure AI Foundry v1 API for all router models (DeepSeek, Kimi, gpt-5-mini).
  */
 
 import { DEFAULT_CONFIG, type LLMResponse, type ModelName } from "./types.js";
@@ -11,14 +11,20 @@ const API_KEY = process.env.AZURE_OPENAI_API_KEY;
 const RESOURCE_ENDPOINT = process.env.AZURE_AI_RESOURCE_ENDPOINT;
 
 interface FoundryChatResponse {
-  choices: Array<{ message: { content: string } }>;
+  choices: Array<{
+    message: {
+      content: string;
+      reasoning_content?: string;
+    };
+  }>;
 }
 
-export type FoundryModel = "Kimi-K2.6" | "DeepSeek-V3.2";
+export type FoundryModel = "Kimi-K2.6" | "DeepSeek-V3.2" | "gpt-5-mini";
 
 const MODEL_TO_NAME: Record<FoundryModel, ModelName> = {
   "Kimi-K2.6": "kimi",
   "DeepSeek-V3.2": "deepseek",
+  "gpt-5-mini": "gpt5mini",
 };
 
 export async function callFoundry(
@@ -40,18 +46,23 @@ export async function callFoundry(
   const timeoutId = setTimeout(() => controller.abort(), DEFAULT_CONFIG.timeoutMs);
 
   try {
+    const body: Record<string, unknown> = {
+      model,
+      messages: [{ role: "user", content: prompt }],
+      max_completion_tokens: maxTokens,
+    };
+    // gpt-5-mini on Foundry rejects custom temperature (defaults only).
+    if (model !== "gpt-5-mini") {
+      body.temperature = DEFAULT_CONFIG.defaultTemperature;
+    }
+
     const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "api-key": API_KEY,
       },
-      body: JSON.stringify({
-        model,
-        messages: [{ role: "user", content: prompt }],
-        max_tokens: maxTokens,
-        temperature: DEFAULT_CONFIG.defaultTemperature,
-      }),
+      body: JSON.stringify(body),
       signal: controller.signal,
     });
 
@@ -63,7 +74,8 @@ export async function callFoundry(
     }
 
     const data = (await response.json()) as FoundryChatResponse;
-    const text = data.choices[0]?.message?.content ?? "";
+    const message = data.choices[0]?.message;
+    const text = message?.content?.trim() || message?.reasoning_content?.trim() || "";
 
     return { model: MODEL_TO_NAME[model], text };
   } catch (error) {
