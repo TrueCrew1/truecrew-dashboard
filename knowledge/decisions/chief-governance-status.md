@@ -22,8 +22,8 @@ runtime stack's fate is not yet decided (see Options below).
 merged into `main` at `9cbb98b`.
 
 - Established `docs/AGENT_TOOL_LANES.md` as the canonical, single-table lane
-  matrix (READ-ONLY / PROPOSE-ONLY / EXECUTE-WITH-APPROVAL) covering every
-  tool in the stack, including Ollama and CodeRabbit for the first time.
+  matrix (READ-ONLY / PROPOSE-ONLY / EXECUTE-WITH-APPROVAL) for the tools it
+  classifies, including Ollama and CodeRabbit for the first time.
 - Established `docs/internal/tool-model-routing-standard.md` as the
   task → tool → model tiering standard (Tier 0 no-LLM, Tier 1 local/cheap via
   Ollama, Tier 2–3 hosted/frontier), wired into `docs/AGENT_RUNBOOK.md` § Tool
