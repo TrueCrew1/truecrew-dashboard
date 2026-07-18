@@ -1556,6 +1556,39 @@ button.chief-brief-metric {
   margin-top: 12px;
 }
 
+.chief-build-test-helper {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+}
+
+.chief-build-test-helper-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.chief-build-test-helper-badge {
+  font-size: 9px;
+}
+
+.chief-build-test-helper-note {
+  margin: 0 0 8px;
+  font-size: 11px;
+  color: var(--steel-dim);
+}
+
+.chief-build-test-helper-status {
+  margin: 0;
+  font-size: 12px;
+  color: var(--steel);
+}
+
+.chief-build-test-helper-list {
+  margin-bottom: 8px;
+}
+
 /* Frames the action row as a distinct decision zone on pending cards, so
    the operator's actual next move reads as separate from the read-only
    summary/checklist content above it — quieter than the overdue/top-

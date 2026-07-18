@@ -99,6 +99,15 @@ AZURE_OPENAI_DEPLOYMENT=gpt-5-mini
 AZURE_AI_RESOURCE_ENDPOINT=
 ```
 
+## Builder test-suggestion helper
+
+On pending **Build** approval cards (Chief → Approvals), operators can click **Suggest tests**.
+
+- Route: `builder` / `medium` → `gpt-5-mini`
+- Output is **advisory only** — does not approve, merge, or deploy
+- Human must still use Approve / Send back / Reject
+- API: `POST /api/llm/suggest-tests` (internal-auth gated)
+
 ## Vercel MCP
 
 The Vercel MCP server provides deployment and project management tools.

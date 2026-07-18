@@ -29,7 +29,7 @@ function printEnvCheck(): void {
   console.log(`    AZURE_OPENAI_ENDPOINT: ${azureEndpoint}`);
   console.log(`    Status: ${gpt5Ready ? "ready" : "incomplete"}`);
   console.log("");
-  console.log("  Azure AI Foundry (Mistral):");
+  console.log("  Azure AI Foundry (DeepSeek / Kimi):");
   console.log(`    AZURE_OPENAI_API_KEY:       ${azureKey}`);
   console.log(`    AZURE_AI_RESOURCE_ENDPOINT: ${aiFoundryEndpoint}`);
   console.log(`    Status: ${mistralReady ? "ready" : "incomplete"}`);
