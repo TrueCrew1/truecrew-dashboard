@@ -26,7 +26,12 @@ import {
   type ApprovalPolicyResult,
 } from "./chiefApprovalPolicy";
 import {
-  launchBuilderMissionFromProposal,
+  BUILDER_MISSION_COMPLETE_DELAY_MS,
+  BUILDER_MISSION_START_DELAY_MS,
+  completeBuilderMission,
+  queueBuilderMissionFromProposal,
+  startBuilderMission,
+  upsertBuilderMission,
   type BuilderMissionLaunchResult,
   type BuilderMissionRecord,
 } from "./builderMission";
@@ -262,16 +267,45 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
     setHistory((prev) => [entry, ...prev]);
   }, []);
 
-  const logAndStoreMissionLaunch = useCallback((launch: BuilderMissionLaunchResult) => {
-    if (launch.outcome !== "launched") return;
-    chiefLog.missionLifecycle(launch.steps.queued, "queued");
-    chiefLog.missionLifecycle(launch.steps.running, "started");
-    chiefLog.missionLifecycle(
-      launch.steps.final,
-      launch.steps.final.status === "failed" ? "failed" : "completed",
-    );
-    setBuilderMissions((prev) => [launch.record, ...prev]);
-  }, []);
+  /**
+   * Progressive stub runner: store queued immediately so the operator can
+   * see it, then advance to running and completed|failed on short delays.
+   * Returns the initial queued launch result (or blocked).
+   */
+  const beginProgressiveBuilderMission = useCallback(
+    (proposal: ApprovalProposal): BuilderMissionLaunchResult => {
+      const launch = queueBuilderMissionFromProposal(proposal, builderMissions);
+      if (launch.outcome !== "launched") return launch;
+
+      const queued = launch.record;
+      chiefLog.missionLifecycle(queued, "queued");
+      setBuilderMissions((prev) => upsertBuilderMission(prev, queued));
+
+      window.setTimeout(() => {
+        const running = startBuilderMission(queued);
+        chiefLog.missionLifecycle(running, "started");
+        setBuilderMissions((prev) => upsertBuilderMission(prev, running));
+
+        window.setTimeout(() => {
+          const final = completeBuilderMission(running);
+          chiefLog.missionLifecycle(
+            final,
+            final.status === "failed" ? "failed" : "completed",
+          );
+          setBuilderMissions((prev) => upsertBuilderMission(prev, final));
+        }, BUILDER_MISSION_COMPLETE_DELAY_MS);
+      }, BUILDER_MISSION_START_DELAY_MS);
+
+      // Surface the queued record + synthetic steps so callers/tests that
+      // inspect the launch result still see a stable shape.
+      return {
+        outcome: "launched",
+        record: queued,
+        steps: { queued, running: queued, final: queued },
+      };
+    },
+    [builderMissions],
+  );
 
   const tryLaunchBuilderMission = useCallback(
     (proposal: ApprovalProposal): BuilderMissionLaunchResult => {
@@ -281,11 +315,9 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
         ...proposal,
         status: "approved",
       };
-      const launch = launchBuilderMissionFromProposal(approvedProposal, builderMissions);
-      logAndStoreMissionLaunch(launch);
-      return launch;
+      return beginProgressiveBuilderMission(approvedProposal);
     },
-    [builderMissions, logAndStoreMissionLaunch],
+    [beginProgressiveBuilderMission],
   );
 
   const launchBuilderMission = useCallback(
@@ -294,11 +326,9 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
       if (!proposal) {
         return { outcome: "blocked", reason: "not_approved" };
       }
-      const launch = launchBuilderMissionFromProposal(proposal, builderMissions);
-      logAndStoreMissionLaunch(launch);
-      return launch;
+      return beginProgressiveBuilderMission(proposal);
     },
-    [proposalsById, builderMissions, logAndStoreMissionLaunch],
+    [proposalsById, beginProgressiveBuilderMission],
   );
 
   const recordDecision = useCallback(

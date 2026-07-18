@@ -13,9 +13,11 @@ import {
   launchBuilderMissionFromProposal,
   missionShouldFail,
   queueBuilderMission,
+  queueBuilderMissionFromProposal,
   runBuilderMission,
   runBuilderMissionSteps,
   startBuilderMission,
+  upsertBuilderMission,
   workStoryIdForProposal,
   type BuilderMission,
   type BuilderMissionRecord,
@@ -231,6 +233,52 @@ describe("BuilderMissionResult shape", () => {
     expect(parsed.status).toBe("failed");
     expect(parsed.result?.status).toBe("failed");
     expect(parsed.result?.artifacts?.failureReason).toBeTruthy();
+  });
+});
+
+describe("queueBuilderMissionFromProposal (progressive UI path)", () => {
+  it("returns a queued record without advancing to completed", () => {
+    const proposal = makeForwardableApprovedProposal();
+    const result = queueBuilderMissionFromProposal(proposal);
+
+    expect(result.outcome).toBe("launched");
+    if (result.outcome !== "launched") return;
+    expect(result.record.status).toBe("queued");
+    expect(result.record.result).toBeUndefined();
+  });
+
+  it("still blocks non-forwardable proposals", () => {
+    const card = createApprovalCardFromBuildRequest(
+      makeBuildRequest({ confidence: 0.95, evidence: undefined }),
+    );
+    const policy = evaluateApprovalPolicy({ proposal: card });
+    const proposal = applyPolicyToProposal(
+      { ...card, status: "approved" },
+      policy,
+    );
+
+    expect(queueBuilderMissionFromProposal(proposal).outcome).toBe("blocked");
+  });
+});
+
+describe("upsertBuilderMission", () => {
+  it("inserts a new mission at the front", () => {
+    const proposal = makeForwardableApprovedProposal();
+    const queued = queueBuilderMission(createBuilderMissionFromProposal(proposal));
+    const next = upsertBuilderMission([], queued);
+    expect(next).toHaveLength(1);
+    expect(next[0]?.status).toBe("queued");
+  });
+
+  it("replaces an existing mission by missionId so lifecycle updates don't duplicate", () => {
+    const proposal = makeForwardableApprovedProposal();
+    const queued = queueBuilderMission(createBuilderMissionFromProposal(proposal));
+    const running = startBuilderMission(queued);
+    const next = upsertBuilderMission([queued], running);
+
+    expect(next).toHaveLength(1);
+    expect(next[0]?.status).toBe("running");
+    expect(next[0]?.mission.missionId).toBe(queued.mission.missionId);
   });
 });
 

@@ -311,6 +311,9 @@ export function runBuilderMissionSteps(
  * Launch path used by Chief after an approve decision: eligibility check,
  * mission creation, stub run. Returns blocked reasons without throwing.
  * Pure — logging is the caller's job (see ChiefApprovalsContext).
+ *
+ * For the operator-visible progressive path (queued → running → final with
+ * delays), use queueBuilderMissionFromProposal + start/complete instead.
  */
 export function launchBuilderMissionFromProposal(
   proposal: ApprovalProposal,
@@ -326,6 +329,47 @@ export function launchBuilderMissionFromProposal(
   const mission = createBuilderMissionFromProposal(proposal, policy, now());
   const steps = runBuilderMissionSteps(mission, now);
   return { outcome: "launched", record: steps.final, steps };
+}
+
+/**
+ * Eligibility + create a queued mission only. Used by the Chief context so
+ * the operator can actually see queued → running → completed|failed instead
+ * of jumping straight to the final state in one render.
+ */
+export function queueBuilderMissionFromProposal(
+  proposal: ApprovalProposal,
+  existingMissions: readonly BuilderMissionRecord[] = [],
+  now: () => string = () => new Date().toISOString(),
+):
+  | { outcome: "launched"; record: BuilderMissionRecord }
+  | { outcome: "blocked"; reason: BuilderMissionLaunchBlockReason } {
+  const eligibility = canLaunchBuilderMission(proposal, existingMissions);
+  if (!eligibility.ok) {
+    return { outcome: "blocked", reason: eligibility.reason };
+  }
+
+  const policy = evaluateApprovalPolicy({ proposal });
+  const mission = createBuilderMissionFromProposal(proposal, policy, now());
+  return { outcome: "launched", record: queueBuilderMission(mission, now()) };
+}
+
+/** Perceptible stub delays so queued/running are visible in the UI. */
+export const BUILDER_MISSION_START_DELAY_MS = 450;
+export const BUILDER_MISSION_COMPLETE_DELAY_MS = 700;
+
+/**
+ * Upsert a mission record by missionId — keeps launch/progress updates
+ * from duplicating rows on the Agents board.
+ */
+export function upsertBuilderMission(
+  missions: readonly BuilderMissionRecord[],
+  next: BuilderMissionRecord,
+): BuilderMissionRecord[] {
+  const idx = missions.findIndex((m) => m.mission.missionId === next.mission.missionId);
+  if (idx === -1) return [next, ...missions];
+  const copy = [...missions];
+  copy[idx] = next;
+  return copy;
 }
 
 /**
