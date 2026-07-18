@@ -269,3 +269,107 @@ in GitHub UI/admin settings before treating any of them as decided:
 6. **Does GitHub Advanced Security / secret scanning already run** on this
    repo (available free for public repos, paid for private)? Not visible
    from workflow files since it's a platform feature, not a workflow step.
+
+## Purpose (compliance checklist)
+
+The sections above are the one-time audit and rollout plan. Everything below
+is the standing artifact this file also serves as going forward: the
+required checklist for any agent/bot or workflow that performs non-trivial
+automation in this repo. Any new bot, or any change to an existing one's
+triggers/permissions/secrets, updates the **Current bots/workflows** section
+below with a filled-in copy of the template — this file, not tribal
+knowledge, is the record of what's authorized to run and with what scope.
+
+## Compliance checklist template
+
+Copy this block for any new bot, workflow, or automation before it's allowed
+to run against this repo:
+
+- **Name:**
+- **Workflow / config file:**
+- **Triggers (events, branches):**
+- **GITHUB_TOKEN permissions:**
+- **Secrets used:**
+- **Data plane impact (deploy, DB, etc.):**
+- **Lane (READ-ONLY / PROPOSE-ONLY / EXECUTE-WITH-APPROVAL):**
+- **Approval / ownership (role, e.g., Chief / Security):**
+
+## Current bots/workflows
+
+### CodeRabbit (review bot)
+
+- **Name:** CodeRabbit
+- **Workflow / config file:** `.coderabbit.yaml` — referenced in
+  `CONTRIBUTING.md` and `docs/agents/CHIEF_OPERATING_SYSTEM.md` as a live PR
+  review gate, but the config file itself is not present in this repo
+  checkout (see Open Question 1 above) — treat its exact scope as
+  unconfirmed until that's resolved.
+- **Triggers:** GitHub App webhook on PR open/update — not a workflow file,
+  not GITHUB_TOKEN-based.
+- **GITHUB_TOKEN permissions:** N/A — authenticates as its own GitHub App
+  installation, not via this repo's `GITHUB_TOKEN`.
+- **Secrets used:** None in-repo; App-managed.
+- **Data plane impact:** None — PR comments only, no code/DB/deploy writes.
+- **Lane:** READ-ONLY / PROPOSE-ONLY
+- **Approval / ownership:** Part of the normal PR/CodeRabbit/Chief path per
+  `docs/agents/CHIEF_OPERATING_SYSTEM.md` § 4; no separate approval needed
+  beyond the GitHub App install itself.
+
+### Supabase migration PR check
+
+- **Name:** Supabase migration PR check
+- **Workflow / config file:**
+  `.github/workflows/supabase-migration-pr-check.yml`
+- **Triggers:** `pull_request` (opened, synchronize, reopened), paths
+  `supabase/migrations/**` and `supabase/combined_migration.sql`.
+- **GITHUB_TOKEN permissions:** `contents: read` at both workflow and job
+  level — no GitHub write scope; this workflow never talks to the GitHub
+  API beyond checkout.
+- **Secrets used:** `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DEV_DB_URL` — scoped
+  to a non-production schema only.
+- **Data plane impact:** Read-only — lints/diffs migrations against a
+  non-prod schema; never runs `supabase db push`.
+- **Lane:** READ-ONLY
+- **Approval / ownership:** Build agent maintains the workflow; candidate to
+  become a required status check once branch protection is confirmed (Open
+  Question 2 above) — not yet enforced as a merge gate.
+
+### Supabase migrate workflow
+
+- **Name:** Supabase migrate workflow
+- **Workflow / config file:** `.github/workflows/supabase-migrate.yml`
+- **Triggers:** push to `main` (paths `supabase/migrations/**`,
+  `supabase/combined_migration.sql`), plus manual `workflow_dispatch`.
+- **GITHUB_TOKEN permissions:** `contents: read` at workflow level — no job
+  calls the GitHub API; this is a Supabase-only (data plane) workflow.
+- **Secrets used:** `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF` — guarded
+  by a secrets-presence check that no-ops (with a warning) if either is
+  unset, rather than failing hard.
+- **Data plane impact:** Writes to the production Supabase schema via
+  `supabase db push` — the highest-impact automation in this repo.
+- **Lane:** EXECUTE-WITH-APPROVAL — gated by merge-to-`main` (human-reviewed
+  PR) or a manually triggered `workflow_dispatch`.
+- **Approval / ownership:** Build agent implements the migration; merge to
+  `main` is the approval gate; manual `workflow_dispatch` runs are
+  David/Chief's call.
+
+### Vercel deploy workflow
+
+- **Name:** Vercel deploy workflow
+- **Workflow / config file:** `.github/workflows/deploy-vercel.yml`
+- **Triggers:** push to `main`, plus manual `workflow_dispatch`.
+- **GITHUB_TOKEN permissions:** `contents: read` at workflow level; the
+  `deploy` job additionally scopes itself with `environment: production`
+  rather than holding production secrets at the workflow level.
+- **Secrets used:** `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`,
+  `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `GITHUB_WEBHOOK_SECRET`,
+  `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` — guarded by a
+  secrets-presence check that no-ops if `VERCEL_TOKEN` is unset.
+- **Data plane impact:** Deploys the production app to Vercel — no GitHub
+  writes, no direct DB writes (Supabase access here is read/runtime only,
+  via the deployed app itself).
+- **Lane:** EXECUTE-WITH-APPROVAL — gated by merge-to-`main` or a manually
+  triggered `workflow_dispatch`.
+- **Approval / ownership:** Build agent implements; merge to `main` is the
+  approval gate; production secrets are scoped to the `production`
+  environment, not the repo/workflow default.
