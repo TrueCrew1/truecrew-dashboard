@@ -2,7 +2,7 @@
  * Azure OpenAI GPT-5 mini client — quality tier for important reasoning
  */
 
-import { DEFAULT_CONFIG, type LLMResponse } from "./types";
+import { DEFAULT_CONFIG, type LLMResponse } from "./types.js";
 
 const API_KEY = process.env.AZURE_OPENAI_API_KEY;
 const ENDPOINT = process.env.AZURE_OPENAI_ENDPOINT;

@@ -7,7 +7,7 @@
  * No side effects: does not approve, merge, deploy, or mutate approval state.
  */
 
-import type { Complexity, Lane } from "./types";
+import type { Complexity, Lane } from "./types.js";
 
 export const BUILD_TEST_SUGGESTION_LANE: Lane = "builder";
 export const BUILD_TEST_SUGGESTION_COMPLEXITY: Complexity = "medium";

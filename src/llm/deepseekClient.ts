@@ -2,7 +2,7 @@
  * DeepSeek V-series client — budget tier for routine tasks
  */
 
-import { DEFAULT_CONFIG, type LLMResponse } from "./types";
+import { DEFAULT_CONFIG, type LLMResponse } from "./types.js";
 
 const API_KEY = process.env.DEEPSEEK_API_KEY;
 const BASE_URL = process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com";

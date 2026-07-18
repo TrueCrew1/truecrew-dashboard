@@ -4,7 +4,7 @@
  * Uses the Azure AI Foundry v1 API for models like Kimi.
  */
 
-import { DEFAULT_CONFIG, type LLMResponse, type ModelName } from "./types";
+import { DEFAULT_CONFIG, type LLMResponse, type ModelName } from "./types.js";
 
 const API_KEY = process.env.AZURE_OPENAI_API_KEY;
 // Azure AI Foundry resource endpoint (without /api/projects/... path)

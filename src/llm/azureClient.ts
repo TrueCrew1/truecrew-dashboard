@@ -7,7 +7,7 @@
  * - gpt-5-mini: quality tier (important reasoning)
  */
 
-import { DEFAULT_CONFIG, type LLMResponse, type ModelName } from "./types";
+import { DEFAULT_CONFIG, type LLMResponse, type ModelName } from "./types.js";
 
 const API_KEY = process.env.AZURE_OPENAI_API_KEY;
 const ENDPOINT = process.env.AZURE_OPENAI_ENDPOINT;

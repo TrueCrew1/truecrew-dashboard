@@ -2,10 +2,10 @@
  * LLM Router module exports
  */
 
-export { type Lane, type Complexity, type ModelName, type LLMResponse } from "./types";
-export { pickModel, runTask, describeRouting } from "./router";
-export { callAzure, type AzureDeployment } from "./azureClient";
-export { callFoundry, type FoundryModel } from "./mistralClient";
+export { type Lane, type Complexity, type ModelName, type LLMResponse } from "./types.js";
+export { pickModel, runTask, describeRouting } from "./router.js";
+export { callAzure, type AzureDeployment } from "./azureClient.js";
+export { callFoundry, type FoundryModel } from "./mistralClient.js";
 export {
   buildSuggestTestsPrompt,
   parseSuggestTestsResponse,
@@ -14,4 +14,4 @@ export {
   BUILD_TEST_SUGGESTION_COMPLEXITY,
   type BuildTestSuggestionInput,
   type BuildTestSuggestionResult,
-} from "./buildTestSuggestion";
+} from "./buildTestSuggestion.js";

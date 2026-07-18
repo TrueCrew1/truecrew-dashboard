@@ -2,7 +2,7 @@
  * Moonshot Kimi 2.6 client — long-context tier
  */
 
-import { DEFAULT_CONFIG, type LLMResponse } from "./types";
+import { DEFAULT_CONFIG, type LLMResponse } from "./types.js";
 
 const API_KEY = process.env.KIMI_API_KEY;
 const BASE_URL = process.env.KIMI_BASE_URL || "https://api.moonshot.cn/v1";
