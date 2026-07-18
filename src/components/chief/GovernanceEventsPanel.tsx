@@ -13,6 +13,10 @@ const EVENT_TYPE_LABEL: Record<ChiefGovernanceEvent["type"], string> = {
   card_decided: "Card decided",
   card_forwarded: "Card forwarded",
   card_returned_for_refinement: "Card returned",
+  mission_queued: "Mission queued",
+  mission_started: "Mission started",
+  mission_completed: "Mission completed",
+  mission_failed: "Mission failed",
   task_reprioritized: "Task reprioritized",
 };
 

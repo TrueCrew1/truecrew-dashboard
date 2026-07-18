@@ -3867,3 +3867,26 @@ button.chief-brief-metric {
   border: 1px solid var(--border);
   border-radius: 4px;
 }
+
+.chief-approval-card-field--mission {
+  margin-top: 4px;
+}
+
+.chief-approval-mission-meta {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: var(--steel);
+  line-height: 1.45;
+}
+
+.chief-approval-mission-meta--fail {
+  color: var(--red);
+}
+
+.agent-work-board-note--missions {
+  margin-top: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-hover);
+}

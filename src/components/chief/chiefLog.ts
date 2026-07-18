@@ -1,5 +1,6 @@
 import { emitChiefGovernanceEvent } from "./chiefGovernanceEvents";
 import type { AgentPacket, AgentPacketRequest } from "./agentPacket";
+import type { BuilderMissionRecord } from "./builderMission";
 import type { ApprovalAction, ApprovalCard, ApprovalMissingSignal, ChiefRoutingDisposition } from "./types";
 
 /** Packet-observability logging. Extends chiefGovernanceEvents.ts — it does not replace it. */
@@ -126,6 +127,42 @@ export const chiefLog = {
       summary: rationale,
       detail: { taskId },
       timestamp,
+    });
+  },
+
+  /** Logs Builder mission lifecycle transitions (queued → started → completed|failed). */
+  missionLifecycle(record: BuilderMissionRecord, phase: "queued" | "started" | "completed" | "failed"): void {
+    const type =
+      phase === "queued"
+        ? "mission_queued"
+        : phase === "started"
+          ? "mission_started"
+          : phase === "completed"
+            ? "mission_completed"
+            : "mission_failed";
+
+    const { mission } = record;
+    emitChiefGovernanceEvent({
+      id: `evt-${mission.missionId}-${phase}-${record.updatedAt}`,
+      type,
+      summary:
+        phase === "queued"
+          ? `Builder mission queued: ${mission.objective}`
+          : phase === "started"
+            ? `Builder mission started: ${mission.objective}`
+            : phase === "completed"
+              ? `Builder mission completed: ${record.result?.summary ?? mission.objective}`
+              : `Builder mission failed: ${record.result?.artifacts?.failureReason ?? mission.objective}`,
+      detail: {
+        missionId: mission.missionId,
+        workStoryId: mission.workStoryId,
+        proposalId: mission.proposalId,
+        status: record.status,
+        evidenceSummary: mission.context?.evidenceSummary,
+        resultSummary: record.result?.summary,
+        failureReason: record.result?.artifacts?.failureReason,
+      },
+      timestamp: record.updatedAt,
     });
   },
 };

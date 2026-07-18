@@ -15,6 +15,12 @@ import {
 } from "./approvalWrappers";
 import { BuildTestSuggestionHelper } from "./BuildTestSuggestionHelper";
 import { ChiefApprovalActions } from "./ChiefApprovalActions";
+import {
+  builderMissionIdForProposal,
+  canLaunchBuilderMission,
+  type BuilderMissionRecord,
+  type BuilderMissionStatus,
+} from "./builderMission";
 import { describeEvidence } from "./chiefApprovalPolicy";
 import {
   APPROVAL_CHECKLIST_STATUS_ICON,
@@ -35,6 +41,20 @@ import {
 } from "./chiefApprovalUrgency";
 import { formatChiefTimestamp } from "./chiefMock";
 import type { ApprovalAction, ApprovalProposal, ChiefRoutingDisposition } from "./types";
+
+const MISSION_STATUS_LABEL: Record<BuilderMissionStatus, string> = {
+  queued: "Mission queued",
+  running: "Mission running",
+  completed: "Mission completed",
+  failed: "Mission failed",
+};
+
+const MISSION_STATUS_BADGE: Record<BuilderMissionStatus, string> = {
+  queued: "badge-steel",
+  running: "badge-blue",
+  completed: "badge-green",
+  failed: "badge-red",
+};
 
 const ROUTING_DISPOSITION_LABEL: Record<ChiefRoutingDisposition, string> = {
   forwarded: "Forwarded",
@@ -75,6 +95,10 @@ interface ApprovalBoardProps {
   statusFilter?: ApprovalStatusFilter;
   onStatusFilterChange?: (filter: ApprovalStatusFilter) => void;
   focusProposalId?: string | null;
+  /** Session Builder missions — shown as status chips on linked approval cards. */
+  builderMissions?: BuilderMissionRecord[];
+  /** Manual launch for an already-approved, forwardable Builder card. */
+  onLaunchBuilderMission?: (proposalId: string) => void;
 }
 
 export function ApprovalBoard({
@@ -84,6 +108,8 @@ export function ApprovalBoard({
   statusFilter: statusFilterProp,
   onStatusFilterChange,
   focusProposalId,
+  builderMissions = [],
+  onLaunchBuilderMission,
 }: ApprovalBoardProps) {
   const [localStatusFilter, setLocalStatusFilter] = useState<ApprovalStatusFilter>("all");
   const statusFilter = statusFilterProp ?? localStatusFilter;
@@ -185,6 +211,14 @@ export function ApprovalBoard({
     color: "var(--steel-dim)",
     fontSize: "0.92em",
   };
+
+  const missionByProposalId = useMemo(() => {
+    const map = new Map<string, BuilderMissionRecord>();
+    for (const record of builderMissions) {
+      map.set(record.mission.proposalId, record);
+    }
+    return map;
+  }, [builderMissions]);
 
   return (
     <div className="chief-approval-tab">
@@ -297,6 +331,10 @@ export function ApprovalBoard({
               // backs it — this signal is set exactly when that's not the case.
               const needsEvidence =
                 proposal.missingSignals?.includes("high_confidence_without_evidence") ?? false;
+              const linkedMission = missionByProposalId.get(proposal.id);
+              const canManualLaunch =
+                Boolean(onLaunchBuilderMission) &&
+                canLaunchBuilderMission(proposal, builderMissions).ok;
               const actionsNode = (
                 <ChiefApprovalActions
                   proposal={proposal}
@@ -368,6 +406,14 @@ export function ApprovalBoard({
                           title="Confidence is ≥90%, but no authoritative evidence (linked PR/issue, or runbook/doc) backs it. Chief cannot forward this without evidence."
                         >
                           Needs evidence
+                        </span>
+                      ) : null}
+                      {linkedMission ? (
+                        <span
+                          className={`badge ${MISSION_STATUS_BADGE[linkedMission.status]}`}
+                          title={`Builder mission ${linkedMission.mission.missionId} (${builderMissionIdForProposal(proposal.id)})`}
+                        >
+                          {MISSION_STATUS_LABEL[linkedMission.status]}
                         </span>
                       ) : null}
                       {urgencyBadge ? (
@@ -467,6 +513,40 @@ export function ApprovalBoard({
                             </ul>
                           </div>
                         ) : null}
+                      </div>
+                    ) : null}
+
+                    {linkedMission ? (
+                      <div className="chief-approval-card-field chief-approval-card-field--mission">
+                        <span className="chief-approval-card-label">Builder mission</span>
+                        <p className="chief-approval-card-value">
+                          {MISSION_STATUS_LABEL[linkedMission.status]}
+                          {linkedMission.result?.summary
+                            ? ` — ${linkedMission.result.summary}`
+                            : ` — ${linkedMission.mission.objective}`}
+                        </p>
+                        {linkedMission.result?.artifacts?.branchName ? (
+                          <p className="chief-approval-mission-meta">
+                            Branch: {linkedMission.result.artifacts.branchName}
+                          </p>
+                        ) : null}
+                        {linkedMission.result?.artifacts?.failureReason ? (
+                          <p className="chief-approval-mission-meta chief-approval-mission-meta--fail">
+                            {linkedMission.result.artifacts.failureReason}
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    {canManualLaunch ? (
+                      <div className="chief-approval-card-field">
+                        <button
+                          type="button"
+                          className="chief-btn chief-btn-secondary chief-btn--compact"
+                          onClick={() => onLaunchBuilderMission?.(proposal.id)}
+                        >
+                          Run Builder mission
+                        </button>
                       </div>
                     ) : null}
                   </div>

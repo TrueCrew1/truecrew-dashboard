@@ -1,6 +1,11 @@
 import { useMemo } from "react";
 import { ApprovalSectionHeader, ApprovalSectionShell, ApprovalSurfaceEmpty } from "./approvalWrappers";
 import { AGENT_WORK_ITEMS, AGENT_WORK_STATUS_CONFIG } from "./agentWorkBoardMock";
+import {
+  missionRecordToAgentWorkNote,
+  missionStatusToAgentWorkStatus,
+  type BuilderMissionRecord,
+} from "./builderMission";
 import { formatChiefTimestamp } from "./chiefMock";
 import {
   deriveAgentAwaitingApprovalWorkItems,
@@ -14,6 +19,19 @@ import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { useData } from "@/context/DataContext";
 import type { AgentWorkItem, AgentWorkStatus, ApprovalProposal } from "./types";
 import type { TaskPriority } from "@/types";
+
+function builderMissionsToWorkItems(missions: BuilderMissionRecord[]): AgentWorkItem[] {
+  return missions.map((record) => ({
+    id: `agentwork-mission-${record.mission.missionId}`,
+    agent: "Build Agent" as const,
+    task: record.mission.objective,
+    status: missionStatusToAgentWorkStatus(record.status),
+    priority: "high" as const,
+    note: missionRecordToAgentWorkNote(record),
+    updatedAt: record.updatedAt,
+    source: "live" as const,
+  }));
+}
 
 const SPECIALIST_INITIALS: Record<AgentWorkItem["agent"], string> = {
   "Workflow Gate Agent": "WG",
@@ -98,8 +116,12 @@ function AgentWorkCard({
 
 export function AgentWorkBoard() {
   const { data } = useData();
-  const { approvals } = useChiefApprovals();
+  const { approvals, builderMissions } = useChiefApprovals();
   const buildItems = useMemo(() => deriveBuildAgentWorkItems(data.tasks), [data.tasks]);
+  const missionItems = useMemo(
+    () => builderMissionsToWorkItems(builderMissions),
+    [builderMissions],
+  );
   const workflowGateItems = useMemo(
     () => deriveWorkflowGateAgentWorkItems(data.tasks),
     [data.tasks],
@@ -127,6 +149,7 @@ export function AgentWorkBoard() {
   }, [approvals]);
   const items = useMemo(
     () => [
+      ...missionItems,
       ...buildItems,
       ...workflowGateItems,
       ...researchItems,
@@ -134,7 +157,14 @@ export function AgentWorkBoard() {
       ...awaitingApprovalItems,
       ...AGENT_WORK_ITEMS,
     ],
-    [buildItems, workflowGateItems, researchItems, librarianItems, awaitingApprovalItems],
+    [
+      missionItems,
+      buildItems,
+      workflowGateItems,
+      researchItems,
+      librarianItems,
+      awaitingApprovalItems,
+    ],
   );
 
   if (items.length === 0) {
@@ -156,11 +186,33 @@ export function AgentWorkBoard() {
       count={`${items.length} item${items.length === 1 ? "" : "s"}`}
     >
       <p className="agent-work-board-note">
-        Snapshot of what each agent is carrying right now. Build, Workflow Gate, Research,
-        Librarian, and Awaiting approval rows marked <span className="badge badge-green">live</span>{" "}
-        reflect real task/incident/artifact data or pending proposals from the shared Approvals
-        queue; other agents are still mock for this slice. Read-only — no actions taken here.
+        Snapshot of what each agent is carrying right now. Builder mission rows (from approved
+        Build proposals), Build/Workflow Gate/Research/Librarian task rows, and Awaiting
+        approval rows marked <span className="badge badge-green">live</span> reflect real
+        mission/task/incident data or pending proposals from the shared Approvals queue; other
+        agents are still mock for this slice. Read-only — no actions taken here.
       </p>
+
+      {builderMissions.length > 0 ? (
+        <p className="agent-work-board-note agent-work-board-note--missions" role="status">
+          Builder missions this session:{" "}
+          <strong>{builderMissions.length}</strong>
+          {" · "}
+          {
+            builderMissions.filter((m) => m.status === "completed").length
+          }{" "}
+          completed
+          {" · "}
+          {builderMissions.filter((m) => m.status === "failed").length} failed
+          {" · "}
+          {
+            builderMissions.filter(
+              (m) => m.status === "queued" || m.status === "running",
+            ).length
+          }{" "}
+          in flight
+        </p>
+      ) : null}
 
       <div className="agent-work-lanes">
         {AGENT_WORK_STATUS_CONFIG.map((laneConfig) => {

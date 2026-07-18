@@ -26,6 +26,11 @@ import {
   type ApprovalPolicyResult,
 } from "./chiefApprovalPolicy";
 import {
+  launchBuilderMissionFromProposal,
+  type BuilderMissionLaunchResult,
+  type BuilderMissionRecord,
+} from "./builderMission";
+import {
   buildChiefLiveContext,
   deriveApprovalCandidates,
   mergeApprovalSources,
@@ -46,6 +51,8 @@ interface ChiefApprovalsContextValue {
   forwardedApprovals: ApprovalProposal[];
   /** Proposals returned for refinement (below confidence threshold or checklist failed). */
   refinementQueue: ApprovalProposal[];
+  /** Session-scoped Builder missions launched from approved Build proposals. */
+  builderMissions: BuilderMissionRecord[];
   pendingApprovalCount: number;
   proposalsById: Map<string, ApprovalProposal>;
   decisionsHydrated: boolean;
@@ -67,6 +74,10 @@ interface ChiefApprovalsContextValue {
    * error — e.g. ChiefPanel's approve/reject buttons) still own that
    * transient state locally; this only owns the decision record itself,
    * so every surface reading `approvals` sees the same thing.
+   *
+   * When action is "approved" and the proposal is a forwardable Builder
+   * card, also launches a Builder mission (queued → running →
+   * completed|failed) via the typed mission contract.
    */
   recordDecision: (id: string, action: ApprovalAction) => Promise<ApprovalDecision>;
   /**
@@ -74,6 +85,11 @@ interface ChiefApprovalsContextValue {
    * Returns the updated policy result.
    */
   reEvaluateProposal: (id: string, ctx?: Partial<ApprovalPolicyContext>) => ApprovalPolicyResult | null;
+  /**
+   * Manual Builder mission launch for an already-approved, forwardable
+   * Build proposal. Same eligibility rules as the auto-launch on approve.
+   */
+  launchBuilderMission: (proposalId: string) => BuilderMissionLaunchResult;
 }
 
 const ChiefApprovalsContext = createContext<ChiefApprovalsContextValue | null>(null);
@@ -98,6 +114,7 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
     ...AGENT_APPROVAL_CARDS,
   ]);
   const [approvalDecisions, setApprovalDecisions] = useState<Record<string, ApprovalDecision>>({});
+  const [builderMissions, setBuilderMissions] = useState<BuilderMissionRecord[]>([]);
   const [history, setHistory] = useState<CommandHistoryEntry[]>([]);
 
   const liveApi = isLiveApiEnabled();
@@ -245,6 +262,45 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
     setHistory((prev) => [entry, ...prev]);
   }, []);
 
+  const logAndStoreMissionLaunch = useCallback((launch: BuilderMissionLaunchResult) => {
+    if (launch.outcome !== "launched") return;
+    chiefLog.missionLifecycle(launch.steps.queued, "queued");
+    chiefLog.missionLifecycle(launch.steps.running, "started");
+    chiefLog.missionLifecycle(
+      launch.steps.final,
+      launch.steps.final.status === "failed" ? "failed" : "completed",
+    );
+    setBuilderMissions((prev) => [launch.record, ...prev]);
+  }, []);
+
+  const tryLaunchBuilderMission = useCallback(
+    (proposal: ApprovalProposal): BuilderMissionLaunchResult => {
+      // Overlay approved status for eligibility — the decision was just
+      // recorded but the merged approvals list may not have re-rendered yet.
+      const approvedProposal: ApprovalProposal = {
+        ...proposal,
+        status: "approved",
+      };
+      const launch = launchBuilderMissionFromProposal(approvedProposal, builderMissions);
+      logAndStoreMissionLaunch(launch);
+      return launch;
+    },
+    [builderMissions, logAndStoreMissionLaunch],
+  );
+
+  const launchBuilderMission = useCallback(
+    (proposalId: string): BuilderMissionLaunchResult => {
+      const proposal = proposalsById.get(proposalId);
+      if (!proposal) {
+        return { outcome: "blocked", reason: "not_approved" };
+      }
+      const launch = launchBuilderMissionFromProposal(proposal, builderMissions);
+      logAndStoreMissionLaunch(launch);
+      return launch;
+    },
+    [proposalsById, builderMissions, logAndStoreMissionLaunch],
+  );
+
   const recordDecision = useCallback(
     async (id: string, action: ApprovalAction): Promise<ApprovalDecision> => {
       const nextStatus = approvalActionToStatus(action);
@@ -260,7 +316,12 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
           };
           applyDecision(applied);
           const decidedCard = proposalsById.get(id);
-          if (decidedCard) chiefLog.cardDecided(decidedCard, action);
+          if (decidedCard) {
+            chiefLog.cardDecided(decidedCard, action);
+            if (action === "approved") {
+              tryLaunchBuilderMission(decidedCard);
+            }
+          }
           return applied;
         } catch (error) {
           if (error instanceof ChiefApprovalConflictError) {
@@ -281,10 +342,15 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
       };
       applyDecision(decision);
       const decidedCard = proposalsById.get(id);
-      if (decidedCard) chiefLog.cardDecided(decidedCard, action);
+      if (decidedCard) {
+        chiefLog.cardDecided(decidedCard, action);
+        if (action === "approved") {
+          tryLaunchBuilderMission(decidedCard);
+        }
+      }
       return decision;
     },
-    [liveApi, applyDecision, proposalsById],
+    [liveApi, applyDecision, proposalsById, tryLaunchBuilderMission],
   );
 
   const value = useMemo<ChiefApprovalsContextValue>(
@@ -293,6 +359,7 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
       approvals,
       forwardedApprovals,
       refinementQueue,
+      builderMissions,
       pendingApprovalCount,
       proposalsById,
       decisionsHydrated,
@@ -303,12 +370,14 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
       history,
       addHistoryEntry,
       reEvaluateProposal,
+      launchBuilderMission,
     }),
     [
       liveContext,
       approvals,
       forwardedApprovals,
       refinementQueue,
+      builderMissions,
       pendingApprovalCount,
       proposalsById,
       decisionsHydrated,
@@ -319,6 +388,7 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
       history,
       addHistoryEntry,
       reEvaluateProposal,
+      launchBuilderMission,
     ],
   );
 
