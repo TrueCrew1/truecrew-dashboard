@@ -20,7 +20,7 @@ Routes tasks to one of three external models based on lane + complexity.
 | Logical model | Azure backend | Tier |
 |---------------|---------------|------|
 | DeepSeek-V3.2 | Azure AI Foundry | Budget — routine tasks |
-| gpt-5-mini | Azure OpenAI deployment | Quality — important reasoning |
+| gpt-5-mini | Azure AI Foundry | Quality — important reasoning |
 | Kimi-K2.6 | Azure AI Foundry | Long-context — Research high only |
 
 ### Routing matrix
@@ -84,22 +84,22 @@ npm run llm -- chief low "Tighten these bullets"
 **Local CLI** (`npm run llm`): copy `.env.example` → `.env.local`. The CLI loads
 `.env` then `.env.local` (override). Run `npm run llm -- --env-check` before smoke tests.
 
-**Production** (`POST /api/llm/suggest-tests`): set the same three Azure variables in
-Vercel → Project → Settings → Environment Variables (Production + Preview as needed).
-Also requires `INTERNAL_API_SECRET` (and client `VITE_INTERNAL_KEY`) for the API auth gate.
+**Production** (`POST /api/llm/suggest-tests`): set `AZURE_OPENAI_API_KEY` and
+`AZURE_AI_RESOURCE_ENDPOINT` in Vercel → Project → Settings → Environment Variables
+(Production + Preview as needed). Also requires `INTERNAL_API_SECRET` (and client
+`VITE_INTERNAL_KEY`) for the API auth gate.
 
 | Variable | Required for | Consumed by |
 |----------|--------------|-------------|
-| `AZURE_OPENAI_API_KEY` | All LLM calls | `src/llm/azureClient.ts`, `src/llm/mistralClient.ts` |
-| `AZURE_OPENAI_ENDPOINT` | gpt-5-mini routes | `src/llm/azureClient.ts` |
-| `AZURE_AI_RESOURCE_ENDPOINT` | DeepSeek-V3.2, Kimi-K2.6 | `src/llm/mistralClient.ts` |
-| `AZURE_OPENAI_DEPLOYMENT` | Not read by current router (deployment hardcoded `gpt-5-mini` in `router.ts`) | legacy `gpt5MiniClient.ts` only |
+| `AZURE_OPENAI_API_KEY` | All LLM calls | `src/llm/mistralClient.ts` (Foundry v1) |
+| `AZURE_AI_RESOURCE_ENDPOINT` | All router models | `src/llm/mistralClient.ts` |
+| `AZURE_OPENAI_ENDPOINT` | Not used by current router (legacy `azureClient.ts` only) | — |
+| `AZURE_OPENAI_DEPLOYMENT` | Not read by current router | legacy `gpt5MiniClient.ts` only |
 
 ```bash
 # .env.local (never commit — see .env.example)
 AZURE_OPENAI_API_KEY=
-AZURE_OPENAI_ENDPOINT=https://YOUR_RESOURCE.openai.azure.com
-AZURE_OPENAI_DEPLOYMENT=gpt-5-mini
+# Foundry resource base — no /api/projects/... or /openai/v1 suffix
 AZURE_AI_RESOURCE_ENDPOINT=https://YOUR_FOUNDRY_RESOURCE.services.ai.azure.com
 ```
 
