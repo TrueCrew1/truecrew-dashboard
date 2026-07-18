@@ -23,6 +23,7 @@ for the reasoning behind a given row. Lane types, defined in full in `AGENT_RUNB
 | Obsidian | READ/WRITE, no gate (Build Log / Agent Log) · PROPOSE-ONLY (roadmap/decision docs) | Chief's own logging is routine; a genuine roadmap/decision change still needs a `PlannerApprovalRequest` | `AGENT_RUNBOOK.md` § Tool Catalog (Docs & notes), `AGENT_WORKFLOW.md` |
 | CodeRabbit | READ-ONLY | Automated PR review comments only — no write or merge access | `.coderabbit.yaml` (newly cataloged in this PR — not previously classified in `AGENT_RUNBOOK.md`) |
 | Ollama | PROPOSE-ONLY | Local AI OS base layer for coding & reasoning — the default Tier 1 target in `docs/internal/tool-model-routing-standard.md`; today realized only through Continue.dev's human-reviewed inline suggestions, not yet a Chief-system agent-callable tool | `TOOL_CATALOG.md#ollama-local`, `docs/internal/tool-model-routing-standard.md` |
+| Supabase migration PR check | READ-ONLY | CI check that lints/diffs migrations on PR against a non-production schema; never runs `supabase db push` | `.github/workflows/supabase-migration-pr-check.yml` |
 
 **On Ollama's lane:** `TOOL_CATALOG.md`'s existing `ollama-local` row still shows
 `owner_agent: —` and `status: launch-only` — accurate today, since Ollama isn't wired
