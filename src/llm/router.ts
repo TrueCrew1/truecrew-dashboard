@@ -1,17 +1,20 @@
 /**
- * LLM Router — lane + complexity → model selection
+ * LLM Router — lane + complexity → Azure deployment selection
  *
- * Decision matrix:
- *   | Lane     | low      | medium   | high     |
- *   |----------|----------|----------|----------|
- *   | research | deepseek | deepseek | kimi     |
- *   | builder  | deepseek | gpt5mini | gpt5mini |
- *   | chief    | deepseek | deepseek | gpt5mini |
+ * All-Azure setup using startup credits:
+ *   | Lane     | low         | medium      | high        |
+ *   |----------|-------------|-------------|-------------|
+ *   | research | gpt-4o-mini | gpt-4o-mini | gpt-4o      |
+ *   | builder  | gpt-4o-mini | gpt-5-mini  | gpt-5-mini  |
+ *   | chief    | gpt-4o-mini | gpt-4o-mini | gpt-5-mini  |
+ *
+ * Tiers:
+ *   - gpt-4o-mini: budget (cheap, routine tasks)
+ *   - gpt-4o: long-context (128K window)
+ *   - gpt-5-mini: quality (important reasoning)
  */
 
-import { callDeepseek } from "./deepseekClient";
-import { callKimi } from "./kimiClient";
-import { callGpt5Mini } from "./gpt5MiniClient";
+import { callAzure, type AzureDeployment } from "./azureClient";
 import {
   type Lane,
   type Complexity,
@@ -21,21 +24,28 @@ import {
 } from "./types";
 
 export function pickModel(input: { lane: Lane; complexity: Complexity }): ModelName {
+  const deployment = pickDeployment(input);
+  if (deployment === "gpt-4o-mini") return "deepseek";
+  if (deployment === "gpt-4o") return "kimi";
+  return "gpt5mini";
+}
+
+function pickDeployment(input: { lane: Lane; complexity: Complexity }): AzureDeployment {
   const { lane, complexity } = input;
 
   if (lane === "research") {
-    if (complexity === "high") return "kimi";
-    return "deepseek";
+    if (complexity === "high") return "gpt-4o";
+    return "gpt-4o-mini";
   }
 
   if (lane === "builder") {
-    if (complexity === "low") return "deepseek";
-    return "gpt5mini";
+    if (complexity === "low") return "gpt-4o-mini";
+    return "gpt-5-mini";
   }
 
   // chief lane
-  if (complexity === "high") return "gpt5mini";
-  return "deepseek";
+  if (complexity === "high") return "gpt-5-mini";
+  return "gpt-4o-mini";
 }
 
 export async function runTask(input: {
@@ -43,31 +53,28 @@ export async function runTask(input: {
   complexity: Complexity;
   prompt: string;
 }): Promise<LLMResponse> {
-  const model = pickModel(input);
+  const deployment = pickDeployment(input);
   const maxTokens = getMaxTokens(input.complexity);
 
-  switch (model) {
-    case "deepseek":
-      return callDeepseek(input.prompt, maxTokens);
-    case "kimi":
-      return callKimi(input.prompt, maxTokens);
-    case "gpt5mini":
-      return callGpt5Mini(input.prompt, maxTokens);
-  }
+  return callAzure(deployment, input.prompt, maxTokens);
 }
 
 export function describeRouting(): string {
   return `
-Lane/Complexity → Model:
+Lane/Complexity → Azure Deployment:
 
-  Lane     | low      | medium   | high
-  ---------|----------|----------|----------
-  research | deepseek | deepseek | kimi
-  builder  | deepseek | gpt5mini | gpt5mini
-  chief    | deepseek | deepseek | gpt5mini
+  Lane     | low         | medium      | high
+  ---------|-------------|-------------|-------------
+  research | gpt-4o-mini | gpt-4o-mini | gpt-4o
+  builder  | gpt-4o-mini | gpt-5-mini  | gpt-5-mini
+  chief    | gpt-4o-mini | gpt-4o-mini | gpt-5-mini
+
+Tiers:
+  - gpt-4o-mini: budget (routine tasks)
+  - gpt-4o: long-context (128K)
+  - gpt-5-mini: quality (reasoning)
 
 Token limits:  low=400, medium=600, high=800
-Temperature:   0.4
 Timeout:       30s
 `.trim();
 }
