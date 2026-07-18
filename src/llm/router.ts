@@ -2,15 +2,16 @@
  * LLM Router — lane + complexity → model selection
  *
  * Azure setup using startup credits:
- *   | Lane     | low        | medium     | high       |
- *   |----------|------------|------------|------------|
- *   | research | gpt-5-mini | gpt-5-mini | Kimi-K2.6  |
- *   | builder  | gpt-5-mini | gpt-5-mini | gpt-5-mini |
- *   | chief    | gpt-5-mini | gpt-5-mini | Kimi-K2.6  |
+ *   | Lane     | low          | medium       | high         |
+ *   |----------|--------------|--------------|--------------|
+ *   | research | DeepSeek-V3.2| DeepSeek-V3.2| Kimi-K2.6    |
+ *   | builder  | DeepSeek-V3.2| gpt-5-mini   | gpt-5-mini   |
+ *   | chief    | DeepSeek-V3.2| DeepSeek-V3.2| gpt-5-mini   |
  *
  * Tiers:
- *   - gpt-5-mini: default (Azure OpenAI)
- *   - Kimi-K2.6: long-context (Azure AI Foundry)
+ *   - DeepSeek-V3.2: budget (routine tasks) via Azure AI Foundry
+ *   - gpt-5-mini: quality (reasoning) via Azure OpenAI
+ *   - Kimi-K2.6: long-context via Azure AI Foundry
  */
 
 import { callAzure } from "./azureClient";
@@ -27,6 +28,7 @@ type RouterModel = FoundryModel | "gpt-5-mini";
 
 export function pickModel(input: { lane: Lane; complexity: Complexity }): ModelName {
   const model = pickRouterModel(input);
+  if (model === "DeepSeek-V3.2") return "deepseek";
   if (model === "Kimi-K2.6") return "kimi";
   return "gpt5mini";
 }
@@ -34,13 +36,19 @@ export function pickModel(input: { lane: Lane; complexity: Complexity }): ModelN
 function pickRouterModel(input: { lane: Lane; complexity: Complexity }): RouterModel {
   const { lane, complexity } = input;
 
-  // Use Kimi-K2.6 for high-complexity research and chief (long context)
-  if (complexity === "high" && (lane === "research" || lane === "chief")) {
-    return "Kimi-K2.6";
+  if (lane === "research") {
+    if (complexity === "high") return "Kimi-K2.6";
+    return "DeepSeek-V3.2";
   }
 
-  // Default to gpt-5-mini for everything else
-  return "gpt-5-mini";
+  if (lane === "builder") {
+    if (complexity === "low") return "DeepSeek-V3.2";
+    return "gpt-5-mini";
+  }
+
+  // chief lane
+  if (complexity === "high") return "gpt-5-mini";
+  return "DeepSeek-V3.2";
 }
 
 export async function runTask(input: {
@@ -62,15 +70,16 @@ export function describeRouting(): string {
   return `
 Lane/Complexity → Model:
 
-  Lane     | low        | medium     | high
-  ---------|------------|------------|----------
-  research | gpt-5-mini | gpt-5-mini | Kimi-K2.6
-  builder  | gpt-5-mini | gpt-5-mini | gpt-5-mini
-  chief    | gpt-5-mini | gpt-5-mini | Kimi-K2.6
+  Lane     | low          | medium       | high
+  ---------|--------------|--------------|------------
+  research | DeepSeek-V3.2| DeepSeek-V3.2| Kimi-K2.6
+  builder  | DeepSeek-V3.2| gpt-5-mini   | gpt-5-mini
+  chief    | DeepSeek-V3.2| DeepSeek-V3.2| gpt-5-mini
 
 Tiers:
-  - gpt-5-mini: default (Azure OpenAI)
-  - Kimi-K2.6: long-context (Azure AI Foundry)
+  - DeepSeek-V3.2: budget (routine tasks)
+  - gpt-5-mini: quality (reasoning)
+  - Kimi-K2.6: long-context
 
 Token limits:  low=400, medium=600, high=800
 Timeout:       30s

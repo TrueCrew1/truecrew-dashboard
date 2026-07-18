@@ -14,10 +14,11 @@ interface FoundryChatResponse {
   choices: Array<{ message: { content: string } }>;
 }
 
-export type FoundryModel = "Kimi-K2.6";
+export type FoundryModel = "Kimi-K2.6" | "DeepSeek-V3.2";
 
 const MODEL_TO_NAME: Record<FoundryModel, ModelName> = {
   "Kimi-K2.6": "kimi",
+  "DeepSeek-V3.2": "deepseek",
 };
 
 export async function callFoundry(
