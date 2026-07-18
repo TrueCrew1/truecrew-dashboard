@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { requireInternalAuth } from "../../lib/auth.js";
 
 type VercelDeployment = {
   state?: string;
@@ -33,7 +34,9 @@ function errorResponse(res: VercelResponse, error: string) {
   return res.status(200).json({ ok: false, error, recent: [] });
 }
 
-export default async function handler(_req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (!requireInternalAuth(req, res)) return;
+
   const token = process.env.VERCEL_API_TOKEN;
   const projectId = process.env.VERCEL_PROJECT_ID;
 
