@@ -3758,6 +3758,39 @@ button.chief-brief-metric {
   color: var(--steel-dim);
 }
 
+/* Chief lane only — two distinct sub-counts (approvals, blocked) instead of
+   one summed badge, so the number matches the "N approvals · M blockers"
+   status text directly below it. */
+.chief-home-lane-chips {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.chief-home-lane-chip {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
+  text-align: center;
+  color: var(--steel);
+}
+
+.chief-home-lane-chip--approvals {
+  border-color: var(--orange-border);
+  color: var(--orange);
+}
+
+.chief-home-lane-chip--blocked {
+  border-color: var(--yellow);
+  color: var(--yellow);
+}
+
 .chief-home-lane-status {
   margin: 0;
   font-size: 12px;
