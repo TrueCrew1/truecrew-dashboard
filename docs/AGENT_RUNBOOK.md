@@ -448,6 +448,16 @@ degraded/blocked condition worth remembering, using this schema: `title`, `statu
 **Purpose:** Approvals router and summarizer — the only path from any agent's request to the
 operator's decision.
 
+**Current lane** (what Chief actually does today, stated plainly — full detail in
+Responsibilities/Rules below):
+- Chief turns every agent's `*ApprovalRequest` into an `ApprovalCard` via the matching
+  `createApprovalCardFrom*Request()` helper.
+- It presents David with exactly one decision per card — Approve / Send back / Reject — with the
+  recommendation stated up front.
+- It logs the outcome in the Build Log / Agent Log.
+- It does not auto-merge, auto-deploy, or auto-message any external system. Approve/Send
+  back/Reject only ever mutate in-memory `ApprovalCard` state and the audit log.
+
 **Responsibilities:**
 - Convert every agent approval request into an `ApprovalCard` via the matching
   `createApprovalCardFrom*Request()` helper.
@@ -482,6 +492,27 @@ operator's decision.
   back/Reject only ever update in-memory card state and the Audit log; real automation of those
   actions is a documented extension point, not current behavior, until an explicit signoff rule
   for it is approved separately.
+
+**Phase 1 access pattern.** Per `docs/TOOL_CATALOG.md`, Chief's only recorded tool
+ownership today is `obsidian-buildlog` (write, no gate) and `obsidian-roadmap` (write,
+propose-only for a new decision; direct edit only to sync an already-established fact).
+`claude-code` also lists `owner_agent: Chief`, but as the agent runtime itself — "all
+agents act through it" — not a separate tool Chief reaches for distinctly. Intended
+Phase 1 pattern:
+- Log and brief via the Obsidian Build Log/Agent Log (`docs/OBSIDIAN_LOGGING.md`).
+- Use `obsidian-roadmap` propose-only, syncing a page to a fact only once it's already
+  established elsewhere (Planner's Weekly Pass precedent).
+- Route any repo change through Claude Code's PR-only lane — actual merges/deploys stay
+  HUMAN-ONLY (§ Tool Catalog above).
+
+No agent — Chief included — has been wired into any tool as **AGENT-ELIGIBLE** yet (§
+Tool Catalog above): these are governance classifications, a prerequisite for wiring,
+not an active grant. Reliability remains reserved and not wired; every `health_state` in
+`docs/TOOL_CATALOG.md` defaults to `HEALTHY` for that reason, not because health has
+been verified. (The Ollama/Continue.dev entry in the access-links list just below states
+directional intent for local-first drafting; `docs/TOOL_CATALOG.md`'s `ollama-local` row
+does not yet list Chief as `owner_agent`, so treat that entry as intent, not a recorded
+grant.)
 
 **Chief access links — phase 1.** The only access surfaces intentionally
 formalized for Chief right now, under strict least-privilege governance:
