@@ -483,6 +483,29 @@ operator's decision.
   actions is a documented extension point, not current behavior, until an explicit signoff rule
   for it is approved separately.
 
+**Chief access links — phase 1.** The only access surfaces intentionally
+formalized for Chief right now, under strict least-privilege governance:
+
+- **Ollama / local-first model routing** — the default layer for cognition
+  and drafting. Realized today via Continue.dev's human-reviewed inline
+  suggestions (`docs/TOOL_CATALOG.md` → `ollama-local`, `continue-dev`;
+  `CLAUDE.md` § Tool routing) — not yet a directly agent-callable API for
+  Chief itself; formalizing it here states the intended default without
+  claiming a runtime integration that doesn't exist yet.
+- **Obsidian logging** — the preferred audit-trail and status-brief sink.
+  Already Chief's own responsibility, no gate (`docs/OBSIDIAN_LOGGING.md`,
+  `docs/TOOL_CATALOG.md` → `obsidian-buildlog`).
+- **Claude Code** — the governed, PR-only execution lane for any repo
+  change. Every write still goes through this runbook's existing gates —
+  Build's merge gate above all (`docs/TOOL_CATALOG.md` → `claude-code`).
+
+These three are the only links being intentionally formalized this phase.
+Everything else stays exactly where it already was: no new GitHub App/bot
+permissions, no Vercel/Supabase write-path linking, no secrets-store access,
+and no new runtime agent code. External-system writes remain gated, not
+linked, until a future phase adds its own explicit policy and verification
+pass — see Change Control below.
+
 ---
 
 ## Incidents, Pauses, and Escalation
