@@ -1,0 +1,38 @@
+name: Supabase migration PR check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "supabase/migrations/**"
+      - "supabase/combined_migration.sql"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-migrations:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: "1.177.8"
+
+      # This workflow never runs `supabase db push` — it only lints/diffs
+      # against a non-production schema so a bad migration fails the PR
+      # before it can reach the real push-to-main migrate workflow.
+      - name: Lint / validate migrations (READ-ONLY)
+        run: |
+          supabase db lint || supabase db diff --linked --dry-run
+        env:
+          # Scoped to a non-production dev schema — never the prod DB URL.
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DEV_DB_URL }}

@@ -9,9 +9,15 @@ concurrency:
   group: vercel-production
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Production-only deploy — scope the environment here rather than
+    # putting production secrets at the workflow level.
+    environment: production
     steps:
       - uses: actions/checkout@v4
 

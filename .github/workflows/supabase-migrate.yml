@@ -8,6 +8,11 @@ on:
       - "supabase/migrations/**"
       - "supabase/combined_migration.sql"
 
+# Data-plane only — this workflow talks to Supabase, never to the GitHub
+# API, so it needs no GitHub write scope at any level.
+permissions:
+  contents: read
+
 jobs:
   migrate:
     runs-on: ubuntu-latest
