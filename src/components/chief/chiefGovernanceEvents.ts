@@ -14,6 +14,14 @@ export type ChiefGovernanceEventType =
   | "packet_created"
   | "card_created"
   | "card_decided"
+  | "card_forwarded"
+  | "card_returned_for_refinement"
+  | "mission_queued"
+  | "mission_started"
+  | "mission_completed"
+  | "mission_failed"
+  | "mission_retry_requested"
+  | "mission_reused_existing"
   | "task_reprioritized";
 
 export interface ChiefGovernanceEvent {

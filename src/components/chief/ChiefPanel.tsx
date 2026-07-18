@@ -41,11 +41,14 @@ export function ChiefPanel() {
   const {
     liveContext,
     approvals,
+    builderMissions,
     pendingApprovalCount,
     proposalsById,
     decisionsHydrated,
     addCommandApproval,
     recordDecision,
+    launchBuilderMission,
+    retryBuilderMission,
     history,
     addHistoryEntry,
   } = useChiefApprovals();
@@ -508,6 +511,13 @@ export function ChiefPanel() {
               onApprovalAction={handleApprovalAction}
               statusFilter={approvalStatusFilter}
               onStatusFilterChange={setApprovalStatusFilter}
+              builderMissions={builderMissions}
+              onLaunchBuilderMission={(proposalId) => {
+                launchBuilderMission(proposalId);
+              }}
+              onRetryBuilderMission={(proposalId) => {
+                retryBuilderMission(proposalId);
+              }}
             />
           </div>
         ) : null}
