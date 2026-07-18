@@ -50,12 +50,16 @@ export type ApprovalRecommendedDecision = "approve" | "hold" | "needs_changes";
  * Where a proposal originated. Populated today: "ops_change" (live
  * operational signals, via deriveApprovalCandidates), "pr" (see
  * chiefApprovalCardMocks.ts, demo data only), "repo_change" (see
- * repoChangeApprovals.ts — a real pending local repo change), and the four
+ * repoChangeApprovals.ts — a real pending local repo change), the four
  * agent sources — "planner_agent" / "agent_build" / "research_agent" /
  * "content_agent" (see agentApprovalGates.ts — each agent's approval
  * requests mapped to cards; example/mock requests for now, same helper
- * pattern every agent must use). Extension point: add a real source (e.g.
- * "github_pr" backed by the GitHub API) as that integration comes online.
+ * pattern every agent must use) — and "chief_workflow" (Chief's own
+ * internal, no-gate-required workflows, e.g. Memory Review Pass, per
+ * docs/AGENT_RUNBOOK.md § Memory Review Pass — recorded as a card so the
+ * run is visible/decidable, not because the workflow itself needs a gate).
+ * Extension point: add a real source (e.g. "github_pr" backed by the
+ * GitHub API) as that integration comes online.
  */
 export type ApprovalSource =
   | "pr"
@@ -64,7 +68,8 @@ export type ApprovalSource =
   | "repo_change"
   | "planner_agent"
   | "research_agent"
-  | "content_agent";
+  | "content_agent"
+  | "chief_workflow";
 
 export interface ApprovalProposal {
   id: string;

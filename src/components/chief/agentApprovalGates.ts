@@ -104,6 +104,18 @@ export interface ContentApprovalRequest extends BaseAgentApprovalRequest {
   audience: "client" | "public";
 }
 
+/**
+ * Chief's own internal, no-new-gate workflows (e.g. Memory Review Pass, per
+ * docs/AGENT_RUNBOOK.md § Memory Review Pass — Gate: none). Recorded as a
+ * card so a run is visible and decidable in the same Approvals surface as
+ * every other agent's requests, not because the underlying workflow
+ * requires approval to proceed — see `workflowName`.
+ */
+export interface ChiefWorkflowApprovalRequest extends Omit<BaseAgentApprovalRequest, "gate"> {
+  gate: string;
+  workflowName: string;
+}
+
 function baseCardFields(
   request: BaseAgentApprovalRequest,
   titlePrefix: string,
@@ -157,6 +169,18 @@ export function createApprovalCardFromResearchRequest(
 
 export function createApprovalCardFromContentRequest(request: ContentApprovalRequest): ApprovalCard {
   return baseCardFields(request, "Content", "content_agent", `Audience: ${request.audience}.`);
+}
+
+export function createApprovalCardFromChiefWorkflowRequest(
+  request: ChiefWorkflowApprovalRequest,
+): ApprovalCard {
+  return baseCardFields(
+    request,
+    "Chief",
+    "chief_workflow",
+    `Workflow: ${request.workflowName}. No approval gate required for this workflow per ` +
+      "AGENT_RUNBOOK.md — recorded here as a decision record, not a blocking gate.",
+  );
 }
 
 // --- Requests: Build is real (below); Planner/Research/Content are illustrative examples ---
