@@ -94,4 +94,18 @@ KIMI_BASE_URL=https://api.moonshot.cn/v1
 AZURE_OPENAI_API_KEY=
 AZURE_OPENAI_ENDPOINT=
 AZURE_OPENAI_DEPLOYMENT=gpt-5-mini
+
+# Azure AI Foundry (DeepSeek, Kimi)
+AZURE_AI_RESOURCE_ENDPOINT=
 ```
+
+## Vercel MCP
+
+The Vercel MCP server provides deployment and project management tools.
+
+**Auth required:** Must authenticate in Cursor Desktop before tools are available.
+
+**Safety rules:**
+- Read-only commands (list projects, view deployments) are preferred initially
+- Deploy-capable commands require manual approval
+- No automatic deploys from agent prompts
