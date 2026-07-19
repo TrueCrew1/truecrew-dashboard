@@ -90,6 +90,7 @@ describe("POST /api/chief/approvals Slack hook", () => {
   it("schedules governed approval updated Slack after a new decision", async () => {
     const req = {
       method: "POST",
+      query: {},
       body: {
         proposalId: "apr-research-psh-abc",
         status: "approved",

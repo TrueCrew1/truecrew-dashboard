@@ -28,7 +28,7 @@ vi.mock("../lib/governedLoopSlack.js", () => ({
     `Monitor state: ${input.state} (probe=${input.probeId}, incident=${input.incidentId ?? "none"}).`,
 }));
 
-import handler from "../api/chief/governed-slack-notify.js";
+import handler from "../api/chief/approvals/index.js";
 
 function createMockResponse() {
   const res = {
@@ -57,6 +57,7 @@ describe("POST /api/chief/governed-slack-notify", () => {
   it("schedules approval created Slack for governed approvals", async () => {
     const req = {
       method: "POST",
+      query: { view: "slack-notify" },
       body: {
         event: "approval_created",
         approvalId: "apr-research-psh-abc",
@@ -79,6 +80,7 @@ describe("POST /api/chief/governed-slack-notify", () => {
   it("posts monitor state Slack messages", async () => {
     const req = {
       method: "POST",
+      query: { view: "slack-notify" },
       body: {
         event: "monitor_state",
         state: "degraded",

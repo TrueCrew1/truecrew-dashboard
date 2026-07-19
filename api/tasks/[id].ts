@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { requireInternalAuth } from "../../lib/auth.js";
+import { listTaskArtifacts } from "../../lib/librarian/create.js";
 import { mapDbTaskToClient } from "../../lib/mappers/tasks.js";
 import { isSupabaseConfigured } from "../../lib/supabase/admin.js";
 import { updateTaskStage } from "../../lib/supabase/queries.js";
@@ -15,8 +16,38 @@ const VALID_STAGES = [
   "Logged",
 ] as const;
 
+function parseView(req: VercelRequest): string {
+  const view = req.query.view;
+  return typeof view === "string" ? view.trim() : "";
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!requireInternalAuth(req, res)) return;
+
+  const taskId = req.query.id;
+  if (typeof taskId !== "string" || !taskId) {
+    return res.status(400).json({ error: "Task id is required" });
+  }
+
+  if (req.method === "GET" && parseView(req) === "artifacts") {
+    if (!isSupabaseConfigured()) {
+      return res.status(503).json({ ok: false, error: "Database not configured" });
+    }
+
+    try {
+      const artifacts = await listTaskArtifacts(taskId);
+      return res.status(200).json({ ok: true, artifacts });
+    } catch (error) {
+      if (error instanceof Error && error.message === "Task not found") {
+        return res.status(404).json({ ok: false, error: error.message });
+      }
+      console.error("Failed to list task artifacts", error);
+      return res.status(500).json({
+        ok: false,
+        error: error instanceof Error ? error.message : "Failed to list artifacts",
+      });
+    }
+  }
 
   if (req.method !== "PATCH") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -24,11 +55,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (!isSupabaseConfigured()) {
     return res.status(503).json({ error: "Database not configured" });
-  }
-
-  const taskId = req.query.id;
-  if (typeof taskId !== "string" || !taskId) {
-    return res.status(400).json({ error: "Task id is required" });
   }
 
   const body = req.body as { stage?: unknown };

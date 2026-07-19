@@ -46,7 +46,7 @@ vi.mock("../lib/missions/projectSummaryHandoffStore.js", () => ({
   listProjectSummaryHandoffMissions: listProjectSummaryHandoffMissionsMock,
 }));
 
-import handler from "../api/research/project-summary-handoff.js";
+import handler from "../api/research/[kind].js";
 
 interface MockResponse {
   statusCode: number;
@@ -64,7 +64,7 @@ function createMockRequest(
     method: "POST",
     headers: {},
     body: {},
-    query: {},
+    query: { kind: "project-summary-handoff" },
     ...overrides,
   } as VercelRequest;
 }

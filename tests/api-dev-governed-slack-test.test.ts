@@ -14,7 +14,7 @@ vi.mock("../lib/governedLoopSlack.js", () => ({
   governedLoopSlack: governedLoopSlackMock,
 }));
 
-import handler from "../api/dev/governed-slack-test.js";
+import handler from "../api/chief/approvals/index.js";
 
 function createMockResponse() {
   const res = {
@@ -33,7 +33,7 @@ function createMockResponse() {
   return res;
 }
 
-describe("POST /api/dev/governed-slack-test", () => {
+describe("POST /api/chief/approvals?view=slack-test", () => {
   const originalNodeEnv = process.env.NODE_ENV;
   const originalVercelEnv = process.env.VERCEL_ENV;
 
@@ -51,7 +51,7 @@ describe("POST /api/dev/governed-slack-test", () => {
   });
 
   it("sends the dev test Slack message in non-production", async () => {
-    const req = { method: "POST" } as VercelRequest;
+    const req = { method: "POST", query: { view: "slack-test" } } as VercelRequest;
     const res = createMockResponse();
 
     await handler(req, res as unknown as VercelResponse);
@@ -66,7 +66,7 @@ describe("POST /api/dev/governed-slack-test", () => {
     process.env.NODE_ENV = "production";
     process.env.VERCEL_ENV = "production";
 
-    const req = { method: "POST" } as VercelRequest;
+    const req = { method: "POST", query: { view: "slack-test" } } as VercelRequest;
     const res = createMockResponse();
 
     await handler(req, res as unknown as VercelResponse);

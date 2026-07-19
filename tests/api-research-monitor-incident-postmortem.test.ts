@@ -44,7 +44,7 @@ vi.mock("../lib/missions/monitorIncidentPostmortemStore.js", () => ({
   listMonitorIncidentPostmortemMissions: listMonitorIncidentPostmortemMissionsMock,
 }));
 
-import handler from "../api/research/monitor-incident-postmortem.js";
+import handler from "../api/research/[kind].js";
 
 interface MockResponse {
   statusCode: number;
@@ -62,7 +62,7 @@ function createMockRequest(
     method: "POST",
     headers: {},
     body: {},
-    query: {},
+    query: { kind: "monitor-incident-postmortem" },
     ...overrides,
   } as VercelRequest;
 }
