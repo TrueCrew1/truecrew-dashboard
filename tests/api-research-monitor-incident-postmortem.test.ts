@@ -44,7 +44,7 @@ vi.mock("../lib/missions/monitorIncidentPostmortemStore.js", () => ({
   listMonitorIncidentPostmortemMissions: listMonitorIncidentPostmortemMissionsMock,
 }));
 
-import handler from "../api/research/[kind].js";
+import handler from "../api/research/dispatch.js";
 
 interface MockResponse {
   statusCode: number;
