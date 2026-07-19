@@ -21,6 +21,7 @@ import {
   parseHandoffContent,
   renderProjectSummaryHandoffNote,
 } from "./projectSummaryHandoffFormat.js";
+import { scheduleGovernedMissionSlack } from "../governedLoopSlack.js";
 
 function mapWorkflowProjectContext(
   row: Awaited<ReturnType<typeof fetchWorkflowProjectContextRow>>,
@@ -62,6 +63,7 @@ async function failMission(
     updatedAt: nowIso(),
   };
   await saveProjectSummaryHandoffMission(updated);
+  scheduleGovernedMissionSlack(updated);
   return updated;
 }
 
@@ -100,6 +102,7 @@ export async function executeProjectSummaryHandoff(
     error: undefined,
   };
   await saveProjectSummaryHandoffMission(mission);
+  scheduleGovernedMissionSlack(mission);
 
   if (!isVaultConfigured()) {
     return failMission(mission, "blocked", "Obsidian vault is not configured");
@@ -212,5 +215,6 @@ export async function executeProjectSummaryHandoff(
     error: undefined,
   };
   await saveProjectSummaryHandoffMission(completed);
+  scheduleGovernedMissionSlack(completed);
   return completed;
 }

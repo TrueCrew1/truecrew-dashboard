@@ -1,0 +1,63 @@
+name: Sync Slack webhook to Vercel
+
+on:
+  workflow_dispatch:
+    inputs:
+      slack_webhook_url:
+        description: "SLACK_WEBHOOK_URL (incoming webhook for Chief governed-loop notifications)"
+        required: true
+        type: string
+
+concurrency:
+  group: sync-slack-webhook-vercel
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Sync SLACK_WEBHOOK_URL to Vercel Production
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          SLACK_WEBHOOK_URL: ${{ inputs.slack_webhook_url }}
+        run: |
+          set -euo pipefail
+          if [ -z "${VERCEL_TOKEN:-}" ]; then
+            echo "::error::VERCEL_TOKEN not configured in repository secrets"
+            exit 1
+          fi
+          if [ -z "${SLACK_WEBHOOK_URL:-}" ]; then
+            echo "::error::slack_webhook_url input is required"
+            exit 1
+          fi
+
+          vercel env rm SLACK_WEBHOOK_URL production --yes --token="$VERCEL_TOKEN" 2>/dev/null || true
+          printf '%s' "$SLACK_WEBHOOK_URL" | vercel env add SLACK_WEBHOOK_URL production --token="$VERCEL_TOKEN"
+          echo "Synced SLACK_WEBHOOK_URL to Vercel production"
+
+      - name: Redeploy production
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+          npm ci
+          vercel build --prod --token="$VERCEL_TOKEN"
+          url=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")
+          echo "Deployed to $url"

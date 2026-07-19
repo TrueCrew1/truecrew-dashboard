@@ -21,6 +21,7 @@ import {
   postmortemNotePath,
   renderMonitorIncidentPostmortemNote,
 } from "./monitorIncidentPostmortemFormat.js";
+import { scheduleGovernedMissionSlack } from "../governedLoopSlack.js";
 
 function mapIncidentContext(
   row: Awaited<ReturnType<typeof fetchIncidentContextRow>>,
@@ -57,6 +58,7 @@ async function failMission(
     updatedAt: nowIso(),
   };
   await saveMonitorIncidentPostmortemMission(updated);
+  scheduleGovernedMissionSlack(updated);
   return updated;
 }
 
@@ -96,6 +98,7 @@ export async function executeMonitorIncidentPostmortem(
     error: undefined,
   };
   await saveMonitorIncidentPostmortemMission(mission);
+  scheduleGovernedMissionSlack(mission);
 
   if (!isVaultConfigured()) {
     return failMission(mission, "blocked", "Obsidian vault is not configured");
@@ -211,5 +214,6 @@ export async function executeMonitorIncidentPostmortem(
     error: undefined,
   };
   await saveMonitorIncidentPostmortemMission(completed);
+  scheduleGovernedMissionSlack(completed);
   return completed;
 }
