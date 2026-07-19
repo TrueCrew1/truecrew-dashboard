@@ -62,6 +62,16 @@ Also upserts ONLY these keys in .env.local (secrets left alone):
 `;
 }
 
+const WORKSPACE_PREVIEW = [
+  "00-Inbox-Downloads/",
+  "01-Needs-Review/",
+  "02-Research-Queue/",
+  "03-Second-Brain/",
+  "04-Archive/",
+  "05-Delete-Candidates/",
+  "Obsidian Vaults/TrueCrew Second Brain/",
+];
+
 async function main(): Promise<void> {
   loadEnvLocal();
   const args = process.argv.slice(2);
@@ -98,16 +108,6 @@ async function main(): Promise<void> {
   console.log("  npm run workspace:triage -- --dry-run");
   console.log("  npm run workspace:triage");
 }
-
-const WORKSPACE_PREVIEW = [
-  "00-Inbox-Downloads/",
-  "01-Needs-Review/",
-  "02-Research-Queue/",
-  "03-Second-Brain/",
-  "04-Archive/",
-  "05-Delete-Candidates/",
-  "Obsidian Vaults/TrueCrew Second Brain/",
-];
 
 main().catch((error: unknown) => {
   console.error(error instanceof Error ? error.message : error);
