@@ -3971,6 +3971,80 @@ button.chief-brief-metric {
   color: var(--steel-dim);
 }
 
+.approval-activity-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.approval-activity-list-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+}
+
+.approval-activity-list-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.approval-activity-list-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.approval-activity-list-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.approval-activity-list-summary {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--steel);
+  line-height: 1.4;
+}
+
+.approval-activity-list-meta {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--steel-dim);
+}
+
+.approval-activity-kind {
+  font-weight: 600;
+  color: var(--steel);
+}
+
+.approval-activity-link {
+  flex-shrink: 0;
+  align-self: center;
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.approval-activity-link:hover {
+  color: var(--accent-hover, var(--accent));
+}
+
 .agent-status-strip {
   padding: 12px 0 4px;
   border-top: 1px solid var(--border);

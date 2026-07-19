@@ -45,7 +45,7 @@ When live probes report a real platform issue, Chief surfaces one deduped approv
 - **Live mode:** operator decisions on real approval cards persist to Supabase (`chief_approval_decisions`) and append a vault activity JSON record under `Operations/Approvals/activity/<proposalId>.json` plus a decision note via `logDecision()`. Activity records are readable via `GET /api/chief/approval-activity`.
 - **Mock mode:** session-only activity rows in `ChiefApprovalsContext` for the current browser session; labeled honestly — no fake durable history.
 - **Scope:** all cards routed through `ChiefApprovalsContext.recordDecision`, including project-summary handoff and monitor platform approvals.
-- **Deferred:** Today `ApprovalActivityCard` UI and Chief deep-link navigation from activity items.
+- **Today:** `ApprovalActivityCard` on Today lists recent governed approval activity (handoff, postmortem, monitor platform) with status and a **View in Chief** deep link (`?chiefApproval=<proposalId>`) that opens the Chief Approvals tab and focuses the matching card.
 
 ### Approval execution feedback (Chief cards)
 

@@ -1,4 +1,5 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import {
   ChiefApprovalConflictError,
@@ -38,6 +39,11 @@ import { GovernanceEventsPanel } from "./GovernanceEventsPanel";
 import { chiefLog } from "./chiefLog";
 import type { ApprovalAction, ChiefResponse } from "./types";
 import type { ApprovalStatusFilter } from "./approvalStatus";
+import {
+  approvalCardElementId,
+  clearChiefApprovalDeepLink,
+  parseChiefApprovalDeepLink,
+} from "@/lib/navigation/approvalActivityNavigation";
 
 /** Dev-only observability tab — never shown in production builds. */
 const SHOW_GOVERNANCE_EVENTS_TAB = import.meta.env.DEV;
@@ -74,6 +80,9 @@ export function ChiefPanel() {
     Record<string, ApprovalActionState>
   >({});
   const [approvalStatusFilter, setApprovalStatusFilter] = useState<ApprovalStatusFilter>("all");
+  const [focusProposalId, setFocusProposalId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const pendingDeepLinkRef = useRef<string | null>(null);
   const liveApi = isLiveApiEnabled();
   const { missions: handoffMissions, refresh: refreshHandoffMissions } =
     useProjectSummaryHandoffMissions(30_000);
@@ -96,6 +105,34 @@ export function ChiefPanel() {
     setApprovalStatusFilter(filter);
     setActiveTab("approvals");
   }, []);
+
+  useEffect(() => {
+    const proposalId = parseChiefApprovalDeepLink(searchParams);
+    if (!proposalId) return;
+
+    pendingDeepLinkRef.current = proposalId;
+    const proposal = proposalsById.get(proposalId);
+    openApprovals(proposal?.status === "pending" ? "pending" : "all");
+    setFocusProposalId(proposalId);
+  }, [searchParams, proposalsById, openApprovals]);
+
+  useEffect(() => {
+    if (!focusProposalId || activeTab !== "approvals") return undefined;
+
+    const proposalId = focusProposalId;
+    const timer = window.setTimeout(() => {
+      document
+        .getElementById(approvalCardElementId(proposalId))
+        ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+      if (pendingDeepLinkRef.current === proposalId) {
+        pendingDeepLinkRef.current = null;
+        setSearchParams(clearChiefApprovalDeepLink(searchParams), { replace: true });
+      }
+    }, 100);
+
+    return () => window.clearTimeout(timer);
+  }, [focusProposalId, activeTab, searchParams, setSearchParams]);
 
   const boardItems = useMemo(
     () => deriveChiefBoardItems(liveContext, approvals),
@@ -613,6 +650,7 @@ export function ChiefPanel() {
               onApprovalAction={handleApprovalAction}
               statusFilter={approvalStatusFilter}
               onStatusFilterChange={setApprovalStatusFilter}
+              focusProposalId={focusProposalId}
               missionsByProposalId={missionsByProposalId}
               liveApiEnabled={liveApi}
             />

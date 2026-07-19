@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ShiftStatsStrip } from "@/components/dashboard/ShiftStatsStrip";
 import { ChiefHomePanel } from "@/components/chief/ChiefHomePanel";
 import { AgentMissionsCard } from "@/components/missions/AgentMissionsCard";
+import { ApprovalActivityCard } from "@/components/today/ApprovalActivityCard";
 import { EntityContextMeta, TaskCell } from "@/components/tasks/TaskCell";
 import { TaskWarningSummary } from "@/components/tasks/TaskWarningSummary";
 import {
@@ -71,6 +72,8 @@ export function TodayPage() {
 
       <div className="page-stack">
         <AgentMissionsCard />
+
+        <ApprovalActivityCard />
 
         <ChiefHomePanel />
 

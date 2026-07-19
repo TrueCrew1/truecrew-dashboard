@@ -20,7 +20,7 @@ Chief V1 now has several real governed loops wired end-to-end in the dashboard. 
 
 - **Trigger:** Operator approves/rejects/sends back via Chief approvals.
 - **Execution:** Decision recorded in Supabase; vault JSON + decision note appended; execution feedback line shows mission / informational outcome.
-- **Visibility:** Decisions persist to vault activity JSON in live mode; execution feedback appears on approval cards. Today approval-activity UI is deferred.
+- **Visibility:** Decisions persist to vault activity JSON in live mode; execution feedback appears on approval cards. Today shows governed approval activity via `ApprovalActivityCard` with deep-link navigation into Chief Approvals.
 
 ### Mission outcome → artifact/result references
 
