@@ -5,11 +5,16 @@ import {
   approvalActionSuccessMessage,
   resolvedApprovalMessage,
 } from "./chiefApproval";
+import { ApprovalExecutionFeedbackLine } from "./ApprovalExecutionFeedbackLine";
+import type { ApprovalExecutionFeedback } from "./approvalExecutionFeedback";
+import type { ApprovalResultLink } from "./approvalResultLinks";
 import type { ApprovalAction, ApprovalProposal } from "./types";
 
 interface ChiefApprovalActionsProps {
   proposal: ApprovalProposal;
   actionState?: ApprovalActionState;
+  executionFeedback?: ApprovalExecutionFeedback | null;
+  resultLinks?: readonly ApprovalResultLink[];
   onAction: (proposalId: string, action: ApprovalAction) => void;
   variant: "board" | "card";
 }
@@ -17,6 +22,8 @@ interface ChiefApprovalActionsProps {
 export function ChiefApprovalActions({
   proposal,
   actionState,
+  executionFeedback,
+  resultLinks = [],
   onAction,
   variant,
 }: ChiefApprovalActionsProps) {
@@ -35,23 +42,39 @@ export function ChiefApprovalActions({
           });
 
     return (
-      <p
-        className={`chief-approval-feedback chief-approval-feedback--resolved chief-approval-feedback--${proposal.status}`}
-        aria-live="polite"
-      >
-        {message}
-      </p>
+      <div className="chief-approval-result">
+        <p
+          className={`chief-approval-feedback chief-approval-feedback--resolved chief-approval-feedback--${proposal.status}`}
+          aria-live="polite"
+        >
+          {message}
+        </p>
+        {executionFeedback ? (
+          <ApprovalExecutionFeedbackLine
+            feedback={executionFeedback}
+            resultLinks={resultLinks}
+          />
+        ) : null}
+      </div>
     );
   }
 
   if (isSuccess && activeAction) {
     return (
-      <p
-        className={`chief-approval-feedback chief-approval-feedback--success chief-approval-feedback--${activeAction}`}
-        aria-live="polite"
-      >
-        {actionState?.message ?? approvalActionSuccessMessage(activeAction, proposal.routeLabel)}
-      </p>
+      <div className="chief-approval-result">
+        <p
+          className={`chief-approval-feedback chief-approval-feedback--success chief-approval-feedback--${activeAction}`}
+          aria-live="polite"
+        >
+          {actionState?.message ?? approvalActionSuccessMessage(activeAction, proposal.routeLabel)}
+        </p>
+        {executionFeedback ? (
+          <ApprovalExecutionFeedbackLine
+            feedback={executionFeedback}
+            resultLinks={resultLinks}
+          />
+        ) : null}
+      </div>
     );
   }
 
@@ -65,6 +88,8 @@ export function ChiefApprovalActions({
           {actionState.message}
         </p>
       ) : null}
+
+      {executionFeedback ? <ApprovalExecutionFeedbackLine feedback={executionFeedback} resultLinks={resultLinks} /> : null}
 
       {proposal.routeTo ? (
         <Link

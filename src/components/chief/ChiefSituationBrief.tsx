@@ -1,6 +1,10 @@
 import { Link } from "react-router-dom";
 import { CHIEF_ROUTES } from "./chiefRoutes";
 import { RecentActivityStrip } from "./RecentActivityStrip";
+import {
+  chiefMonitorBriefStatusClass,
+  deriveChiefSituationBriefFromMonitor,
+} from "./chiefMonitorSituation";
 import type { PendingApprovalUrgencySummary } from "./chiefApprovalUrgency";
 import type { ChiefLiveContext } from "./chiefLiveContext";
 import type { PlatformHealthState } from "@/types/monitor";
@@ -14,30 +18,6 @@ interface ChiefSituationBriefProps {
   platformHealth?: PlatformHealthState;
   /** Gates the platform-health line so mock-mode data is never shown as real. */
   liveApiEnabled?: boolean;
-}
-
-/** Null when Vercel is fine — only describes an actual reported problem. */
-function vercelIssueLabel(vercel: PlatformHealthState["vercel"]): string | null {
-  if (vercel.error) return `Vercel: ${vercel.error}`;
-  if (vercel.data && vercel.data.ok === false) {
-    return `Vercel: ${vercel.data.error ?? "reporting an error"}`;
-  }
-  if (vercel.data?.latest?.state && vercel.data.latest.state.toUpperCase() === "ERROR") {
-    return "Vercel: latest deploy failed";
-  }
-  return null;
-}
-
-/** Null when Supabase is fine — only describes an actual reported problem. */
-function supabaseIssueLabel(supabase: PlatformHealthState["supabase"]): string | null {
-  if (supabase.error) return `Supabase: ${supabase.error}`;
-  if (supabase.data && supabase.data.ok === false) {
-    return `Supabase: ${supabase.data.error ?? supabase.data.message ?? "reporting an error"}`;
-  }
-  if (supabase.data && supabase.data.db_reachable === false) {
-    return "Supabase: database unreachable";
-  }
-  return null;
 }
 
 interface BriefMetric {
@@ -75,12 +55,10 @@ export function ChiefSituationBrief({
   const contextGapCount =
     context.tasksMissingCustomer.length + context.tasksMissingWorkflow.length;
 
-  const platformIssues =
-    liveApiEnabled && platformHealth
-      ? [vercelIssueLabel(platformHealth.vercel), supabaseIssueLabel(platformHealth.supabase)].filter(
-          (issue): issue is string => issue !== null,
-        )
-      : [];
+  const monitorBrief = deriveChiefSituationBriefFromMonitor({
+    liveApiEnabled: liveApiEnabled === true,
+    platformHealth,
+  });
 
   const urgencySublabel = pendingUrgency
     ? formatPendingUrgencySublabel(pendingUrgency)
@@ -130,13 +108,30 @@ export function ChiefSituationBrief({
   ];
 
   const hasSignal = metrics.some((metric) => metric.count > 0);
+  const platformClear = monitorBrief.tone === "healthy";
 
   return (
     <section className="chief-brief" aria-label="Operational situation brief">
       <div className="chief-brief-header">
         <h2 className="chief-brief-title">Situation brief</h2>
-        {!hasSignal ? (
+        {!hasSignal && platformClear ? (
           <span className="chief-brief-status chief-brief-status--clear">Queue stable</span>
+        ) : null}
+      </div>
+
+      <div
+        className={`chief-brief-platform ${chiefMonitorBriefStatusClass(monitorBrief.tone)}`}
+        role="status"
+        aria-live="polite"
+      >
+        <p className="chief-brief-platform-headline">{monitorBrief.headline}</p>
+        {monitorBrief.detail ? (
+          <p className="chief-brief-platform-detail">{monitorBrief.detail}</p>
+        ) : null}
+        {liveApiEnabled ? (
+          <Link to={CHIEF_ROUTES.monitor} className="chief-brief-link">
+            View on Monitor →
+          </Link>
         ) : null}
       </div>
 
@@ -195,15 +190,6 @@ export function ChiefSituationBrief({
           {context.overdueTasks.length === 1 ? "" : "s"} —{" "}
           <Link to={CHIEF_ROUTES.operationsOverdue} className="chief-brief-link">
             view on Operations
-          </Link>
-        </p>
-      ) : null}
-
-      {platformIssues.length > 0 ? (
-        <p className="chief-brief-footnote" role="status">
-          Platform issue — {platformIssues.join(" · ")} —{" "}
-          <Link to={CHIEF_ROUTES.monitor} className="chief-brief-link">
-            view on Monitor
           </Link>
         </p>
       ) : null}

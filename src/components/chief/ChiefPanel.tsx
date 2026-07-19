@@ -5,12 +5,28 @@ import {
   formatDataSourceLabel,
   isLiveApiEnabled,
 } from "@/lib/api/client";
+import { executeProjectSummaryHandoffMission } from "@/lib/api/researchMission";
+import { executeMonitorIncidentPostmortemMission } from "@/lib/api/researchPostmortemMission";
+import { useProjectSummaryHandoffMissions } from "@/hooks/useProjectSummaryHandoffMissions";
+import { useMonitorIncidentPostmortemMissions } from "@/hooks/useMonitorIncidentPostmortemMissions";
+import {
+  incidentIdForResearchMonitorIncidentPostmortemProposal,
+  isResearchMonitorIncidentPostmortemProposal,
+} from "./researchIncidentProposal";
+import {
+  mergeResearchMissionsByProposalId,
+  type ResearchMissionPayload,
+} from "./researchMonitorIncidentPostmortem";
 import { useMonitorHealth } from "@/hooks/useMonitorHealth";
 import { ApprovalBoard } from "./ApprovalBoard";
 import { ChiefQueueStrip } from "./ChiefQueueStrip";
 import { CommandHistory } from "./CommandHistory";
 import { buildApprovalFromResponse, buildHistoryEntry } from "./chiefMock";
 import { approvalActionSuccessMessage, type ApprovalActionState } from "./chiefApproval";
+import {
+  isResearchProjectSummaryHandoffProposal,
+  projectIdForResearchProjectSummaryHandoffProposal,
+} from "./researchProjectSummaryHandoff";
 import { classifyChiefEvaluation, evaluationInputFromChiefResponse } from "./chiefDecisionTier";
 import { deriveChiefBoardItems, resolveChiefCommand } from "./chiefLiveContext";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
@@ -59,6 +75,20 @@ export function ChiefPanel() {
   >({});
   const [approvalStatusFilter, setApprovalStatusFilter] = useState<ApprovalStatusFilter>("all");
   const liveApi = isLiveApiEnabled();
+  const { missions: handoffMissions, refresh: refreshHandoffMissions } =
+    useProjectSummaryHandoffMissions(30_000);
+  const { missions: postmortemMissions, refresh: refreshPostmortemMissions } =
+    useMonitorIncidentPostmortemMissions(30_000);
+  const [researchMissionOverrides, setResearchMissionOverrides] = useState<
+    Record<string, ResearchMissionPayload>
+  >({});
+  const missionsByProposalId = useMemo(() => {
+    const map = mergeResearchMissionsByProposalId(handoffMissions, postmortemMissions);
+    for (const [proposalId, mission] of Object.entries(researchMissionOverrides)) {
+      map.set(proposalId, mission);
+    }
+    return map;
+  }, [handoffMissions, postmortemMissions, researchMissionOverrides]);
   // Same hook and endpoints Monitor already uses — no new polling or data source.
   const platformHealth = useMonitorHealth();
 
@@ -145,6 +175,79 @@ export function ChiefPanel() {
       try {
         await recordDecision(id, action);
 
+        if (action === "approved" && liveApi) {
+          let launchMission: (() => Promise<ResearchMissionPayload>) | null = null;
+          let missingLinkMessage: string | null = null;
+
+          if (isResearchProjectSummaryHandoffProposal(proposal)) {
+            const projectId = projectIdForResearchProjectSummaryHandoffProposal(proposal);
+            if (projectId) {
+              launchMission = () =>
+                executeProjectSummaryHandoffMission({
+                  proposalId: id,
+                  projectId,
+                });
+            } else {
+              missingLinkMessage = "missing project linkage on this approval card.";
+            }
+          } else if (isResearchMonitorIncidentPostmortemProposal(proposal)) {
+            const incidentId = incidentIdForResearchMonitorIncidentPostmortemProposal(proposal);
+            if (incidentId) {
+              launchMission = () =>
+                executeMonitorIncidentPostmortemMission({
+                  proposalId: id,
+                  incidentId,
+                });
+            } else {
+              missingLinkMessage = "missing incident linkage on this approval card.";
+            }
+          }
+
+          if (missingLinkMessage) {
+            setApprovalActionStates((prev) => ({
+              ...prev,
+              [id]: {
+                phase: "error",
+                action,
+                message: `Approved, but mission did not run: ${missingLinkMessage}`,
+              },
+            }));
+            return;
+          }
+
+          if (launchMission) {
+            try {
+              const mission = await launchMission();
+              setResearchMissionOverrides((prev) => ({ ...prev, [id]: mission }));
+              void refreshHandoffMissions();
+              void refreshPostmortemMissions();
+              setApprovalActionStates((prev) => ({
+                ...prev,
+                [id]: {
+                  phase: "success",
+                  action,
+                  message: approvalActionSuccessMessage(action, proposal.routeLabel),
+                },
+              }));
+              return;
+            } catch (missionError) {
+              const missionMessage =
+                missionError instanceof Error
+                  ? missionError.message
+                  : "Research mission failed to start";
+              setApprovalActionStates((prev) => ({
+                ...prev,
+                [id]: {
+                  phase: "error",
+                  action,
+                  message: `Approved, but mission did not run: ${missionMessage}`,
+                },
+              }));
+              return;
+            }
+          }
+        }
+
         setApprovalActionStates((prev) => ({
           ...prev,
           [id]: {
@@ -176,7 +279,7 @@ export function ChiefPanel() {
         }));
       }
     },
-    [proposalsById, recordDecision, decisionsHydrated],
+    [proposalsById, recordDecision, decisionsHydrated, liveApi, refreshHandoffMissions, refreshPostmortemMissions],
   );
 
   const handleSubmit = (event: FormEvent) => {
@@ -480,6 +583,8 @@ export function ChiefPanel() {
               approvalActionStates={approvalActionStates}
               onApprovalAction={handleApprovalAction}
               onOpenApprovals={() => openApprovals("pending")}
+              missionsByProposalId={missionsByProposalId}
+              liveApiEnabled={liveApi}
             />
           </div>
         ) : null}
@@ -508,6 +613,8 @@ export function ChiefPanel() {
               onApprovalAction={handleApprovalAction}
               statusFilter={approvalStatusFilter}
               onStatusFilterChange={setApprovalStatusFilter}
+              missionsByProposalId={missionsByProposalId}
+              liveApiEnabled={liveApi}
             />
           </div>
         ) : null}

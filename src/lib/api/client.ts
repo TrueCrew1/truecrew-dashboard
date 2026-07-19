@@ -107,6 +107,37 @@ export interface ChiefApprovalDecisionPayload {
   actor: "founder" | "operator" | "observer" | null;
 }
 
+export interface ChiefApprovalActivityPayload {
+  title: string;
+  summary: string;
+  source?: string;
+  category?: string;
+  missionKind?: string;
+}
+
+export interface ChiefApprovalActivityRecordPayload {
+  proposalId: string;
+  title: string;
+  summary: string;
+  decision: "approved" | "rejected" | "sent_back";
+  decidedAt: string;
+  actor: "founder" | "operator" | "observer" | null;
+  source: string | null;
+  category: string | null;
+  missionKind: string | null;
+  recordedAt: string;
+}
+
+export interface RecordChiefApprovalDecisionResult {
+  decision: ChiefApprovalDecisionPayload;
+  activity?: {
+    recorded: boolean;
+    vaultPath?: string;
+    obsidianDecisionPath?: string;
+    error?: string;
+  };
+}
+
 export class ChiefApprovalConflictError extends Error {
   decision: ChiefApprovalDecisionPayload;
 
@@ -130,16 +161,23 @@ export async function recordChiefApprovalDecision(
   proposalId: string,
   status: "approved" | "rejected" | "sent_back",
   actor?: "founder" | "operator" | "observer" | null,
-): Promise<ChiefApprovalDecisionPayload> {
+  activity?: ChiefApprovalActivityPayload,
+): Promise<RecordChiefApprovalDecisionResult> {
   const response = await apiFetch("/api/chief/approvals", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ proposalId, status, actor: actor ?? null }),
+    body: JSON.stringify({
+      proposalId,
+      status,
+      actor: actor ?? null,
+      activity: activity ?? undefined,
+    }),
   });
 
   const body = (await response.json().catch(() => ({}))) as {
     error?: string;
     decision?: ChiefApprovalDecisionPayload;
+    activity?: RecordChiefApprovalDecisionResult["activity"];
   };
 
   if (response.status === 409 && body.decision) {
@@ -154,7 +192,30 @@ export async function recordChiefApprovalDecision(
     throw new Error("Approval decision API returned no decision");
   }
 
-  return body.decision;
+  return {
+    decision: body.decision,
+    activity: body.activity,
+  };
+}
+
+export async function fetchApprovalActivity(): Promise<{
+  activity: ChiefApprovalActivityRecordPayload[];
+  vaultConfigured: boolean;
+}> {
+  const response = await apiFetch("/api/chief/approval-activity");
+  if (!response.ok) {
+    throw new Error(`Approval activity API returned ${response.status}`);
+  }
+
+  const body = (await response.json()) as {
+    activity?: ChiefApprovalActivityRecordPayload[];
+    vaultConfigured?: boolean;
+  };
+
+  return {
+    activity: body.activity ?? [],
+    vaultConfigured: body.vaultConfigured ?? false,
+  };
 }
 
 export async function fetchHealth(): Promise<{

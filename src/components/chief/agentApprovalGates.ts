@@ -61,6 +61,8 @@ export const APPROVAL_GATES: Record<AgentRole, readonly string[]> = {
   research: [
     "New tool or stack adoption",
     "Vendor selection or contract decision",
+    "Project summary and build handoff",
+    "Monitor incident postmortem",
   ],
   content: [
     "External-facing copy shipped to clients or the public",
@@ -98,6 +100,10 @@ export interface BuildApprovalRequest extends Omit<BaseAgentApprovalRequest, "ga
 
 export interface ResearchApprovalRequest extends BaseAgentApprovalRequest {
   alternativesConsidered: string[];
+  /** Executable mission kind when approval should trigger a governed runner. */
+  missionKind?: string;
+  /** Workflow/project id the mission should load from Supabase. */
+  missionProjectId?: string;
 }
 
 export interface ContentApprovalRequest extends BaseAgentApprovalRequest {
@@ -145,14 +151,18 @@ export function createApprovalCardFromBuildRequest(request: BuildApprovalRequest
 export function createApprovalCardFromResearchRequest(
   request: ResearchApprovalRequest,
 ): ApprovalCard {
-  return baseCardFields(
-    request,
-    "Research",
-    "research_agent",
-    request.alternativesConsidered.length > 0
-      ? `Alternatives considered: ${request.alternativesConsidered.join(", ")}.`
-      : "No alternatives recorded.",
-  );
+  return {
+    ...baseCardFields(
+      request,
+      "Research",
+      "research_agent",
+      request.alternativesConsidered.length > 0
+        ? `Alternatives considered: ${request.alternativesConsidered.join(", ")}.`
+        : "No alternatives recorded.",
+    ),
+    missionKind: request.missionKind,
+    missionProjectId: request.missionProjectId,
+  };
 }
 
 export function createApprovalCardFromContentRequest(request: ContentApprovalRequest): ApprovalCard {

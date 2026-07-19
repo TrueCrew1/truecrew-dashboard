@@ -6,12 +6,14 @@ import {
   deriveAgentAwaitingApprovalWorkItems,
   deriveBuildAgentWorkItems,
   deriveLibrarianAgentWorkItems,
+  deriveProjectSummaryHandoffWorkItems,
   deriveResearchAgentWorkItems,
   deriveWorkflowGateAgentWorkItems,
 } from "./chiefLiveContext";
 import { getApprovalUrgencyBadge, OVERDUE_HOURS } from "./chiefApprovalUrgency";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { useData } from "@/context/DataContext";
+import { useProjectSummaryHandoffMissions } from "@/hooks/useProjectSummaryHandoffMissions";
 import type { AgentWorkItem, AgentWorkStatus, ApprovalProposal } from "./types";
 import type { TaskPriority } from "@/types";
 
@@ -99,6 +101,7 @@ function AgentWorkCard({
 export function AgentWorkBoard() {
   const { data } = useData();
   const { approvals } = useChiefApprovals();
+  const { missions: handoffMissions } = useProjectSummaryHandoffMissions();
   const buildItems = useMemo(() => deriveBuildAgentWorkItems(data.tasks), [data.tasks]);
   const workflowGateItems = useMemo(
     () => deriveWorkflowGateAgentWorkItems(data.tasks),
@@ -107,6 +110,10 @@ export function AgentWorkBoard() {
   const researchItems = useMemo(
     () => deriveResearchAgentWorkItems(data.incidents),
     [data.incidents],
+  );
+  const handoffItems = useMemo(
+    () => deriveProjectSummaryHandoffWorkItems(handoffMissions),
+    [handoffMissions],
   );
   const librarianItems = useMemo(
     () => deriveLibrarianAgentWorkItems(data.tasks, data.notes),
@@ -130,11 +137,12 @@ export function AgentWorkBoard() {
       ...buildItems,
       ...workflowGateItems,
       ...researchItems,
+      ...handoffItems,
       ...librarianItems,
       ...awaitingApprovalItems,
       ...AGENT_WORK_ITEMS,
     ],
-    [buildItems, workflowGateItems, researchItems, librarianItems, awaitingApprovalItems],
+    [buildItems, workflowGateItems, researchItems, handoffItems, librarianItems, awaitingApprovalItems],
   );
 
   if (items.length === 0) {

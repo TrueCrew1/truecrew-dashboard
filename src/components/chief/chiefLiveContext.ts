@@ -584,6 +584,50 @@ export function deriveResearchAgentWorkItems(incidents: Incident[]): AgentWorkIt
   });
 }
 
+type ProjectSummaryHandoffMissionLike = {
+  id: string;
+  status: "queued" | "running" | "completed" | "blocked" | "failed";
+  projectId: string;
+  projectTitle: string;
+  updatedAt: string;
+  error?: string;
+  outputNotePath?: string;
+  handoff?: { recommendedNextBuildStep: string };
+};
+
+function mapMissionStatusToAgentWork(
+  status: ProjectSummaryHandoffMissionLike["status"],
+): AgentWorkItem["status"] {
+  if (status === "queued") return "queued";
+  if (status === "running") return "active";
+  if (status === "completed") return "completed";
+  return "blocked";
+}
+
+export function deriveProjectSummaryHandoffWorkItems(
+  missions: ProjectSummaryHandoffMissionLike[],
+): AgentWorkItem[] {
+  return missions.map((mission) => {
+    const status = mapMissionStatusToAgentWork(mission.status);
+    const note =
+      mission.status === "completed"
+        ? mission.handoff?.recommendedNextBuildStep ??
+          (mission.outputNotePath ? `Wrote ${mission.outputNotePath}` : "Handoff complete.")
+        : mission.error ?? `Status: ${mission.status}`;
+
+    return {
+      id: `agentwork-research-psh-${mission.id}`,
+      agent: "Research Agent",
+      task: `Project summary handoff — ${mission.projectTitle || mission.projectId}`,
+      status,
+      priority: status === "blocked" ? "high" : "medium",
+      note,
+      updatedAt: mission.updatedAt,
+      source: "live",
+    };
+  });
+}
+
 function artifactsByWorkItemId(notes: Note[]): Map<string, Artifact> {
   const map = new Map<string, Artifact>();
   for (const note of notes) {
