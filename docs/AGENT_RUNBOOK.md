@@ -1089,7 +1089,7 @@ Core policy:
 | Obsidian vault — roadmap/decision docs (e.g. Approvals Roadmap) | AGENT-ELIGIBLE | Planner, Chief | PROPOSE-ONLY for new decisions; direct edit only for syncing a doc to an already-established fact (see Planner's Weekly Pass precedent) | A genuine roadmap/phase change still needs a `PlannerApprovalRequest` first. |
 | Repo docs (`docs/*.md`, `README.md`) | AGENT-ELIGIBLE | Content, Build | PROPOSE-ONLY via PR; external-facing bits (e.g. README) get their own single-issue card | Content's "external copy — no surprises" rule applies to anything public-facing, including a public README. |
 | Notion | HUMAN-ONLY | — | — | Not authorized in this environment; also redundant with Obsidian as the vault of record — no clear need yet. |
-| Google Drive | HUMAN-ONLY | — | — | Contents/sensitivity not scoped; revisit if a specific, narrow folder becomes relevant. |
+| Google Drive | SCOPED | Research, Chief | READ/WRITE inside `TrueCrew/` intake folders only (via local / Drive Desktop path) | Pilot: bots may classify/move inside `TrueCrew/00–05-*` and append triage logs. Still HUMAN-ONLY for permanent delete outside `05-Delete-Candidates`, email, and all other Drive trees. See `docs/RESEARCH_CLEANUP_WORKFLOW.md`. |
 
 ### Dashboards & analytics
 

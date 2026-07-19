@@ -70,6 +70,9 @@ work is:
 | Hot context (live vault) | `True Crew/Hot Context.md` |
 | Obsidian write CLI | `npm run obsidian:log` |
 | Vault seed script | `npm run obsidian:setup-vault` |
+| Intake workspace setup | `npm run workspace:setup` |
+| Inbox triage (research + cleanup pilot) | `npm run workspace:triage` |
+| Research + cleanup workflow | [RESEARCH_CLEANUP_WORKFLOW.md](RESEARCH_CLEANUP_WORKFLOW.md) |
 
 ## Bootstrapping the Obsidian vault
 

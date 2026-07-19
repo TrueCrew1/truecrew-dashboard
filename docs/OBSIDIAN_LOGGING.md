@@ -20,8 +20,12 @@ Minimal local-first logging from True Crew into your live Obsidian vault. Obsidi
 |----------|------------|------------|
 | **Build log** | `Operations/Logs/Build Log.md` | Append section |
 | **PR log** | `Operations/Logs/PR Log.md` | Append section |
+| **Triage log** | `Operations/Logs/Triage Log.md` | Append section (intake pilot) |
 | **Decision log** | `Decisions/{YYYY-MM-DD} — {title}.md` | New note per decision |
 | **Hot context** | `True Crew/Hot Context.md` | Overwrite (single living note) |
+
+Intake / second-brain notes from triage also write under `Sources/`, `Topics/`, and
+`Synthesis/`. See [RESEARCH_CLEANUP_WORKFLOW.md](RESEARCH_CLEANUP_WORKFLOW.md).
 
 These align with existing seed/mock conventions (`Decisions/…`, `Operations/…`) and keep rolling logs separate from one-off deploy/runbook notes.
 
