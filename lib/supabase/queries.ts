@@ -75,6 +75,137 @@ export async function insertChiefApprovalDecision(
   return { row: data as DbChiefApprovalDecisionRow, created: true };
 }
 
+export interface WorkflowProjectContextRow {
+  id: string;
+  title: string;
+  type: string;
+  stage: string;
+  owner: string;
+  summary: string;
+  tasks: Array<{
+    id: string;
+    title: string;
+    stage: string;
+    workflowType: string;
+    priority: string;
+    blocker: string | null;
+    description: string;
+  }>;
+}
+
+export async function fetchWorkflowProjectContext(
+  workflowId: string,
+): Promise<WorkflowProjectContextRow | null> {
+  const supabase = getSupabaseAdmin();
+  const workflowColumn = UUID_RE.test(workflowId) ? "id" : "legacy_id";
+
+  const { data: workflow, error: wfError } = await supabase
+    .from("workflows")
+    .select("id, title, type, stage, owner, summary")
+    .eq(workflowColumn, workflowId)
+    .maybeSingle();
+
+  if (wfError) throw new Error(wfError.message);
+  if (!workflow) return null;
+
+  const { data: links, error: linkError } = await supabase
+    .from("workflow_tasks")
+    .select("task_id")
+    .eq("workflow_id", workflow.id);
+
+  if (linkError) throw new Error(linkError.message);
+
+  const taskIds = (links ?? []).map((row) => row.task_id);
+  let tasks: WorkflowProjectContextRow["tasks"] = [];
+
+  if (taskIds.length > 0) {
+    const { data: taskRows, error: taskError } = await supabase
+      .from("tasks")
+      .select("id, title, stage, workflow_type, priority, blocker, description")
+      .in("id", taskIds)
+      .order("updated_at", { ascending: true });
+
+    if (taskError) throw new Error(taskError.message);
+
+    tasks = (taskRows ?? []).map((task) => ({
+      id: task.id,
+      title: task.title,
+      stage: task.stage,
+      workflowType: task.workflow_type,
+      priority: task.priority,
+      blocker: task.blocker,
+      description: task.description,
+    }));
+  }
+
+  return {
+    id: workflow.id,
+    title: workflow.title,
+    type: workflow.type,
+    stage: workflow.stage,
+    owner: workflow.owner,
+    summary: workflow.summary,
+    tasks,
+  };
+}
+
+export interface IncidentContextRow {
+  id: string;
+  title: string;
+  severity: number;
+  status: string;
+  serviceName: string;
+  summary: string;
+  openedAt: string;
+  mitigatedAt?: string;
+  resolvedAt?: string;
+  linkedRepairId?: string;
+}
+
+export async function fetchIncidentContext(
+  incidentId: string,
+): Promise<IncidentContextRow | null> {
+  const supabase = getSupabaseAdmin();
+  const column = UUID_RE.test(incidentId) ? "id" : "legacy_id";
+
+  const { data, error } = await supabase
+    .from("incidents")
+    .select(
+      "id, title, severity, status, service_name, summary, opened_at, mitigated_at, resolved_at, linked_repair_id",
+    )
+    .eq(column, incidentId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+
+  const row = data as {
+    id: string;
+    title: string;
+    severity: number;
+    status: string;
+    service_name: string;
+    summary: string;
+    opened_at: string;
+    mitigated_at: string | null;
+    resolved_at: string | null;
+    linked_repair_id: string | null;
+  };
+
+  return {
+    id: row.id,
+    title: row.title,
+    severity: row.severity,
+    status: row.status,
+    serviceName: row.service_name,
+    summary: row.summary,
+    openedAt: row.opened_at,
+    mitigatedAt: row.mitigated_at ?? undefined,
+    resolvedAt: row.resolved_at ?? undefined,
+    linkedRepairId: row.linked_repair_id ?? undefined,
+  };
+}
+
 export async function updateTaskStage(
   taskId: string,
   stage: string,
