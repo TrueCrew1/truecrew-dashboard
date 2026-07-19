@@ -13,7 +13,8 @@ Command center for operations and maintenance teams — run the day from the fie
 
 > Full setup guide: [docs/VERCEL_SUPABASE_SETUP.md](docs/VERCEL_SUPABASE_SETUP.md)  
 > **Deploy now (5 min):** [docs/DEPLOY_NOW.md](docs/DEPLOY_NOW.md)  
-> **Agent ↔ approver workflow:** [docs/AGENT_WORKFLOW.md](docs/AGENT_WORKFLOW.md)
+> **Agent ↔ approver workflow:** [docs/AGENT_WORKFLOW.md](docs/AGENT_WORKFLOW.md)  
+> **Research + cleanup pilot:** [docs/RESEARCH_CLEANUP_WORKFLOW.md](docs/RESEARCH_CLEANUP_WORKFLOW.md)
 
 ## Quick start
 

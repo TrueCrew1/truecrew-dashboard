@@ -19,6 +19,8 @@
     "db:status": "supabase migration list",
     "obsidian:log": "npx tsx scripts/obsidian-log.ts",
     "obsidian:setup-vault": "npx tsx scripts/setup-obsidian-vault.ts",
+    "workspace:setup": "npx tsx scripts/setup-truecrew-workspace.ts",
+    "workspace:triage": "npx tsx scripts/triage-inbox.ts",
     "llm": "npx tsx scripts/llm-task.ts"
   },
   "dependencies": {
