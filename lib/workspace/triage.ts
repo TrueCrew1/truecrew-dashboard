@@ -10,7 +10,6 @@ import {
   SYNTHESIS_SOURCE_THRESHOLD,
   createSourceNote,
   createSynthesisDraft,
-  synthesisTitle,
   titleFromFilename,
   topicTitle,
   upsertTopicNote,
@@ -62,6 +61,7 @@ export async function runTriage(
 
     let destinationPath: string | undefined;
     let sourceNotePath: string | undefined;
+    let notes: string | undefined;
     let action: TriageLogEntry["action"] = dryRun ? "dry-run" : "moved";
 
     try {
@@ -72,6 +72,9 @@ export async function runTriage(
         dryRun,
       );
       destinationPath = moveResult.destinationPath;
+      if (moveResult.renamed) {
+        notes = `Renamed on collision to ${moveResult.finalFilename}`;
+      }
       if (!dryRun) moved += 1;
 
       if (classified.createSourceNote && vaultRoot) {
@@ -83,7 +86,9 @@ export async function runTriage(
             filename: moveResult.finalFilename,
             bucket: classified.bucket,
             reason: classified.reason,
+            confidence: classified.confidence,
             theme: classified.theme,
+            originalPath: sourcePath,
             workspaceRelativePath,
           },
           dryRun,
@@ -95,6 +100,10 @@ export async function runTriage(
           list.push(noteTitle);
           themeSources.set(classified.theme, list);
         }
+      } else if (classified.createSourceNote && !vaultRoot) {
+        notes = [notes, "Skipped Obsidian note — vault not configured"]
+          .filter(Boolean)
+          .join("; ");
       }
     } catch (error) {
       action = "skipped";
@@ -107,10 +116,12 @@ export async function runTriage(
       const skippedEntry: TriageLogEntry = {
         loggedAt: new Date(),
         filename: classified.filename,
+        sourcePath,
         fromFolder: INBOX_FOLDER,
         toFolder: classified.destinationFolder,
         bucket: classified.bucket,
         reason,
+        confidence: classified.confidence,
         action,
         theme: classified.theme,
       };
@@ -127,11 +138,14 @@ export async function runTriage(
     const entry: TriageLogEntry = {
       loggedAt: new Date(),
       filename: classified.filename,
+      sourcePath,
       fromFolder: INBOX_FOLDER,
       toFolder: classified.destinationFolder,
       bucket: classified.bucket,
       reason: classified.reason,
+      confidence: classified.confidence,
       action,
+      notes,
       destinationPath,
       sourceNotePath,
       theme: classified.theme,
@@ -167,8 +181,6 @@ export async function runTriage(
           dryRun,
         );
         synthesisNotesCreated.push(synthesisPath);
-        // Ensure topic points at the synthesis title even on first create
-        void synthesisTitle(theme);
       }
     }
   }

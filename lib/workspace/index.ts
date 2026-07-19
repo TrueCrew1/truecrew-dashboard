@@ -8,6 +8,7 @@ export {
   resolveWorkspacePathForSetup,
 } from "./config.js";
 export { classifyFile } from "./classify.js";
+export { upsertPathEnvLocal } from "./env-local.js";
 export {
   BUCKET_TO_FOLDER,
   FOLDER_TO_BUCKET,
@@ -30,6 +31,11 @@ export {
 } from "./log.js";
 export { moveWithinWorkspace } from "./move.js";
 export {
+  DEFAULT_VAULT_PATH as DEFAULT_DRIVE_VAULT_PATH,
+  DEFAULT_WORKSPACE_PATH as DEFAULT_DRIVE_WORKSPACE_PATH,
+  VAULT_LAYOUT_FOLDERS,
+} from "./paths.js";
+export {
   BOT_PERMISSIONS,
   DELETE_ALLOWED_FOLDER,
   READ_ALLOWED_FOLDERS,
@@ -47,8 +53,10 @@ export {
   topicTitle,
   upsertTopicNote,
 } from "./second-brain.js";
+export { setupWorkspace } from "./setup.js";
 export { runTriage } from "./triage.js";
 export type {
+  ClassificationConfidence,
   ClassifiedFile,
   SourceNoteInput,
   SynthesisNoteInput,

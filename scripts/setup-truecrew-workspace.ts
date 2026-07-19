@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 /**
- * Create the TrueCrew intake folder tree (local / Google Drive mirror).
+ * Create the TrueCrew intake folder tree in Google Drive + path entries in .env.local.
  *
  *   npm run workspace:setup
- *   npm run workspace:setup -- --path "/path/to/TrueCrew"
  */
 import fs from "node:fs";
 import path from "node:path";
 import {
   DEFAULT_WORKSPACE_PATH,
-  WORKSPACE_ENV,
   resolveWorkspacePathForSetup,
 } from "../lib/workspace/config";
+import { upsertPathEnvLocal } from "../lib/workspace/env-local";
+import { DEFAULT_VAULT_PATH } from "../lib/workspace/paths";
 import { setupWorkspace } from "../lib/workspace/setup";
 
 function loadEnvLocal(): void {
@@ -45,25 +45,20 @@ function parsePathArg(args: string[]): string | undefined {
 }
 
 function usage(): string {
-  return `True Crew → workspace folder setup
+  return `True Crew → Google Drive workspace setup
 
 Usage:
   npm run workspace:setup
-  npm run workspace:setup -- --path "${DEFAULT_WORKSPACE_PATH}"
 
-Creates:
-  TrueCrew/00-Inbox-Downloads
-  TrueCrew/01-Needs-Review
-  TrueCrew/02-Research-Queue
-  TrueCrew/03-Second-Brain
-  TrueCrew/04-Archive
-  TrueCrew/05-Delete-Candidates
+Creates under Google Drive:
+  TrueCrew/00-Inbox-Downloads … 05-Delete-Candidates
   TrueCrew/BOT_PERMISSIONS.md
-  TrueCrew/GOOGLE_DRIVE.md
   TrueCrew/03-Second-Brain/Triage-Log.csv
+  TrueCrew/Obsidian Vaults/TrueCrew Second Brain/{Sources,Topics,Synthesis,Questions,Ops,Operations/Logs}
 
-Environment:
-  ${WORKSPACE_ENV}   Absolute path to the TrueCrew workspace root
+Also upserts ONLY these keys in .env.local (secrets left alone):
+  TRUECREW_WORKSPACE_PATH
+  OBSIDIAN_VAULT_PATH
 `;
 }
 
@@ -77,23 +72,42 @@ async function main(): Promise<void> {
 
   const explicit = parsePathArg(args);
   const root = resolveWorkspacePathForSetup(explicit);
-  process.env[WORKSPACE_ENV] = root;
+  const vaultPath = path.join(root, "Obsidian Vaults", "TrueCrew Second Brain");
+
+  const envResult = upsertPathEnvLocal(process.cwd(), {
+    workspacePath: root,
+    vaultPath: root === DEFAULT_WORKSPACE_PATH ? DEFAULT_VAULT_PATH : vaultPath,
+  });
 
   const result = await setupWorkspace(root);
 
   console.log(`Workspace: ${result.root}`);
-  console.log("\nFolders:");
-  for (const folder of result.createdFolders) console.log(`  + ${folder}/`);
-  if (result.createdFiles.length) {
-    console.log("\nFiles:");
-    for (const file of result.createdFiles) console.log(`  + ${file}`);
-  }
-  console.log("\nNext:");
-  console.log(`  1. Add to .env.local: ${WORKSPACE_ENV}="${result.root}"`);
-  console.log("  2. Drop files into 00-Inbox-Downloads");
-  console.log("  3. Preview: npm run workspace:triage -- --dry-run");
-  console.log("  4. Run:     npm run workspace:triage");
+  console.log(`Vault:     ${result.vaultPath}`);
+  console.log(
+    envResult.created
+      ? `\n.env.local: created (path keys only)`
+      : `\n.env.local: updated path keys only (secrets untouched)`,
+  );
+  console.log(`  keys: ${envResult.updatedKeys.join(", ")}`);
+
+  console.log("\nFolders ready:");
+  for (const folder of WORKSPACE_PREVIEW) console.log(`  + ${folder}`);
+
+  console.log("\nNext (copy/paste, one line at a time):");
+  console.log("  npm run obsidian:setup-vault");
+  console.log("  npm run workspace:triage -- --dry-run");
+  console.log("  npm run workspace:triage");
 }
+
+const WORKSPACE_PREVIEW = [
+  "00-Inbox-Downloads/",
+  "01-Needs-Review/",
+  "02-Research-Queue/",
+  "03-Second-Brain/",
+  "04-Archive/",
+  "05-Delete-Candidates/",
+  "Obsidian Vaults/TrueCrew Second Brain/",
+];
 
 main().catch((error: unknown) => {
   console.error(error instanceof Error ? error.message : error);

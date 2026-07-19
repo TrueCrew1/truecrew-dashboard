@@ -1,6 +1,6 @@
 import path from "node:path";
 import { BUCKET_TO_FOLDER, type TriageBucket } from "./folders.js";
-import type { ClassifiedFile } from "./types.js";
+import type { ClassificationConfidence, ClassifiedFile } from "./types.js";
 
 const JUNK_NAMES = new Set([
   ".ds_store",
@@ -136,22 +136,35 @@ export function classifyFile(sourcePath: string): ClassifiedFile {
 
   let bucket: TriageBucket = "needs-review";
   let reason = "Unclear type — parked in Needs Review for a human look.";
+  let confidence: ClassificationConfidence = "low";
 
   if (JUNK_NAMES.has(name) || JUNK_EXTENSIONS.has(ext) || name.startsWith("~$")) {
     bucket = "delete-candidates";
     reason = "Looks like junk/temp (safe delete-candidate, not permanent delete).";
-  } else if (ARCHIVE_EXTENSIONS.has(ext) || hasHint(name, ARCHIVE_NAME_HINTS)) {
+    confidence = "high";
+  } else if (ARCHIVE_EXTENSIONS.has(ext)) {
     bucket = "archive";
-    reason = "Looks like a backup/archive package.";
-  } else if (RESEARCH_EXTENSIONS.has(ext) || hasHint(name, RESEARCH_NAME_HINTS)) {
+    reason = "Archive/package file type.";
+    confidence = "high";
+  } else if (hasHint(name, ARCHIVE_NAME_HINTS)) {
+    bucket = "archive";
+    reason = "Filename looks like a backup/archive.";
+    confidence = "medium";
+  } else if (RESEARCH_EXTENSIONS.has(ext)) {
     bucket = "research";
     reason = "Research-shaped document — queued for reading.";
+    confidence = hasHint(name, RESEARCH_NAME_HINTS) ? "high" : "medium";
+  } else if (hasHint(name, RESEARCH_NAME_HINTS)) {
+    bucket = "research";
+    reason = "Filename suggests research material.";
+    confidence = "medium";
   } else if (
     SECOND_BRAIN_EXTENSIONS.has(ext) ||
     hasHint(name, SECOND_BRAIN_NAME_HINTS)
   ) {
     bucket = "second-brain";
     reason = "Note-shaped file — candidate for the second brain.";
+    confidence = SECOND_BRAIN_EXTENSIONS.has(ext) ? "medium" : "medium";
   }
 
   const createSourceNote = bucket === "research" || bucket === "second-brain";
@@ -162,6 +175,7 @@ export function classifyFile(sourcePath: string): ClassifiedFile {
     bucket,
     destinationFolder: BUCKET_TO_FOLDER[bucket],
     reason,
+    confidence,
     theme,
     createSourceNote,
   };

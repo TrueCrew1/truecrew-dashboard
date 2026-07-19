@@ -1,18 +1,14 @@
 import fs from "node:fs";
 import path from "node:path";
-import { WORKSPACE_ROOT_NAME } from "./folders.js";
+import { DEFAULT_WORKSPACE_PATH as DRIVE_WORKSPACE_PATH } from "./paths.js";
 
 const WORKSPACE_ENV = "TRUECREW_WORKSPACE_PATH";
 
 /**
- * Default local path on a Mac with Google Drive for Desktop.
+ * Default TrueCrew workspace — Google Drive is the source of truth.
  * Override with TRUECREW_WORKSPACE_PATH in .env.local.
  */
-export const DEFAULT_WORKSPACE_PATH = path.join(
-  "/Users/truecrew/Library/CloudStorage/GoogleDrive-truecrew",
-  "My Drive",
-  WORKSPACE_ROOT_NAME,
-);
+export const DEFAULT_WORKSPACE_PATH = DRIVE_WORKSPACE_PATH;
 
 function resolveExistingDir(candidate: string): string | null {
   const resolved = path.resolve(candidate);
@@ -66,11 +62,6 @@ export function describeWorkspaceResolution(): string {
 
   lines.push("Create the folder tree:");
   lines.push(`  npm run workspace:setup`);
-  lines.push("");
-  lines.push("Or point at an existing folder:");
-  lines.push(
-    `  ${WORKSPACE_ENV}="/path/to/TrueCrew" npm run workspace:setup`,
-  );
 
   return lines.join("\n");
 }

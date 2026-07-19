@@ -24,32 +24,54 @@ export async function createSourceNote(
     `bucket/${input.bucket}`,
     ...(input.theme ? [`theme/${input.theme}`] : []),
   ];
+  const summary =
+    input.summary?.trim() ||
+    `Intake from \`${input.filename}\`. ${input.reason}`;
+  const keyPoints =
+    input.keyPoints && input.keyPoints.length > 0
+      ? input.keyPoints
+      : [
+          "Read the original file in Google Drive.",
+          "Replace this stub with real takeaways.",
+          input.theme
+            ? `Link useful bits into [[${topicTitle(input.theme)}]].`
+            : "Assign a topic tag when a theme is clear.",
+        ];
 
   const body = [
     "---",
     "type: source",
     "status: raw",
+    `title: ${JSON.stringify(title)}`,
     `theme: ${input.theme ?? "unscoped"}`,
+    `confidence: ${input.confidence}`,
     `tags: [${tags.join(", ")}]`,
+    `original_path: ${JSON.stringify(input.originalPath)}`,
     `workspace_path: ${JSON.stringify(input.workspaceRelativePath)}`,
     `created: ${new Date().toISOString().slice(0, 10)}`,
     "---",
     "",
     `# ${title}`,
     "",
-    "## Origin",
+    "## Original path",
     "",
-    `- File: \`${input.filename}\``,
-    `- Workspace path: \`${input.workspaceRelativePath}\``,
-    `- Triage reason: ${input.reason}`,
+    `\`${input.originalPath}\``,
     "",
-    "## Raw summary",
+    "## Workspace path (after triage)",
     "",
-    "_Pilot stub — fill in after reading the source._",
+    `\`${input.workspaceRelativePath}\``,
     "",
-    "## Extracted facts",
+    "## Short summary",
     "",
-    "- ",
+    summary,
+    "",
+    "## Key points",
+    "",
+    ...keyPoints.map((point) => `- ${point}`),
+    "",
+    "## Tags",
+    "",
+    tags.map((tag) => `#${tag.replace(/\//g, "/")}`).join(" "),
     "",
     "## Links",
     "",
@@ -115,7 +137,7 @@ export async function upsertTopicNote(
     "",
     "## Open questions",
     "",
-    "- ",
+    `- Capture open questions in [[Questions/]] or link a note from Questions/.`,
     "",
     "## Synthesis",
     "",

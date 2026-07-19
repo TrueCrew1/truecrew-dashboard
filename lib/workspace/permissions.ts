@@ -1,5 +1,5 @@
 /**
- * Bot permissions for the TrueCrew research + cleanup pilot.
+ * Bot permissions for the TrueCrew research + cleanup workflow.
  *
  * Keep this file boring and explicit. Founders and agents should be able to
  * read it in one pass and know what bots may / may not do.
@@ -9,19 +9,16 @@ export const BOT_PERMISSIONS = {
   may: [
     "read files inside the TrueCrew workspace folders",
     "classify files from 00-Inbox-Downloads into approved buckets",
-    "move files between approved TrueCrew folders only",
-    "rename files when moving (safe collision suffixes)",
-    "create Obsidian notes in Sources/, Topics/, and Synthesis/",
-    "append structured triage logs (Obsidian Triage Log + local Sheet CSV)",
-    "create Google Docs / Sheets logs when Drive sync is pointed at this tree",
+    "move and rename files within approved TrueCrew folders only",
+    "create Obsidian notes (Sources/, Topics/, Synthesis/)",
+    "create and update logs (Operations/Logs/Triage Log.md + 03-Second-Brain/Triage-Log.csv)",
   ],
   mayNot: [
     "permanently delete files outside 05-Delete-Candidates",
-    "empty 05-Delete-Candidates without an explicit human confirmation step",
+    "empty 05-Delete-Candidates without explicit human confirmation",
     "send emails from any account",
-    "touch production SaaS systems (Vercel production deploys, Stripe live, etc.)",
-    "move files outside the TrueCrew workspace root",
-    "change secrets, DNS, billing, or access-control settings",
+    "touch production SaaS systems (Vercel production deploys, Stripe live, secrets, DNS)",
+    "move files outside the TrueCrew Google Drive workspace root",
   ],
 } as const;
 
@@ -69,7 +66,9 @@ export function renderPermissionsMarkdown(): string {
   const may = BOT_PERMISSIONS.may.map((item) => `- ${item}`).join("\n");
   const mayNot = BOT_PERMISSIONS.mayNot.map((item) => `- ${item}`).join("\n");
   return [
-    "# TrueCrew bot permissions (pilot)",
+    "# TrueCrew bot permissions",
+    "",
+    "Google Drive (`TrueCrew/`) is the source of truth for files and the Obsidian vault.",
     "",
     "## Bots MAY",
     "",
@@ -79,7 +78,7 @@ export function renderPermissionsMarkdown(): string {
     "",
     mayNot,
     "",
-    "Deletions stay human-gated. Move junk into `05-Delete-Candidates`; you empty that folder.",
+    "Deletions stay human-gated. Junk goes into `05-Delete-Candidates`; **you** empty that folder.",
     "",
   ].join("\n");
 }

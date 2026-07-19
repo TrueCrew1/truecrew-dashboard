@@ -34,8 +34,8 @@ These align with existing seed/mock conventions (`Decisions/…`, `Operations/�
 1. Set your vault root locally (not in Vercel production):
 
 ```bash
-# .env.local
-OBSIDIAN_VAULT_PATH=/absolute/path/to/your/vault
+# .env.local  (Google Drive vault — source of truth)
+OBSIDIAN_VAULT_PATH="/Users/truecrew/Google Drive/TrueCrew/Obsidian Vaults/TrueCrew Second Brain"
 ```
 
 2. Log from the repo root:

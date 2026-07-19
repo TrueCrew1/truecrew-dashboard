@@ -1,118 +1,144 @@
-# Research + cleanup workflow (pilot)
+# Research + cleanup + second-brain workflow
 
-Let bots clean intake files and grow the Obsidian second brain — without deleting
-things on their own or touching production systems.
+Google Drive is the **only** source of truth for organized files and the Obsidian vault.
+Obsidian is just the app that opens the vault folder inside Drive.
 
-## What you get
+## Plain-English picture
 
-1. A fixed folder tree (`TrueCrew/…`) locally and in Google Drive
-2. A triage command that scans the inbox, classifies, moves, and logs
-3. Obsidian notes in `Sources/`, `Topics/`, and `Synthesis/`
-4. Hard bot permissions (especially: no permanent deletes outside Delete-Candidates)
+1. You drop messy files into `TrueCrew/00-Inbox-Downloads` (in Google Drive).
+2. You run one triage command.
+3. Bots classify, move, and log each file.
+4. Research-worthy files also get notes in the Obsidian vault.
+5. You still decide what gets permanently deleted and nothing sends email.
 
-## Folder structure
+## Paths (Mac)
 
-Same names everywhere (local disk + Google Drive):
+| What | Path |
+|------|------|
+| Workspace | `/Users/truecrew/Google Drive/TrueCrew` |
+| Obsidian vault | `/Users/truecrew/Google Drive/TrueCrew/Obsidian Vaults/TrueCrew Second Brain` |
+
+These are written into `.env.local` by `npm run workspace:setup` (path keys only — secrets untouched).
+
+## Folder layout (Google Drive)
 
 ```
 TrueCrew/
-  00-Inbox-Downloads/     ← drop new files here
-  01-Needs-Review/        ← unclear; human decides
-  02-Research-Queue/      ← research-shaped docs
-  03-Second-Brain/        ← note-shaped files + Triage-Log.csv
-  04-Archive/             ← keep, but cold
-  05-Delete-Candidates/   ← junk parked for YOU to delete
+  00-Inbox-Downloads/      ← drop messy files here
+  01-Needs-Review/         ← unclear; you decide
+  02-Research-Queue/       ← research docs
+  03-Second-Brain/         ← reference files + Triage-Log.csv
+  04-Archive/              ← keep, cold storage
+  05-Delete-Candidates/    ← junk parked for YOU to delete
   BOT_PERMISSIONS.md
-  GOOGLE_DRIVE.md
+  Obsidian Vaults/
+    TrueCrew Second Brain/
+      Sources/
+      Topics/
+      Synthesis/
+      Questions/
+      Ops/
+      Operations/Logs/
 ```
 
-## Where logs are stored
+## Where logs live
 
 | Log | Location |
 |-----|----------|
-| **Obsidian triage log** | Vault: `Operations/Logs/Triage Log.md` |
-| **Google Sheets–ready CSV** | `TrueCrew/03-Second-Brain/Triage-Log.csv` |
-| **Bot permissions** | `TrueCrew/BOT_PERMISSIONS.md` (also `lib/workspace/permissions.ts`) |
+| Markdown triage log | Vault → `Operations/Logs/Triage Log.md` |
+| Spreadsheet log | `TrueCrew/03-Second-Brain/Triage-Log.csv` (import to Google Sheets) |
+| Permissions | `TrueCrew/BOT_PERMISSIONS.md` |
 
-Import the CSV into Google Sheets: Drive → New → File upload, or Sheets → File → Import.
+Each log row includes: timestamp, file path, classification, destination, confidence, notes.
 
-## Bot permissions (short version)
+## Bot permissions (short)
 
-**MAY:** read, classify, move between approved folders, rename on collision, create
-Obsidian notes, append triage logs / Sheets CSV.
+**MAY:** read, classify, move/rename inside TrueCrew folders, create Obsidian notes, update logs.
 
-**MAY NOT:** permanently delete outside `05-Delete-Candidates`, empty that folder
-without you, send email, touch production SaaS (deploys, Stripe live, secrets).
+**MAY NOT:** permanently delete outside `05-Delete-Candidates`, send email, touch production SaaS.
 
-Full list: `lib/workspace/permissions.ts`.
+Enforced in code: `lib/workspace/permissions.ts`.
 
-## How to start a triage run
+## Step-by-step (copy one line at a time)
 
-### One-time setup
+Open Terminal on your Mac. Paste **one line**, press Return, wait for it to finish, then the next.
 
 ```bash
-# 1) Create the folder tree (prefer a Google Drive for Desktop path)
+cd ~/truecrew-dashboard
+```
+
+```bash
+npm install
+```
+
+(Skip `npm install` later if you already ran it and nothing broke.)
+
+```bash
 npm run workspace:setup
-# or:
-npm run workspace:setup -- --path "/path/to/TrueCrew"
+```
 
-# 2) Put this in .env.local
-TRUECREW_WORKSPACE_PATH="/path/to/TrueCrew"
-OBSIDIAN_VAULT_PATH="/path/to/TrueCrew Second Brain"
+Creates the Google Drive folders + upserts the two path lines in `.env.local`.
 
-# 3) Seed Obsidian templates (Sources / Topics / Synthesis / Triage Log)
+```bash
 npm run obsidian:setup-vault
 ```
 
-### Every run
+Seeds Sources / Topics / Synthesis / Questions / Ops / Operations/Logs.
 
 ```bash
-# Preview first (recommended)
 npm run workspace:triage -- --dry-run
-
-# Do it
-npm run workspace:triage
-
-# Small batch
-npm run workspace:triage -- --limit 10
 ```
 
-## What triage does
+**Preview only** — prints what would happen. Does **not** move files or change notes.
 
-1. Scans `00-Inbox-Downloads`
-2. Classifies each file with simple rules (junk → delete-candidates, PDFs → research,
-   notes → second-brain, unclear → needs-review)
-3. Moves the file into the matching folder
-4. Appends a structured log entry (Obsidian + CSV)
-5. For research / second-brain files, creates a `Sources/` note
-6. When multiple sources share a theme, upserts a `Topics/` note
-7. When a theme has ≥2 sources in the run, drafts a `Synthesis/` note
+```bash
+npm run workspace:triage
+```
+
+**Real run** — moves files, writes logs, creates notes.
+
+Useful extras:
+
+- `clear` — clean the Terminal screen
+- `pwd` — show where you are
+- `ls` — list files in the current folder
+- `Ctrl+C` — stop a command that is stuck
+
+## What you should see afterward
+
+### In Google Drive → `TrueCrew/`
+
+- Files leave `00-Inbox-Downloads`
+- They appear in `01`–`05` folders by type
+- `03-Second-Brain/Triage-Log.csv` grows a new row per file
+- `BOT_PERMISSIONS.md` spells out the rules
+
+### In Obsidian → vault **TrueCrew Second Brain**
+
+Open that folder as a vault (Obsidian → Open folder as vault).
+
+- `Sources/` — one note per research-worthy file (title, original path, summary, key points, tags)
+- `Topics/` — theme notes when several sources share a theme
+- `Synthesis/` — draft write-ups when enough sources exist
+- `Operations/Logs/Triage Log.md` — append-only history of triage actions
 
 ## Code map
 
 | Piece | Path |
 |-------|------|
-| Folder names | `lib/workspace/folders.ts` |
+| Drive paths | `lib/workspace/paths.ts` |
 | Permissions | `lib/workspace/permissions.ts` |
 | Classifier | `lib/workspace/classify.ts` |
-| Safe moves | `lib/workspace/move.ts` |
-| Logs | `lib/workspace/log.ts` |
+| Moves | `lib/workspace/move.ts` |
+| Triage run | `lib/workspace/triage.ts` |
 | Obsidian notes | `lib/workspace/second-brain.ts` |
-| Orchestration | `lib/workspace/triage.ts` |
+| Logs | `lib/workspace/log.ts` |
 | Setup CLI | `scripts/setup-truecrew-workspace.ts` |
+| Vault CLI | `scripts/setup-obsidian-vault.ts` |
 | Triage CLI | `scripts/triage-inbox.ts` |
 
-## Founder control loop
+## Safety reminders
 
-1. Drop files in inbox (or let downloads land there)
-2. Run triage (or ask an agent to run it)
-3. Skim `01-Needs-Review` and `05-Delete-Candidates`
-4. You empty Delete-Candidates — bots do not
-5. Read new `Sources/` notes; edit Topics / Synthesis when useful
-
-## Out of scope for this pilot
-
-- Live Google Drive API calls (use Drive Desktop sync instead)
-- Auto-emptying Delete-Candidates
-- Email, Slack, or any outbound messaging
-- Production deploys / Stripe / secrets
+- Junk is only **moved** to `05-Delete-Candidates` — you delete it in Finder/Drive.
+- `--dry-run` is always safe to re-run.
+- OneDrive / iCloud are not part of this workflow.

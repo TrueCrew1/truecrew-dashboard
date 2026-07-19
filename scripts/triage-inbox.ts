@@ -4,7 +4,6 @@
  *
  *   npm run workspace:triage -- --dry-run
  *   npm run workspace:triage
- *   npm run workspace:triage -- --limit 10
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -60,27 +59,28 @@ function parseArgs(argv: string[]): {
 }
 
 function usage(): string {
-  return `True Crew → inbox triage (pilot)
+  return `True Crew → inbox triage
 
 Usage:
   npm run workspace:triage -- --dry-run
   npm run workspace:triage
   npm run workspace:triage -- --limit 10
-  npm run workspace:triage -- --skip-obsidian
 
 What it does:
-  1. Scans TrueCrew/00-Inbox-Downloads
+  1. Scans TrueCrew/00-Inbox-Downloads (Google Drive)
   2. Classifies each file (review / research / second-brain / archive / delete-candidates)
   3. Moves the file into the matching folder
   4. Appends a log row (Obsidian Triage Log + Triage-Log.csv)
   5. Creates Obsidian Sources/ notes for research-worthy files
   6. Upserts Topics/ and draft Synthesis/ when themes repeat
 
+--dry-run prints the plan only (no moves, no note changes).
+
 Bots never permanently delete. Junk goes to 05-Delete-Candidates for you.
 
 Environment:
   ${WORKSPACE_ENV}     Path to TrueCrew workspace root
-  OBSIDIAN_VAULT_PATH    Path to "TrueCrew Second Brain" vault (optional but recommended)
+  OBSIDIAN_VAULT_PATH    Path to TrueCrew Second Brain vault (inside Drive)
 `;
 }
 
@@ -100,7 +100,7 @@ async function main(): Promise<void> {
   const options = parseArgs(args);
   const result = await runTriage(options);
 
-  console.log(options.dryRun ? "Dry run (no moves / no writes)" : "Triage complete");
+  console.log(options.dryRun ? "Dry run (no moves / no note changes)" : "Triage complete");
   console.log(`  Scanned:   ${result.scanned}`);
   console.log(`  Processed: ${result.processed}`);
   console.log(`  Moved:     ${result.moved}`);
@@ -110,7 +110,7 @@ async function main(): Promise<void> {
     console.log("\nEntries:");
     for (const entry of result.entries) {
       console.log(
-        `  · ${entry.filename} → ${entry.toFolder} [${entry.bucket}] — ${entry.reason}`,
+        `  · ${entry.filename} → ${entry.toFolder} [${entry.bucket}/${entry.confidence}] — ${entry.reason}`,
       );
     }
   } else {

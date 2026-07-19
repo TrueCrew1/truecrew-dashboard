@@ -7,7 +7,7 @@ import type { TriageLogEntry } from "./types.js";
 /** Obsidian rolling log inside the TrueCrew Second Brain vault. */
 export const TRIAGE_LOG_VAULT_PATH = "Operations/Logs/Triage Log.md";
 
-/** Local CSV inside the TrueCrew workspace — importable to Google Sheets. */
+/** CSV inside the TrueCrew workspace — importable to Google Sheets. */
 export const TRIAGE_SHEET_RELATIVE_PATH = "03-Second-Brain/Triage-Log.csv";
 
 function formatTimestamp(date: Date): string {
@@ -26,11 +26,14 @@ export function renderTriageLogSection(entry: TriageLogEntry): string {
     `## ${formatTimestamp(entry.loggedAt)} — ${entry.filename}`,
     "",
     `- **Action:** ${entry.action}`,
+    `- **Source path:** \`${entry.sourcePath}\``,
     `- **From:** \`${entry.fromFolder}\``,
     `- **To:** \`${entry.toFolder}\``,
-    `- **Bucket:** ${entry.bucket}`,
+    `- **Classification:** ${entry.bucket}`,
+    `- **Confidence:** ${entry.confidence}`,
     `- **Reason:** ${entry.reason}`,
   ];
+  if (entry.notes) lines.push(`- **Notes:** ${entry.notes}`);
   if (entry.theme) lines.push(`- **Theme:** ${entry.theme}`);
   if (entry.destinationPath) {
     lines.push(`- **Destination:** \`${entry.destinationPath}\``);
@@ -52,7 +55,7 @@ export function renderTriageLogSeed(): string {
     "",
     "# Triage Log",
     "",
-    "Structured intake log for the TrueCrew research + cleanup pilot.",
+    "Structured intake log for the TrueCrew research + cleanup workflow.",
     "Bots append here; humans decide what leaves `05-Delete-Candidates`.",
     "",
     "---",
@@ -64,11 +67,14 @@ export function renderSheetHeader(): string {
   return [
     "logged_at",
     "filename",
+    "source_path",
     "from_folder",
     "to_folder",
-    "bucket",
+    "classification",
+    "confidence",
     "reason",
     "action",
+    "notes",
     "theme",
     "destination_path",
     "source_note_path",
@@ -79,11 +85,14 @@ export function renderSheetRow(entry: TriageLogEntry): string {
   return [
     entry.loggedAt.toISOString(),
     entry.filename,
+    entry.sourcePath,
     entry.fromFolder,
     entry.toFolder,
     entry.bucket,
+    entry.confidence,
     entry.reason,
     entry.action,
+    entry.notes ?? "",
     entry.theme ?? "",
     entry.destinationPath ?? "",
     entry.sourceNotePath ?? "",
