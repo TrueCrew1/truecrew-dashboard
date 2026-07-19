@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -27,7 +28,12 @@ import {
 } from "./chiefLiveContext";
 import { deriveMonitorApprovalCards } from "./monitorApprovalCards";
 import { buildApprovalActivitySnapshot } from "./approvalActivityHelpers";
+import { deriveChiefSituationBriefFromMonitor } from "./chiefMonitorSituation";
 import { useMonitorHealth } from "@/hooks/useMonitorHealth";
+import {
+  notifyGovernedApprovalCreated,
+  notifyGovernedMonitorState,
+} from "@/lib/api/governedSlackNotify";
 import type { ApprovalActivityRecord } from "../../../lib/approvals/types";
 import { buildApprovalActivityRecord } from "../../../lib/approvals/approvalActivity";
 import type {
@@ -95,6 +101,8 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
 
   const liveApi = isLiveApiEnabled();
   const platformHealth = useMonitorHealth();
+  const lastMonitorSlackStateRef = useRef<string | null>(null);
+  const monitorApprovalSlackNotifiedRef = useRef(false);
   const [decisionsHydrated, setDecisionsHydrated] = useState(!liveApi);
   const [decisionsHydrationError, setDecisionsHydrationError] = useState<string | null>(null);
   const [monitorIssueSeenAt, setMonitorIssueSeenAt] = useState<string | null>(null);
@@ -115,6 +123,50 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
     }
     setMonitorIssueSeenAt((prev) => prev ?? new Date().toISOString());
   }, [derivedMonitorCards.length]);
+
+  useEffect(() => {
+    if (!liveApi) return;
+
+    if (derivedMonitorCards.length === 0) {
+      monitorApprovalSlackNotifiedRef.current = false;
+      return;
+    }
+
+    if (monitorApprovalSlackNotifiedRef.current) return;
+
+    const card = derivedMonitorCards[0];
+    monitorApprovalSlackNotifiedRef.current = true;
+    notifyGovernedApprovalCreated({
+      approvalId: card.id,
+    });
+  }, [derivedMonitorCards, liveApi]);
+
+  useEffect(() => {
+    const brief = deriveChiefSituationBriefFromMonitor({
+      liveApiEnabled: liveApi,
+      platformHealth,
+    });
+
+    if (brief.tone === "loading") return;
+
+    const probeId =
+      brief.tone === "mock"
+        ? "mock"
+        : brief.allIssues.length > 0
+          ? brief.allIssues
+              .map((issue) => (issue.startsWith("Vercel:") ? "vercel" : "supabase"))
+              .join("+")
+          : "vercel+supabase";
+
+    const stateKey = `${brief.tone}:${probeId}`;
+    if (lastMonitorSlackStateRef.current === stateKey) return;
+    lastMonitorSlackStateRef.current = stateKey;
+
+    notifyGovernedMonitorState({
+      state: brief.tone,
+      probeId,
+    });
+  }, [liveApi, platformHealth]);
 
   const monitorApprovals = useMemo(() => {
     if (derivedMonitorCards.length === 0) return [];
@@ -201,7 +253,15 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
     setCommandApprovals((prev) => [proposal, ...prev]);
     // Canonical Chief observability event (see chiefLog.ts / chiefGovernanceEvents.ts) — observability-only, must not block enqueue.
     chiefLog.cardCreated(proposal);
-  }, []);
+
+    if (liveApi) {
+      notifyGovernedApprovalCreated({
+        approvalId: proposal.id,
+        missionKind: proposal.missionKind,
+        missionProjectId: proposal.missionProjectId,
+      });
+    }
+  }, [liveApi]);
 
   const addHistoryEntry = useCallback((entry: CommandHistoryEntry) => {
     setHistory((prev) => [entry, ...prev]);
@@ -233,13 +293,14 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
             id,
             nextStatus,
             null,
-            activitySnapshot
+            activitySnapshot && decidedCard
               ? {
                   title: activitySnapshot.title,
                   summary: activitySnapshot.summary,
                   source: activitySnapshot.source,
                   category: activitySnapshot.category,
                   missionKind: activitySnapshot.missionKind,
+                  missionProjectId: decidedCard.missionProjectId,
                 }
               : undefined,
           );
