@@ -10,8 +10,11 @@ import {
 } from "./chiefLiveContext";
 import { CHIEF_ROUTES } from "./chiefRoutes";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
+import { isLiveApiEnabled } from "@/lib/api/client";
+import { useMonitorHealth } from "@/hooks/useMonitorHealth";
 import { useBuildTasks, type BuildGateTask } from "./hooks/useBuildTasks";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
+import { AgentStatusStrip } from "./AgentStatusStrip";
 import type { AgentWorkItem, ApprovalProposal, ChiefBoardItem, ChiefResponse } from "./types";
 
 const SNAPSHOT_LIMIT = 4;
@@ -118,6 +121,8 @@ export function ChiefHomePanel() {
   );
 
   const { buildGateTasks } = useBuildTasks();
+  const liveApi = isLiveApiEnabled();
+  const platformHealth = useMonitorHealth();
 
   const researchWorkItems = useMemo(
     () => deriveResearchAgentWorkItems(liveContext.activeIncidents),
@@ -175,7 +180,11 @@ export function ChiefHomePanel() {
           onOpenApprovals={() =>
             approvalSnapshotRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
           }
+          platformHealth={platformHealth}
+          liveApiEnabled={liveApi}
         />
+
+        <AgentStatusStrip />
 
         <div className="chief-home-lanes">
           <div className={`chief-home-lane chief-home-lane--${chiefLane.tone}`}>

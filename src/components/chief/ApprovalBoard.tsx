@@ -33,6 +33,12 @@ import {
   summarizePendingApprovalUrgency,
 } from "./chiefApprovalUrgency";
 import { formatChiefTimestamp } from "./chiefMock";
+import {
+  deriveApprovalExecutionFeedback,
+  launchErrorFromApprovalActionMessage,
+} from "./approvalExecutionFeedback";
+import { deriveApprovalResultLinks } from "./approvalResultLinks";
+import type { ResearchMissionPayload } from "./researchMonitorIncidentPostmortem";
 import type { ApprovalAction, ApprovalProposal } from "./types";
 
 interface ApprovalBoardProps {
@@ -42,6 +48,8 @@ interface ApprovalBoardProps {
   statusFilter?: ApprovalStatusFilter;
   onStatusFilterChange?: (filter: ApprovalStatusFilter) => void;
   focusProposalId?: string | null;
+  missionsByProposalId?: Map<string, ResearchMissionPayload>;
+  liveApiEnabled?: boolean;
 }
 
 export function ApprovalBoard({
@@ -51,6 +59,8 @@ export function ApprovalBoard({
   statusFilter: statusFilterProp,
   onStatusFilterChange,
   focusProposalId,
+  missionsByProposalId,
+  liveApiEnabled = false,
 }: ApprovalBoardProps) {
   const [localStatusFilter, setLocalStatusFilter] = useState<ApprovalStatusFilter>("all");
   const statusFilter = statusFilterProp ?? localStatusFilter;
@@ -260,10 +270,28 @@ export function ApprovalBoard({
               const urgencyBadge = getApprovalUrgencyBadge(proposal);
               const isFocused = focusProposalId === proposal.id;
               const isTopPriority = proposal.id === topPriorityProposalId;
+              const actionState = approvalActionStates[proposal.id];
+              const executionFeedback = deriveApprovalExecutionFeedback({
+                proposal,
+                liveApiEnabled,
+                mission: missionsByProposalId?.get(proposal.id) ?? null,
+                launchError: launchErrorFromApprovalActionMessage(
+                  actionState?.message,
+                  actionState?.action,
+                ),
+                isLaunching: actionState?.phase === "loading" && actionState.action === "approved",
+              });
+              const resultLinks = deriveApprovalResultLinks({
+                mission: missionsByProposalId?.get(proposal.id) ?? null,
+                missionKind: proposal.missionKind,
+                liveApiEnabled,
+              });
               const actionsNode = (
                 <ChiefApprovalActions
                   proposal={proposal}
-                  actionState={approvalActionStates[proposal.id]}
+                  actionState={actionState}
+                  executionFeedback={executionFeedback}
+                  resultLinks={resultLinks}
                   onAction={onApprovalAction}
                   variant="card"
                 />

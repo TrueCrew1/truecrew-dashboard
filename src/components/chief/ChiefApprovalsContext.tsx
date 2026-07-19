@@ -25,6 +25,11 @@ import {
   mergeApprovalSources,
   type ChiefLiveContext,
 } from "./chiefLiveContext";
+import { deriveMonitorApprovalCards } from "./monitorApprovalCards";
+import { buildApprovalActivitySnapshot } from "./approvalActivityHelpers";
+import { useMonitorHealth } from "@/hooks/useMonitorHealth";
+import type { ApprovalActivityRecord } from "../../../lib/approvals/types";
+import { buildApprovalActivityRecord } from "../../../lib/approvals/approvalActivity";
 import type {
   ApprovalAction,
   ApprovalDecision,
@@ -54,6 +59,10 @@ interface ChiefApprovalsContextValue {
    * so every surface reading `approvals` sees the same thing.
    */
   recordDecision: (id: string, action: ApprovalAction) => Promise<ApprovalDecision>;
+  /** Mock-mode session activity and live-mode optimistic rows before vault refresh. */
+  sessionApprovalActivity: ApprovalActivityRecord[];
+  /** Set when a live decision persisted to Supabase but vault activity logging failed. */
+  lastActivityPersistError: string | null;
 }
 
 const ChiefApprovalsContext = createContext<ChiefApprovalsContextValue | null>(null);
@@ -79,10 +88,39 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
   ]);
   const [approvalDecisions, setApprovalDecisions] = useState<Record<string, ApprovalDecision>>({});
   const [history, setHistory] = useState<CommandHistoryEntry[]>([]);
+  const [sessionApprovalActivity, setSessionApprovalActivity] = useState<ApprovalActivityRecord[]>(
+    [],
+  );
+  const [lastActivityPersistError, setLastActivityPersistError] = useState<string | null>(null);
 
   const liveApi = isLiveApiEnabled();
+  const platformHealth = useMonitorHealth();
   const [decisionsHydrated, setDecisionsHydrated] = useState(!liveApi);
   const [decisionsHydrationError, setDecisionsHydrationError] = useState<string | null>(null);
+  const [monitorIssueSeenAt, setMonitorIssueSeenAt] = useState<string | null>(null);
+
+  const derivedMonitorCards = useMemo(
+    () =>
+      deriveMonitorApprovalCards({
+        liveApiEnabled: liveApi,
+        platformHealth,
+      }),
+    [liveApi, platformHealth],
+  );
+
+  useEffect(() => {
+    if (derivedMonitorCards.length === 0) {
+      setMonitorIssueSeenAt(null);
+      return;
+    }
+    setMonitorIssueSeenAt((prev) => prev ?? new Date().toISOString());
+  }, [derivedMonitorCards.length]);
+
+  const monitorApprovals = useMemo(() => {
+    if (derivedMonitorCards.length === 0) return [];
+    const createdAt = monitorIssueSeenAt ?? derivedMonitorCards[0].createdAt;
+    return derivedMonitorCards.map((card) => ({ ...card, createdAt }));
+  }, [derivedMonitorCards, monitorIssueSeenAt]);
 
   useEffect(() => {
     if (!liveApi) return;
@@ -132,7 +170,11 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const approvals = useMemo(() => {
-    const merged = mergeApprovalSources(derivedApprovals, commandApprovals);
+    const merged = mergeApprovalSources(
+      derivedApprovals,
+      commandApprovals,
+      monitorApprovals,
+    );
     return merged.map((proposal) => {
       const decision = approvalDecisions[proposal.id];
       if (!decision) return proposal;
@@ -143,7 +185,7 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
         decidedBy: decision.actor ?? undefined,
       };
     });
-  }, [derivedApprovals, commandApprovals, approvalDecisions]);
+  }, [derivedApprovals, commandApprovals, monitorApprovals, approvalDecisions]);
 
   const pendingApprovalCount = useMemo(
     () => approvals.filter((proposal) => proposal.status === "pending").length,
@@ -165,21 +207,67 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
     setHistory((prev) => [entry, ...prev]);
   }, []);
 
+  const appendSessionActivity = useCallback((record: ApprovalActivityRecord) => {
+    setSessionApprovalActivity((prev) => {
+      const withoutDuplicate = prev.filter((entry) => entry.proposalId !== record.proposalId);
+      return [record, ...withoutDuplicate];
+    });
+  }, []);
+
   const recordDecision = useCallback(
     async (id: string, action: ApprovalAction): Promise<ApprovalDecision> => {
       const nextStatus = approvalActionToStatus(action);
+      const decidedCard = proposalsById.get(id);
 
       if (liveApi) {
         try {
-          const decision = await recordChiefApprovalDecision(id, nextStatus);
+          const activitySnapshot = decidedCard
+            ? buildApprovalActivitySnapshot(decidedCard, {
+                decision: nextStatus,
+                decidedAt: new Date().toISOString(),
+                actor: null,
+              })
+            : undefined;
+
+          const result = await recordChiefApprovalDecision(
+            id,
+            nextStatus,
+            null,
+            activitySnapshot
+              ? {
+                  title: activitySnapshot.title,
+                  summary: activitySnapshot.summary,
+                  source: activitySnapshot.source,
+                  category: activitySnapshot.category,
+                  missionKind: activitySnapshot.missionKind,
+                }
+              : undefined,
+          );
+
           const applied: ApprovalDecision = {
-            proposalId: decision.proposalId,
-            status: decision.status,
-            decidedAt: decision.decidedAt,
-            actor: decision.actor,
+            proposalId: result.decision.proposalId,
+            status: result.decision.status,
+            decidedAt: result.decision.decidedAt,
+            actor: result.decision.actor,
           };
           applyDecision(applied);
-          const decidedCard = proposalsById.get(id);
+
+          if (result.activity && !result.activity.recorded) {
+            setLastActivityPersistError(result.activity.error ?? "Activity log write failed");
+          } else {
+            setLastActivityPersistError(null);
+          }
+
+          if (decidedCard && activitySnapshot) {
+            appendSessionActivity(
+              buildApprovalActivityRecord({
+                ...activitySnapshot,
+                decidedAt: applied.decidedAt,
+                actor: applied.actor,
+              }),
+            );
+          }
+
           if (decidedCard) chiefLog.cardDecided(decidedCard, action);
           return applied;
         } catch (error) {
@@ -200,11 +288,23 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
         actor: null,
       };
       applyDecision(decision);
-      const decidedCard = proposalsById.get(id);
-      if (decidedCard) chiefLog.cardDecided(decidedCard, action);
+
+      if (decidedCard) {
+        appendSessionActivity(
+          buildApprovalActivityRecord(
+            buildApprovalActivitySnapshot(decidedCard, {
+              decision: nextStatus,
+              decidedAt: decision.decidedAt,
+              actor: decision.actor,
+            }),
+          ),
+        );
+        chiefLog.cardDecided(decidedCard, action);
+      }
+
       return decision;
     },
-    [liveApi, applyDecision, proposalsById],
+    [liveApi, applyDecision, proposalsById, appendSessionActivity],
   );
 
   const value = useMemo<ChiefApprovalsContextValue>(
@@ -220,6 +320,8 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
       recordDecision,
       history,
       addHistoryEntry,
+      sessionApprovalActivity,
+      lastActivityPersistError,
     }),
     [
       liveContext,
@@ -233,6 +335,8 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
       recordDecision,
       history,
       addHistoryEntry,
+      sessionApprovalActivity,
+      lastActivityPersistError,
     ],
   );
 

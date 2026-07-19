@@ -83,6 +83,10 @@ export interface ApprovalProposal {
   decidedBy?: Persona;
   /** Structured review checklist — optional; renders only when present. */
   checklist?: ApprovalChecklistItem[];
+  /** Executable mission kind when this approval triggers a governed runner. */
+  missionKind?: string;
+  /** Workflow/project id for mission execution (Supabase workflows). */
+  missionProjectId?: string;
   /** Chief's suggested call, distinct from the operator's actual decision (`status`). */
   recommendedDecision?: ApprovalRecommendedDecision;
   source?: ApprovalSource;

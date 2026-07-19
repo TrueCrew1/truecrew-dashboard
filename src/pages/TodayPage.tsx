@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { ShiftStatsStrip } from "@/components/dashboard/ShiftStatsStrip";
 import { ChiefHomePanel } from "@/components/chief/ChiefHomePanel";
+import { AgentMissionsCard } from "@/components/missions/AgentMissionsCard";
 import { EntityContextMeta, TaskCell } from "@/components/tasks/TaskCell";
 import { TaskWarningSummary } from "@/components/tasks/TaskWarningSummary";
 import {
@@ -69,6 +70,8 @@ export function TodayPage() {
       <ShiftStatsStrip />
 
       <div className="page-stack">
+        <AgentMissionsCard />
+
         <ChiefHomePanel />
 
         <div className="grid-2">

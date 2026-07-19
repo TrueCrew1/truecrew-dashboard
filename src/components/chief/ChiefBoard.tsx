@@ -7,9 +7,15 @@ import {
 } from "./approvalWrappers";
 import { getApprovalUrgencyBadge, OVERDUE_HOURS } from "./chiefApprovalUrgency";
 import { formatChiefTimestamp } from "./chiefMock";
+import {
+  deriveApprovalExecutionFeedback,
+  launchErrorFromApprovalActionMessage,
+} from "./approvalExecutionFeedback";
+import { deriveApprovalResultLinks } from "./approvalResultLinks";
 import { CHIEF_BOARD_LANES } from "./chiefLiveContext";
 import { useBuildTasks } from "./hooks/useBuildTasks";
 import { BuildTaskApprovalCard } from "./BuildTaskApprovalCard";
+import type { ResearchMissionPayload } from "./researchMonitorIncidentPostmortem";
 import type { ApprovalActionState } from "./chiefApproval";
 import type { ApprovalAction, ApprovalProposal, ChiefBoardItem, ChiefBoardLane } from "./types";
 
@@ -20,6 +26,8 @@ interface ChiefBoardProps {
   approvalActionStates: Record<string, ApprovalActionState>;
   onApprovalAction: (proposalId: string, action: ApprovalAction) => void;
   onOpenApprovals?: () => void;
+  missionsByProposalId?: Map<string, ResearchMissionPayload>;
+  liveApiEnabled?: boolean;
 }
 
 function itemsForLane(items: ChiefBoardItem[], lane: ChiefBoardLane): ChiefBoardItem[] {
@@ -62,11 +70,15 @@ function ApprovalBoardCard({
   item,
   proposal,
   actionState,
+  executionFeedback,
+  resultLinks,
   onApprovalAction,
 }: {
   item: ChiefBoardItem;
   proposal: ApprovalProposal;
   actionState?: ApprovalActionState;
+  executionFeedback?: ReturnType<typeof deriveApprovalExecutionFeedback>;
+  resultLinks?: ReturnType<typeof deriveApprovalResultLinks>;
   onApprovalAction: (proposalId: string, action: ApprovalAction) => void;
 }) {
   const urgencyBadge = getApprovalUrgencyBadge(proposal);
@@ -107,6 +119,8 @@ function ApprovalBoardCard({
       <ChiefApprovalActions
         proposal={proposal}
         actionState={actionState}
+        executionFeedback={executionFeedback}
+        resultLinks={resultLinks}
         onAction={onApprovalAction}
         variant="board"
       />
@@ -121,6 +135,8 @@ export function ChiefBoard({
   approvalActionStates,
   onApprovalAction,
   onOpenApprovals,
+  missionsByProposalId,
+  liveApiEnabled = false,
 }: ChiefBoardProps) {
   const { buildGateTasks, isLoading, error } = useBuildTasks();
   const totalSignal = items.length + buildGateTasks.length;
@@ -195,6 +211,8 @@ export function ChiefBoard({
                       item.proposalId !== undefined
                         ? proposalsById.get(item.proposalId)
                         : undefined;
+                    const actionState =
+                      proposal !== undefined ? approvalActionStates[proposal.id] : undefined;
 
                     return (
                       <li key={item.id}>
@@ -202,7 +220,24 @@ export function ChiefBoard({
                           <ApprovalBoardCard
                             item={item}
                             proposal={proposal}
-                            actionState={approvalActionStates[proposal.id]}
+                            actionState={actionState}
+                            executionFeedback={deriveApprovalExecutionFeedback({
+                              proposal,
+                              liveApiEnabled,
+                              mission: missionsByProposalId?.get(proposal.id) ?? null,
+                              launchError: launchErrorFromApprovalActionMessage(
+                                actionState?.message,
+                                actionState?.action,
+                              ),
+                              isLaunching:
+                                actionState?.phase === "loading" &&
+                                actionState.action === "approved",
+                            })}
+                            resultLinks={deriveApprovalResultLinks({
+                              mission: missionsByProposalId?.get(proposal.id) ?? null,
+                              missionKind: proposal.missionKind,
+                              liveApiEnabled,
+                            })}
                             onApprovalAction={onApprovalAction}
                           />
                         ) : (

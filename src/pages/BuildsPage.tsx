@@ -11,11 +11,20 @@ import {
   TableText,
 } from "@/components/ui";
 import { enqueueBuildAgentTestProposal } from "@/components/chief/buildAgentTestProposal";
+import {
+  proposeResearchProjectSummaryHandoffPacket,
+  researchProjectSummaryHandoffProposalId,
+} from "@/components/chief/researchProjectSummaryHandoff";
 import { useChiefApprovals } from "@/components/chief/ChiefApprovalsContext";
 import { TaskCell } from "@/components/tasks/TaskCell";
 import { TaskWarningSummary } from "@/components/tasks/TaskWarningSummary";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
+import {
+  missionForProject,
+  useProjectSummaryHandoffMissions,
+} from "@/hooks/useProjectSummaryHandoffMissions";
+import { isLiveApiEnabled } from "@/lib/api/client";
 import {
   applyTaskWarningView,
   summarizeTaskWarnings,
@@ -25,14 +34,25 @@ import {
 } from "../../lib/task-warnings";
 
 type BuildAgentTestFeedback = "queued" | "already_pending" | null;
+type HandoffFeedback = "queued" | "already_pending" | null;
+
+function formatMissionStatus(
+  status: "queued" | "running" | "completed" | "blocked" | "failed",
+): string {
+  return status;
+}
 
 export function BuildsPage() {
   const { selectedEntityId, setSelectedEntityId } = useSelection();
   const { data } = useData();
   const { approvals, addCommandApproval } = useChiefApprovals();
+  const { missions: handoffMissions, loading: handoffLoading, error: handoffError } =
+    useProjectSummaryHandoffMissions();
+  const liveApi = isLiveApiEnabled();
   const [warningKind, setWarningKind] = useState<TaskWarningKind | null>(null);
   const [buildAgentTestFeedback, setBuildAgentTestFeedback] =
     useState<BuildAgentTestFeedback>(null);
+  const [handoffFeedback, setHandoffFeedback] = useState<HandoffFeedback>(null);
 
   function handleProposeBuildAgentTest() {
     const result = enqueueBuildAgentTestProposal(approvals);
@@ -43,6 +63,20 @@ export function BuildsPage() {
     addCommandApproval(result.card);
     setBuildAgentTestFeedback("queued");
   }
+
+  function handleProposeProjectSummaryHandoff(workflowId: string) {
+    const workflow = buildWorkflows.find((entry) => entry.id === workflowId);
+    if (!workflow) return;
+
+    const result = proposeResearchProjectSummaryHandoffPacket(workflow, approvals);
+    if (result.outcome === "blocked") {
+      setHandoffFeedback("already_pending");
+      return;
+    }
+    addCommandApproval(result.card);
+    setHandoffFeedback("queued");
+  }
+
   const buildWorkflows = data.workflows.filter((w) => w.type === "build");
   const buildTasks = data.tasks.filter((t) => t.workflowType === "build");
   const warningContext = useMemo(
@@ -85,6 +119,94 @@ export function BuildsPage() {
               Already awaiting approval — review the pending test proposal on Chief → Approvals.
             </p>
           ) : null}
+        </Panel>
+
+        <Panel title="Project summary handoff (Research)">
+          <p className="cell-muted">
+            Propose a governed Research mission for a build workflow. After Chief approval, the
+            runner loads live workflow data from Supabase, calls the Research LLM lane, and writes
+            the handoff note plus Build Log entry to Obsidian.
+          </p>
+          {!liveApi ? (
+            <p className="cell-muted" role="status">
+              Live API is off — enable VITE_USE_LIVE_API to queue and run this mission.
+            </p>
+          ) : null}
+          {handoffError ? (
+            <p className="cell-muted" role="status">
+              Mission status unavailable: {handoffError}
+            </p>
+          ) : null}
+          {handoffFeedback === "queued" ? (
+            <p className="cell-muted" role="status">
+              Queued for operator approval — open Chief → Approvals to decide.
+            </p>
+          ) : null}
+          {handoffFeedback === "already_pending" ? (
+            <p className="cell-muted" role="status">
+              Already awaiting approval for this build workflow.
+            </p>
+          ) : null}
+          {buildWorkflows.length === 0 ? (
+            <PanelEmpty
+              emptyKey="build-handoff-workflows"
+              title="No build workflows"
+              description="Add a build workflow in Operations before proposing a project summary handoff."
+            />
+          ) : (
+            <TableScroll wide label="Build workflow handoff proposals">
+              <table className="data-table data-table--comfortable">
+                <thead>
+                  <tr>
+                    <th scope="col">Build</th>
+                    <th scope="col">Mission status</th>
+                    <th scope="col">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {buildWorkflows.map((wf) => {
+                    const mission = missionForProject(handoffMissions, wf.id);
+                    const pending = approvals.some(
+                      (proposal) =>
+                        proposal.id === researchProjectSummaryHandoffProposalId(wf.id) &&
+                        proposal.status === "pending",
+                    );
+                    return (
+                      <tr key={wf.id}>
+                        <td className="cell-truncate" title={wf.title}>
+                          {wf.title}
+                        </td>
+                        <td>
+                          {handoffLoading && !mission ? (
+                            <TableText value="Loading…" />
+                          ) : pending ? (
+                            <TableText value="awaiting approval" />
+                          ) : mission ? (
+                            <TableText
+                              value={formatMissionStatus(mission.status)}
+                              title={mission.error}
+                            />
+                          ) : (
+                            <TableText value="not started" fallback="not started" />
+                          )}
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            className="empty-state-link"
+                            disabled={!liveApi || pending}
+                            onClick={() => handleProposeProjectSummaryHandoff(wf.id)}
+                          >
+                            Propose handoff
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </TableScroll>
+          )}
         </Panel>
 
         <Panel title="Build workflows">

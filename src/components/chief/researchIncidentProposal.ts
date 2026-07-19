@@ -1,5 +1,5 @@
+import { RESEARCH_MONITOR_INCIDENT_POSTMORTEM_KIND } from "../../../lib/missions/types";
 import {
-  APPROVAL_GATES,
   createApprovalCardFromResearchRequest,
   type ResearchApprovalRequest,
 } from "./agentApprovalGates";
@@ -13,8 +13,24 @@ export type ResearchIncidentEnqueueResult =
   | { outcome: "queued"; card: ApprovalCard }
   | { outcome: "blocked"; reason: "already_pending" };
 
-function researchIncidentProposalId(incidentId: string): string {
+export const RESEARCH_INCIDENT_POSTMORTEM_GATE = "Monitor incident postmortem";
+
+export function researchIncidentProposalId(incidentId: string): string {
   return stableChiefId("apr-research-incident", incidentId);
+}
+
+export function isResearchMonitorIncidentPostmortemProposal(
+  proposal: Pick<ApprovalProposal, "id" | "missionKind" | "missionProjectId">,
+): boolean {
+  if (proposal.missionKind === RESEARCH_MONITOR_INCIDENT_POSTMORTEM_KIND) return true;
+  return proposal.id.startsWith("apr-research-incident-");
+}
+
+export function incidentIdForResearchMonitorIncidentPostmortemProposal(
+  proposal: Pick<ApprovalProposal, "missionProjectId" | "id">,
+): string | null {
+  if (proposal.missionProjectId) return proposal.missionProjectId;
+  return null;
 }
 
 /**
@@ -29,13 +45,11 @@ export function buildResearchIncidentRequest(
 ): ResearchApprovalRequest {
   return {
     id: researchIncidentProposalId(incident.id),
-    gate: APPROVAL_GATES.research[0],
+    gate: RESEARCH_INCIDENT_POSTMORTEM_GATE,
     summary:
       `Sev ${incident.severity} incident "${incident.title}" on ${incident.serviceName} ` +
-      `(status: ${incident.status}). ${incident.summary} No other open incident on this ` +
-      `service in current data, so this isn't yet a confirmed recurring pattern — but a ` +
-      `latency spike on an auth-critical path warrants real-time APM/latency monitoring ` +
-      `beyond ad hoc detection.`,
+      `(status: ${incident.status}). ${incident.summary} Research will draft a postmortem brief ` +
+      `with likely causes, impacts, and recommended follow-up actions from this incident record.`,
     riskLevel: incident.severity <= 1 ? "high" : "medium",
     testsOrChecksDone: [
       {
@@ -43,20 +57,22 @@ export function buildResearchIncidentRequest(
         status: "pass",
       },
       {
-        label: `Checked current incidents for a recurring pattern on ${incident.serviceName} — none found`,
+        label: `Service context loaded: ${incident.serviceName}`,
         status: "pass",
       },
       {
-        label: "Compared 2 real options via live search: SigNoz (open-source, self-hosted, free) vs. New Relic (hosted, free tier up to 100GB/month)",
-        status: "pass",
+        label: "Mission will load incident from Supabase and call the live Research LLM lane",
+        status: "pending",
       },
     ],
     requestedAction:
-      "Approve to start a real evaluation of SigNoz or New Relic for this service's latency monitoring, or hold/reject if not warranted right now.",
+      "Approve to run Research: generate monitor incident postmortem note and artifact in Obsidian.",
     alternativesConsidered: [
-      "SigNoz — open-source, self-hosted, free",
-      "New Relic — hosted, free tier up to 100GB/month, usage-based beyond",
+      "Manual supervisor postmortem in Obsidian (no LLM)",
+      "Defer postmortem until incident is resolved",
     ],
+    missionKind: RESEARCH_MONITOR_INCIDENT_POSTMORTEM_KIND,
+    missionProjectId: incident.id,
     createdAt,
   };
 }
