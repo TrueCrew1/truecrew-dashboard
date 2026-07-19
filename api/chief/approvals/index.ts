@@ -4,6 +4,7 @@ import { recordApprovalDecisionActivity } from "../../../lib/approvals/recordApp
 import { mapDbChiefApprovalDecisionToClient } from "../../../lib/mappers/chief-approvals.js";
 import { isVaultConfigured } from "../../../lib/obsidian/config.js";
 import { isSupabaseConfigured } from "../../../lib/supabase/admin.js";
+import { scheduleGovernedApprovalUpdatedSlack } from "../../../lib/governedLoopSlack.js";
 import {
   fetchChiefApprovalDecisions,
   insertChiefApprovalDecision,
@@ -34,6 +35,10 @@ function parseActivityPayload(body: Record<string, unknown> | undefined) {
     category: typeof payload.category === "string" ? payload.category.trim() : undefined,
     missionKind:
       typeof payload.missionKind === "string" ? payload.missionKind.trim() : undefined,
+    missionProjectId:
+      typeof payload.missionProjectId === "string"
+        ? payload.missionProjectId.trim()
+        : undefined,
   };
 }
 
@@ -128,6 +133,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           error: "Obsidian vault is not configured",
         };
       }
+
+      scheduleGovernedApprovalUpdatedSlack({
+        approvalId: proposalId,
+        status: body.status,
+        missionKind: activityPayload?.missionKind,
+        missionProjectId: activityPayload?.missionProjectId,
+      });
 
       return res.status(201).json({ decision, activity });
     } catch (error) {

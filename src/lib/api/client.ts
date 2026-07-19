@@ -113,6 +113,7 @@ export interface ChiefApprovalActivityPayload {
   source?: string;
   category?: string;
   missionKind?: string;
+  missionProjectId?: string;
 }
 
 export interface ChiefApprovalActivityRecordPayload {
