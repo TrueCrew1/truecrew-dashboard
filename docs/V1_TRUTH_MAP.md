@@ -47,3 +47,9 @@ Slack is a real workspace and app surface for TrueCrew operators (they can post 
 
 Integration Health (Monitor) is a real V1 capability when live API mode and server env are configured: Vercel and Supabase are checked via real probes and surfaced in Monitor and Chief. Repo health, by contrast, is not an in-product signal in V1; it is a manual operator workflow backed by GitHub Actions and the Daily Build Health Check runbook.
 
+## Ops baseline
+
+| Capability | Status | Evidence required | Known gaps | Phase 1 action |
+|---|---|---|---|---|
+| Tool governance catalog + integrations inventory | REAL | Typed source: `lib/ops/toolGovernanceCatalog.ts`, `lib/ops/integrationsInventory.ts`, `lib/ops/validateCatalog.ts`; human docs: `docs/internal/tool-governance-catalog.md`, `docs/internal/integrations-inventory.md`; tests: `tests/operational-catalog.test.ts` (shape validation + doc id alignment). | Product-scoped only — does not replace `docs/TOOL_CATALOG.md` (personal editor/agent stack). No UI surface; statuses are manual maintenance. Google Drive workspace marked `not_wired` on current `main`. | MERGE NOW — point operators and agents at this slice for V1 tool/integration truth, failure behavior, and partial vs active status. |
+
