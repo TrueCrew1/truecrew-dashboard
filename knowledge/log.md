@@ -397,6 +397,15 @@ playbooks. Full reasoning in the Obsidian Build Log entry of the same name.
 - No dashboard UI or app code changed; no new VS Code extension was actually
   installed by this pass — governance/docs only.
 
+## 2026-07-20 — Chief decision law + mandates
+
+- 2026-07-20 — created — `docs/SYSTEM_LAW_TRUTH_MERGE_DECISION_TABLE_V1.md` — restore Truth × Merge law cited by V1 Truth Map.
+- 2026-07-20 — created — `docs/agents/CHIEF_OPERATING_SYSTEM.md` — short Chief mirror of decision law + rubric.
+- 2026-07-20 — updated — `docs/AGENT_RUNBOOK.md` — Chief Decision Rubric; agent MUST/MUST NOT/MUST escalate; Standards Review gate; Approval Feedback Review workflow.
+- 2026-07-20 — updated — `docs/AGENT_TOOL_LANES.md` — agent × authority summary; Copilot excluded from governance/law.
+- 2026-07-20 — updated — `knowledge/concepts/chief-approvals.md` — pointer to System Law + Decision Rubric.
+- 2026-07-20 — created — `sources/2026-07-20-pr-158-workspace-tdz-and-blockers.md` — #158 TDZ fixed, path BLOCKED, isolated from #156/#157.
+
 ## 2026-07-20 — Knowledge foundation (typed notes in existing vault)
 
 - 2026-07-20 — created — `reference/knowledge-schema.md`, `reference/regulated-content.md` — frontmatter schema + regulated-content policy (MSHA/OSHA/DOT + extensible).

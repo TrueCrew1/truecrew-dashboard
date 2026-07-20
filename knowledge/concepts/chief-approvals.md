@@ -3,9 +3,9 @@ title: Chief Approvals (the approval routing model)
 type: concept
 status: active
 confidence: high
-last_reviewed: 2026-07-04
+last_reviewed: 2026-07-20
 created: 2026-07-04
-updated: 2026-07-04
+updated: 2026-07-20
 related_pages: [approval-load, tool-catalog]
 related_prs: [64, 66, 67, 68, 71]
 related_cards: []
@@ -44,6 +44,10 @@ Approval Panel (Chief → Approvals tab). David only ever decides through cards 
 
 ## What to check first
 
+- [SYSTEM_LAW_TRUTH_MERGE_DECISION_TABLE_V1.md](../../docs/SYSTEM_LAW_TRUTH_MERGE_DECISION_TABLE_V1.md)
+  and the Chief **Decision Rubric** in `docs/AGENT_RUNBOOK.md` before recommending
+  Approve / Hold / Reject on a merge-related card.
+- `docs/agents/CHIEF_OPERATING_SYSTEM.md` for the short Chief mirror.
 - `reference/tool-access.md` for which agent may use which tool before proposing a
   gated action involving an external system.
 - Whether a stated precondition is unmet before recommending "approve" on risk level

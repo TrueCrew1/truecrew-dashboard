@@ -16,7 +16,7 @@ for the full rule set.
 | Concepts | 6 | 10 |
 | Projects | 3 | 5 |
 | Decisions | 4 | 15 |
-| Sources | 10 | 50 |
+| Sources | 11 | 50 |
 | Lessons | 5 | 20 |
 | Reference | 6 | 10 |
 
@@ -122,7 +122,7 @@ just a folder pointer) so every note is actually reachable from this page, per t
 - [PR #79 — dashboard-maintenance bundle ApprovalCard](sources/pr-79-dashboard-maintenance-bundle-card.md)
 - [Build ↔ Vercel read-only status-check experiment](sources/vercel-status-check-experiment.md)
 - [Agent Runbook § Approval Load](sources/approval-load-runbook-section.md)
-- [Second Brain governance rules added](sources/second-brain-governance-rules.md)
+- [PR #158 — workspace TDZ fixed; path BLOCKED; isolated from #156/#157](sources/2026-07-20-pr-158-workspace-tdz-and-blockers.md)
 
 ## Recent updates
 
