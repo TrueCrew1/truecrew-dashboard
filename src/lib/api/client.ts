@@ -157,7 +157,9 @@ export async function fetchChiefApprovalDecisions(): Promise<ChiefApprovalDecisi
   if (!response.ok) {
     throw new Error(`Approval decisions API returned ${response.status}`);
   }
-  const body = (await response.json()) as { decisions?: ChiefApprovalDecisionPayload[] };
+  const body = await readResponseJson<{ decisions?: ChiefApprovalDecisionPayload[] }>(response, {
+    pathHint: "/api/chief/approvals",
+  });
   return body.decisions ?? [];
 }
 
