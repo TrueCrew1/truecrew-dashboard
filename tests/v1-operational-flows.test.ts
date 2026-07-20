@@ -60,18 +60,18 @@ describe("V1 integration harness", () => {
     expect(totals.pass + totals.partial).toBe(ids.length);
   });
 
-  it("does not pass merge-plan-baseline until slices are merged to main", () => {
+  it("does not pass merge-plan-main-merge until slices are merged to main", () => {
     const checks = runV1IntegrationChecks({ root: process.cwd() });
-    expect(checks["merge-plan-baseline"].outcome).toBe("partial");
-    expect(checks["merge-plan-baseline"].message).toMatch(/not merged to main/i);
+    expect(checks["merge-plan-main-merge"].outcome).toBe("partial");
+    expect(checks["merge-plan-main-merge"].message).toMatch(/not merged to main/i);
   });
 
-  it("passes merge-plan-baseline when merged fixture covers required slices", () => {
+  it("passes merge-plan-main-merge when merged fixture covers required slices", () => {
     const checks = runV1IntegrationChecks({
       root: process.cwd(),
       mergedSliceIds: REQUIRED_BASELINE_SLICES,
     });
-    expect(checks["merge-plan-baseline"].outcome).toBe("pass");
+    expect(checks["merge-plan-main-merge"].outcome).toBe("pass");
   });
 
   it("fails loudly when catalogs would be invalid", () => {

@@ -9,8 +9,8 @@ import { INTEGRATIONS_INVENTORY } from "./integrationsInventory.js";
 import { TOOL_GOVERNANCE_CATALOG } from "./toolGovernanceCatalog.js";
 import {
   detectPresentSliceIds,
-  isBaselineAchieved,
   isBaselineMerged,
+  isBaselinePresentOnDisk,
   listMissingBaselineSliceIds,
   listMissingMergedBaselineSliceIds,
   type V1MergeSliceId,
@@ -34,7 +34,7 @@ export type IntegrationCheckId =
   | "evidence-trail-missing-refs"
   | "turnover-snapshot"
   | "turnover-panel-demo-guard"
-  | "merge-plan-baseline"
+  | "merge-plan-main-merge"
   | "builder-report-presence";
 
 export type V1IntegrationCheckMap = Record<IntegrationCheckId, IntegrationCheckResult>;
@@ -202,26 +202,26 @@ export function runV1IntegrationChecks(
     );
   }
 
-  const stackPresent = isBaselineAchieved(root, { presentSliceIds });
+  const stackPresent = isBaselinePresentOnDisk(root, { presentSliceIds });
   const stackMerged = isBaselineMerged(mergedSliceIds);
 
   if (stackMerged) {
-    checks["merge-plan-baseline"] = result(
+    checks["merge-plan-main-merge"] = result(
       "pass",
       "All required V1 slices are merged to main.",
     );
   } else if (mergedSliceIds.length > 0) {
-    checks["merge-plan-baseline"] = result(
+    checks["merge-plan-main-merge"] = result(
       "partial",
       `Partial main merge — still missing: ${listMissingMergedBaselineSliceIds(mergedSliceIds).join(", ")}`,
     );
   } else if (stackPresent) {
-    checks["merge-plan-baseline"] = result(
+    checks["merge-plan-main-merge"] = result(
       "partial",
       "V1 stack markers are present on this branch but slices are not merged to main.",
     );
   } else {
-    checks["merge-plan-baseline"] = result(
+    checks["merge-plan-main-merge"] = result(
       "partial",
       `Missing baseline slices on disk: ${listMissingBaselineSliceIds(root, { presentSliceIds }).join(", ") || "none detected"}`,
     );
