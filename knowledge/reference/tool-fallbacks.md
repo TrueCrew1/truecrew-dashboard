@@ -39,22 +39,23 @@ guesses — see `docs/TOOL_CATALOG.md` for the researched source per tool
 |---|---|
 | Claude Code itself is `BLOCKED` | No fallback — this is a real outage, not a routing decision (see `claude-code` below). All agent work stops until resolved. |
 | Claude Pro / Claude Code credits are low but not exhausted | Keep using Claude Code for repo-scale work (nothing else does that job); shift *ad-hoc* reasoning/drafting to free ChatGPT first, then free Gemini/DeepSeek/Kimi. Return to Claude once credits refresh — don't keep defaulting to free tools out of habit. |
-| Perplexity credits are low | Free ChatGPT → free Gemini for research, in that order; state which tier was actually used in the output, per Research's "cite what was checked" rule. |
+| Perplexity credits are low | Free ChatGPT → free Gemini for research overflow (not Grok as default); state which tier was actually used, per Research's "cite what was checked" rule. Prefer restoring Perplexity for anything product/compliance-adjacent. |
 | Need cheap, routine local chat (not repo-scale reasoning) | **Open WebUI** over Ollama — preferred local day-to-day chat (not dashboard-wired). Continue.dev is secondary in-editor autocomplete only. |
 | Fully offline / no internet at all | Open WebUI + Ollama (Continue.dev secondary) — every other lane above needs a network connection. |
 | Sustained / automated LLM work | **Azure router** (DeepSeek / gpt-5-mini / Kimi) — default while Azure credits remain (expire next month). |
-| A specific free tool's daily/rate quota is hit mid-task | Chain to the next free tool in the list (ChatGPT/Gemini/Grok/DeepSeek/Kimi) rather than waiting out the reset window, unless the task can wait. |
+| A specific free tool's daily/rate quota is hit mid-task | Chain to the next free tool in the list (ChatGPT/Gemini/DeepSeek/Kimi) rather than waiting out the reset window, unless the task can wait. Do not substitute Grok for Perplexity on default research. |
 
 ## Tiers
 
 - **Primary sustained (API)** — Azure-routed DeepSeek / gpt-5-mini / Kimi — default
   bulk lane while credits remain.
 - **Primary premium (judgment)** — Claude Code / Cursor Pro (coding), Claude Pro
-  (high-stakes synthesis), Perplexity Pro (research).
-- **Preferred fallback** — free ChatGPT, then free Gemini / Grok, when a premium tool
-  is `DEGRADED`/`BLOCKED` or credits are low.
+  (high-stakes synthesis), **Perplexity Pro (PRIMARY research)**.
+- **Preferred fallback** — free ChatGPT, then free Gemini, when a premium tool
+  is `DEGRADED`/`BLOCKED` or credits are low (not Grok for default research).
 - **Acceptable local / always-available** — **Open WebUI** (+ Ollama) preferred;
   Continue.dev secondary; free DeepSeek/Kimi manual overflow.
+- **NON-PROD_WEB_AI** — Grok: X/social sentiment only; see TOOL_CATALOG § Research tools.
 - **Launch-only / manual, not yet integrated** — VS Code itself; Slack/Calendar/Email
   inbound (product Slack *outbound* webhook is separate — see integrations inventory).
 - **Paused** — GitHub Copilot (+ Chat): do **not** reinstall by default; optional
@@ -68,7 +69,8 @@ guesses — see `docs/TOOL_CATALOG.md` for the researched source per tool
 |---|---|---|
 | High-stakes synthesis / architecture | Claude Pro / Claude Code | free ChatGPT → free Gemini |
 | Coding and repo edits | Claude Code / Cursor Pro | Open WebUI for small local drafts; Continue.dev secondary autocomplete |
-| Research and comparison | Perplexity Pro | free ChatGPT → free Gemini → manual |
+| Research and comparison | **Perplexity Pro (PRIMARY)** | free ChatGPT → free Gemini → manual (not Grok for defaults) |
+| X/social sentiment | Grok (NON-PROD_WEB_AI only) | — (do not escalate Grok into product/compliance decisions alone) |
 | Critique / second-pass review | A *different* tool than the one that produced the first draft (e.g. Gemini reviewing Claude output) | any other available tier-2 tool |
 | Note filing / Obsidian formatting | Claude Code (Chief's own logging responsibility) | manual by David if the vault is unreachable |
 | Sustained / automated LLM | Azure router (DeepSeek / gpt-5-mini / Kimi) | free filter → Pro judgment if blocked |
@@ -134,18 +136,19 @@ guesses — see `docs/TOOL_CATALOG.md` for the researched source per tool
   the actual task on it; note the gap and backfill as soon as possible.
 
 ### perplexity-pro
-- **role:** Research's live web-search tool
+- **role:** **PRIMARY research lane** — cited web, standards/docs, competitive analysis
 - **owner_agent:** Research
 - **fallback chain:** primary Perplexity Pro → first fallback free ChatGPT → second
   fallback free Gemini → degraded path David runs the search manually and hands
-  Research the results.
+  Research the results. **Do not** use Grok as a Perplexity substitute for default
+  research (Grok = X/social sentiment only).
 - **known constraints:** every fallback here is a consumer chat subscription with no
   agent-callable API today (per Tool Catalog) — "fallback" currently means David
   manually relaying results, not an automated switch.
 - **when to prefer fallback:** Perplexity unreachable/degraded, rate-limited, **or
   David's Perplexity credits are low** — proceed with a fallback but state in the
   research output which tier was actually used, per Research's existing "cite what
-  was checked" rule.
+  was checked" rule. Restore Perplexity for product/compliance-adjacent questions.
 
 ### claude-pro
 - **role:** Research/Content's ad-hoc reasoning/drafting outside repo-scale work
@@ -232,9 +235,10 @@ these is actually adopted — don't pre-build governance for a tool that isn't i
 `docs/TOOL_CATALOG.md` `status: removed`. **GitHub Copilot** is `paused` — do **not**
 reinstall by default; agents must not treat that as permission to turn it back on.
 Open WebUI is cataloged as preferred local chat (`open-webui`) — not a dashboard
-integration. **Grok** entry: https://grok.com (company https://x.ai/) — lane
-`NON-PROD_WEB_AI`; personal/low-sensitivity only; no MSHA/customer-identifiable data,
-no production/bulk, no xAI API without explicit governance approval.
+integration. **Research tools:** Perplexity Pro = PRIMARY; **Grok** =
+https://grok.com (company https://x.ai/) — lane `NON-PROD_WEB_AI` for X/social
+sentiment only; no MSHA/customer-identifiable data, no production/bulk, no xAI API
+or automated pipeline wiring without explicit governance approval.
 
 ## Related
 

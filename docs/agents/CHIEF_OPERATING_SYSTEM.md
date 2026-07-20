@@ -22,8 +22,9 @@ unless the product inventory says so.
 
 1. **API / sustained (default bulk)** — DeepSeek / Kimi / gpt-5-mini via Azure router
    (`docs/AI_STACK.md`) — use while Azure credits remain (expire next month)
-2. **Premium core** — Claude Pro, Cursor Pro, Perplexity Pro (judgment / supervision)
-3. **Free / filter** — ChatGPT, Gemini, Grok, Kimi, DeepSeek (free web)
+2. **Premium core** — Claude Pro, Cursor Pro; **Perplexity Pro = PRIMARY research**
+3. **Free / filter** — ChatGPT, Gemini, Kimi, DeepSeek (overflow); **Grok** =
+   NON-PROD_WEB_AI for X/social sentiment only (not default research)
 4. **Local** — **Open WebUI** (preferred chat) over Ollama; Continue.dev secondary;
    Docker Desktop when needed
 5. **Editor shell** — VS Code + Claude Code + Cursor
@@ -39,7 +40,8 @@ unless the product inventory says so.
 | Cheap second opinion | Free-filter web chat |
 | Local day-to-day chat | **Open WebUI** (+ Ollama) |
 | In-editor autocomplete only | Continue.dev (secondary) |
-| Live web evidence | Perplexity Pro |
+| Live web / standards / competitive research | **Perplexity Pro (PRIMARY)** |
+| X/social sentiment only | Grok (NON-PROD_WEB_AI) — never as default research |
 | Hard judgment / architecture | Claude Pro |
 | Multi-file implementation | Cursor Pro + Claude Code (PR + Build gate) |
 | Merge / migrate / deploy | Existing Chief → Build gates — never “because the model said so” |

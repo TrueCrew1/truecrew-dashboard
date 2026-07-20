@@ -61,7 +61,7 @@ enumerate tools in code.
 |------|------------|----------|
 | Claude Pro | `claude-pro` | Hard reasoning, architecture, ambiguous product decisions, high-stakes drafting |
 | Cursor Pro | `cursor` | Multi-file repo edits, PR drafts, cloud/agent coding in this repo |
-| Perplexity Pro | `perplexity-pro` | Live web / current-events research with citations |
+| Perplexity Pro | `perplexity-pro` | **PRIMARY research lane** — cited web research, standards/docs, competitive analysis |
 
 ### Free / fallback / filter
 
@@ -69,7 +69,7 @@ enumerate tools in code.
 |------|------------|----------|
 | ChatGPT free | `chatgpt-free` | Quick second opinion; overflow when premium credits are tight |
 | Gemini free | `gemini-free` | Large-context / multimodal skim |
-| Grok free | `grok-free` | Alternate filter/second opinion |
+| Grok free | `grok-free` | NON-PROD_WEB_AI — X/social sentiment only (not default research) |
 | Kimi free | `kimi-free` | Overflow chat; light research when API not needed |
 | DeepSeek free | `deepseek-free` | Overflow chat; cheap filter before escalating |
 
@@ -122,16 +122,40 @@ personal chat tools.
 
 ---
 
+## Research tools (Cursor context)
+
+Manual web-research lanes for human/agent sessions (not product Research missions —
+those use the Azure router). Prefer this order:
+
+| Tool | Role | Use for | Do not use for |
+|------|------|---------|----------------|
+| **Perplexity Pro** | **PRIMARY** research lane | Structured, cited web research; standards/doc discovery; competitive analysis; most day-to-day research questions; Deep Research-style multi-step analysis | Treating chat output as merged product truth without a note/`knowledge/` capture |
+| **Grok (xAI)** | NON-PROD_WEB_AI only | **Only** when you specifically need X/social sentiment or “what are people currently saying/doing?” style insight | Default research; MSHA-sensitive or customer-identifiable data; production/bulk; anything that might set product/compliance direction without Perplexity (or another primary source) |
+
+**Rationale:** Perplexity is optimized for fast, source-backed answers — safer default
+for anything that might influence product or compliance decisions. Grok is optional
+color on public social chatter, not a substitute primary researcher.
+
+**Grok guardrails (mandatory):**
+- No MSHA-sensitive, customer-identifiable, or production data.
+- No production or bulk workloads.
+- Do **not** propose wiring Grok (or xAI APIs) into automated pipelines without
+  explicit governance approval.
+
+Entry: https://grok.com · Company: https://x.ai/ · Catalog id: `grok-free`.
+
+---
+
 ## Tool routing policy (concise)
 
 | Tool | Category | Status | Best use | Avoid use for | Preferred owner/agent | Notes |
 |------|----------|--------|----------|---------------|----------------------|-------|
 | Claude Pro | premium-core | manual | Hard decisions, architecture, quality drafting | Bulk/routine loops; burning credits on greppable tasks | Research, Content, Chief (human) | Consumer chat — not product-wired |
 | Cursor Pro | premium-core / editor-shell | partially-wired | Multi-file edits, cloud agents, PR drafts | Merging/deploying without Build gate | Build | Evidenced via `cursor/*` branches |
-| Perplexity Pro | premium-core | manual | Live web research + citations | Code execution; treating notes as approved truth | Research | Relay findings into `knowledge/` |
+| Perplexity Pro | premium-core | manual | **PRIMARY research** — cited web, standards/docs, competitive analysis | Code execution; treating notes as approved truth | Research | Safer default for product/compliance-influencing questions |
 | ChatGPT free | free-filter | manual | Second opinion / overflow | Sustained drafting past free window | Research, Content | Filter before escalating to Pro |
 | Gemini free | free-filter | manual | Large context / multimodal skim | Authoritative product decisions alone | Research, Content | Separate from Gemini API quotas |
-| Grok free | free-filter | manual | Alternate filter opinion | Sole source for ship decisions | Research, Content | Manual web chat |
+| Grok free | NON-PROD_WEB_AI | manual | X/social sentiment only (“what are people saying?”) | Default research; MSHA/customer PII; bulk/prod; automated pipelines | Research (human) | https://grok.com — not a Perplexity substitute |
 | Kimi free | free-filter | manual | Overflow chat | Sustained API-scale workloads | Research, Content | Prefer `kimi-api` for sustained |
 | DeepSeek free | free-filter | manual | Overflow / cheap filter | Long automated missions | Research, Content | Prefer `deepseek-api` for sustained |
 | DeepSeek API | api-sustained | partially-wired | **Default sustained** budget lane | Burning Pro chat on bulk loops | Research, Builder (router) | Azure credits expire next month — prefer this lane |
@@ -156,9 +180,10 @@ personal chat tools.
    sessions to the Azure router (DeepSeek → gpt-5-mini → Kimi via `npm run llm`,
    Research missions, suggest-tests). **Reason:** Azure credits expire next month —
    convert them into useful work. See `docs/AI_STACK.md`.
-3. **Free filter before premium chat.** Use ChatGPT / Gemini / Grok / Kimi / DeepSeek
-   **free** web chats to narrow options or get a second opinion; escalate only when
-   stuck or stakes rise.
+3. **Research web tools:** default to **Perplexity Pro** (PRIMARY) for structured,
+   cited research. Use **Grok** only for X/social sentiment — see § Research tools.
+   Other free chats (ChatGPT / Gemini / Kimi / DeepSeek) remain general overflow
+   filters, not research substitutes for Perplexity.
 4. **Local filter / offline draft.** Prefer **Open WebUI** (over Ollama) for local
    day-to-day chat. Continue.dev is secondary/fallback for in-editor autocomplete —
    not the primary local chat surface.
@@ -167,7 +192,7 @@ personal chat tools.
      resolution between sources.
    - **Cursor Pro** — multi-file implementation and agentic coding in this repo
      (still propose-only for merge; Build gate applies).
-   - **Perplexity Pro** — anything that needs fresh web evidence.
+   - **Perplexity Pro** — **PRIMARY** research lane (cited web, standards, competitive).
 6. **Do not burn Pro credits on:** formatting, repeating research already in
    `knowledge/`, or tasks the Azure router / free filter / local model already solved.
 7. **Quality bar stays fixed.** Cheaper lane ≠ lower acceptance criteria — escalate
@@ -241,8 +266,12 @@ personal chat tools.
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: manual
 - approval_required: no
-- notes: premium-core live web/current-events research. Relay useful findings into
-  `knowledge/` — do not treat chat output as merged product truth.
+- notes: **PRIMARY research lane** for Cursor/human sessions. Use for structured,
+  cited web research, standards/doc discovery, competitive analysis, Deep Research-
+  style multi-step analysis, and most day-to-day research questions. Safer default
+  than Grok for anything that might influence product or compliance decisions. Relay
+  useful findings into `knowledge/` — do not treat chat output as merged product truth.
+  Product Research missions still use the Azure router (`docs/AI_STACK.md`).
 
 ### gemini-free
 - name: free Gemini
@@ -278,10 +307,12 @@ personal chat tools.
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: manual
 - approval_required: no (chat); **yes** for any future xAI API / product wiring
-- notes: Lane **NON-PROD_WEB_AI** — personal / low-sensitivity research only. Rules:
-  no MSHA-sensitive or customer-identifiable data; no production or bulk workloads;
-  no xAI API integration without explicit governance approval. Not product-wired and
-  not part of the Azure LLM router. Company site (not the chat entry): https://x.ai/.
+- notes: Lane **NON-PROD_WEB_AI**. Use **only** for X/social sentiment or “what are
+  people currently saying/doing?” insight — **not** the default research tool
+  (that is Perplexity Pro). Guardrails: no MSHA-sensitive, customer-identifiable, or
+  production data; no production or bulk workloads; do **not** propose wiring Grok
+  or xAI APIs into automated pipelines without explicit governance approval. Not
+  product-wired and not part of the Azure LLM router. Company site: https://x.ai/.
   Confirmed entry URL 2026-07-20: `url_main` https://grok.com.
 
 ### deepseek-free

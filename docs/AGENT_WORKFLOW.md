@@ -24,10 +24,12 @@ work is:
   gpt-5-mini via `npm run llm` or product Research/Builder paths —
   [docs/AI_STACK.md](AI_STACK.md)). Azure credits expire next month — default bulk
   work here; keep Pro tools for judgment.
-- **Filter with free tools before premium chat** — ChatGPT / Gemini / Grok / Kimi /
+- **Filter with free tools before premium chat** — ChatGPT / Gemini / Kimi /
   DeepSeek free web chats for second opinions; escalate to Claude Pro, Cursor Pro,
-  or Perplexity Pro when judgment, multi-file work, or live web evidence requires it
-  ([docs/TOOL_CATALOG.md](TOOL_CATALOG.md) § LLM usage policy).
+  or **Perplexity Pro (PRIMARY research)** when judgment, multi-file work, or live
+  web evidence requires it ([docs/TOOL_CATALOG.md](TOOL_CATALOG.md) § Research tools /
+  LLM usage policy). **Grok** is NON-PROD_WEB_AI for X/social sentiment only — not
+  the default research lane.
 - **Local day-to-day chat via Open WebUI** (over Ollama) — preferred local surface;
   Continue.dev is secondary in-editor fallback only. Open WebUI is local-only — not
   a dashboard runtime integration.

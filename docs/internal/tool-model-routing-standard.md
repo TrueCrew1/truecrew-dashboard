@@ -50,7 +50,8 @@ work. Premium Pro tools are judgment/supervision; local/free are filter/fallback
 - Changes touch auth, RLS, CI security, production migrations, or multi-service
   architecture.
 - Azure/free/local output is ambiguous, fails tests/lint, or leaves spec unclear.
-- Fresh web citations are required (Perplexity Pro).
+- Fresh web citations / structured research are required (**Perplexity Pro** —
+  PRIMARY research lane; Grok is not a substitute).
 
 **Default Ollama / Open WebUI** (per `docs/TOOL_CATALOG.md#ollama-local` /
 `#open-webui`):
@@ -70,7 +71,8 @@ work. Premium Pro tools are judgment/supervision; local/free are filter/fallback
 | Small local chat / draft | Open WebUI (+ Ollama) | Tier 1 | Touches infra/auth/data model |
 | In-editor autocomplete | Continue.dev (secondary) | Tier 1 | Prefer Open WebUI for chat |
 | SQL migration review | Claude Code + Azure quality lane | Tier 2–3 | Destructive SQL / RLS / backfill |
-| Live web research | Perplexity Pro (after optional free filter) | Tier 2–3 | Conflicting sources → Claude Pro |
+| Live web research (PRIMARY) | **Perplexity Pro** | Tier 2–3 | Conflicting sources → Claude Pro |
+| X/social sentiment only | Grok (NON-PROD_WEB_AI) | Tier 1 (manual) | Never for product/compliance defaults |
 
 **GitHub Copilot:** **paused.** Do not reinstall by default and do not route work
 here. Optional only if David explicitly re-approves later

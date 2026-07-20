@@ -11,7 +11,7 @@ integrations (Supabase, Vercel host, Slack webhook, etc.):
 |-------|-------|------|
 | **API / sustained (default bulk lane)** | DeepSeek, Kimi, gpt-5-mini via Azure router | Repeatable missions, CLI, Builder suggest-tests — **use while Azure credits remain** (expire next month) |
 | **Premium core** | Claude Pro, Cursor Pro, Perplexity Pro | Judgment, supervision, live web research — not bulk loops |
-| **Free / filter** | ChatGPT, Gemini, Grok, Kimi, DeepSeek (free web) | Overflow, second opinions, cheap filtering before Pro |
+| **Free / filter** | ChatGPT, Gemini, Kimi, DeepSeek (overflow); Grok = X/social only | Overflow before Pro; Grok not default research |
 | **Local / self-hosted** | Ollama, **Open WebUI (preferred chat)**, Docker Desktop; Continue.dev secondary | Local filter/offline draft; **Open WebUI is not dashboard-wired** |
 | **Editor / shell** | VS Code, Claude Code, Cursor | Primary implementation surfaces |
 | **Paused** | GitHub Copilot | Do not reinstall by default; only if explicitly re-approved |
@@ -22,14 +22,17 @@ integrations (Supabase, Vercel host, Slack webhook, etc.):
 |------|------|
 | **Claude Pro** | Hard reasoning, architecture, careful drafting (consumer chat) |
 | **Cursor Pro** | Multi-file / agentic coding; propose-only for merge (Build gate) |
-| **Perplexity Pro** | External web research → feeds `knowledge/` |
+| **Perplexity Pro** | **PRIMARY research lane** — cited web, standards/docs, competitive analysis → feeds `knowledge/` |
 
 ## Free / fallback / filter
 
-Use before burning Pro credits: **ChatGPT free**, **Gemini free**, **Grok free**
-(https://grok.com — NON-PROD_WEB_AI: personal / low-sensitivity only; no MSHA/customer
-PII, no bulk/prod, no xAI API without approval), **Kimi free**, **DeepSeek free**.
-Manual only — not product APIs.
+Use before burning Pro credits: **ChatGPT free**, **Gemini free**, **Kimi free**,
+**DeepSeek free** (general overflow). **Grok** is not a general free filter for
+research — NON-PROD_WEB_AI only for X/social sentiment (https://grok.com; no
+MSHA/customer PII; no bulk/prod; no xAI API without approval). Manual only — not
+product APIs.
+
+**Research default:** Perplexity Pro first. See `docs/TOOL_CATALOG.md` § Research tools.
 
 ## API / sustained-work (LLM Router) — default sustained lane
 
@@ -86,7 +89,8 @@ Optional only if David explicitly re-approves later.
 | Task | Tool | Lane + Complexity |
 |------|------|-------------------|
 | Sustained Research / bulk LLM | Azure `llm` router | research/builder → DeepSeek / Kimi / gpt-5-mini |
-| Live web research | Perplexity Pro (+ optional free filter first) | — |
+| Live web research (PRIMARY) | **Perplexity Pro** | — |
+| X/social sentiment only | Grok (NON-PROD_WEB_AI) | — |
 | Hard product/architecture call | Claude Pro | — |
 | Multi-file refactor / agent PR | Cursor Pro + Claude Code | — |
 | Local day-to-day chat | **Open WebUI** (+ Ollama) | — |
@@ -102,9 +106,10 @@ Full policy: `docs/TOOL_CATALOG.md` § LLM usage policy.
 
 1. Mechanical first (no LLM).
 2. **Azure router default for sustained/automated work** (credits expire next month).
-3. Free filter before premium chat.
+3. Free overflow (ChatGPT/Gemini/Kimi/DeepSeek) before premium chat — **not** Grok
+   as general research (Grok = X/social sentiment only).
 4. Local: **Open WebUI** preferred; Continue.dev secondary.
-5. Premium core for judgment/supervision (Claude / Cursor / Perplexity Pro).
+5. Premium: Claude / Cursor for judgment; **Perplexity Pro = PRIMARY research**.
 6. Never lower the quality bar when choosing a cheaper lane — escalate when stuck.
 7. Copilot stays paused — no reinstall unless explicitly re-approved.
 

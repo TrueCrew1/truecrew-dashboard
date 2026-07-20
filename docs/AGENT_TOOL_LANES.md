@@ -32,7 +32,9 @@ Approved stack layers (premium / free / API / local / editor) and LLM usage poli
 | Continue.dev | PROPOSE-ONLY (secondary) | In-editor autocomplete fallback — not primary local chat | `TOOL_CATALOG.md#continue-dev` |
 | Docker Desktop | HUMAN-ONLY (local infra) | Containers / MCP when needed locally — not a production deploy path | `TOOL_CATALOG.md#docker-desktop` |
 | Azure LLM router (DeepSeek / Kimi / gpt-5-mini) | PROPOSE-ONLY (outputs) | **Default sustained** API work via `npm run llm` / Research / suggest-tests (Azure credits expire next month) | `docs/AI_STACK.md`, `TOOL_CATALOG.md#deepseek-api` |
-| Claude Pro / Perplexity Pro / free web LLMs | PROPOSE-ONLY (manual relay) | Premium judgment + free-filter — no agent-callable consumer APIs today | `TOOL_CATALOG.md` Approved stack |
+| Claude Pro / free web LLMs | PROPOSE-ONLY (manual relay) | Premium judgment + free-filter overflow — no agent-callable consumer APIs today | `TOOL_CATALOG.md` Approved stack |
+| Perplexity Pro | PROPOSE-ONLY (manual relay) | **PRIMARY research** lane for cited web / standards / competitive analysis | `TOOL_CATALOG.md` § Research tools |
+| Grok (xAI) | PROPOSE-ONLY (human) / NON-PROD_WEB_AI | X/social sentiment only — not default research; no automated wiring without approval | `TOOL_CATALOG.md#grok-free` |
 | Slack outbound (product) | product notify | Outbound webhook only — `partial` in integrations inventory | `lib/ops/integrationsInventory.ts` |
 | Slack inbound/bot (personal) | future | Not built — `future-integration` in TOOL_CATALOG; do not conflate with outbound | `TOOL_CATALOG.md#slack` |
 | Supabase migration PR check | READ-ONLY | CI check that lints/diffs migrations on PR against a non-production schema; never runs `supabase db push` | `.github/workflows/supabase-migration-pr-check.yml` |
