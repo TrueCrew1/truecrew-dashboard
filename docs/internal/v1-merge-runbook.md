@@ -45,3 +45,28 @@ npx vitest run tests/v1-operational-flows.test.ts
 ```
 
 `lib/ops/v1IntegrationCheck.ts` aggregates catalog, readiness, panel, evidence, turnover, and merge-plan checks. The `merge-plan-main-merge` check returns **partial** on open-PR stack branches (markers present, not merged) and **pass** only when `mergedSliceIds` covers all required slices. Not wired to production routes in V1.
+
+## V1 inspection tip refresh — July 20, 2026
+
+The inspection tip branch `cursor/v1-feature-and-integration-tip-0eaa` was **recreated from `origin/main`** (reset + `--force-with-lease` push) rather than rebased. The prior tip (`b924012…`) had diverged with a parallel stack history and was missing #168–#170 and #169.
+
+| Item | Value |
+|------|--------|
+| Tip branch | `cursor/v1-feature-and-integration-tip-0eaa` |
+| SHA (tip and `main`) | `deb965e6cdf9003fe584ddfd7c7b3b362a0dad62` |
+| Alignment | Tip is identical to `origin/main` and includes the full V1 stack (#162–#166, #168–#170, #169) |
+
+**Quality bar on refreshed tip (all PASS):**
+
+- `npm test` — 50 files, 331 tests
+- `npm run lint`
+- `npm run build` (chunk-size warning only)
+
+**Harness (`runV1IntegrationChecks()`):**
+
+| Args | `merge-plan-main-merge` | `builder-report-presence` |
+|------|-------------------------|---------------------------|
+| Default (`mergedSliceIds` = `[]`) | **partial** — markers present on disk; empty merged list | **pass** |
+| Full `mergedSliceIds` fixture | **pass** | **pass** |
+
+V1 is fully merged on `main`, and the inspection tip now reflects that; **partial under default args is by design** (`mergedSliceIds` defaults to none merged until callers pass CI/git metadata or a test fixture).
