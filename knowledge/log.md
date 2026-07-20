@@ -397,6 +397,10 @@ playbooks. Full reasoning in the Obsidian Build Log entry of the same name.
 - No dashboard UI or app code changed; no new VS Code extension was actually
   installed by this pass — governance/docs only.
 
+## 2026-07-20 — Desktop research corpus (public web)
+
+- 2026-07-20 — created — 13 typed notes under `sources/{competitors,workflows,findings,assumptions,questions}/` via `npm run discovery:file` (MaintainX/UpKeep/Limble/Fiix; three workflows; four findings; one assumption; one question). No interviews; no decision. Regulated: OSHA finding + regs-on-Today question.
+
 ## 2026-07-20 — Chief decision law + mandates
 
 - 2026-07-20 — created — `docs/SYSTEM_LAW_TRUTH_MERGE_DECISION_TABLE_V1.md` — restore Truth × Merge law cited by V1 Truth Map.
