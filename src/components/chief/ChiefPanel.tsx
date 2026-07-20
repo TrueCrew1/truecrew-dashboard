@@ -10,6 +10,7 @@ import { executeProjectSummaryHandoffMission } from "@/lib/api/researchMission";
 import { executeMonitorIncidentPostmortemMission } from "@/lib/api/researchPostmortemMission";
 import { useProjectSummaryHandoffMissions } from "@/hooks/useProjectSummaryHandoffMissions";
 import { useMonitorIncidentPostmortemMissions } from "@/hooks/useMonitorIncidentPostmortemMissions";
+import { useApprovalActivity } from "@/hooks/useApprovalActivity";
 import {
   incidentIdForResearchMonitorIncidentPostmortemProposal,
   isResearchMonitorIncidentPostmortemProposal,
@@ -70,6 +71,7 @@ export function ChiefPanel() {
     recordDecision,
     history,
     addHistoryEntry,
+    sessionApprovalActivity,
   } = useChiefApprovals();
 
   const [activeTab, setActiveTab] = useState<ChiefTab>("command");
@@ -100,6 +102,11 @@ export function ChiefPanel() {
   }, [handoffMissions, postmortemMissions, researchMissionOverrides]);
   // Same hook and endpoints Monitor already uses — no new polling or data source.
   const platformHealth = useMonitorHealth();
+  const { vaultRecords: approvalVaultRecords } = useApprovalActivity(null);
+  const approvalActivityRecords = useMemo(
+    () => [...approvalVaultRecords, ...sessionApprovalActivity],
+    [approvalVaultRecords, sessionApprovalActivity],
+  );
 
   const openApprovals = useCallback((filter: ApprovalStatusFilter = "all") => {
     setApprovalStatusFilter(filter);
@@ -653,6 +660,7 @@ export function ChiefPanel() {
               focusProposalId={focusProposalId}
               missionsByProposalId={missionsByProposalId}
               liveApiEnabled={liveApi}
+              approvalActivityRecords={approvalActivityRecords}
             />
           </div>
         ) : null}
