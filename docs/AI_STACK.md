@@ -9,12 +9,12 @@ integrations (Supabase, Vercel host, Slack webhook, etc.):
 
 | Layer | Tools | Role |
 |-------|-------|------|
-| **Premium core** | Claude Pro, Cursor Pro, Perplexity Pro | Primary quality judgment + coding + live web research |
+| **API / sustained (default bulk lane)** | DeepSeek, Kimi, gpt-5-mini via Azure router | Repeatable missions, CLI, Builder suggest-tests — **use while Azure credits remain** (expire next month) |
+| **Premium core** | Claude Pro, Cursor Pro, Perplexity Pro | Judgment, supervision, live web research — not bulk loops |
 | **Free / filter** | ChatGPT, Gemini, Grok, Kimi, DeepSeek (free web) | Overflow, second opinions, cheap filtering before Pro |
-| **API / sustained** | DeepSeek, Kimi, gpt-5-mini via Azure router | Repeatable missions, CLI, Builder suggest-tests |
-| **Local / self-hosted** | Ollama, Open WebUI, Docker Desktop (as needed) | Credit-free draft; **Open WebUI is not dashboard-wired** |
+| **Local / self-hosted** | Ollama, **Open WebUI (preferred chat)**, Docker Desktop; Continue.dev secondary | Local filter/offline draft; **Open WebUI is not dashboard-wired** |
 | **Editor / shell** | VS Code, Claude Code, Cursor | Primary implementation surfaces |
-| **Paused / optional** | GitHub Copilot | Not required, not default |
+| **Paused** | GitHub Copilot | Do not reinstall by default; only if explicitly re-approved |
 
 ## Premium core
 
@@ -29,9 +29,11 @@ integrations (Supabase, Vercel host, Slack webhook, etc.):
 Use before burning Pro credits: **ChatGPT free**, **Gemini free**, **Grok free**,
 **Kimi free**, **DeepSeek free**. Manual only — not product APIs.
 
-## API / sustained-work (LLM Router)
+## API / sustained-work (LLM Router) — default sustained lane
 
 Routes tasks to Azure AI Foundry-backed logical models (`src/llm/router.ts`).
+**Default for sustained/automated work** so Azure credits (expire next month) convert
+into useful output. Premium Pro tools remain for judgment; local/free remain filter.
 
 | Logical model | Azure backend | Tier |
 |---------------|---------------|------|
@@ -61,8 +63,9 @@ product callers.
 
 | Tool | Role |
 |------|------|
-| **Ollama** | Local models; Continue.dev; optional Librarian refine when enabled |
-| **Open WebUI** | Local browser UI over Ollama (and similar). Installed as local AI layer; **not** an app route or Vercel integration |
+| **Open WebUI** | **Preferred** local day-to-day chat UI over Ollama. **Not** an app route or Vercel integration |
+| **Ollama** | Local model host; optional Librarian refine when enabled |
+| **Continue.dev** | Secondary/fallback in-editor autocomplete — not primary local chat |
 | **Docker Desktop** | When local containers / MCP infra need it |
 
 ## Editor / dev shell
@@ -73,33 +76,35 @@ product callers.
 | **Claude Code** | Governed agent runtime (PR-based) |
 | **Cursor** | Editor + cloud agents (same premium-core Cursor Pro) |
 
-**GitHub Copilot:** paused / optional — not part of the required stack. Prefer
-Continue.dev + Ollama for inline assist.
+**GitHub Copilot:** **paused.** Do not reinstall by default and do not route work here.
+Optional only if David explicitly re-approves later.
 
 ## Task → tool mapping
 
 | Task | Tool | Lane + Complexity |
 |------|------|-------------------|
+| Sustained Research / bulk LLM | Azure `llm` router | research/builder → DeepSeek / Kimi / gpt-5-mini |
 | Live web research | Perplexity Pro (+ optional free filter first) | — |
 | Hard product/architecture call | Claude Pro | — |
 | Multi-file refactor / agent PR | Cursor Pro + Claude Code | — |
-| Routine local draft | Ollama / Open WebUI / Continue.dev | — |
+| Local day-to-day chat | **Open WebUI** (+ Ollama) | — |
+| In-editor autocomplete (secondary) | Continue.dev + Ollama | — |
 | Research options (sustained) | `llm` router | research low/medium → DeepSeek |
 | Long synthesis | `llm` | research high → Kimi |
 | Builder test ideas | `llm` / suggest-tests | builder medium → gpt-5-mini |
 | Chief wording (CLI) | `llm` | chief low/medium → DeepSeek |
-| Inline completion | Continue.dev + Ollama (not Copilot) | — |
 
 ## LLM usage policy (summary)
 
 Full policy: `docs/TOOL_CATALOG.md` § LLM usage policy.
 
 1. Mechanical first (no LLM).
-2. Local (Ollama / WebUI / Continue) for routine drafts.
+2. **Azure router default for sustained/automated work** (credits expire next month).
 3. Free filter before premium chat.
-4. Premium core for judgment (Claude / Cursor / Perplexity Pro).
-5. API router for sustained/automated work (preserve Pro credits).
+4. Local: **Open WebUI** preferred; Continue.dev secondary.
+5. Premium core for judgment/supervision (Claude / Cursor / Perplexity Pro).
 6. Never lower the quality bar when choosing a cheaper lane — escalate when stuck.
+7. Copilot stays paused — no reinstall unless explicitly re-approved.
 
 ## Usage
 
@@ -123,15 +128,17 @@ npm run llm -- chief low "Tighten these bullets"
 
 ## Cost discipline
 
-**Budget target:** $200 / 30 days (API / Foundry)
+**Budget target:** $200 / 30 days (API / Foundry) — **spend Azure credits productively
+before they expire next month.**
 
-1. **DeepSeek by default** — all low-complexity router tasks
+1. **DeepSeek by default** — all low-complexity router tasks (sustained default lane)
 2. **GPT-5 mini for important reasoning** — Builder medium+, Chief high
 3. **Kimi only for long context** — Research high when synthesizing many sources
 4. **Short prompts** — include only necessary context
 5. **Capped outputs** — 400–800 tokens based on complexity
 6. **Reuse `knowledge/`** — don't repeat calls for the same research
-7. **Preserve Claude/Cursor/Perplexity Pro** — use free filter + local + API first
+7. **Preserve Claude/Cursor/Perplexity Pro** for judgment — not for bulk loops the
+   Azure router can handle
 
 ## Environment variables
 

@@ -60,15 +60,17 @@ This repo already has an approval-first process — don't restate or reinvent it
 
 The AI/editor tool stack itself is governed at two levels — don't restate either here,
 follow them:
-- **Personal VS Code/editor stack** — VS Code + Claude Code + Continue.dev on local
-  Ollama; Open WebUI for local browser chat when installed; Cursor Pro for multi-file /
-  cloud agent work. Approved layers and routing live in `docs/TOOL_CATALOG.md` and
+- **Personal VS Code/editor stack** — VS Code + Claude Code; **Open WebUI** preferred
+  for local day-to-day chat (over Ollama); Continue.dev secondary in-editor fallback;
+  Cursor Pro for multi-file / cloud agent work; **Azure router default for sustained
+  LLM work** (credits expire next month). Approved layers: `docs/TOOL_CATALOG.md`,
   `docs/AI_STACK.md`. **Cline / Cline Nightly remain removed.** **GitHub Copilot is
-  paused/optional — not required and not default** (do not treat it as core stack).
+  paused — do not reinstall by default; optional only if explicitly re-approved later.**
 - **Agent-system tool governance** (which of Chief/Planner/Build/Research/Content/
   Reliability may use which tool, at what access level) — `docs/TOOL_CATALOG.md`
   (the stable record) and `docs/AGENT_RUNBOOK.md` §§ Tool Catalog, External Services
   Tool Catalog, Reliability Agent (the reasoning). Product runtime SoT:
-  `lib/ops/integrationsInventory.ts`. See also
+  `lib/ops/integrationsInventory.ts` (Slack there = outbound webhook only; inbound
+  Slack remains future in TOOL_CATALOG). See also
   `knowledge/reference/tool-fallbacks.md` for fallback chains and best-use-by-task
   guidance.

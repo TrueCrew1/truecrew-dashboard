@@ -73,11 +73,12 @@ enumerate tools in code.
 | Kimi free | `kimi-free` | Overflow chat; light research when API not needed |
 | DeepSeek free | `deepseek-free` | Overflow chat; cheap filter before escalating |
 
-### API / sustained-work (product + CLI router)
+### API / sustained-work (product + CLI router) — **default sustained lane**
 
 Logical models routed via Azure AI Foundry in this repo (`docs/AI_STACK.md`,
-`src/llm/router.ts`). Prefer these for **repeatable, automated, or long sessions**
-instead of burning premium chat quotas.
+`src/llm/router.ts`). **Default for repeatable, automated, or long sessions** —
+convert Azure credits (expire next month) into useful work rather than sitting idle.
+Premium chat/editor tools stay for judgment and supervision, not bulk loops.
 
 | Logical model | Catalog id | Role |
 |---------------|------------|------|
@@ -89,9 +90,10 @@ instead of burning premium chat quotas.
 
 | Tool | Catalog id | Best use |
 |------|------------|----------|
-| Ollama | `ollama-local` | Local models; Continue.dev + optional Librarian refine |
-| WebUI / Open WebUI | `open-webui` | Local chat UI over Ollama (and similar); **not** dashboard runtime |
+| Ollama | `ollama-local` | Local model host under Open WebUI (+ optional Librarian refine) |
+| WebUI / Open WebUI | `open-webui` | **Preferred** local day-to-day chat UI over Ollama; **not** dashboard runtime |
 | Docker Desktop | `docker-desktop` | Local infra / MCP containers when needed |
+| Continue.dev | `continue-dev` | Secondary/fallback in-editor autocomplete/chat — not the primary local chat surface |
 
 ### Editor / dev shell
 
@@ -105,14 +107,18 @@ instead of burning premium chat quotas.
 
 | Tool | Catalog id | Notes |
 |------|------------|-------|
-| GitHub Copilot (+ Chat) | `copilot` | **Paused / optional** — not required, not default. Do not treat as part of the core stack. |
+| GitHub Copilot (+ Chat) | `copilot` | **Paused** — do **not** reinstall by default. Optional only if David explicitly re-approves later. |
 
 ### Runtime / product (separate SoT)
 
 Use `lib/ops/integrationsInventory.ts` for: Supabase, Vercel hosting/probe, Slack
-outbound webhook, GitHub webhook, Azure OpenAI (product), Obsidian vault path,
-internal API auth, Vercel MCP (editor), Google Drive (`not_wired`). Do not duplicate
-those statuses here as if they were personal chat tools.
+**outbound webhook only** (`partial`), GitHub webhook, Azure OpenAI (product), Obsidian
+vault path, internal API auth, Vercel MCP (editor), Google Drive (`not_wired`).
+
+**Slack split (intentional):** product inventory = outbound webhook (`partial`); this
+personal catalog row = inbound/bot/agent command workflow (`future-integration`). Do
+not merge those statuses. Do not duplicate product statuses here as if they were
+personal chat tools.
 
 ---
 
@@ -128,15 +134,17 @@ those statuses here as if they were personal chat tools.
 | Grok free | free-filter | manual | Alternate filter opinion | Sole source for ship decisions | Research, Content | Manual web chat |
 | Kimi free | free-filter | manual | Overflow chat | Sustained API-scale workloads | Research, Content | Prefer `kimi-api` for sustained |
 | DeepSeek free | free-filter | manual | Overflow / cheap filter | Long automated missions | Research, Content | Prefer `deepseek-api` for sustained |
-| DeepSeek API | api-sustained | partially-wired | Router budget lane; routine LLM tasks | Human chat when free web is enough | Research, Builder (router) | Via Azure Foundry in this repo |
+| DeepSeek API | api-sustained | partially-wired | **Default sustained** budget lane | Burning Pro chat on bulk loops | Research, Builder (router) | Azure credits expire next month — prefer this lane |
 | Kimi API | api-sustained | partially-wired | Long-context Research high | Tiny greppable questions | Research (router) | Via Azure Foundry |
 | gpt-5-mini API | api-sustained | partially-wired | Builder suggest-tests; quality reasoning | Every trivial edit | Builder, Chief CLI | Via Azure Foundry |
-| Ollama | local-self-hosted | launch-only / partial product | Local draft; Continue.dev; optional Librarian | Production Vercel runtime without vault/host | — / Librarian when enabled | Product: `LIBRARIAN_AI_ENABLED` |
-| Open WebUI | local-self-hosted | launch-only | Local browser UI over Ollama | Claiming dashboard integration | — (human) | **Not** wired into truecrew-dashboard |
+| Ollama | local-self-hosted | launch-only / partial product | Local model host | Production Vercel without vault/host | — / Librarian when enabled | Backs Open WebUI |
+| Open WebUI | local-self-hosted | launch-only | **Preferred** local day-to-day chat | Claiming dashboard integration | — (human) | **Not** wired into truecrew-dashboard |
+| Continue.dev | editor-shell | launch-only | Secondary in-editor autocomplete/chat | Primary local chat (use Open WebUI) | — | Fallback to Open WebUI |
 | Docker Desktop | local-self-hosted | launch-only | Local containers / MCP infra | Production deploy path | — (human) | Use when local infra needs it |
-| VS Code | editor-shell | launch-only | Primary shell for Claude Code + Continue | Replacing PR/approval gates | — | |
+| VS Code | editor-shell | launch-only | Primary shell for Claude Code | Replacing PR/approval gates | — | |
 | Claude Code | editor-shell | fully-wired | Governed repo agent work | Skipping Chief/Build gates | Chief runtime / Build | Runbook-governed |
-| Copilot | paused | paused | Optional inline assist if re-enabled | Default stack; required tooling | — | Not installed / not required |
+| Copilot | paused | paused | — (do not use unless re-approved) | Default stack; autonomous reinstall | — | Paused — no reinstall by default |
+| Slack (personal inbound) | ops-workflow | future-integration | Future bot/inbound workflow | Treating outbound webhook as “full Slack” | — | See product inventory for outbound |
 | GitHub / Vercel / Supabase | product (see inventory) | see inventory | Repo, host, DB | Confusing with chat subscriptions | Build | Product SoT ≠ this catalog |
 
 ---
@@ -144,24 +152,28 @@ those statuses here as if they were personal chat tools.
 ## LLM usage policy (credit preservation)
 
 1. **Start mechanical.** Grep, tests, lint, docs lookup — Tier 0, no model.
-2. **Local first for routine draft.** Ollama (+ Continue.dev and/or Open WebUI) for
-   single-file refactors, explanations, PR body drafts, cheap iteration.
-3. **Free filter before premium.** Use ChatGPT / Gemini / Grok / Kimi / DeepSeek **free**
-   web chats to narrow options or get a second opinion; escalate only when stuck or
-   stakes rise.
-4. **Premium core for judgment.**
+2. **Azure/API first for sustained work.** Default repeatable, automated, or long
+   sessions to the Azure router (DeepSeek → gpt-5-mini → Kimi via `npm run llm`,
+   Research missions, suggest-tests). **Reason:** Azure credits expire next month —
+   convert them into useful work. See `docs/AI_STACK.md`.
+3. **Free filter before premium chat.** Use ChatGPT / Gemini / Grok / Kimi / DeepSeek
+   **free** web chats to narrow options or get a second opinion; escalate only when
+   stuck or stakes rise.
+4. **Local filter / offline draft.** Prefer **Open WebUI** (over Ollama) for local
+   day-to-day chat. Continue.dev is secondary/fallback for in-editor autocomplete —
+   not the primary local chat surface.
+5. **Premium core for judgment and supervision** (not bulk loops):
    - **Claude Pro** — ambiguous product/architecture calls, careful prose, conflict
      resolution between sources.
    - **Cursor Pro** — multi-file implementation and agentic coding in this repo
      (still propose-only for merge; Build gate applies).
    - **Perplexity Pro** — anything that needs fresh web evidence.
-5. **API / sustained work via router.** Prefer Azure-routed DeepSeek → gpt-5-mini →
-   Kimi (`npm run llm`, Research missions, suggest-tests) for repeatable workloads so
-   Pro chat quotas stay available for judgment calls. See `docs/AI_STACK.md`.
-6. **Do not burn Pro credits on:** formatting, repeating the same research already in
-   `knowledge/`, or tasks a free filter or local model already solved.
+6. **Do not burn Pro credits on:** formatting, repeating research already in
+   `knowledge/`, or tasks the Azure router / free filter / local model already solved.
 7. **Quality bar stays fixed.** Cheaper lane ≠ lower acceptance criteria — escalate
    tier when output is ambiguous, fails tests, or touches auth/RLS/migrations/CI.
+8. **Copilot stays paused.** Do not reinstall or route work to Copilot unless David
+   explicitly re-approves it later.
 
 ---
 
@@ -261,14 +273,15 @@ those statuses here as if they were personal chat tools.
 - owner_agent: Research, Content
 - access_type: launch-only
 - interface: web
-- launch_target: https://grok.x.ai
+- launch_target: https://grok.x.ai — **UNVERIFIED; confirm manually** (may be wrong or
+  outdated — do not treat as certain)
 - model_type: Grok
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: manual
 - approval_required: no
 - notes: free-filter / alternate second-opinion chat. Manual only — not product-wired
-  and not part of the Azure LLM router. Confirm current free-tier limits in the
-  product UI before relying on sustained sessions.
+  and not part of the Azure LLM router. Entry URL needs human confirmation before
+  relying on it; also confirm current free-tier limits in the product UI.
 
 ### deepseek-free
 - name: free DeepSeek
@@ -361,10 +374,11 @@ those statuses here as if they were personal chat tools.
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: launch-only
 - approval_required: no
-- notes: Local AI base layer for Continue.dev, Open WebUI, and optional Librarian
-  refinement. Not a substitute for governed Research missions on Vercel. Research note
-  (2026-07-04, non-binding): `qwen2.5-coder:7b`/`14b` still solid; Qwen3-Coder worth
-  eventual evaluation — not an immediate change.
+- notes: Local model host behind **Open WebUI** (preferred chat UI) and optional
+  Librarian refinement / Continue.dev fallback. Not a substitute for Azure-router
+  sustained work or governed Research missions on Vercel. Research note (2026-07-04,
+  non-binding): `qwen2.5-coder:7b`/`14b` still solid; Qwen3-Coder worth eventual
+  evaluation — not an immediate change.
 
 ### open-webui
 - name: WebUI / Open WebUI (local)
@@ -378,10 +392,11 @@ those statuses here as if they were personal chat tools.
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: launch-only
 - approval_required: no
-- notes: Local browser UI for chatting with self-hosted models. Installed as part of
-  the local AI layer; **not wired into truecrew-dashboard runtime** (no app route,
-  env, or API integration in this repo). Use for credit-free iteration; promote
-  useful outcomes into PRs/`knowledge/` manually.
+- notes: **Preferred local day-to-day chat surface.** Installed as part of the local
+  AI layer; **not wired into truecrew-dashboard runtime** (no app route, env, or API
+  integration in this repo). Use for local filter/offline draft; promote useful
+  outcomes into PRs/`knowledge/` manually. Sustained/automated work still prefers
+  the Azure router while credits remain.
 
 ### continue-dev
 - name: Continue.dev
@@ -396,8 +411,8 @@ those statuses here as if they were personal chat tools.
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: launch-only
 - approval_required: no
-- notes: $0-cost editor-AI lane alongside Claude Code — see `CLAUDE.md` § Tool
-  routing. Complements Open WebUI (browser) rather than replacing it.
+- notes: **Secondary / fallback** in-editor assist — available, but Open WebUI is the
+  preferred local chat UI. Do not describe Continue as the primary local AI surface.
 
 ## Dev
 
@@ -494,8 +509,9 @@ those statuses here as if they were personal chat tools.
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: launch-only
 - approval_required: no
-- notes: Primary editor shell — Claude Code + Continue.dev (+ optional Copilot if
-  ever re-enabled). Not part of the agent approval system itself.
+- notes: Primary editor shell — Claude Code (+ Continue.dev as secondary inline
+  assist). Copilot stays paused — do not reinstall unless explicitly re-approved.
+  Not part of the agent approval system itself.
 
 ### docker-desktop
 - name: Docker Desktop
@@ -524,10 +540,11 @@ those statuses here as if they were personal chat tools.
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: paused
 - approval_required: n/a
-- notes: **Paused / optional — not required, not default.** Previously excluded from
-  this environment; remains off the approved core stack. Prefer Continue.dev + Ollama
-  or Claude Code / Cursor Pro for coding assist. Free-tier facts (researched
-  2026-07-04) kept for reference only — not a reinstall mandate. Source:
+- notes: **Paused.** Do **not** reinstall by default and do **not** route work here.
+  Optional **only** if David explicitly re-approves later — agents must not treat
+  this row as permission to turn Copilot back on. Use Claude Code / Cursor Pro /
+  Open WebUI / Azure router instead. Free-tier facts (researched 2026-07-04) are
+  reference-only. Source:
   [GitHub Copilot plans](https://docs.github.com/en/copilot/get-started/plans).
 
 ### cline
@@ -637,9 +654,10 @@ those statuses here as if they were personal chat tools.
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: future-integration
 - approval_required: n/a
-- notes: Personal-stack status remains future for inbound/agent command use.
-  **Product** outbound governed-loop webhook is `partial` in
-  `lib/ops/integrationsInventory.ts` (`SLACK_WEBHOOK_URL`) — do not conflate the two.
+- notes: **Intentional split — do not conflate.** This personal-catalog row =
+  inbound / bot / agent-command Slack workflow → `future-integration` (not built).
+  Product/runtime inventory id `slack` = **outbound webhook only** → `partial`
+  (`SLACK_WEBHOOK_URL`, governed-loop notify). Outbound ≠ full Slack integration.
 
 ### calendar
 - name: Calendar
