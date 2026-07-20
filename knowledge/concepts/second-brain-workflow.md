@@ -3,9 +3,9 @@ title: Second Brain Workflow (vault governance)
 type: concept
 status: active
 confidence: medium
-last_reviewed: 2026-07-04
+last_reviewed: 2026-07-20
 created: 2026-07-04
-updated: 2026-07-04
+updated: 2026-07-20
 related_pages: [chief-approvals, approval-load, second-brain-setup]
 related_prs: [80]
 related_cards: []
@@ -28,7 +28,9 @@ this page is a pointer/summary, not a restatement.
 
 - **Hard caps (first month):** concepts ≤10, projects ≤5, decisions ≤15, sources ≤50,
   lessons ≤20, reference ≤10. A candidate that would exceed its cap gets logged as a
-  deferred idea in `knowledge/log.md` instead of created.
+  deferred idea in `knowledge/log.md` instead of created. `discovery/` notes are
+  outside those caps but should stay high-signal and get promoted into durable pages
+  when judgment stabilizes (see `knowledge/discovery/README.md`).
 - **Retrieval order:** `MEMORY.md` first (0a), open only the relevant linked pages
   (0b), summarize before acting (0c) — never load the whole vault by default.
 - **Priority order for what earns a page**, highest first: active projects/live
@@ -39,6 +41,9 @@ this page is a pointer/summary, not a restatement.
 - **Lessons vs. concept pages:** a genuinely behavior-changing insight becomes a
   `lessons/*.md` file; a durable-but-descriptive one becomes/extends a `concepts/`
   page. See `docs/AGENT_RUNBOOK.md` § Lessons.
+- **Discovery capture:** researchers file interviews/findings/etc. under
+  `knowledge/discovery/` using templates + `reference/knowledge-schema.md`. Regulated
+  content follows `reference/regulated-content.md`.
 - **Three named safeguards:** no orphaned pages (reachable from `MEMORY.md` or
   `index.md`), no duplicate topics, no uncontrolled renaming.
 - **Memory Review Pass** (new workflow) reviews status markers
@@ -49,7 +54,11 @@ this page is a pointer/summary, not a restatement.
 - `knowledge/log.md` for the most recent Second Brain pass's deferred-idea list
   before proposing a new page on a similar topic.
 - The relevant cap (concepts/projects/decisions/sources/lessons/reference) before
-  creating a new page — if it's at or near cap, prefer updating an existing page.
+  creating a new durable page — if it's at or near cap, prefer updating an existing
+  page. Discovery notes: prefer updating an existing discovery note first.
+- `knowledge/reference/knowledge-schema.md` and
+  `knowledge/reference/regulated-content.md` before filing regulated or
+  compliance-adjacent discovery content.
 
 ## Open questions
 

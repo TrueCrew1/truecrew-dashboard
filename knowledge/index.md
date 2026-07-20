@@ -18,7 +18,19 @@ for the full rule set.
 | Decisions | 4 | 15 |
 | Sources | 10 | 50 |
 | Lessons | 5 | 20 |
-| Reference | 4 | 10 |
+| Reference | 6 | 10 |
+| Discovery | (new) | soft — promote reusable judgment; don't hoard forever |
+
+## Discovery
+
+Early-stage SaaS discovery capture (`discovery/`). Notes use
+[reference/knowledge-schema.md](reference/knowledge-schema.md). Not counted against
+concept/decision first-month caps; still keep high-signal and promote durable
+judgment into `concepts/` / `decisions/` via Second Brain passes.
+
+- [discovery/README.md](discovery/README.md) — filing guide
+- Subfolders: `interviews/`, `findings/`, `workflows/`, `competitors/`,
+  `assumptions/`, `questions/` (each has a stub README)
 
 ## Concepts
 
@@ -100,6 +112,10 @@ Stable lookup pages — no narrative, just facts for a fast check during a real 
 - [Tool Fallback Chains](reference/tool-fallbacks.md) — ~10 critical tools' primary
   → fallback → degraded-path routing. Check before relying on a tool marked
   `DEGRADED`/`BLOCKED` in `docs/TOOL_CATALOG.md`.
+- [Knowledge note schema](reference/knowledge-schema.md) — discovery/decision
+  frontmatter (`id`, `truth_level`, `sensitivity`, `regs`, …).
+- [Regulated content policy](reference/regulated-content.md) — tagging, external-tool
+  restrictions, and citation rules for MSHA/OSHA/DOT (+ extensible regs).
 
 ## Sources
 
@@ -120,6 +136,11 @@ just a folder pointer) so every note is actually reachable from this page, per t
 
 ## Recent updates
 
+- **2026-07-20** — Discovery foundation: added `discovery/` (interviews, findings,
+  workflows, competitors, assumptions, questions),
+  [reference/knowledge-schema.md](reference/knowledge-schema.md),
+  [reference/regulated-content.md](reference/regulated-content.md), and discovery
+  templates. No bulk migration of older notes.
 - **2026-07-04** — Knowledge base refresh + free-tool research pass: added a Slice 2
   (Supabase Health Monitor, PR #59) pointer to
   [projects/truecrew-dashboard.md](projects/truecrew-dashboard.md)'s Open items

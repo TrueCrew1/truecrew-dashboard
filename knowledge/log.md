@@ -396,3 +396,10 @@ playbooks. Full reasoning in the Obsidian Build Log entry of the same name.
   `docs/AGENT_WORKFLOW.md`, which already serve that purpose in this repo.
 - No dashboard UI or app code changed; no new VS Code extension was actually
   installed by this pass — governance/docs only.
+
+## 2026-07-20 — Discovery foundation
+
+- 2026-07-20 — created — `discovery/` (+ interviews/findings/workflows/competitors/assumptions/questions README stubs) — minimum viable SaaS discovery capture layer.
+- 2026-07-20 — created — `reference/knowledge-schema.md`, `reference/regulated-content.md` — frontmatter schema + regulated-content policy (MSHA/OSHA/DOT + extensible).
+- 2026-07-20 — created — discovery templates (interview/finding/workflow_observation/competitor_profile/assumption/question); updated `templates/decision-template.md`.
+- 2026-07-20 — updated — `README.md`, `MEMORY.md`, `index.md`, `concepts/second-brain-workflow.md`, `docs/AGENT_RUNBOOK.md` — wire discovery into vault layers + agent rules.
