@@ -777,16 +777,18 @@ exist — recall is a required step, not an optional nicety.
   Maintenance). **Narrow exceptions:** (1) a workflow's own **Learning capture and
   promotion** step (see Lessons below) may create or update one focused
   `knowledge/lessons/*.md` file directly — nothing else; (2) researchers (and Research
-  with human oversight) may create/update notes under `knowledge/discovery/` using the
-  discovery templates and `knowledge/reference/knowledge-schema.md`, appending a
-  `knowledge/log.md` line — discovery notes are capture, not durable policy. A dashboard
-  workflow's Second Brain check itself is still read-only; if it notices something worth
-  capturing that isn't high-value and isn't in the vault yet, it logs the observation and
-  leaves durable page-creation to the next Second Brain Starter Pass.
+  with human oversight) may create/update **typed capture notes** under
+  `knowledge/sources/` (and `type: decision` under `knowledge/decisions/`) using the
+  templates and `knowledge/reference/knowledge-schema.md`, appending a
+  `knowledge/log.md` line — typed capture notes are not durable policy until promoted.
+  There is **no** parallel `knowledge/discovery/` tree. A dashboard workflow's Second
+  Brain check itself is still read-only; if it notices something worth capturing that
+  isn't high-value and isn't in the vault yet, it logs the observation and leaves durable
+  page-creation to the next Second Brain Starter Pass.
 
-### Discovery knowledge (agent rules)
+### Knowledge discovery & use (agent rules)
 
-When using `knowledge/discovery/` or regulated notes:
+When using typed notes in `knowledge/sources/` / `knowledge/decisions/`, or regulated notes:
 
 - Prefer **validated internal knowledge** over external web knowledge for product truths.
 - Do **not** treat hypotheses (`truth_level: hypothesis`) or assumptions as policy.
@@ -794,6 +796,16 @@ When using `knowledge/discovery/` or regulated notes:
   or summarizing — see `knowledge/reference/regulated-content.md`.
 - Decisions and approvals that rely on regulated knowledge must cite **note `id`s** and
   applicable **`regs`** codes.
+
+### Regulated content handling
+
+See `knowledge/reference/regulated-content.md` for the full policy. In short:
+
+- Tag with `sensitivity: regulated` and applicable `regs` (`MSHA`, `OSHA`, `DOT`, …).
+- Do not paste regulated / PII content into NON-PROD web tools (e.g. Grok).
+- Agents may propose edits; they do not silently overwrite `truth_level: validated`
+  regulated notes.
+- Cite note `id`s + `regs` whenever a decision or approval relies on regulated knowledge.
 
 ---
 
@@ -807,7 +819,7 @@ one big pile of notes.
 |---|---|---|
 | **Memory index** | `MEMORY.md` | The one small file agents check *first* — one-line pointers to the handful of pages that matter most right now. Not a full map. |
 | **Event logs** | Build Log (Obsidian), `knowledge/log.md` | Chronological record of what happened. Broad, cheap, append-only, not curated for reuse. |
-| **Raw capture** | `knowledge/inbox/`, `knowledge/sources/`, `knowledge/discovery/` | Source material, intermediate notes, and early SaaS discovery capture (interviews, findings, workflows, competitors, assumptions, questions). |
+| **Raw capture** | `knowledge/inbox/`, `knowledge/sources/` | Source material and typed capture notes (interviews, findings, workflows, competitors, assumptions, questions — discriminated by frontmatter `type`). |
 | **Durable knowledge** | `knowledge/concepts/`, `knowledge/projects/`, `knowledge/decisions/` | Reusable guidance and memory — curated, distilled, meant to be read again. |
 | **Lessons** | `knowledge/lessons/` | Small, specific, behavior-changing rules — see Lessons below. |
 | **Reference** | `knowledge/reference/` | Stable lookup facts (tool access, workflow entry points) — rarely change, no narrative needed. |
@@ -934,8 +946,8 @@ memory trust, see Memory Governance; `decisions`: keeps its existing
 resolved decision's trust is implied by its outcome), `confidence`
 (`high`/`medium`/`low`), `last_reviewed` (date), plus the existing `related_pages`,
 `related_prs`, `related_cards`. `lessons/` and `reference/` pages carry their own
-field sets (see Lessons above and the lesson/reference templates). **Discovery notes**
-under `knowledge/discovery/` use the schema in
+field sets (see Lessons above and the lesson/reference templates). **Typed capture /
+decision notes** under `knowledge/sources/` and `knowledge/decisions/` use the schema in
 `knowledge/reference/knowledge-schema.md` (`id`, `type`, `truth_level`, `sensitivity`,
 `regs`, …) — do not bulk-migrate older vault pages onto that schema.
 

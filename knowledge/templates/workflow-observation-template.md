@@ -20,6 +20,8 @@ evidence_strength: medium
 
 # {Title}
 
+> File under `knowledge/sources/`. Schema: `knowledge/reference/knowledge-schema.md`.
+
 ## Context
 
 Where/when observed, who was doing the work, tools in use (paper, radio, app, etc.).

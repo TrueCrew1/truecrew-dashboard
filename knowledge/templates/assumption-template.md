@@ -20,6 +20,8 @@ evidence_strength: low
 
 # {Title}
 
+> File under `knowledge/sources/`. Assumptions are **not** policy.
+
 ## Assumption
 
 State the assumption in one sentence. This is **not** product policy.

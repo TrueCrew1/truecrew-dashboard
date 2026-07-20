@@ -20,6 +20,8 @@ evidence_strength: low
 
 # {Title}
 
+> File under `knowledge/sources/`. Schema: `knowledge/reference/knowledge-schema.md`. Not policy until validated/promoted.
+
 ## Context
 
 Where this finding came from (interview ids, desk research, field note) and the

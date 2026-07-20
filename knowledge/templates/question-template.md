@@ -19,6 +19,8 @@ workflow:
 
 # {Title}
 
+> File under `knowledge/sources/`. Schema: `knowledge/reference/knowledge-schema.md`.
+
 ## Question
 
 The open question, precisely enough that an answer would change a decision.

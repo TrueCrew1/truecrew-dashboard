@@ -36,7 +36,7 @@ folder name:
 |---|---|---|
 | **Memory index** | `MEMORY.md` | Always checked first. Small, curated, one-line pointers to what matters right now. |
 | **Event logs** | Build Log (Obsidian), `log.md` | Chronological record of what happened — broad, cheap, append-only. |
-| **Raw capture** | `inbox/`, `sources/`, `discovery/` | Source material, intermediate notes, and early SaaS discovery capture (interviews, findings, workflows, competitors, assumptions, questions). |
+| **Raw capture** | `inbox/`, `sources/` | Source material and typed capture notes (interviews, findings, workflows, competitors, assumptions, questions — discriminated by frontmatter `type`). |
 | **Durable knowledge** | `concepts/`, `projects/`, `decisions/` | Reusable guidance — curated, distilled, meant to be read again. |
 | **Lessons** | `lessons/` | Small, specific, behavior-changing rules — see below. |
 | **Reference** | `reference/` | Stable lookup facts (tool access, workflow entry points) — rarely change. |
@@ -78,8 +78,7 @@ here.
 | Folder | What lives here |
 |---|---|
 | `inbox/` | Temporary raw captures waiting to be processed. Should stay small and empty most of the time. |
-| `discovery/` | Early-stage SaaS discovery capture — interviews, findings, workflow observations, competitors, assumptions, questions. Use templates + `reference/knowledge-schema.md`. |
-| `sources/` | One note per raw artifact (a PR, a Build Log entry, a runbook section, a status-check result). Preserves the original facts and any uncertainty, before synthesis. |
+| `sources/` | Capture notes — legacy PR/runbook artifacts **and** typed kinds (`interview`, `finding`, `workflow_observation`, `competitor_profile`, `assumption`, `question`) using `reference/knowledge-schema.md`. See `sources/README.md`. |
 | `concepts/` | Durable topic pages — the load-bearing ideas of this project. High-value ones are structured as compact playbooks (Summary / What works / What to check first / Open questions / Related). |
 | `projects/` | Pages for active efforts (e.g. the dashboard itself, a specific audit). |
 | `decisions/` | One page per meaningful decision — what was decided, why, alternatives, and current outcome status (approved / pending / declined). |
@@ -87,9 +86,10 @@ here.
 | `reference/` | Stable lookup pages for recurring operational facts (tool access, workflow entry points, knowledge schema, regulated content). |
 | `templates/` | Copy one of these to start a new page in the right shape. |
 
-**Discovery + regulated content:** see [discovery/README.md](discovery/README.md),
+**Typed capture + regulated content:** see [sources/README.md](sources/README.md),
 [reference/knowledge-schema.md](reference/knowledge-schema.md), and
-[reference/regulated-content.md](reference/regulated-content.md).
+[reference/regulated-content.md](reference/regulated-content.md). There is **no**
+parallel `discovery/` tree — keep notes inside this governed vault.
 
 See `docs/AGENT_RUNBOOK.md` § **Memory Architecture** for the full layer model and
 retrieval order, § **Lessons** for what turns an event into durable, behavior-changing

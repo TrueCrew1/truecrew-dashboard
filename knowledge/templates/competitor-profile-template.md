@@ -18,6 +18,8 @@ evidence_strength: low
 
 # {Title}
 
+> File under `knowledge/sources/`. Schema: `knowledge/reference/knowledge-schema.md`.
+
 ## Snapshot
 
 What they sell, who they sell to, and the workflow they claim to own.

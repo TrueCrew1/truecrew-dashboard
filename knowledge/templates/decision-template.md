@@ -31,12 +31,12 @@ and what's blocking a call.
 
 ## Why
 
-The reasoning, grounded in real facts (verified via `gh`, code, docs, or discovery
-note ids) — not just "seemed right."
+The reasoning, grounded in real facts (verified via `gh`, code, docs, or typed
+knowledge note ids) — not just "seemed right."
 
 ## Evidence / notes cited
 
-- Discovery / knowledge note ids:
+- Knowledge note ids:
 - Regs (if any):
 
 ## Alternatives considered
@@ -50,6 +50,6 @@ What else was on the table, and why it wasn't chosen (or isn't yet).
 
 ---
 
-For discovery/schema field meanings see
-`knowledge/reference/knowledge-schema.md`. If this decision relies on regulated
-knowledge, follow `knowledge/reference/regulated-content.md` (cite note ids + regs).
+For schema field meanings see `knowledge/reference/knowledge-schema.md`. If this
+decision relies on regulated knowledge, follow
+`knowledge/reference/regulated-content.md` (cite note ids + regs).

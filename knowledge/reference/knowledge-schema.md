@@ -1,11 +1,15 @@
-# Knowledge note schema (discovery + decisions)
+# Knowledge note schema (typed notes in existing folders)
 
-Canonical frontmatter for **discovery** notes and for **new/updated** decision notes
-that touch product discovery or regulated domains. Older vault pages may still use
-the legacy fields (`confidence`, `related_pages`, …) — do **not** bulk-migrate them.
+Canonical frontmatter for **structured note kinds** filed inside the existing
+governed vault — primarily `sources/` (capture) and `decisions/` (outcomes).
+Older vault pages may still use legacy fields (`confidence`, `related_pages`, …) —
+do **not** bulk-migrate them.
 
-Machine-friendly YAML frontmatter. Agents and researchers should fill every required
-field; use empty lists / `none` rather than omitting keys.
+There is **no** parallel `discovery/` tree. Typed notes stay Chief-visible and under
+the same precedence / Second Brain rules as the rest of `knowledge/`.
+
+Machine-friendly YAML frontmatter. Fill every required field; use empty lists /
+`none` rather than omitting keys.
 
 ## Required fields
 
@@ -13,7 +17,7 @@ field; use empty lists / `none` rather than omitting keys.
 |-------|------|------------------------|
 | `id` | string | Stable slug id, e.g. `finding-2026-07-20-pm-overdue` (do not rename casually) |
 | `type` | string | See **Types** below |
-| `status` | string | Discovery: `draft` \| `active` \| `validated` \| `deprecated`. Decisions keep outcome: `pending` \| `approved` \| `declined` |
+| `status` | string | Capture notes: `draft` \| `active` \| `validated` \| `deprecated`. Decisions keep outcome: `pending` \| `approved` \| `declined` |
 | `truth_level` | string | `observed` \| `reported` \| `hypothesis` \| `validated` \| `rejected` |
 | `scope` | string | Short product scope, e.g. `discovery`, `ops-workflow`, `compliance`, `competitor`, `platform` |
 | `sensitivity` | string | `public` \| `internal` \| `restricted` \| `regulated` |
@@ -35,19 +39,25 @@ field; use empty lists / `none` rather than omitting keys.
 | `evidence_strength` | `low` \| `medium` \| `high` |
 | `related_prs` | Legacy-compatible list |
 | `related_cards` | Legacy-compatible list |
-| `confidence` | Legacy `high`/`medium`/`low` — optional on discovery notes |
+| `confidence` | Legacy `high`/`medium`/`low` — optional on capture notes |
 
-## Types
+## Types → existing folders
 
-| `type` | Folder |
-|--------|--------|
-| `interview` | `discovery/interviews/` |
-| `finding` | `discovery/findings/` |
-| `workflow_observation` | `discovery/workflows/` |
-| `competitor_profile` | `discovery/competitors/` |
-| `assumption` | `discovery/assumptions/` |
-| `question` | `discovery/questions/` |
+| `type` | File under |
+|--------|------------|
+| `interview` | `sources/` |
+| `finding` | `sources/` |
+| `workflow_observation` | `sources/` |
+| `competitor_profile` | `sources/` |
+| `assumption` | `sources/` |
+| `question` | `sources/` |
 | `decision` | `decisions/` |
+
+Suggested filename: `YYYY-MM-DD-short-slug.md` (same dating habit as existing sources).
+
+Copy templates from `../templates/` (`interview-template.md`, `finding-template.md`,
+`workflow-observation-template.md`, `competitor-profile-template.md`,
+`assumption-template.md`, `question-template.md`, `decision-template.md`).
 
 ## Regs (extensible)
 
@@ -78,7 +88,7 @@ created_by: research
 created_at: 2026-07-20
 updated_at: 2026-07-20
 links:
-  - discovery/interviews/2026-07-20-supervisor-a.md
+  - sources/2026-07-20-supervisor-a-interview.md
 tags: [pm, supervisor, today-view]
 icp: field-supervisor
 workflow: pm-overdue
@@ -89,5 +99,5 @@ evidence_strength: medium
 ## Related
 
 - [regulated-content.md](regulated-content.md)
-- [discovery/README.md](../discovery/README.md)
+- [sources/README.md](../sources/README.md)
 - Templates under [../templates/](../templates/)

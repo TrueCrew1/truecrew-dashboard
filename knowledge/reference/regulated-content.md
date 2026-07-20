@@ -4,6 +4,9 @@ Durable rules for knowledge notes that touch regulated operations domains (minin
 maintenance / transport / environmental compliance, etc.). This is vault policy —
 not a substitute for legal advice.
 
+Applies to typed notes under the **existing** vault (`sources/`, `decisions/`, and
+any later durable page that inherits regulated claims) — not a separate research tree.
+
 ## What counts as regulated content
 
 A note is **regulated content** when it discusses, interprets, or guides behavior
@@ -18,7 +21,7 @@ code is named yet (set `regs: [OTHER]` until clarified).
 
 ## How it must be tagged
 
-On every such note (discovery or decision):
+On every such note (capture or decision):
 
 1. `sensitivity: regulated`
 2. `regs: [...]` with applicable codes from
@@ -37,14 +40,17 @@ On every such note (discovery or decision):
 - No exporting regulated notes to public channels, marketing copy, or client-facing
   docs without the normal Content / Chief approval path.
 
+See also `docs/TOOL_CATALOG.md` § Research tools and
+`knowledge/reference/tool-fallbacks.md` (when present) for lane defaults.
+
 ## How agents may change validated regulated notes
 
 - Agents may **propose** edits (PR, ApprovalCard, or draft note) — they do **not**
   silently overwrite `truth_level: validated` regulated notes.
 - Changes to validated regulated notes require human review (Chief card or explicit
   founder approval).
-- Hypotheses stay in `discovery/assumptions/` or `truth_level: hypothesis` findings —
-  never promoted to policy by an agent alone.
+- Hypotheses stay as `truth_level: hypothesis` (often `type: assumption` or draft
+  `finding`) — never promoted to policy by an agent alone.
 
 ## Decisions and runbooks must cite
 
@@ -60,5 +66,5 @@ Uncited regulated claims are not trusted product truth.
 ## Related
 
 - [knowledge-schema.md](knowledge-schema.md)
-- `docs/AGENT_RUNBOOK.md` § Second Brain Usage / Knowledge Maintenance
-- `docs/TOOL_CATALOG.md` § Research tools (Perplexity primary; Grok constrained)
+- `docs/AGENT_RUNBOOK.md` § Second Brain Usage / Knowledge Maintenance / Regulated content
+- Research lanes: Perplexity primary; Grok NON-PROD_WEB_AI only

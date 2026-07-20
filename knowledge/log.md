@@ -397,9 +397,10 @@ playbooks. Full reasoning in the Obsidian Build Log entry of the same name.
 - No dashboard UI or app code changed; no new VS Code extension was actually
   installed by this pass — governance/docs only.
 
-## 2026-07-20 — Discovery foundation
+## 2026-07-20 — Knowledge foundation (typed notes in existing vault)
 
-- 2026-07-20 — created — `discovery/` (+ interviews/findings/workflows/competitors/assumptions/questions README stubs) — minimum viable SaaS discovery capture layer.
 - 2026-07-20 — created — `reference/knowledge-schema.md`, `reference/regulated-content.md` — frontmatter schema + regulated-content policy (MSHA/OSHA/DOT + extensible).
-- 2026-07-20 — created — discovery templates (interview/finding/workflow_observation/competitor_profile/assumption/question); updated `templates/decision-template.md`.
-- 2026-07-20 — updated — `README.md`, `MEMORY.md`, `index.md`, `concepts/second-brain-workflow.md`, `docs/AGENT_RUNBOOK.md` — wire discovery into vault layers + agent rules.
+- 2026-07-20 — created — typed templates (interview/finding/workflow_observation/competitor_profile/assumption/question); updated `templates/decision-template.md`.
+- 2026-07-20 — created — `sources/README.md` — filing guide for typed capture kinds inside existing `sources/`.
+- 2026-07-20 — updated — `README.md`, `MEMORY.md`, `index.md`, `concepts/second-brain-workflow.md`, `docs/AGENT_RUNBOOK.md` — schema + regulated rules; typed notes stay in governed folders.
+- 2026-07-20 — corrected — removed parallel `discovery/` tree (stubs + write exception). Capture kinds file under `sources/`; decisions under `decisions/`. No separate research repository.

@@ -20,6 +20,8 @@ evidence_strength: medium
 
 # {Title}
 
+> File under `knowledge/sources/` as `YYYY-MM-DD-short-slug.md`. Schema: `knowledge/reference/knowledge-schema.md`.
+
 ## Context
 
 Who was interviewed, role/ICP, site/context, date, and why this interview happened.
