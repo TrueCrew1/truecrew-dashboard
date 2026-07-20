@@ -12,6 +12,7 @@ interface UseApprovalActivityResult {
   loading: boolean;
   error: string | null;
   liveApi: boolean;
+  vaultRecords: ApprovalActivityRecord[];
   refresh: () => Promise<void>;
 }
 
@@ -81,5 +82,5 @@ export function useApprovalActivity(pollMs: number | null = DEFAULT_POLL_MS): Us
     [approvals, liveApi, sessionApprovalActivity, vaultRecords],
   );
 
-  return { items, loading, error, liveApi, refresh };
+  return { items, loading, error, liveApi, vaultRecords, refresh };
 }
