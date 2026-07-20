@@ -14,6 +14,7 @@ import { isLiveApiEnabled } from "@/lib/api/client";
 import { useMonitorHealth } from "@/hooks/useMonitorHealth";
 import { useBuildTasks, type BuildGateTask } from "./hooks/useBuildTasks";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
+import { ChiefOperationalStatusPanel } from "./ChiefOperationalStatusPanel";
 import { AgentStatusStrip } from "./AgentStatusStrip";
 import type { AgentWorkItem, ApprovalProposal, ChiefBoardItem, ChiefResponse } from "./types";
 
@@ -183,6 +184,8 @@ export function ChiefHomePanel() {
           platformHealth={platformHealth}
           liveApiEnabled={liveApi}
         />
+
+        <ChiefOperationalStatusPanel />
 
         <AgentStatusStrip />
 

@@ -56,3 +56,9 @@ No external API calls are made. Status is derived from typed catalogs, repo file
 2. Treat `overallStatus` as the headline — expect `partial` on current V1 `main`.
 3. Use `blockers` for hard stops, `warnings` for env/config gaps, `partialOrNotWired` for scoped limits.
 4. Re-run after merging turnover, Builder report, or catalog updates — capability detection updates automatically.
+
+## In-app Command Center surface
+
+- **Panel:** `ChiefOperationalStatusPanel` on Today → Chief home (`ChiefHomePanel`).
+- **Live mode:** fetches `GET /api/chief/operational-readiness` with internal auth.
+- **Demo mode:** shows explicit unavailable state — no fabricated readiness data.
