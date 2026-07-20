@@ -1168,7 +1168,8 @@ by default; only if explicitly re-approved later.
 | **Claude Pro** | premium-core | Consumer chat (claude.ai); hard reasoning/drafting | AGENT-ELIGIBLE (in principle) | Research, Content | PROPOSE-ONLY — no Anthropic API in this stack today |
 | **Cursor Pro** | premium-core | AI editor + cloud agents; evidenced `cursor/*` branches | AGENT-ELIGIBLE | Build | PROPOSE-ONLY — merge/close via Build gate |
 | **Perplexity Pro** | premium-core | Live web-search LLM | AGENT-ELIGIBLE (in principle) | Research | PROPOSE-ONLY — notes/citations only |
-| **free ChatGPT / Gemini / Grok / Kimi / DeepSeek** | free-filter | Overflow / second opinion before Pro | AGENT-ELIGIBLE (in principle) | Research, Content | PROPOSE-ONLY — manual relay |
+| **free ChatGPT / Gemini / Kimi / DeepSeek** | free-filter | Overflow / second opinion before Pro | AGENT-ELIGIBLE (in principle) | Research, Content | PROPOSE-ONLY — manual relay |
+| **Grok (xAI)** | free-filter / NON-PROD_WEB_AI | Personal / low-sensitivity research only (https://grok.com) | HUMAN-ONLY (web) | Research (human) | No MSHA/customer PII; no bulk/prod; no xAI API without governance approval |
 | **DeepSeek / Kimi / gpt-5-mini (Azure router)** | api-sustained | **Default sustained** product/CLI LLM work | AGENT-ELIGIBLE | Research, Builder | PROPOSE-ONLY outputs; existing gates for actions |
 | **Open WebUI** | local | **Preferred** local day-to-day chat over Ollama | HUMAN-ONLY (local) | — | launch-only — **not** truecrew-dashboard runtime |
 | **Ollama** | local | Local model host; optional Librarian | AGENT-ELIGIBLE (scoped) | Librarian (when enabled) | PROPOSE-ONLY / env-gated product refine |

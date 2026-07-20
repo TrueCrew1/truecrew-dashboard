@@ -26,8 +26,10 @@ integrations (Supabase, Vercel host, Slack webhook, etc.):
 
 ## Free / fallback / filter
 
-Use before burning Pro credits: **ChatGPT free**, **Gemini free**, **Grok free**,
-**Kimi free**, **DeepSeek free**. Manual only — not product APIs.
+Use before burning Pro credits: **ChatGPT free**, **Gemini free**, **Grok free**
+(https://grok.com — NON-PROD_WEB_AI: personal / low-sensitivity only; no MSHA/customer
+PII, no bulk/prod, no xAI API without approval), **Kimi free**, **DeepSeek free**.
+Manual only — not product APIs.
 
 ## API / sustained-work (LLM Router) — default sustained lane
 

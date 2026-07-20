@@ -267,21 +267,22 @@ personal chat tools.
   [Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing).
 
 ### grok-free
-- name: free Grok
+- name: Grok (xAI) — free web
 - category: ai
 - stack_layer: free-filter
-- owner_agent: Research, Content
+- owner_agent: Research, Content (human relay only)
 - access_type: launch-only
 - interface: web
-- launch_target: https://grok.x.ai — **UNVERIFIED; confirm manually** (may be wrong or
-  outdated — do not treat as certain)
-- model_type: Grok
+- launch_target: https://grok.com
+- model_type: Grok (xAI)
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: manual
-- approval_required: no
-- notes: free-filter / alternate second-opinion chat. Manual only — not product-wired
-  and not part of the Azure LLM router. Entry URL needs human confirmation before
-  relying on it; also confirm current free-tier limits in the product UI.
+- approval_required: no (chat); **yes** for any future xAI API / product wiring
+- notes: Lane **NON-PROD_WEB_AI** — personal / low-sensitivity research only. Rules:
+  no MSHA-sensitive or customer-identifiable data; no production or bulk workloads;
+  no xAI API integration without explicit governance approval. Not product-wired and
+  not part of the Azure LLM router. Company site (not the chat entry): https://x.ai/.
+  Confirmed entry URL 2026-07-20: `url_main` https://grok.com.
 
 ### deepseek-free
 - name: free DeepSeek

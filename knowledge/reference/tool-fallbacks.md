@@ -232,7 +232,9 @@ these is actually adopted — don't pre-build governance for a tool that isn't i
 `docs/TOOL_CATALOG.md` `status: removed`. **GitHub Copilot** is `paused` — do **not**
 reinstall by default; agents must not treat that as permission to turn it back on.
 Open WebUI is cataloged as preferred local chat (`open-webui`) — not a dashboard
-integration. Grok launch URL in the catalog is **UNVERIFIED** pending human confirm.
+integration. **Grok** entry: https://grok.com (company https://x.ai/) — lane
+`NON-PROD_WEB_AI`; personal/low-sensitivity only; no MSHA/customer-identifiable data,
+no production/bulk, no xAI API without explicit governance approval.
 
 ## Related
 
