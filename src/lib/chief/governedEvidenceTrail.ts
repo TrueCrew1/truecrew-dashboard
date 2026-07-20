@@ -78,7 +78,7 @@ export interface EvidenceCapabilityPresence {
 
 export const DEFAULT_EVIDENCE_CAPABILITIES: EvidenceCapabilityPresence = {
   builderReportModule: false,
-  dailyTurnoverModule: false,
+  dailyTurnoverModule: true,
   governedSlackModule: true,
 };
 

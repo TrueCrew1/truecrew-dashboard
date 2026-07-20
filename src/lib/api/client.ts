@@ -1,6 +1,7 @@
 import type { MockData } from "@/data/mockData";
 import { mockData } from "@/data/mockData";
 import type { OperationalReadinessSummary } from "@/lib/ops/operationalReadinessTypes";
+import type { DailyTurnoverApiResponse } from "@/lib/chief/dailyTurnoverTypes";
 import type {
   AlertItem,
   Artifact,
@@ -218,6 +219,18 @@ export async function fetchApprovalActivity(): Promise<{
     activity: body.activity ?? [],
     vaultConfigured: body.vaultConfigured ?? false,
   };
+}
+
+export async function triggerDailyTurnover(): Promise<DailyTurnoverApiResponse> {
+  const response = await apiFetch("/api/chief/daily-turnover", {
+    method: "POST",
+  });
+  if (!response.ok) {
+    const body = (await response.json().catch(() => ({}))) as { error?: string; message?: string };
+    throw new Error(body.message ?? body.error ?? `Daily turnover API returned ${response.status}`);
+  }
+
+  return response.json() as Promise<DailyTurnoverApiResponse>;
 }
 
 export async function fetchOperationalReadiness(): Promise<OperationalReadinessSummary> {
