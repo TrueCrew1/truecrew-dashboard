@@ -92,12 +92,15 @@ describe("V1 operational readiness composition", () => {
 
   it("does not mark reporting ready when modules are env-gated", () => {
     isVaultConfiguredMock.mockReturnValue(false);
+    const capabilities = detectV1CapabilityPresence(process.cwd());
     const summary = buildOperationalReadinessSummary(process.cwd());
     const reporting = summary.domains.find((domain) => domain.id === "reporting");
 
     expect(reporting?.status).not.toBe("ready");
-    if (detectV1CapabilityPresence(process.cwd()).dailyTurnover) {
+    if (capabilities.dailyTurnover || capabilities.builderReport) {
       expect(reporting?.status).toBe("partial");
+    }
+    if (!capabilities.builderReport) {
       expect(reporting?.partialNotes.some((note) => note.includes("Builder"))).toBe(true);
     }
   });
