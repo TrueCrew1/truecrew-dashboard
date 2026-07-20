@@ -1,5 +1,6 @@
 import type { MockData } from "@/data/mockData";
 import { mockData } from "@/data/mockData";
+import type { OperationalReadinessSummary } from "@/lib/ops/operationalReadinessTypes";
 import type {
   AlertItem,
   Artifact,
@@ -217,6 +218,15 @@ export async function fetchApprovalActivity(): Promise<{
     activity: body.activity ?? [],
     vaultConfigured: body.vaultConfigured ?? false,
   };
+}
+
+export async function fetchOperationalReadiness(): Promise<OperationalReadinessSummary> {
+  const response = await apiFetch("/api/chief/operational-readiness");
+  if (!response.ok) {
+    throw new Error(`Operational readiness API returned ${response.status}`);
+  }
+
+  return response.json() as Promise<OperationalReadinessSummary>;
 }
 
 export async function fetchHealth(): Promise<{
