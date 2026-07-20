@@ -646,8 +646,9 @@ notes and/or cards.
 - **Steps:**
   - **1.** Pull recent decisions with status `rejected` or `sent_back` from
     `chief_approval_decisions` (live: `GET /api/chief/approvals` / approval-activity paths, or
-    `fetchChiefApprovalDecisions` in `lib/supabase/queries.ts`). Mock mode: session/audit log only —
-    say so; do not invent durable history.
+    `fetchChiefApprovalDecisions` in `lib/supabase/queries.ts`; from the command line,
+    `npm run chief:approval-feedback` prints the same counts and recent rejected/sent_back list,
+    read-only). Mock mode: session/audit log only — say so; do not invent durable history.
   - **2.** Cluster patterns (missing evidence, Truth Map mismatch, lane drift, regulated-citation
     gaps, precondition holds).
   - **3.** Propose doc-only updates via a normal PR: System Law, Truth Map row, and/or Chief
