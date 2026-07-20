@@ -2,6 +2,10 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { requireInternalAuth } from "../../../lib/auth.js";
 import { listApprovalActivityRecords } from "../../../lib/approvals/approvalActivityStore.js";
 import { recordApprovalDecisionActivity } from "../../../lib/approvals/recordApprovalDecisionActivity.js";
+import { collectDailyTurnoverSnapshot } from "../../../lib/chief/collectDailyTurnoverSnapshot.js";
+import {
+  formatDailyTurnoverSlackMessage,
+} from "../../../lib/chief/dailyTurnover.js";
 import {
   formatMonitorStateMessage,
   governedLoopSlack,
@@ -107,6 +111,35 @@ async function handleSlackTest(_req: VercelRequest, res: VercelResponse) {
   return res.status(200).json({ ok: true });
 }
 
+async function handleDailyTurnover(_req: VercelRequest, res: VercelResponse) {
+  try {
+    const snapshot = await collectDailyTurnoverSnapshot();
+    const message = formatDailyTurnoverSlackMessage(snapshot);
+    const slackConfigured = Boolean(process.env.SLACK_WEBHOOK_URL?.trim());
+
+    if (slackConfigured) {
+      await governedLoopSlack(message);
+    }
+
+    return res.status(200).json({
+      ok: true,
+      generatedAt: snapshot.generatedAt,
+      summary: snapshot,
+      message,
+      slack: {
+        configured: slackConfigured,
+        attempted: slackConfigured,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to build daily turnover", error);
+    return res.status(500).json({
+      error: "Failed to build daily turnover",
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+}
+
 async function handleSlackNotify(req: VercelRequest, res: VercelResponse) {
   const body = (req.body ?? {}) as Record<string, unknown>;
   const event = parseString(body.event);
@@ -164,6 +197,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === "POST" && view === "slack-notify") {
     return handleSlackNotify(req, res);
+  }
+
+  if ((req.method === "POST" || req.method === "GET") && view === "daily-turnover") {
+    return handleDailyTurnover(req, res);
   }
 
   if (!isSupabaseConfigured()) {

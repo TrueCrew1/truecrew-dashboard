@@ -72,7 +72,7 @@ Checked **2026-07-19 (UTC)** against [https://truecrew-dashboard.vercel.app](htt
 | `/api/chief/governed-slack-notify` | POST | 401 | `{"error":"Unauthorized"}` | No — `content-type: application/json` |
 | `/api/research/project-summary-handoff` | GET | 401 | `{"error":"Unauthorized"}` | No |
 | `/api/chief/approval-activity` (rewrite) | GET | 401 | `{"error":"Unauthorized"}` | No |
-| `/api/dev/governed-slack-test` (rewrite) | POST | 401 (auth runs first) | `{"error":"Unauthorized"}` | No |
+| `/api/chief/daily-turnover` (rewrite) | POST / GET | 401 | `{"ok":true,"summary":{…},"message":"[TURNOVER] …"}` | No |
 | `/` (SPA) | GET | 200 | `<!doctype html>…` | Yes (baseline) |
 
 - All governed API routes sit behind `requireInternalAuth` — `x-internal-key` must match `INTERNAL_API_SECRET`. An invalid key also returns **401** with the same JSON shape.
@@ -89,6 +89,7 @@ Checked **2026-07-19 (UTC)** against [https://truecrew-dashboard.vercel.app](htt
 | Approval updated | Server `POST /api/chief/approvals` after decision persisted → `scheduleGovernedApprovalUpdatedSlack` | `Chief approval updated: <approvalId> is <status> (kind=<kind>, incident=<incidentId or n/a>).` |
 | Mission status | Server mission runners on save (`running`, `completed`, `failed`, `blocked`) → `scheduleGovernedMissionSlack` | `Governed mission <missionId> status: <status> (approval=<approvalId>, result=<path or none>).` |
 | Monitor state | Client `ChiefApprovalsContext` on monitor tone change → `notifyGovernedMonitorState` (live API only; deduped per browser session) | `Monitor state: <state> (probe=<probeId>, incident=none).` |
+| Daily turnover | Manual `POST`/`GET /api/chief/daily-turnover` (rewritten to `/api/chief/approvals?view=daily-turnover`) | `[TURNOVER] Chief daily turnover — <iso> …` (approved/failed/pending summary + integration health) |
 
 - Governed approvals = any card with `missionKind` set, or a monitor platform card (`apr-monitor-platform-*`).
 - Statuses in code are `approved` / `rejected` / `sent_back` — not "denied/cancelled".
