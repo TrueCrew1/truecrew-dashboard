@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { buildOperationalReadinessSummary } from "../../../lib/chief/operationalReadiness.js";
 import { requireInternalAuth } from "../../../lib/auth.js";
 import { listApprovalActivityRecords } from "../../../lib/approvals/approvalActivityStore.js";
 import { recordApprovalDecisionActivity } from "../../../lib/approvals/recordApprovalDecisionActivity.js";
@@ -81,6 +82,10 @@ function isDevEnvironment(): boolean {
   return nodeEnv !== "production" && vercelEnv !== "production";
 }
 
+async function handleOperationalReadiness(_req: VercelRequest, res: VercelResponse) {
+  return res.status(200).json(buildOperationalReadinessSummary());
+}
+
 async function handleApprovalActivity(_req: VercelRequest, res: VercelResponse) {
   if (!isVaultConfigured()) {
     return res.status(200).json({ activity: [], vaultConfigured: false });
@@ -156,6 +161,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === "GET" && view === "activity") {
     return handleApprovalActivity(req, res);
+  }
+
+  if (req.method === "GET" && view === "operational-readiness") {
+    return handleOperationalReadiness(req, res);
   }
 
   if (req.method === "POST" && view === "slack-test") {
