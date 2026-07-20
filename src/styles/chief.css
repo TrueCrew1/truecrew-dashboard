@@ -4035,6 +4035,154 @@ button.chief-brief-metric {
   color: var(--text);
 }
 
+.chief-turnover-footnote {
+  margin: 10px 0 0;
+  font-size: 10px;
+  color: var(--steel-dim);
+}
+
+.chief-turnover-panel {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+}
+
+.chief-turnover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.chief-turnover-title,
+.chief-turnover-history-title {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+}
+
+.chief-turnover-pill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+}
+
+.chief-turnover-pill--neutral {
+  color: var(--text);
+}
+
+.chief-turnover-pill--muted {
+  color: var(--steel-dim);
+}
+
+.chief-turnover-detail,
+.chief-turnover-meta,
+.chief-turnover-empty {
+  margin: 0 0 8px;
+  font-size: 11px;
+  color: var(--steel-dim);
+  line-height: 1.45;
+}
+
+.chief-turnover-headline {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.chief-turnover-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.chief-turnover-trigger {
+  align-self: flex-start;
+  padding: 8px 12px;
+  border: 1px solid var(--orange-border);
+  border-radius: 6px;
+  background: var(--orange);
+  color: #0a0b0d;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chief-turnover-trigger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.chief-turnover-error {
+  margin: 0 0 8px;
+  font-size: 11px;
+  color: #f87171;
+}
+
+.chief-turnover-result {
+  margin-bottom: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.chief-turnover-counts {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.chief-turnover-message {
+  margin: 0;
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  font-size: 10px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  color: var(--steel-dim);
+  overflow-x: auto;
+}
+
+.chief-turnover-notes,
+.chief-turnover-history-list {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 11px;
+  color: var(--steel-dim);
+}
+
+.chief-turnover-history {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.chief-turnover-history-item {
+  margin-bottom: 8px;
+}
+
+.chief-turnover-history-time,
+.chief-turnover-history-summary,
+.chief-turnover-history-preview {
+  display: block;
+}
+
+.chief-turnover-history-summary {
+  color: var(--text);
+  font-weight: 600;
+}
+
 .chief-home-intake {
   padding-top: 14px;
   border-top: 1px solid var(--border);
