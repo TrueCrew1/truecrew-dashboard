@@ -7,11 +7,8 @@ import {
 } from "../lib/chief/dailyTurnover.js";
 import { detectV1CapabilityPresence } from "../lib/ops/capabilityPresence.js";
 import {
+  REQUIRED_BASELINE_SLICE_IDS,
   detectPresentSliceIds,
-  isBaselineAchieved,
-  listMissingBaselineSliceIds,
-  V1_MERGE_SLICES,
-  type V1MergeSliceId,
 } from "../lib/ops/v1MergePlan.js";
 import {
   runV1IntegrationChecks,
@@ -49,44 +46,7 @@ function buildApprovedHandoffProposal(): ApprovalProposal {
   };
 }
 
-const REQUIRED_BASELINE_SLICES: V1MergeSliceId[] = [
-  "tool-governance-catalog",
-  "operational-readiness",
-  "command-center-ops-status",
-  "evidence-trail",
-  "daily-turnover",
-];
-
-describe("V1 merge plan", () => {
-  it("lists slices in merge order with unique ids", () => {
-    const ids = V1_MERGE_SLICES.map((slice) => slice.id);
-    expect(new Set(ids).size).toBe(ids.length);
-    expect(V1_MERGE_SLICES[0]?.id).toBe("tool-governance-catalog");
-    expect(V1_MERGE_SLICES.at(-1)?.id).toBe("builder-v1-report");
-  });
-
-  it("detects the full V1 stack on this branch", () => {
-    const present = detectPresentSliceIds(process.cwd());
-    for (const sliceId of REQUIRED_BASELINE_SLICES) {
-      expect(present, `expected slice present: ${sliceId}`).toContain(sliceId);
-    }
-    expect(isBaselineAchieved(process.cwd())).toBe(true);
-    expect(listMissingBaselineSliceIds(process.cwd())).toEqual([]);
-  });
-
-  it("approximates pre-merge main with fixture slice ids", () => {
-    const mainFixture: V1MergeSliceId[] = [];
-    expect(isBaselineAchieved(process.cwd(), { presentSliceIds: mainFixture })).toBe(false);
-    expect(listMissingBaselineSliceIds(process.cwd(), { presentSliceIds: mainFixture })).toEqual(
-      REQUIRED_BASELINE_SLICES,
-    );
-  });
-
-  it("treats builder report as optional for baseline", () => {
-    const withoutBuilder = REQUIRED_BASELINE_SLICES;
-    expect(isBaselineAchieved(process.cwd(), { presentSliceIds: withoutBuilder })).toBe(true);
-  });
-});
+const REQUIRED_BASELINE_SLICES = [...REQUIRED_BASELINE_SLICE_IDS];
 
 describe("V1 integration harness", () => {
   it("runs all integration checks without throwing", () => {
@@ -98,6 +58,20 @@ describe("V1 integration harness", () => {
     const totals = summarizeIntegrationChecks(checks);
     expect(totals.fail).toBe(0);
     expect(totals.pass + totals.partial).toBe(ids.length);
+  });
+
+  it("does not pass merge-plan-baseline until slices are merged to main", () => {
+    const checks = runV1IntegrationChecks({ root: process.cwd() });
+    expect(checks["merge-plan-baseline"].outcome).toBe("partial");
+    expect(checks["merge-plan-baseline"].message).toMatch(/not merged to main/i);
+  });
+
+  it("passes merge-plan-baseline when merged fixture covers required slices", () => {
+    const checks = runV1IntegrationChecks({
+      root: process.cwd(),
+      mergedSliceIds: REQUIRED_BASELINE_SLICES,
+    });
+    expect(checks["merge-plan-baseline"].outcome).toBe("pass");
   });
 
   it("fails loudly when catalogs would be invalid", () => {

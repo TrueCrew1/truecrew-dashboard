@@ -9,6 +9,9 @@ export type V1MergeSliceId =
   | "daily-turnover"
   | "builder-v1-report";
 
+/** Slice state relative to main merge progress (not disk presence alone). */
+export type V1SliceStatus = "merged" | "present" | "missing";
+
 export interface V1MergeSlice {
   id: V1MergeSliceId;
   label: string;
@@ -16,9 +19,20 @@ export interface V1MergeSlice {
   branch: string | null;
   /** All marker paths must exist for the slice to be considered present on disk. */
   markerPaths: readonly string[];
+  /** Lower slices in the stack that should merge before this one. */
+  dependsOn: readonly V1MergeSliceId[];
   /** Required for the in-repo V1 operational baseline (excludes optional builder report). */
   requiredForBaseline: boolean;
   mergeOrder: number;
+}
+
+export interface V1SliceReadiness {
+  id: V1MergeSliceId;
+  label: string;
+  status: V1SliceStatus;
+  presentOnDisk: boolean;
+  mergedToMain: boolean;
+  requiredForBaseline: boolean;
 }
 
 /**
@@ -35,6 +49,7 @@ export const V1_MERGE_SLICES: readonly V1MergeSlice[] = [
       "lib/ops/toolGovernanceCatalog.ts",
       "lib/ops/integrationsInventory.ts",
     ],
+    dependsOn: [],
     requiredForBaseline: true,
     mergeOrder: 1,
   },
@@ -44,6 +59,7 @@ export const V1_MERGE_SLICES: readonly V1MergeSlice[] = [
     prNumber: 163,
     branch: "cursor/chief-operational-readiness-0eaa",
     markerPaths: ["lib/chief/operationalReadiness.ts"],
+    dependsOn: ["tool-governance-catalog"],
     requiredForBaseline: true,
     mergeOrder: 2,
   },
@@ -56,6 +72,7 @@ export const V1_MERGE_SLICES: readonly V1MergeSlice[] = [
       "src/components/chief/ChiefOperationalStatusPanel.tsx",
       "src/lib/ops/operationalReadinessView.ts",
     ],
+    dependsOn: ["operational-readiness"],
     requiredForBaseline: true,
     mergeOrder: 3,
   },
@@ -68,6 +85,7 @@ export const V1_MERGE_SLICES: readonly V1MergeSlice[] = [
       "src/lib/chief/governedEvidenceTrail.ts",
       "src/components/chief/ChiefEvidenceTrailPanel.tsx",
     ],
+    dependsOn: ["command-center-ops-status"],
     requiredForBaseline: true,
     mergeOrder: 4,
   },
@@ -80,6 +98,7 @@ export const V1_MERGE_SLICES: readonly V1MergeSlice[] = [
       "lib/chief/dailyTurnover.ts",
       "src/components/chief/ChiefDailyTurnoverPanel.tsx",
     ],
+    dependsOn: ["evidence-trail"],
     requiredForBaseline: true,
     mergeOrder: 5,
   },
@@ -89,10 +108,15 @@ export const V1_MERGE_SLICES: readonly V1MergeSlice[] = [
     prNumber: null,
     branch: "cursor/builder-v1-report-0eaa",
     markerPaths: ["lib/build/builderReport.ts"],
+    dependsOn: [],
     requiredForBaseline: false,
     mergeOrder: 6,
   },
 ] as const;
+
+export const REQUIRED_BASELINE_SLICE_IDS: readonly V1MergeSliceId[] = V1_MERGE_SLICES.filter(
+  (slice) => slice.requiredForBaseline,
+).map((slice) => slice.id);
 
 function sliceIsPresent(root: string, slice: V1MergeSlice): boolean {
   return slice.markerPaths.every((relativePath) =>
@@ -106,6 +130,36 @@ export function detectPresentSliceIds(root = process.cwd()): V1MergeSliceId[] {
   );
 }
 
+/**
+ * Returns slices in merge order, validating that every dependsOn edge points to
+ * an earlier position in the sequence.
+ */
+export function computeMergeOrder(
+  slices: readonly V1MergeSlice[] = V1_MERGE_SLICES,
+): V1MergeSlice[] {
+  const ordered = [...slices].sort((a, b) => a.mergeOrder - b.mergeOrder);
+  const indexById = new Map(ordered.map((slice, index) => [slice.id, index]));
+
+  for (const slice of ordered) {
+    const sliceIndex = indexById.get(slice.id);
+    if (sliceIndex === undefined) continue;
+
+    for (const dependencyId of slice.dependsOn) {
+      const dependencyIndex = indexById.get(dependencyId);
+      if (dependencyIndex === undefined) {
+        throw new Error(`Unknown merge dependency: ${slice.id} -> ${dependencyId}`);
+      }
+      if (dependencyIndex >= sliceIndex) {
+        throw new Error(
+          `Invalid merge order: ${slice.id} depends on ${dependencyId} but merges earlier or at the same position.`,
+        );
+      }
+    }
+  }
+
+  return ordered;
+}
+
 export function listMissingBaselineSliceIds(
   root = process.cwd(),
   options?: { presentSliceIds?: readonly V1MergeSliceId[] },
@@ -116,9 +170,18 @@ export function listMissingBaselineSliceIds(
   ).map((slice) => slice.id);
 }
 
+export function listMissingMergedBaselineSliceIds(
+  mergedSliceIds: readonly V1MergeSliceId[],
+): V1MergeSliceId[] {
+  const merged = new Set(mergedSliceIds);
+  return V1_MERGE_SLICES.filter(
+    (slice) => slice.requiredForBaseline && !merged.has(slice.id),
+  ).map((slice) => slice.id);
+}
+
 /**
- * True when every required V1 slice marker set is present on disk.
- * Use `presentSliceIds` in tests to approximate merged vs open-PR states.
+ * True when every required slice marker set is present on disk.
+ * This does NOT mean merged to main — use isBaselineMerged for that.
  */
 export function isBaselineAchieved(
   root = process.cwd(),
@@ -127,11 +190,49 @@ export function isBaselineAchieved(
   return listMissingBaselineSliceIds(root, options).length === 0;
 }
 
+/**
+ * True when every required slice is recorded as merged to main.
+ * Pass mergedSliceIds from CI/git metadata or test fixtures.
+ */
+export function isBaselineMerged(mergedSliceIds: readonly V1MergeSliceId[]): boolean {
+  return listMissingMergedBaselineSliceIds(mergedSliceIds).length === 0;
+}
+
+export function evaluateSliceReadiness(input: {
+  root?: string;
+  presentSliceIds?: readonly V1MergeSliceId[];
+  mergedSliceIds?: readonly V1MergeSliceId[];
+}): V1SliceReadiness[] {
+  const root = input.root ?? process.cwd();
+  const present = new Set(input.presentSliceIds ?? detectPresentSliceIds(root));
+  const merged = new Set(input.mergedSliceIds ?? []);
+
+  return V1_MERGE_SLICES.map((slice) => {
+    const presentOnDisk = present.has(slice.id);
+    const mergedToMain = merged.has(slice.id);
+    const status: V1SliceStatus = mergedToMain
+      ? "merged"
+      : presentOnDisk
+        ? "present"
+        : "missing";
+
+    return {
+      id: slice.id,
+      label: slice.label,
+      status,
+      presentOnDisk,
+      mergedToMain,
+      requiredForBaseline: slice.requiredForBaseline,
+    };
+  });
+}
+
+/** @deprecated Use computeMergeOrder — kept for callers that filtered by presence. */
 export function orderedMergeSlices(
   presentSliceIds?: readonly V1MergeSliceId[],
 ): V1MergeSlice[] {
-  const present = presentSliceIds ? new Set(presentSliceIds) : null;
-  return V1_MERGE_SLICES.filter((slice) =>
-    present ? present.has(slice.id) : true,
-  );
+  const ordered = computeMergeOrder();
+  if (!presentSliceIds) return ordered;
+  const present = new Set(presentSliceIds);
+  return ordered.filter((slice) => present.has(slice.id));
 }

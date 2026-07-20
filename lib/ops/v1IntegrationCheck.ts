@@ -10,7 +10,9 @@ import { TOOL_GOVERNANCE_CATALOG } from "./toolGovernanceCatalog.js";
 import {
   detectPresentSliceIds,
   isBaselineAchieved,
+  isBaselineMerged,
   listMissingBaselineSliceIds,
+  listMissingMergedBaselineSliceIds,
   type V1MergeSliceId,
 } from "./v1MergePlan.js";
 
@@ -40,6 +42,8 @@ export type V1IntegrationCheckMap = Record<IntegrationCheckId, IntegrationCheckR
 export interface RunV1IntegrationChecksInput {
   root?: string;
   presentSliceIds?: readonly V1MergeSliceId[];
+  /** Slice ids merged to main; defaults to none (open-PR stack state). */
+  mergedSliceIds?: readonly V1MergeSliceId[];
 }
 
 function result(
@@ -58,6 +62,7 @@ export function runV1IntegrationChecks(
 ): V1IntegrationCheckMap {
   const root = input.root ?? process.cwd();
   const presentSliceIds = input.presentSliceIds ?? detectPresentSliceIds(root);
+  const mergedSliceIds = input.mergedSliceIds ?? [];
   const capabilities = detectV1CapabilityPresence(root);
   const checks: Partial<V1IntegrationCheckMap> = {};
 
@@ -197,13 +202,30 @@ export function runV1IntegrationChecks(
     );
   }
 
-  const baselineAchieved = isBaselineAchieved(root, { presentSliceIds });
-  checks["merge-plan-baseline"] = baselineAchieved
-    ? result("pass", "All required V1 merge slice markers are present.")
-    : result(
-        "partial",
-        `Missing baseline slices: ${listMissingBaselineSliceIds(root, { presentSliceIds }).join(", ") || "none detected"}`,
-      );
+  const stackPresent = isBaselineAchieved(root, { presentSliceIds });
+  const stackMerged = isBaselineMerged(mergedSliceIds);
+
+  if (stackMerged) {
+    checks["merge-plan-baseline"] = result(
+      "pass",
+      "All required V1 slices are merged to main.",
+    );
+  } else if (mergedSliceIds.length > 0) {
+    checks["merge-plan-baseline"] = result(
+      "partial",
+      `Partial main merge — still missing: ${listMissingMergedBaselineSliceIds(mergedSliceIds).join(", ")}`,
+    );
+  } else if (stackPresent) {
+    checks["merge-plan-baseline"] = result(
+      "partial",
+      "V1 stack markers are present on this branch but slices are not merged to main.",
+    );
+  } else {
+    checks["merge-plan-baseline"] = result(
+      "partial",
+      `Missing baseline slices on disk: ${listMissingBaselineSliceIds(root, { presentSliceIds }).join(", ") || "none detected"}`,
+    );
+  }
 
   checks["builder-report-presence"] = capabilities.builderReport
     ? result("pass", "Builder V1 structured report module is present.")
