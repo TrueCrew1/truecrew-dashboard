@@ -3699,6 +3699,186 @@ button.chief-brief-metric {
   gap: 16px;
 }
 
+.chief-ops-status {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+}
+
+.chief-ops-status-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.chief-ops-status-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+}
+
+.chief-ops-status-pill {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+}
+
+.chief-ops-status-pill--neutral {
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.chief-ops-status-pill--warn {
+  color: var(--orange);
+  border-color: var(--orange-border);
+}
+
+.chief-ops-status-pill--critical {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.45);
+}
+
+.chief-ops-status-pill--muted {
+  color: var(--steel-dim);
+}
+
+.chief-ops-status-headline {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.chief-ops-status-meta,
+.chief-ops-status-detail {
+  margin: 0 0 10px;
+  font-size: 11px;
+  color: var(--steel-dim);
+  line-height: 1.45;
+}
+
+.chief-ops-status-domains {
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chief-ops-status-domain {
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.chief-ops-status-domain:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.chief-ops-status-domain-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.chief-ops-status-domain-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.chief-ops-status-domain-status {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.chief-ops-status-domain-status--neutral {
+  color: var(--text);
+}
+
+.chief-ops-status-domain-status--warn {
+  color: var(--orange);
+}
+
+.chief-ops-status-domain-status--critical {
+  color: #f87171;
+}
+
+.chief-ops-status-domain-status--muted {
+  color: var(--steel-dim);
+}
+
+.chief-ops-status-domain-summary {
+  margin: 0;
+  font-size: 11px;
+  color: var(--steel-dim);
+  line-height: 1.45;
+}
+
+.chief-ops-status-section {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.chief-ops-status-section--warn .chief-ops-status-section-title {
+  color: var(--orange);
+}
+
+.chief-ops-status-section--critical .chief-ops-status-section-title {
+  color: #f87171;
+}
+
+.chief-ops-status-section-title {
+  margin: 0 0 6px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+}
+
+.chief-ops-status-list {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 11px;
+  color: var(--steel-dim);
+  line-height: 1.45;
+}
+
+.chief-ops-status-retry {
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-panel);
+  color: var(--text);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.chief-ops-status-footnote {
+  margin: 10px 0 0;
+  font-size: 10px;
+  color: var(--steel-dim);
+}
+
 .chief-home-panel .chief-brief {
   margin-bottom: 0;
   padding-bottom: 0;
