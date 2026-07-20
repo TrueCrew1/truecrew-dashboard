@@ -3885,6 +3885,156 @@ button.chief-brief-metric {
   border-bottom: none;
 }
 
+.chief-evidence-trail-shell {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.chief-evidence-trail-toggle {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--orange);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chief-evidence-trail-toggle:hover {
+  text-decoration: underline;
+}
+
+.chief-evidence-trail {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-panel);
+}
+
+.chief-evidence-trail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.chief-evidence-trail-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+}
+
+.chief-evidence-trail-pill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+}
+
+.chief-evidence-trail-pill--neutral {
+  color: var(--text);
+}
+
+.chief-evidence-trail-pill--warn {
+  color: var(--orange);
+  border-color: var(--orange-border);
+}
+
+.chief-evidence-trail-pill--info {
+  color: #60a5fa;
+}
+
+.chief-evidence-trail-pill--muted {
+  color: var(--steel-dim);
+}
+
+.chief-evidence-trail-summary,
+.chief-evidence-trail-meta,
+.chief-evidence-trail-empty {
+  margin: 0 0 8px;
+  font-size: 11px;
+  color: var(--steel-dim);
+  line-height: 1.45;
+}
+
+.chief-evidence-trail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.chief-evidence-trail-field--wide {
+  grid-column: 1 / -1;
+}
+
+.chief-evidence-trail-label,
+.chief-evidence-trail-section-title {
+  display: block;
+  margin: 0 0 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+}
+
+.chief-evidence-trail-value {
+  display: block;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.chief-evidence-trail-value--success {
+  color: #4ade80;
+}
+
+.chief-evidence-trail-value--warn {
+  color: var(--orange);
+}
+
+.chief-evidence-trail-value--error {
+  color: #f87171;
+}
+
+.chief-evidence-trail-section {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.chief-evidence-trail-section--warn .chief-evidence-trail-section-title {
+  color: var(--orange);
+}
+
+.chief-evidence-trail-list,
+.chief-evidence-trail-warnings {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 11px;
+  color: var(--steel-dim);
+  line-height: 1.45;
+}
+
+.chief-evidence-trail-list-item {
+  margin-bottom: 4px;
+}
+
+.chief-evidence-trail-item-label {
+  display: inline-block;
+  min-width: 72px;
+  font-weight: 600;
+  color: var(--text);
+}
+
 .chief-home-intake {
   padding-top: 14px;
   border-top: 1px solid var(--border);

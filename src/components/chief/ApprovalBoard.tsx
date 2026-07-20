@@ -38,8 +38,10 @@ import {
   launchErrorFromApprovalActionMessage,
 } from "./approvalExecutionFeedback";
 import { deriveApprovalResultLinks } from "./approvalResultLinks";
+import { ChiefEvidenceTrailSection } from "./ChiefEvidenceTrailSection";
 import type { ResearchMissionPayload } from "./researchMonitorIncidentPostmortem";
 import type { ApprovalAction, ApprovalProposal } from "./types";
+import type { ApprovalActivityRecord } from "../../../lib/approvals/types";
 
 interface ApprovalBoardProps {
   proposals: ApprovalProposal[];
@@ -50,6 +52,7 @@ interface ApprovalBoardProps {
   focusProposalId?: string | null;
   missionsByProposalId?: Map<string, ResearchMissionPayload>;
   liveApiEnabled?: boolean;
+  approvalActivityRecords?: readonly ApprovalActivityRecord[];
 }
 
 export function ApprovalBoard({
@@ -61,6 +64,7 @@ export function ApprovalBoard({
   focusProposalId,
   missionsByProposalId,
   liveApiEnabled = false,
+  approvalActivityRecords = [],
 }: ApprovalBoardProps) {
   const [localStatusFilter, setLocalStatusFilter] = useState<ApprovalStatusFilter>("all");
   const statusFilter = statusFilterProp ?? localStatusFilter;
@@ -422,6 +426,14 @@ export function ApprovalBoard({
                   ) : (
                     actionsNode
                   )}
+
+                  <ChiefEvidenceTrailSection
+                    proposal={proposal}
+                    liveApiEnabled={liveApiEnabled}
+                    mission={missionsByProposalId?.get(proposal.id) ?? null}
+                    actionState={actionState}
+                    activityRecords={approvalActivityRecords}
+                  />
                 </article>
               );
             })}
