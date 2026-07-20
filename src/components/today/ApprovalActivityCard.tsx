@@ -6,8 +6,10 @@ import {
   APPROVAL_STATUS_LABEL,
 } from "@/components/chief/chiefApproval";
 import {
+  APPROVAL_ACTIVITY_DEV_UNAVAILABLE_NOTE,
   APPROVAL_ACTIVITY_LIVE_NOTE,
   APPROVAL_ACTIVITY_MOCK_MODE_NOTE,
+  isApprovalActivityDevUnavailable,
 } from "@/components/chief/approvalActivityHelpers";
 import { useApprovalActivity } from "@/hooks/useApprovalActivity";
 import { buildChiefApprovalDeepLink } from "@/lib/navigation/approvalActivityNavigation";
@@ -18,14 +20,17 @@ export function ApprovalActivityCard() {
   const { items, loading, error, liveApi } = useApprovalActivity();
 
   const modeNote = liveApi ? APPROVAL_ACTIVITY_LIVE_NOTE : APPROVAL_ACTIVITY_MOCK_MODE_NOTE;
+  const softUnavailable = isApprovalActivityDevUnavailable(error);
 
   return (
     <Panel title="Approval activity">
       <p className="cell-muted">{modeNote}</p>
 
       {error ? (
-        <p className="cell-muted" role="alert">
-          Could not load approval activity: {error}
+        <p className="cell-muted" role="status">
+          {softUnavailable
+            ? APPROVAL_ACTIVITY_DEV_UNAVAILABLE_NOTE
+            : `Could not load approval activity: ${error}`}
         </p>
       ) : null}
 

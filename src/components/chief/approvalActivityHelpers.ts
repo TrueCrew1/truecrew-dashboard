@@ -33,3 +33,11 @@ export const APPROVAL_ACTIVITY_MOCK_MODE_NOTE =
 
 export const APPROVAL_ACTIVITY_LIVE_NOTE =
   "Recent Chief approval decisions from vault activity records (live mode).";
+
+export const APPROVAL_ACTIVITY_DEV_UNAVAILABLE_NOTE =
+  "Approval activity unavailable in this dev mode — the live endpoint is not returning JSON. Use vercel dev, or set VITE_USE_LIVE_API=false.";
+
+export function isApprovalActivityDevUnavailable(error: string | null): boolean {
+  if (!error) return false;
+  return /not wired in this dev mode|non-JSON|VITE_USE_LIVE_API/i.test(error);
+}

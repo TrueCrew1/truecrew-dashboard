@@ -82,6 +82,23 @@ describe("operationalReadinessView", () => {
     }
   });
 
+  it("maps soft/dev non-JSON failures to muted unavailable (not raw parse text)", () => {
+    const view = deriveOperationalStatusView({
+      liveApi: true,
+      loading: false,
+      error:
+        "Endpoint not wired in this dev mode (/api/chief/operational-readiness). Use vercel dev (or disable VITE_USE_LIVE_API) for live JSON APIs.",
+      summary: null,
+    });
+
+    expect(view.kind).toBe("unavailable");
+    if (view.kind === "unavailable") {
+      expect(view.tone).toBe("muted");
+      expect(view.headline).toMatch(/Unavailable in this dev mode/i);
+      expect(view.detail).not.toMatch(/Unexpected token/i);
+    }
+  });
+
   it("returns summary view with blocked and partial domains", () => {
     const summary = buildSummary({
       overallStatus: "blocked",

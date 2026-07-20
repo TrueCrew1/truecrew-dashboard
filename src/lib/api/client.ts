@@ -2,6 +2,7 @@ import type { MockData } from "@/data/mockData";
 import { mockData } from "@/data/mockData";
 import type { OperationalReadinessSummary } from "@/lib/ops/operationalReadinessTypes";
 import type { DailyTurnoverApiResponse } from "@/lib/chief/dailyTurnoverTypes";
+import { readResponseJson } from "@/lib/api/safeJson";
 import type {
   AlertItem,
   Artifact,
@@ -210,10 +211,10 @@ export async function fetchApprovalActivity(): Promise<{
     throw new Error(`Approval activity API returned ${response.status}`);
   }
 
-  const body = (await response.json()) as {
+  const body = await readResponseJson<{
     activity?: ChiefApprovalActivityRecordPayload[];
     vaultConfigured?: boolean;
-  };
+  }>(response, { pathHint: "/api/chief/approval-activity" });
 
   return {
     activity: body.activity ?? [],
@@ -239,7 +240,9 @@ export async function fetchOperationalReadiness(): Promise<OperationalReadinessS
     throw new Error(`Operational readiness API returned ${response.status}`);
   }
 
-  return response.json() as Promise<OperationalReadinessSummary>;
+  return readResponseJson<OperationalReadinessSummary>(response, {
+    pathHint: "/api/chief/operational-readiness",
+  });
 }
 
 export async function fetchHealth(): Promise<{
