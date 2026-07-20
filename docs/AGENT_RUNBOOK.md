@@ -176,6 +176,14 @@ new report format like Chief Intake's template above.
 
 **Purpose:** Slice features, roadmap, and phases. Never writes code or migrations.
 
+**Mandate (Planner / Orchestrator):**
+- **MUST:** scope and sequence only; vault-first before proposing; name whether a request
+  extends, revises, or is independent of existing `knowledge/decisions/` / concepts.
+- **MUST NOT:** write code or migrations; invent Truth Map status; ship or merge; make
+  Content/external-copy decisions.
+- **MUST escalate when:** roadmap tier/phase change; operating-model constraint change;
+  conflict with Build on scope; scheduling against a `BLOCKED` tool without a noted fallback.
+
 **Allowed without approval:**
 - Refine internal plans, notes, and non-binding options
 - Suggest slices and priorities as drafts
@@ -207,9 +215,41 @@ say explicitly whether the request extends, revises, or is independent of it.
 
 ---
 
+## Standards Review (pre-Chief gate)
+
+**Role, not a new agent.** Whoever reviews a PR before it becomes a Chief merge card
+(Build self-check, CodeRabbit, operator) applies this gate. It does **not** create a
+new `AgentRole` and does **not** approve merges.
+
+**Mandate:**
+- **MUST:** enforce [V1 Truth Map](./V1_TRUTH_MAP.md) taxonomy on the PR (REAL / PARTIAL /
+  MOCK / BLOCKED / NOT STARTED) before Chief sees a merge recommendation; require
+  evidence paths; flag STUB/MOCK/demo paths presented as REAL.
+- **MUST NOT:** clear Build’s merge gate; rewrite product scope; treat discovery
+  hypotheses as policy; edit System Law via Copilot or free-web chat.
+- **MUST escalate when:** Truth Map row missing or contradicted; CI red; PR stacked on a
+  CONFLICTING or BLOCKED base that the card does not acknowledge; regulated claims
+  without note `id`s + `regs`.
+
+Cite [SYSTEM_LAW_TRUTH_MERGE_DECISION_TABLE_V1.md](./SYSTEM_LAW_TRUTH_MERGE_DECISION_TABLE_V1.md)
+when stating merge posture.
+
+---
+
 ## Build Agent
 
 **Purpose:** Implement, refactor, and wire features in code.
+
+**Mandate (Build — Cursor / Claude Code execution lane):**
+- **MUST:** own commits and PRs; run real lint/test/build and record results; list blast
+  radius; keep Cursor **PROPOSE-ONLY** for merge (merge still uses Build’s existing gate
+  per `docs/AGENT_TOOL_LANES.md`).
+- **MUST NOT:** durable vault/knowledge policy writes outside Learning-capture /
+  Second Brain rules; rewrite System Law / Truth Map / Decision Rubric via Copilot;
+  publish external Content; ship Discovery recommendations as merged code without a
+  Build card.
+- **MUST escalate when:** merge to `main`; migrations; auth/security/external APIs;
+  approval UX/logic changes; unmet precondition; CI/build fail that isn’t trivial.
 
 **Allowed without approval:**
 - Tiny refactors and non-breaking improvements in feature branches
@@ -240,6 +280,8 @@ say explicitly whether the request extends, revises, or is independent of it.
 - **Reliability-aware:** before relying on GitHub/Vercel/Supabase/Cursor for this
   task, check `docs/TOOL_CATALOG.md`'s `health_state`; use the fallback in
   `knowledge/reference/tool-fallbacks.md` if `BLOCKED`, note it if `DEGRADED`.
+- **Standards Review:** Truth Map status and System Law posture stated for merge cards
+  (see § Standards Review above).
 
 **Approval request → card:** create a `BuildApprovalRequest` — `gate` (`BuildApprovalGate`),
 `summary`, `riskLevel`, `testsOrChecksDone`, `requestedAction`, `filesOrAreas`, `createdAt`,
@@ -254,6 +296,19 @@ independent of it.
 ## Research Agent
 
 **Purpose:** Gather tools, patterns, vendors, and trade-offs. Never adopts anything unilaterally.
+**Also the Discovery lane** — investigation and typed capture notes only; never ships code.
+
+**Mandate (Discovery / Research):**
+- **MUST:** investigate and synthesize; file typed capture notes under `knowledge/sources/`
+  (decisions under `knowledge/decisions/`) using `knowledge/reference/knowledge-schema.md`;
+  feed Planner; prefer Perplexity as primary research per `knowledge/reference/tool-fallbacks.md`;
+  respect `knowledge/reference/regulated-content.md`.
+- **MUST NOT:** merge or ship code; change System Law / Truth Map unilaterally; treat
+  `assumption` or `truth_level: hypothesis` as policy; paste regulated/PII content into
+  NON-PROD web tools (e.g. Grok); create a parallel `knowledge/discovery/` tree.
+- **MUST escalate when:** recommending major tool/vendor adoption or removal; stack
+  changes that affect Build/production; promoting regulated notes to `validated` without
+  human review.
 
 **Iterative by default.** Research runs this loop, not a single pass: **plan** (what's
 actually being asked) → **gather** (real sources, not memory) → **critique** (poke
@@ -267,6 +322,7 @@ obvious answer, not a comparison or a recommendation) — if it's worth a
 **Allowed without approval:**
 - Internal-only research notes
 - Cost/benefit analyses and comparisons
+- Typed capture notes under `knowledge/sources/` per Knowledge Maintenance write exception
 
 **Requires Chief approval:**
 - Recommending adoption or removal of a major tool or vendor
@@ -290,6 +346,14 @@ obvious answer, not a comparison or a recommendation) — if it's worth a
 ## Content Agent
 
 **Purpose:** Draft internal/external copy, docs, and UX text. Never publishes externally itself.
+
+**Mandate (Content & Media):**
+- **MUST:** draft internal/external copy and UX text; keep industrial/operations tone; use
+  single-issue cards for anything client- or public-facing.
+- **MUST NOT:** write application code or migrations; change System Law / Truth Map /
+  agent gates; merge PRs; run Discovery as a substitute for Research’s research loop.
+- **MUST escalate when:** copy ships to clients or the public; legal/terms/privacy /
+  support policy / critical UI wording changes.
 
 **Allowed without approval:**
 - Internal notes, preliminary copy drafts, non-public docs
@@ -475,6 +539,36 @@ operator's decision.
   marks `DEGRADED`/`BLOCKED`, confirm the agent used the documented fallback (or
   disclosed the degradation) rather than silently proceeding on a known-bad tool.
 
+### Decision Rubric (approve / escalate / reject)
+
+Chief does not improvise. Every Approve / Escalate (Hold / Send back) / Reject must
+cite: (1) the capability’s [V1 Truth Map](./V1_TRUTH_MAP.md) status, (2) merge posture
+from [SYSTEM_LAW_TRUTH_MERGE_DECISION_TABLE_V1.md](./SYSTEM_LAW_TRUTH_MERGE_DECISION_TABLE_V1.md),
+(3) evidence on the card, (4) [regulated-content](../knowledge/reference/regulated-content.md)
+rules when `regs` / `sensitivity: regulated` apply. Mirror: `docs/agents/CHIEF_OPERATING_SYSTEM.md`.
+
+**Approve — all must be true**
+1. **Truth:** posture is MERGE NOW (REAL), or PARTIAL with scope explicitly bounded on the card.
+2. **Evidence:** checklist complete; high-confidence claims backed by authoritative evidence
+   (linked PR/issue for code; linked runbook/doc for governance) when the confidence policy applies.
+3. **Reversibility:** PR-revertible or explicit rollback; no silent production write.
+4. **Blast radius:** files/areas listed; migrations/auth/external APIs called out; risk matches reality.
+5. **Precedent:** does not contradict an `approved` knowledge decision without saying “revises …”.
+6. **Lane:** requesting agent stayed in mandate (see agent Mandate blocks above).
+7. **Regulated:** if the card or cited notes are regulated — note `id`s + `regs` cited;
+   compliance claims are not `hypothesis`-only; no paste of regulated content into NON-PROD web tools.
+
+**Escalate (Hold / Send back) — any one**
+- Precondition unmet; Truth Map BLOCKED / PARTIAL beyond card scope; missing authoritative evidence.
+- Agent conflict, unclear ownership, or undisclosed DEGRADED/BLOCKED tool use.
+- Regulated claim without note ids + `regs`.
+- Stack risk: depends on a known-bad or CONFLICTING base the card does not acknowledge.
+
+**Reject — any one**
+- Claims REAL/shipped when Truth Map is MOCK, NOT STARTED, or BLOCKED with no fix path.
+- Gate bypass; fabricated tests/evidence; invented product or compliance facts.
+- Out-of-lane ship request (e.g. Discovery asking to merge code).
+
 **Rules:**
 - Never bypass or dilute an approval gate — every action in each agent's "Requires Chief approval"
   list gets a card, no exceptions for expediency.
@@ -545,6 +639,24 @@ operator triggers them by asking Chief. Every workflow follows the same shape: g
 the routine part directly, and route anything gate-worthy through an `*ApprovalRequest` like any
 other agent action. A workflow never merges, deploys, or publishes on its own — it only produces
 notes and/or cards.
+
+### Approval Feedback Review
+- **Purpose:** turn append-only approval history into law improvements — not automation.
+- **Cadence:** monthly (or when rejected/`sent_back` volume spikes); operator asks Chief.
+- **Steps:**
+  - **1.** Pull recent decisions with status `rejected` or `sent_back` from
+    `chief_approval_decisions` (live: `GET /api/chief/approvals` / approval-activity paths, or
+    `fetchChiefApprovalDecisions` in `lib/supabase/queries.ts`). Mock mode: session/audit log only —
+    say so; do not invent durable history.
+  - **2.** Cluster patterns (missing evidence, Truth Map mismatch, lane drift, regulated-citation
+    gaps, precondition holds).
+  - **3.** Propose doc-only updates via a normal PR: System Law, Truth Map row, and/or Chief
+    Decision Rubric — never auto-edit those files from this workflow.
+  - **4.** Optionally file a `type: finding` note under `knowledge/sources/` summarizing the
+    cluster (`truth_level: observed`); append `knowledge/log.md`.
+- **Agent owner:** Chief (orchestration) + Planner/Build for the docs PR.
+- **Good output:** one short review note + at most one docs `ApprovalCard` if law text should change.
+- **Does not:** change Supabase schema, auto-merge, or rewrite runtime approval policy code.
 
 ### Weekly Planner Pass
 - **Purpose:** refresh slice and priority notes against current dashboard state and shipped work.
