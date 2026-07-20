@@ -15,6 +15,7 @@ import { useMonitorHealth } from "@/hooks/useMonitorHealth";
 import { useBuildTasks, type BuildGateTask } from "./hooks/useBuildTasks";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
 import { ChiefOperationalStatusPanel } from "./ChiefOperationalStatusPanel";
+import { ChiefDailyTurnoverPanel } from "./ChiefDailyTurnoverPanel";
 import { AgentStatusStrip } from "./AgentStatusStrip";
 import type { AgentWorkItem, ApprovalProposal, ChiefBoardItem, ChiefResponse } from "./types";
 
@@ -186,6 +187,8 @@ export function ChiefHomePanel() {
         />
 
         <ChiefOperationalStatusPanel />
+
+        <ChiefDailyTurnoverPanel />
 
         <AgentStatusStrip />
 
