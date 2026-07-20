@@ -183,11 +183,23 @@ export function listMissingMergedBaselineSliceIds(
  * True when every required slice marker set is present on disk.
  * This does NOT mean merged to main — use isBaselineMerged for that.
  */
-export function isBaselineAchieved(
+export function isBaselinePresentOnDisk(
   root = process.cwd(),
   options?: { presentSliceIds?: readonly V1MergeSliceId[] },
 ): boolean {
   return listMissingBaselineSliceIds(root, options).length === 0;
+}
+
+/**
+ * @deprecated Renamed to isBaselinePresentOnDisk — "achieved" read as ambiguous
+ * with "merged to main". This is a pure pass-through with identical arguments
+ * and return value; update callers to isBaselinePresentOnDisk when convenient.
+ */
+export function isBaselineAchieved(
+  root = process.cwd(),
+  options?: { presentSliceIds?: readonly V1MergeSliceId[] },
+): boolean {
+  return isBaselinePresentOnDisk(root, options);
 }
 
 /**

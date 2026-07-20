@@ -7,6 +7,7 @@ import {
   evaluateSliceReadiness,
   isBaselineAchieved,
   isBaselineMerged,
+  isBaselinePresentOnDisk,
   listMissingBaselineSliceIds,
   listMissingMergedBaselineSliceIds,
   type V1MergeSliceId,
@@ -54,21 +55,28 @@ describe("computeMergeOrder", () => {
 });
 
 describe("disk presence vs main merge", () => {
-  it("detects the full V1 stack on this branch", () => {
+  it("detects all required marker files on this tip branch (disk presence only)", () => {
     const present = detectPresentSliceIds(process.cwd());
     for (const sliceId of REQUIRED_BASELINE_SLICE_IDS) {
       expect(present, `expected slice present: ${sliceId}`).toContain(sliceId);
     }
-    expect(isBaselineAchieved(process.cwd())).toBe(true);
+    expect(isBaselinePresentOnDisk(process.cwd())).toBe(true);
     expect(listMissingBaselineSliceIds(process.cwd())).toEqual([]);
   });
 
   it("approximates pre-merge main with empty fixture ids", () => {
     const mainFixture: V1MergeSliceId[] = [];
-    expect(isBaselineAchieved(process.cwd(), { presentSliceIds: mainFixture })).toBe(false);
+    expect(isBaselinePresentOnDisk(process.cwd(), { presentSliceIds: mainFixture })).toBe(false);
     expect(listMissingBaselineSliceIds(process.cwd(), { presentSliceIds: mainFixture })).toEqual([
       ...REQUIRED_BASELINE_SLICE_IDS,
     ]);
+  });
+
+  it("keeps deprecated isBaselineAchieved as a pure pass-through", () => {
+    expect(isBaselineAchieved(process.cwd())).toBe(isBaselinePresentOnDisk(process.cwd()));
+    expect(isBaselineAchieved(process.cwd(), { presentSliceIds: [] })).toBe(
+      isBaselinePresentOnDisk(process.cwd(), { presentSliceIds: [] }),
+    );
   });
 
   it("treats baseline as unmerged when only disk markers exist", () => {

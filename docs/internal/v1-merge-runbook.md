@@ -2,6 +2,8 @@
 
 Ordered merge plan for the current V1 operational stack. Slice **presence** is detected from marker files on disk via `lib/ops/v1MergePlan.ts` — not from GitHub PR state.
 
+**Tip branch ≠ live on main:** markers present on the feature tip means the stack is on disk; main merge status is separate and must be passed via `mergedSliceIds`.
+
 ## Merge order
 
 Use `computeMergeOrder()` as the single source of truth. Slices merge in this sequence:
@@ -22,7 +24,7 @@ After each merge, rebase the next branch onto updated `main` so stacked duplicat
 **Disk presence** (markers on branch):
 
 ```bash
-npx tsx -e "import { isBaselineAchieved, detectPresentSliceIds, listMissingBaselineSliceIds } from './lib/ops/v1MergePlan.ts'; console.log({ present: detectPresentSliceIds(), onDisk: isBaselineAchieved(), missing: listMissingBaselineSliceIds() });"
+npx tsx -e "import { isBaselinePresentOnDisk, detectPresentSliceIds, listMissingBaselineSliceIds } from './lib/ops/v1MergePlan.ts'; console.log({ present: detectPresentSliceIds(), onDisk: isBaselinePresentOnDisk(), missing: listMissingBaselineSliceIds() });"
 ```
 
 **Merged to main** (pass `mergedSliceIds` from CI or a fixture):
@@ -31,7 +33,7 @@ npx tsx -e "import { isBaselineAchieved, detectPresentSliceIds, listMissingBasel
 npx tsx -e "import { isBaselineMerged, REQUIRED_BASELINE_SLICE_IDS } from './lib/ops/v1MergePlan.ts'; console.log({ merged: isBaselineMerged(REQUIRED_BASELINE_SLICE_IDS) });"
 ```
 
-- `isBaselineAchieved()` — all required marker files exist on disk (true on the feature stack tip).
+- `isBaselinePresentOnDisk()` — all required marker files exist on disk (true on the feature stack tip). Deprecated alias: `isBaselineAchieved()`.
 - `isBaselineMerged(mergedSliceIds)` — all required slices recorded as merged to `main`.
 - Builder report (slice 6) is optional for baseline.
 
@@ -42,4 +44,4 @@ npx vitest run tests/v1-merge-plan.test.ts
 npx vitest run tests/v1-operational-flows.test.ts
 ```
 
-`lib/ops/v1IntegrationCheck.ts` aggregates catalog, readiness, panel, evidence, turnover, and merge-plan checks. The `merge-plan-baseline` check returns **partial** on open-PR stack branches (markers present, not merged) and **pass** only when `mergedSliceIds` covers all required slices. Not wired to production routes in V1.
+`lib/ops/v1IntegrationCheck.ts` aggregates catalog, readiness, panel, evidence, turnover, and merge-plan checks. The `merge-plan-main-merge` check returns **partial** on open-PR stack branches (markers present, not merged) and **pass** only when `mergedSliceIds` covers all required slices. Not wired to production routes in V1.
