@@ -20,16 +20,30 @@ Given the access links formalized in `docs/AGENT_RUNBOOK.md` § Chief ("Chief
 access links — phase 1"), the current operating pattern for any Chief-adjacent
 work is:
 
-- **Think/draft locally first**, via Ollama (Continue.dev) — cheap,
-  local-first cognition before reaching for a hosted model.
+- **Think/draft locally first**, via Ollama (Continue.dev and/or Open WebUI) —
+  cheap, local-first cognition before reaching for a hosted model. Open WebUI is
+  local-only — not a dashboard runtime integration.
+- **Filter with free tools before premium** — ChatGPT / Gemini / Grok / Kimi /
+  DeepSeek free web chats for second opinions; escalate to Claude Pro, Cursor Pro,
+  or Perplexity Pro when judgment, multi-file work, or live web evidence requires it
+  ([docs/TOOL_CATALOG.md](TOOL_CATALOG.md) § LLM usage policy).
+- **Sustained / automated LLM work** — prefer the Azure router (DeepSeek / Kimi /
+  gpt-5-mini) via `npm run llm` or product Research/Builder paths
+  ([docs/AI_STACK.md](AI_STACK.md)) so Pro credits stay available for hard calls.
 - **Log/brief to Obsidian** — the audit trail and status-brief sink for
   anything worth remembering ([docs/OBSIDIAN_LOGGING.md](OBSIDIAN_LOGGING.md)).
-- **Execute repo changes only through the Claude Code PR flow** — no write
-  happens outside the existing PR-only, approval-gated path below.
+- **Execute repo changes only through the Claude Code / Cursor PR flow** — no write
+  happens outside the existing PR-only, approval-gated path below. GitHub Copilot is
+  paused/optional — not required.
 - **Escalate anything beyond those bounds** — a new external-system link, a
   write-path permission, or anything not covered by this phase's three
   formalized surfaces goes to David as an explicit decision, not an inferred
   extension.
+
+**Stack brief for agents:** [docs/agents/CHIEF_OPERATING_SYSTEM.md](agents/CHIEF_OPERATING_SYSTEM.md).
+**Product vs personal tools:** product runtime SoT is
+`lib/ops/integrationsInventory.ts`; personal/editor/local SoT is
+`docs/TOOL_CATALOG.md`.
 
 **[docs/AGENT_RUNBOOK.md](AGENT_RUNBOOK.md) is the full operating contract for Planner, Build, Research, Content, and Chief** — read it before operating as any of these agents, and give it to a new agent session as-is. It defines, per agent: purpose and scope, what's allowed without approval (routine, reversible work), what requires a Chief approval gate (state-changing, external, or hard-to-revert work — e.g. Build's merges/migrations, Content's client-facing copy), the exact fields each `*ApprovalRequest` needs, and what to verify before asking for approval. It also defines Chief's own responsibilities (turning requests into cards, checking claims rather than trusting them, never auto-merging/deploying/messaging), when an agent must stop and escalate rather than proceed, how the runbook itself gets changed (a PR, routed through Chief like any other approval-gated change), and — since this pass — how agents turn work artifacts into the `knowledge/` vault (**Second Brain Starter Pass**).
 

@@ -1,21 +1,37 @@
 # AI Stack
 
-True Crew's AI tooling stack for Chief/Research/Builder lanes.
+True Crew's approved AI tooling — personal/editor/local layers plus the product LLM
+router. Full catalog rows: [`docs/TOOL_CATALOG.md`](TOOL_CATALOG.md). Product runtime
+integrations (Supabase, Vercel host, Slack webhook, etc.):
+`lib/ops/integrationsInventory.ts` — **separate SoT**.
 
-## Tools
+## Layers at a glance
+
+| Layer | Tools | Role |
+|-------|-------|------|
+| **Premium core** | Claude Pro, Cursor Pro, Perplexity Pro | Primary quality judgment + coding + live web research |
+| **Free / filter** | ChatGPT, Gemini, Grok, Kimi, DeepSeek (free web) | Overflow, second opinions, cheap filtering before Pro |
+| **API / sustained** | DeepSeek, Kimi, gpt-5-mini via Azure router | Repeatable missions, CLI, Builder suggest-tests |
+| **Local / self-hosted** | Ollama, Open WebUI, Docker Desktop (as needed) | Credit-free draft; **Open WebUI is not dashboard-wired** |
+| **Editor / shell** | VS Code, Claude Code, Cursor | Primary implementation surfaces |
+| **Paused / optional** | GitHub Copilot | Not required, not default |
+
+## Premium core
 
 | Tool | Role |
 |------|------|
+| **Claude Pro** | Hard reasoning, architecture, careful drafting (consumer chat) |
+| **Cursor Pro** | Multi-file / agentic coding; propose-only for merge (Build gate) |
 | **Perplexity Pro** | External web research → feeds `knowledge/` |
-| **Cursor + Claude Code** | In-editor reasoning, multi-file refactors (use sparingly) |
-| **GitHub Copilot** | Inline completion, quick test stubs |
-| **LLM Router** | Structured text/code reasoning via `npm run llm` |
 
-## LLM Router
+## Free / fallback / filter
 
-Routes tasks to one of three external models based on lane + complexity.
+Use before burning Pro credits: **ChatGPT free**, **Gemini free**, **Grok free**,
+**Kimi free**, **DeepSeek free**. Manual only — not product APIs.
 
-### Models (Azure-backed)
+## API / sustained-work (LLM Router)
+
+Routes tasks to Azure AI Foundry-backed logical models (`src/llm/router.ts`).
 
 | Logical model | Azure backend | Tier |
 |---------------|---------------|------|
@@ -31,22 +47,59 @@ Routes tasks to one of three external models based on lane + complexity.
 | builder | DeepSeek-V3.2 | gpt-5-mini | gpt-5-mini |
 | chief | DeepSeek-V3.2 | DeepSeek-V3.2 | gpt-5-mini |
 
+**Note:** `chief` lane is CLI / advisory (`npm run llm`) — there is no live Chief chat
+loop in the dashboard UI. Research missions and Builder suggest-tests are the main
+product callers.
+
 ### Defaults
 
 - Token limits: low=400, medium=600, high=800
 - Temperature: 0.4
 - Timeout: 30s
 
-## Task → Tool mapping
+## Local / self-hosted
+
+| Tool | Role |
+|------|------|
+| **Ollama** | Local models; Continue.dev; optional Librarian refine when enabled |
+| **Open WebUI** | Local browser UI over Ollama (and similar). Installed as local AI layer; **not** an app route or Vercel integration |
+| **Docker Desktop** | When local containers / MCP infra need it |
+
+## Editor / dev shell
+
+| Tool | Role |
+|------|------|
+| **VS Code** | Primary shell |
+| **Claude Code** | Governed agent runtime (PR-based) |
+| **Cursor** | Editor + cloud agents (same premium-core Cursor Pro) |
+
+**GitHub Copilot:** paused / optional — not part of the required stack. Prefer
+Continue.dev + Ollama for inline assist.
+
+## Task → tool mapping
 
 | Task | Tool | Lane + Complexity |
 |------|------|-------------------|
-| Research options | Perplexity + `llm` | research low/medium |
+| Live web research | Perplexity Pro (+ optional free filter first) | — |
+| Hard product/architecture call | Claude Pro | — |
+| Multi-file refactor / agent PR | Cursor Pro + Claude Code | — |
+| Routine local draft | Ollama / Open WebUI / Continue.dev | — |
+| Research options (sustained) | `llm` router | research low/medium → DeepSeek |
 | Long synthesis | `llm` | research high → Kimi |
-| Builder test ideas | `llm` | builder medium → GPT-5 mini |
-| Chief wording | `llm` | chief low/medium → DeepSeek |
-| Inline completion | Copilot | — |
-| Multi-file refactor | Cursor + Claude Code | — |
+| Builder test ideas | `llm` / suggest-tests | builder medium → gpt-5-mini |
+| Chief wording (CLI) | `llm` | chief low/medium → DeepSeek |
+| Inline completion | Continue.dev + Ollama (not Copilot) | — |
+
+## LLM usage policy (summary)
+
+Full policy: `docs/TOOL_CATALOG.md` § LLM usage policy.
+
+1. Mechanical first (no LLM).
+2. Local (Ollama / WebUI / Continue) for routine drafts.
+3. Free filter before premium chat.
+4. Premium core for judgment (Claude / Cursor / Perplexity Pro).
+5. API router for sustained/automated work (preserve Pro credits).
+6. Never lower the quality bar when choosing a cheaper lane — escalate when stuck.
 
 ## Usage
 
@@ -70,14 +123,15 @@ npm run llm -- chief low "Tighten these bullets"
 
 ## Cost discipline
 
-**Budget target:** $200 / 30 days
+**Budget target:** $200 / 30 days (API / Foundry)
 
-1. **DeepSeek by default** — all low-complexity tasks
+1. **DeepSeek by default** — all low-complexity router tasks
 2. **GPT-5 mini for important reasoning** — Builder medium+, Chief high
 3. **Kimi only for long context** — Research high when synthesizing many sources
 4. **Short prompts** — include only necessary context
 5. **Capped outputs** — 400–800 tokens based on complexity
 6. **Reuse `knowledge/`** — don't repeat calls for the same research
+7. **Preserve Claude/Cursor/Perplexity Pro** — use free filter + local + API first
 
 ## Environment variables
 
@@ -130,7 +184,7 @@ curl -sS -X POST https://YOUR_DOMAIN/api/llm/suggest-tests \
 
 ## Vercel MCP
 
-The Vercel MCP server provides deployment and project management tools.
+The Vercel MCP server provides deployment and project management tools (editor).
 
 **Config** (`.cursor/mcp.json`):
 

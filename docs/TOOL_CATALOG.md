@@ -1,15 +1,28 @@
 # Tool Catalog
 
-The single stable, appendable record of every tool in David's stack, for agent
-governance and (eventually) a Tool Launcher / Quick Access board in the dashboard.
-Reasoning behind each classification lives in `docs/AGENT_RUNBOOK.md` §§ Tool
-Catalog / External Services Tool Catalog — this file is the machine-readable record
-those sections classify *into*.
+The single stable, appendable record of every tool in David's **personal / editor /
+local AI stack**, for agent governance and (eventually) a Tool Launcher board.
+
+**Product/runtime integrations** (Supabase, Vercel hosting, Slack webhook, Azure
+router used by Research/Builder APIs, etc.) live separately in:
+
+- `lib/ops/integrationsInventory.ts` + `docs/internal/integrations-inventory.md`
+- `lib/ops/toolGovernanceCatalog.ts` + `docs/internal/tool-governance-catalog.md`
+
+Do **not** treat a row here as product-wired into `truecrew-dashboard` unless that
+integration inventory (or proven code) says so.
+
+Reasoning behind lane classifications: `docs/AGENT_RUNBOOK.md` §§ Tool Catalog /
+External Services Tool Catalog. Fast lane lookup: `docs/AGENT_TOOL_LANES.md`.
+Model-tier routing: `docs/internal/tool-model-routing-standard.md`.
+Operating summary: `docs/AI_STACK.md`, `docs/agents/CHIEF_OPERATING_SYSTEM.md`.
 
 **Schema (fixed, one block per tool):**
 - `id` — stable slug, never renamed once a UI or script references it
 - `name` — human-readable name
 - `category` — `ai` / `dev` / `ops`
+- `stack_layer` — `premium-core` / `free-filter` / `api-sustained` / `local-self-hosted` /
+  `editor-shell` / `ops-workflow` / `paused` (see Approved stack below)
 - `owner_agent` — which agent(s) use it (`—` if none / human-only)
 - `access_type` — `launch-only` / `read` / `write` (mixed tools list both, scoped)
 - `interface` — how it's reached (`web`, `cli`, `api`, `mcp`, `desktop-app`,
@@ -28,6 +41,7 @@ those sections classify *into*.
   propose-only) / `launch-only` (can be opened, no read/write integration) /
   `manual` (output only reaches an agent via David relaying it by hand) /
   `future-integration` (not connected yet, or no confirmed use case) /
+  `paused` (optional; not required/default — may be re-enabled later) /
   `removed` (deliberately excluded — see notes for why, so it reads as a decision,
   not an oversight).
 - `approval_required` — `yes` / `no`, scoped per access_type if they differ
@@ -39,26 +53,140 @@ enumerate tools in code.
 
 ---
 
+## Approved stack (layers)
+
+### Premium core (primary quality)
+
+| Tool | Catalog id | Best use |
+|------|------------|----------|
+| Claude Pro | `claude-pro` | Hard reasoning, architecture, ambiguous product decisions, high-stakes drafting |
+| Cursor Pro | `cursor` | Multi-file repo edits, PR drafts, cloud/agent coding in this repo |
+| Perplexity Pro | `perplexity-pro` | Live web / current-events research with citations |
+
+### Free / fallback / filter
+
+| Tool | Catalog id | Best use |
+|------|------------|----------|
+| ChatGPT free | `chatgpt-free` | Quick second opinion; overflow when premium credits are tight |
+| Gemini free | `gemini-free` | Large-context / multimodal skim |
+| Grok free | `grok-free` | Alternate filter/second opinion |
+| Kimi free | `kimi-free` | Overflow chat; light research when API not needed |
+| DeepSeek free | `deepseek-free` | Overflow chat; cheap filter before escalating |
+
+### API / sustained-work (product + CLI router)
+
+Logical models routed via Azure AI Foundry in this repo (`docs/AI_STACK.md`,
+`src/llm/router.ts`). Prefer these for **repeatable, automated, or long sessions**
+instead of burning premium chat quotas.
+
+| Logical model | Catalog id | Role |
+|---------------|------------|------|
+| DeepSeek (API / Foundry) | `deepseek-api` | Budget sustained work — Research/Builder low/medium default |
+| Kimi (API / Foundry) | `kimi-api` | Long-context Research high |
+| gpt-5-mini (API / Foundry) | `gpt-5-mini-api` | Quality Builder medium+ / Chief high wording via CLI |
+
+### Local / self-hosted
+
+| Tool | Catalog id | Best use |
+|------|------------|----------|
+| Ollama | `ollama-local` | Local models; Continue.dev + optional Librarian refine |
+| WebUI / Open WebUI | `open-webui` | Local chat UI over Ollama (and similar); **not** dashboard runtime |
+| Docker Desktop | `docker-desktop` | Local infra / MCP containers when needed |
+
+### Editor / dev shell
+
+| Tool | Catalog id | Best use |
+|------|------------|----------|
+| VS Code | `vscode` | Primary editor shell |
+| Claude Code (in VS Code / CLI) | `claude-code` | Governed agent runtime for PR-based repo work |
+| Cursor | `cursor` | Same as Cursor Pro row — propose-only diffs/PRs |
+
+### Paused / optional (not required)
+
+| Tool | Catalog id | Notes |
+|------|------------|-------|
+| GitHub Copilot (+ Chat) | `copilot` | **Paused / optional** — not required, not default. Do not treat as part of the core stack. |
+
+### Runtime / product (separate SoT)
+
+Use `lib/ops/integrationsInventory.ts` for: Supabase, Vercel hosting/probe, Slack
+outbound webhook, GitHub webhook, Azure OpenAI (product), Obsidian vault path,
+internal API auth, Vercel MCP (editor), Google Drive (`not_wired`). Do not duplicate
+those statuses here as if they were personal chat tools.
+
+---
+
+## Tool routing policy (concise)
+
+| Tool | Category | Status | Best use | Avoid use for | Preferred owner/agent | Notes |
+|------|----------|--------|----------|---------------|----------------------|-------|
+| Claude Pro | premium-core | manual | Hard decisions, architecture, quality drafting | Bulk/routine loops; burning credits on greppable tasks | Research, Content, Chief (human) | Consumer chat — not product-wired |
+| Cursor Pro | premium-core / editor-shell | partially-wired | Multi-file edits, cloud agents, PR drafts | Merging/deploying without Build gate | Build | Evidenced via `cursor/*` branches |
+| Perplexity Pro | premium-core | manual | Live web research + citations | Code execution; treating notes as approved truth | Research | Relay findings into `knowledge/` |
+| ChatGPT free | free-filter | manual | Second opinion / overflow | Sustained drafting past free window | Research, Content | Filter before escalating to Pro |
+| Gemini free | free-filter | manual | Large context / multimodal skim | Authoritative product decisions alone | Research, Content | Separate from Gemini API quotas |
+| Grok free | free-filter | manual | Alternate filter opinion | Sole source for ship decisions | Research, Content | Manual web chat |
+| Kimi free | free-filter | manual | Overflow chat | Sustained API-scale workloads | Research, Content | Prefer `kimi-api` for sustained |
+| DeepSeek free | free-filter | manual | Overflow / cheap filter | Long automated missions | Research, Content | Prefer `deepseek-api` for sustained |
+| DeepSeek API | api-sustained | partially-wired | Router budget lane; routine LLM tasks | Human chat when free web is enough | Research, Builder (router) | Via Azure Foundry in this repo |
+| Kimi API | api-sustained | partially-wired | Long-context Research high | Tiny greppable questions | Research (router) | Via Azure Foundry |
+| gpt-5-mini API | api-sustained | partially-wired | Builder suggest-tests; quality reasoning | Every trivial edit | Builder, Chief CLI | Via Azure Foundry |
+| Ollama | local-self-hosted | launch-only / partial product | Local draft; Continue.dev; optional Librarian | Production Vercel runtime without vault/host | — / Librarian when enabled | Product: `LIBRARIAN_AI_ENABLED` |
+| Open WebUI | local-self-hosted | launch-only | Local browser UI over Ollama | Claiming dashboard integration | — (human) | **Not** wired into truecrew-dashboard |
+| Docker Desktop | local-self-hosted | launch-only | Local containers / MCP infra | Production deploy path | — (human) | Use when local infra needs it |
+| VS Code | editor-shell | launch-only | Primary shell for Claude Code + Continue | Replacing PR/approval gates | — | |
+| Claude Code | editor-shell | fully-wired | Governed repo agent work | Skipping Chief/Build gates | Chief runtime / Build | Runbook-governed |
+| Copilot | paused | paused | Optional inline assist if re-enabled | Default stack; required tooling | — | Not installed / not required |
+| GitHub / Vercel / Supabase | product (see inventory) | see inventory | Repo, host, DB | Confusing with chat subscriptions | Build | Product SoT ≠ this catalog |
+
+---
+
+## LLM usage policy (credit preservation)
+
+1. **Start mechanical.** Grep, tests, lint, docs lookup — Tier 0, no model.
+2. **Local first for routine draft.** Ollama (+ Continue.dev and/or Open WebUI) for
+   single-file refactors, explanations, PR body drafts, cheap iteration.
+3. **Free filter before premium.** Use ChatGPT / Gemini / Grok / Kimi / DeepSeek **free**
+   web chats to narrow options or get a second opinion; escalate only when stuck or
+   stakes rise.
+4. **Premium core for judgment.**
+   - **Claude Pro** — ambiguous product/architecture calls, careful prose, conflict
+     resolution between sources.
+   - **Cursor Pro** — multi-file implementation and agentic coding in this repo
+     (still propose-only for merge; Build gate applies).
+   - **Perplexity Pro** — anything that needs fresh web evidence.
+5. **API / sustained work via router.** Prefer Azure-routed DeepSeek → gpt-5-mini →
+   Kimi (`npm run llm`, Research missions, suggest-tests) for repeatable workloads so
+   Pro chat quotas stay available for judgment calls. See `docs/AI_STACK.md`.
+6. **Do not burn Pro credits on:** formatting, repeating the same research already in
+   `knowledge/`, or tasks a free filter or local model already solved.
+7. **Quality bar stays fixed.** Cheaper lane ≠ lower acceptance criteria — escalate
+   tier when output is ambiguous, fails tests, or touches auth/RLS/migrations/CI.
+
+---
+
 ## AI
 
 ### claude-code
 - name: Claude Code
 - category: ai
+- stack_layer: editor-shell
 - owner_agent: Chief (the agent runtime itself — all agents act through it)
 - access_type: write
 - interface: cli
-- launch_target: this repo's terminal session
-- model_type: Claude (Sonnet 5 / Opus 4.8 family)
+- launch_target: this repo's terminal session (often inside VS Code)
+- model_type: Claude (Sonnet / Opus family)
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: fully-wired
 - approval_required: yes — governed entirely by this runbook's existing gates, not a
   new classification
 - notes: not an external tool to launch; included for completeness since it's the
-  thing running every other row's governance.
+  thing running every other row's governance. Primary agent runtime alongside Cursor.
 
 ### claude-pro
 - name: Claude Pro (claude.ai)
 - category: ai
+- stack_layer: premium-core
 - owner_agent: Research, Content
 - access_type: launch-only
 - interface: web
@@ -67,12 +195,14 @@ enumerate tools in code.
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: manual
 - approval_required: no
-- notes: consumer chat, separate from Claude Code — PROPOSE-ONLY in principle, no
-  agent-callable API today. See § External Services Tool Catalog.
+- notes: premium-core consumer chat, separate from Claude Code — PROPOSE-ONLY in
+  principle, no agent-callable Anthropic API in this stack today. Use for hard
+  reasoning; preserve credits via free-filter + API router first.
 
 ### chatgpt-free
 - name: free ChatGPT
 - category: ai
+- stack_layer: free-filter
 - owner_agent: Research, Content
 - access_type: launch-only
 - interface: web
@@ -81,15 +211,16 @@ enumerate tools in code.
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: manual
 - approval_required: no
-- notes: manual overflow/second-opinion chat, per `CLAUDE.md` tool routing. Free-tier
-  quota (researched 2026-07-04): roughly 10 messages per 5-hour rolling window on the
-  current flagship model before falling back to a smaller model; no fixed daily cap,
-  limit resets on a rolling basis. Fine for a quick second opinion, not for sustained
-  drafting. Source: [OpenAI Help Center — ChatGPT Free Tier FAQ](https://help.openai.com/en/articles/9275245-chatgpt-free-tier-faq).
+- notes: free-filter / second-opinion chat. Free-tier quota (researched 2026-07-04):
+  roughly 10 messages per 5-hour rolling window on the current flagship model before
+  falling back to a smaller model; no fixed daily cap, limit resets on a rolling
+  basis. Fine for a quick second opinion, not for sustained drafting. Source:
+  [OpenAI Help Center — ChatGPT Free Tier FAQ](https://help.openai.com/en/articles/9275245-chatgpt-free-tier-faq).
 
 ### perplexity-pro
 - name: Perplexity Pro
 - category: ai
+- stack_layer: premium-core
 - owner_agent: Research
 - access_type: launch-only
 - interface: web
@@ -98,11 +229,13 @@ enumerate tools in code.
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: manual
 - approval_required: no
-- notes: live web/current-events research, per `CLAUDE.md` tool routing.
+- notes: premium-core live web/current-events research. Relay useful findings into
+  `knowledge/` — do not treat chat output as merged product truth.
 
 ### gemini-free
 - name: free Gemini
 - category: ai
+- stack_layer: free-filter
 - owner_agent: Research, Content
 - access_type: launch-only
 - interface: web
@@ -111,19 +244,36 @@ enumerate tools in code.
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: manual
 - approval_required: no
-- notes: large-context/multimodal tasks, per `CLAUDE.md` tool routing. Free-tier quota
-  (researched 2026-07-04): the consumer Gemini app is a separate contract from the
-  Gemini API — Google AI Studio itself is free to browse with no subscription; a
-  free API key (also from AI Studio) gets roughly 1,500 requests/day and up to 1M
-  tokens/minute on Gemini 2.5 Flash (RPM 15; Flash-Lite RPM 30), while Gemini 2.5 Pro
-  is capped much lower on free tier (~50 req/day) and Google moved Pro to paid-only
-  API access as of April 2026. Rate limits are per-project, not per-key — extra keys
-  don't add quota. Source: [Gemini API rate limits](https://ai.google.dev/gemini-api/docs/rate-limits),
+- notes: free-filter large-context/multimodal tasks. Free-tier quota (researched
+  2026-07-04): the consumer Gemini app is a separate contract from the Gemini API —
+  Google AI Studio itself is free to browse with no subscription; a free API key
+  (also from AI Studio) gets roughly 1,500 requests/day and up to 1M tokens/minute on
+  Gemini 2.5 Flash (RPM 15; Flash-Lite RPM 30), while Gemini 2.5 Pro is capped much
+  lower on free tier (~50 req/day) and Google moved Pro to paid-only API access as of
+  April 2026. Rate limits are per-project, not per-key — extra keys don't add quota.
+  Source: [Gemini API rate limits](https://ai.google.dev/gemini-api/docs/rate-limits),
   [Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing).
+
+### grok-free
+- name: free Grok
+- category: ai
+- stack_layer: free-filter
+- owner_agent: Research, Content
+- access_type: launch-only
+- interface: web
+- launch_target: https://grok.x.ai
+- model_type: Grok
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
+- status: manual
+- approval_required: no
+- notes: free-filter / alternate second-opinion chat. Manual only — not product-wired
+  and not part of the Azure LLM router. Confirm current free-tier limits in the
+  product UI before relying on sustained sessions.
 
 ### deepseek-free
 - name: free DeepSeek
 - category: ai
+- stack_layer: free-filter
 - owner_agent: Research, Content
 - access_type: launch-only
 - interface: web
@@ -132,19 +282,15 @@ enumerate tools in code.
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: manual
 - approval_required: no
-- notes: manual overflow chat when Claude credits are low, per `CLAUDE.md`. Free-tier
-  quota (researched 2026-07-04): the web/mobile chat interface (chat.deepseek.com) has
-  no paid "Plus"/"Pro" tier for individuals — access to the current flagship model is
-  free with daily-reset usage quotas, no fixed message cap published. The separate
-  developer API grants new accounts 5M free tokens (~$8.40 value, expires in 30 days)
-  and otherwise serves requests best-effort with no hard per-user RPM/TPM cap (occasional
-  429/503 under peak load) — not needed for manual chat overflow use, only relevant if
-  API access is ever wired in. Source: [DeepSeek API pricing](https://api-docs.deepseek.com/quick_start/pricing),
+- notes: free-filter overflow chat. For sustained/automated work use `deepseek-api`
+  (Azure router) instead. Free web chat has daily-reset usage quotas; developer API
+  is a separate contract. Source: [DeepSeek API pricing](https://api-docs.deepseek.com/quick_start/pricing),
   [DeepSeek API rate limits](https://api-docs.deepseek.com/quick_start/rate_limit).
 
 ### kimi-free
 - name: free Kimi
 - category: ai
+- stack_layer: free-filter
 - owner_agent: Research, Content
 - access_type: launch-only
 - interface: web
@@ -153,42 +299,94 @@ enumerate tools in code.
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: manual
 - approval_required: no
-- notes: manual overflow chat, per `CLAUDE.md`. Free-tier quota (researched
-  2026-07-04): kimi.com's free "Adagio" plan gives unlimited basic chat, file upload
-  (PDFs/images), and web access with no account required to try it; the current
-  flagship model is free through the web UI. What's metered/not free: heavy agent
-  tasks, deep-research mode, Agent Swarm, and Kimi Code — those draw down a separate
-  quota or need a paid plan. The developer API (separate from the free web chat) caps
-  at ~1,000 requests/day on the K2 base model, billed otherwise — not relevant unless
-  API access is ever wired in. Source: [Moonshot AI platform](https://platform.moonshot.ai/),
-  [Kimi AI pricing overview](https://kimik2ai.com/pricing/).
+- notes: free-filter overflow chat. For sustained long-context missions use `kimi-api`
+  (Azure router). Free "Adagio" plan facts researched 2026-07-04 — heavy agent /
+  deep-research modes may be metered. Source: [Moonshot AI platform](https://platform.moonshot.ai/).
+
+### deepseek-api
+- name: DeepSeek API (Azure Foundry — router budget lane)
+- category: ai
+- stack_layer: api-sustained
+- owner_agent: Research, Builder
+- access_type: write (server/CLI only — structured LLM tasks)
+- interface: api
+- launch_target: `npm run llm` / Research mission runners / Azure Foundry
+- model_type: DeepSeek-V3.2 (logical)
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
+- status: partially-wired
+- approval_required: yes for any action derived from output that hits an existing gate
+- notes: Product/CLI sustained-work lane via `src/llm/router.ts`. Requires
+  `AZURE_OPENAI_API_KEY` + `AZURE_AI_RESOURCE_ENDPOINT`. Legacy direct `DEEPSEEK_*`
+  keys in `.env.example` are unused by the current router.
+
+### kimi-api
+- name: Kimi API (Azure Foundry — long-context Research)
+- category: ai
+- stack_layer: api-sustained
+- owner_agent: Research
+- access_type: write (server/CLI only)
+- interface: api
+- launch_target: `npm run llm -- research high …` / Research missions
+- model_type: Kimi-K2.6 (logical)
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
+- status: partially-wired
+- approval_required: yes for gate-hit actions from output
+- notes: Prefer for long synthesis over burning Claude Pro or free web chat.
+  Same Azure env as other router models. Legacy `KIMI_*` keys unused by current router.
+
+### gpt-5-mini-api
+- name: gpt-5-mini API (Azure Foundry — quality lane)
+- category: ai
+- stack_layer: api-sustained
+- owner_agent: Builder, Chief (CLI wording only)
+- access_type: write (server/CLI only)
+- interface: api
+- launch_target: `POST /api/llm/suggest-tests`, `npm run llm`
+- model_type: gpt-5-mini (logical)
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
+- status: partially-wired
+- approval_required: yes — suggest-tests output is advisory only; Build gate still applies
+- notes: Builder medium/high and Chief high CLI wording. Not a live Chief chat loop in
+  the dashboard UI.
 
 ### ollama-local
 - name: Ollama (local)
 - category: ai
-- owner_agent: — (David's own tooling, not a Chief-system agent)
-- access_type: launch-only
+- stack_layer: local-self-hosted
+- owner_agent: — (David's own tooling; optional Librarian refine when enabled)
+- access_type: launch-only (editor); partial product when `LIBRARIAN_AI_ENABLED`
 - interface: cli / local
-- launch_target: local machine
+- launch_target: local machine (`http://127.0.0.1:11434`)
 - model_type: local open models
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: launch-only
 - approval_required: no
-- notes: powers Continue.dev autocomplete per `CLAUDE.md` — not wired to any
-  Planner/Build/Research/Content/Chief workflow. Research note (2026-07-04, non-binding
-  — no config change made): the currently-configured `qwen2.5-coder:7b`/`14b` (see
-  `continue-dev` below) is still a solid, well-benchmarked choice, but Qwen3-Coder
-  (community default now at 14B, Q4_K_M quantization, ~12GB VRAM) benchmarks ahead of
-  Qwen2.5-Coder at the same size on repo-level coding tasks as of 2026. Worth an
-  eventual `ollama pull` evaluation on David's own hardware before switching — not
-  proposed as an immediate change. DeepSeek-Coder-V3 benchmarks highest of the three
-  overall but needs ~140GB VRAM even at INT4 — not feasible on typical local hardware.
-  Source: [best local coding LLM 2026 comparison](https://runlocalmodel.com/best-local-coding-llm-2026.html),
-  [Qwen3-Coder-Next guide](https://dev.to/sienna/qwen3-coder-next-the-complete-2026-guide-to-running-powerful-ai-coding-agents-locally-1k95).
+- notes: Local AI base layer for Continue.dev, Open WebUI, and optional Librarian
+  refinement. Not a substitute for governed Research missions on Vercel. Research note
+  (2026-07-04, non-binding): `qwen2.5-coder:7b`/`14b` still solid; Qwen3-Coder worth
+  eventual evaluation — not an immediate change.
+
+### open-webui
+- name: WebUI / Open WebUI (local)
+- category: ai
+- stack_layer: local-self-hosted
+- owner_agent: — (human local tooling)
+- access_type: launch-only
+- interface: web (local) / docker
+- launch_target: local Open WebUI instance (typically over Ollama)
+- model_type: whatever models Ollama (or configured backends) expose
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
+- status: launch-only
+- approval_required: no
+- notes: Local browser UI for chatting with self-hosted models. Installed as part of
+  the local AI layer; **not wired into truecrew-dashboard runtime** (no app route,
+  env, or API integration in this repo). Use for credit-free iteration; promote
+  useful outcomes into PRs/`knowledge/` manually.
 
 ### continue-dev
 - name: Continue.dev
 - category: ai
+- stack_layer: editor-shell
 - owner_agent: — (David's own editor tooling, not a Chief-system agent)
 - access_type: launch-only (inline autocomplete + optional in-editor chat)
 - interface: desktop-app (VS Code extension)
@@ -198,15 +396,15 @@ enumerate tools in code.
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: launch-only
 - approval_required: no
-- notes: the decided, $0-cost editor-AI lane alongside Claude Code — see
-  `CLAUDE.md` § Tool routing. Covers both autocomplete and cheap/routine chat in
-  one extension; config already built, no further setup needed.
+- notes: $0-cost editor-AI lane alongside Claude Code — see `CLAUDE.md` § Tool
+  routing. Complements Open WebUI (browser) rather than replacing it.
 
 ## Dev
 
 ### github
 - name: GitHub (repo, PRs, issues)
 - category: dev
+- stack_layer: ops-workflow
 - owner_agent: Build
 - access_type: write (merge/close); read (browsing)
 - interface: cli (`gh`) / web
@@ -216,11 +414,12 @@ enumerate tools in code.
 - status: fully-wired
 - approval_required: yes (merge/close); no (browsing)
 - notes: EXECUTE-WITH-APPROVAL for merge/close, READ-ONLY for browsing — already
-  proven in practice. See § Tool Catalog.
+  proven in practice. Product webhook/CI details also in integrations inventory.
 
 ### vercel
 - name: Vercel
 - category: dev
+- stack_layer: ops-workflow
 - owner_agent: Build (Reliability, reserved — future health/fallback monitoring)
 - access_type: read (deploy status/preview URLs); write = human-only (env vars,
   production config)
@@ -230,18 +429,17 @@ enumerate tools in code.
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: partially-wired
 - approval_required: no (read); n/a — human-only (config)
-- notes: deploy-status read access already exercised for real this session. See §
-  Tool Catalog, § Dashboards & analytics.
+- notes: Personal-stack classification for deploy visibility. Runtime probe/hosting
+  status of truth: `lib/ops/integrationsInventory.ts` id `vercel`.
 - **known noise (decided, issue #89):** `INTERNAL_API_SECRET` is intentionally not
   set in Vercel's Preview environment scope (Production only). Preview deployments
   will show `requireInternalAuth` 401s on every internal `/api/*` call — this is
   expected, not an incident. See `knowledge/decisions/vercel-preview-secret-scope.md`.
-  No alerting rule exists in this repo to exclude these from yet; revisit if one is
-  added.
 
 ### supabase
 - name: Supabase
 - category: dev
+- stack_layer: ops-workflow
 - owner_agent: Build (Reliability, reserved)
 - access_type: read (schema/status); write = propose-only (migrations, via code)
 - interface: web / api
@@ -251,11 +449,13 @@ enumerate tools in code.
 - status: partially-wired
 - approval_required: yes (migrations — Build's existing "database or schema
   migration" gate); no (read)
-- notes: console/dashboard (billing, service keys) stays human-only.
+- notes: console/dashboard (billing, service keys) stays human-only. Product SoT:
+  integrations inventory id `supabase`.
 
 ### sentry
 - name: Sentry
 - category: dev
+- stack_layer: ops-workflow
 - owner_agent: Build, Research (Reliability, reserved)
 - access_type: read
 - interface: web
@@ -264,12 +464,12 @@ enumerate tools in code.
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: future-integration
 - approval_required: no
-- notes: new, low-risk, pairs with Daily Build Health Check for real incident
-  correlation — not yet in active use.
+- notes: not product-wired — do not claim live error tracking in the dashboard.
 
 ### cursor
-- name: Cursor / VS Cursor
+- name: Cursor Pro / Cursor
 - category: dev
+- stack_layer: premium-core
 - owner_agent: Build
 - access_type: write (drafts diffs/PRs only)
 - interface: desktop-app
@@ -279,11 +479,13 @@ enumerate tools in code.
 - status: partially-wired
 - approval_required: yes — merge/close always goes through Build's normal gate
   regardless of authorship tool
-- notes: real evidenced use in this repo's history (`cursor/*` branches).
+- notes: Premium-core editor + cloud agents. Real evidenced use (`cursor/*` branches).
+  Propose-only for merge; not a bypass of Chief/Build gates.
 
 ### vscode
 - name: VS Code
 - category: dev
+- stack_layer: editor-shell
 - owner_agent: — (David's own editor)
 - access_type: launch-only
 - interface: desktop-app
@@ -292,34 +494,46 @@ enumerate tools in code.
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: launch-only
 - approval_required: no
-- notes: Continue.dev + Ollama autocomplete runs here, per `CLAUDE.md` — not part of
-  the agent system.
+- notes: Primary editor shell — Claude Code + Continue.dev (+ optional Copilot if
+  ever re-enabled). Not part of the agent approval system itself.
+
+### docker-desktop
+- name: Docker Desktop
+- category: dev
+- stack_layer: local-self-hosted
+- owner_agent: — (human local infra)
+- access_type: launch-only
+- interface: desktop-app
+- launch_target: local
+- model_type: n/a
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
+- status: launch-only
+- approval_required: no
+- notes: Use when local infra or MCP containers need it (e.g. Open WebUI). Not a
+  production deploy tool and not wired into the dashboard app.
 
 ### copilot
 - name: GitHub Copilot (+ Copilot Chat)
 - category: dev
-- owner_agent: — (human-only)
+- stack_layer: paused
+- owner_agent: — (human-only, optional)
 - access_type: n/a
 - interface: desktop-app (VS Code extension) / web
-- launch_target: n/a — not installed
+- launch_target: n/a — not part of the required/default stack
 - model_type: n/a
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
-- status: removed
+- status: paused
 - approval_required: n/a
-- notes: explicitly excluded per `CLAUDE.md` (global): "only if already surfaced
-  inside Office/Windows tools; not wired into this dev environment." Copilot Chat's
-  cache/storage was cleaned up 2026-07-03 after an earlier uninstall. Not a gap —
-  listed here so the exclusion reads as a decision, not an oversight. Free-tier facts
-  (researched 2026-07-04, documented for reference only — **this does not reopen the
-  removed decision above**): GitHub's free individual plan gives 2,000 code
-  completions/month and 50 Copilot Chat messages/month, auto model selection only, no
-  credit card required. Recorded here in case it's useful context later; not a
-  reinstall proposal. Source: [GitHub Copilot plans](https://docs.github.com/en/copilot/get-started/plans),
-  [Copilot usage limits](https://docs.github.com/en/copilot/concepts/usage-limits).
+- notes: **Paused / optional — not required, not default.** Previously excluded from
+  this environment; remains off the approved core stack. Prefer Continue.dev + Ollama
+  or Claude Code / Cursor Pro for coding assist. Free-tier facts (researched
+  2026-07-04) kept for reference only — not a reinstall mandate. Source:
+  [GitHub Copilot plans](https://docs.github.com/en/copilot/get-started/plans).
 
 ### cline
 - name: Cline (`saoudrizwan.claude-dev`)
 - category: dev
+- stack_layer: paused
 - owner_agent: — (human-only)
 - access_type: n/a
 - interface: desktop-app (VS Code extension)
@@ -329,13 +543,13 @@ enumerate tools in code.
 - status: removed
 - approval_required: n/a
 - notes: deliberately uninstalled 2026-07-03 — duplicated Claude Code's agentic
-  role. Task-history data (9 sessions, free OpenRouter model) left on disk on
-  purpose; only the extension was removed. Don't suggest reinstalling as "another
-  option" — see `CLAUDE.md` § Tool routing.
+  role. Don't suggest reinstalling as "another option" — see `CLAUDE.md` § Tool
+  routing.
 
 ### cline-nightly
 - name: Cline Nightly (`saoudrizwan.cline-nightly`)
 - category: dev
+- stack_layer: paused
 - owner_agent: — (human-only)
 - access_type: n/a
 - interface: desktop-app (VS Code extension)
@@ -344,8 +558,7 @@ enumerate tools in code.
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: removed
 - approval_required: n/a
-- notes: a second, never-really-used duplicate install of Cline running alongside
-  stable — pure accumulation, removed in the same 2026-07-03 pass. Same "don't
+- notes: never-really-used duplicate of Cline — removed 2026-07-03. Same "don't
   reinstall" guidance as `cline`.
 
 ## Ops / workflow
@@ -353,6 +566,7 @@ enumerate tools in code.
 ### obsidian-buildlog
 - name: Obsidian — Build Log / Agent Log
 - category: ops
+- stack_layer: ops-workflow
 - owner_agent: Chief
 - access_type: write
 - interface: filesystem (vault)
@@ -362,10 +576,12 @@ enumerate tools in code.
 - status: fully-wired
 - approval_required: no
 - notes: logging is Chief's own responsibility, no gate — proven every session.
+  Product vault env: `OBSIDIAN_VAULT_PATH` (not available on Vercel production).
 
 ### obsidian-roadmap
 - name: Obsidian — roadmap/decision docs
 - category: ops
+- stack_layer: ops-workflow
 - owner_agent: Planner, Chief
 - access_type: write (propose-only for a new decision; direct edit only to sync an
   already-established fact)
@@ -381,6 +597,7 @@ enumerate tools in code.
 ### repo-docs
 - name: Repo docs (`docs/*.md`, `README.md`)
 - category: ops
+- stack_layer: ops-workflow
 - owner_agent: Content, Build
 - access_type: write (propose-only via PR)
 - interface: filesystem (repo)
@@ -395,6 +612,7 @@ enumerate tools in code.
 ### dashboard-tasks
 - name: Dashboard Tasks (internal)
 - category: ops
+- stack_layer: ops-workflow
 - owner_agent: Build, Chief
 - access_type: write
 - interface: in-app
@@ -410,20 +628,23 @@ enumerate tools in code.
 ### slack
 - name: Slack
 - category: ops
-- owner_agent: — (human-only)
-- access_type: launch-only
+- stack_layer: ops-workflow
+- owner_agent: — (human-only for inbound; product has outbound webhook)
+- access_type: launch-only (personal); see product inventory for outbound notify
 - interface: web / desktop-app
 - launch_target: not yet confirmed
 - model_type: n/a
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: future-integration
 - approval_required: n/a
-- notes: no confirmed agent use case yet — least-privilege default per Global
-  Standard, same treatment as Zapier/ticketing in § External SaaS.
+- notes: Personal-stack status remains future for inbound/agent command use.
+  **Product** outbound governed-loop webhook is `partial` in
+  `lib/ops/integrationsInventory.ts` (`SLACK_WEBHOOK_URL`) — do not conflate the two.
 
 ### calendar
 - name: Calendar
 - category: ops
+- stack_layer: ops-workflow
 - owner_agent: — (human-only)
 - access_type: launch-only
 - interface: web / app
@@ -438,6 +659,7 @@ enumerate tools in code.
 ### email
 - name: Email (Gmail)
 - category: ops
+- stack_layer: ops-workflow
 - owner_agent: — (human-only)
 - access_type: launch-only
 - interface: web

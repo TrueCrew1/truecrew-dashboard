@@ -40,36 +40,35 @@ guesses — see `docs/TOOL_CATALOG.md` for the researched source per tool
 | Claude Code itself is `BLOCKED` | No fallback — this is a real outage, not a routing decision (see `claude-code` below). All agent work stops until resolved. |
 | Claude Pro / Claude Code credits are low but not exhausted | Keep using Claude Code for repo-scale work (nothing else does that job); shift *ad-hoc* reasoning/drafting to free ChatGPT first, then free Gemini/DeepSeek/Kimi. Return to Claude once credits refresh — don't keep defaulting to free tools out of habit. |
 | Perplexity credits are low | Free ChatGPT → free Gemini for research, in that order; state which tier was actually used in the output, per Research's "cite what was checked" rule. |
-| Need cheap, routine, in-editor chat/autocomplete (not repo-scale reasoning) | Continue.dev on local Ollama — $0, always available, this *is* the standing fallback lane, not a stopgap. |
-| Fully offline / no internet at all | Continue.dev + Ollama only — every other lane above needs a network connection. |
-| A specific free tool's daily/rate quota is hit mid-task | Chain to the next free tool in the list (no required order among ChatGPT/Gemini/DeepSeek/Kimi) rather than waiting out the reset window, unless the task can wait. |
+| Need cheap, routine, in-editor chat/autocomplete (not repo-scale reasoning) | Continue.dev on local Ollama — $0, always available; Open WebUI is the local browser alternative (not dashboard-wired). |
+| Fully offline / no internet at all | Continue.dev + Ollama / Open WebUI only — every other lane above needs a network connection. |
+| A specific free tool's daily/rate quota is hit mid-task | Chain to the next free tool in the list (ChatGPT/Gemini/Grok/DeepSeek/Kimi) rather than waiting out the reset window, unless the task can wait. |
 
 ## Tiers
 
-- **Primary premium** — the tool used for the highest-value work by default:
-  Claude Code (coding/repo work), Claude Pro (high-stakes synthesis/reasoning),
-  Perplexity Pro (research).
-- **Preferred fallback** — the first thing to reach for when a primary premium tool
-  is `DEGRADED`/`BLOCKED` or credits are low: free ChatGPT, then free Gemini.
-- **Acceptable low-cost / always-available** — genuinely free, local, no-credit-risk
-  lanes: Continue.dev on local Ollama (editor autocomplete/chat), free
-  DeepSeek/Kimi (last-resort manual overflow).
-- **Launch-only / manual, not yet integrated** — real tools David uses, with zero
-  agent-side integration: VS Code itself, Slack, Calendar, Email.
-- **Removed, not future work** — Cline, Cline Nightly, GitHub Copilot Chat.
-  Deliberately excluded (see `docs/TOOL_CATALOG.md`'s `status: removed` entries) —
-  don't re-propose them as "another option" for this stack.
+- **Primary premium** — Claude Code / Cursor Pro (coding), Claude Pro (high-stakes
+  synthesis), Perplexity Pro (research).
+- **Preferred fallback** — free ChatGPT, then free Gemini / Grok, when a premium tool
+  is `DEGRADED`/`BLOCKED` or credits are low.
+- **Acceptable low-cost / always-available** — Continue.dev + Ollama, Open WebUI
+  (local), free DeepSeek/Kimi (manual overflow), Azure DeepSeek router for sustained API.
+- **Launch-only / manual, not yet integrated** — VS Code itself; Slack/Calendar/Email
+  inbound (product Slack *outbound* webhook is separate — see integrations inventory).
+- **Paused / optional** — GitHub Copilot (+ Chat): not required, not default
+  (`docs/TOOL_CATALOG.md` `status: paused`).
+- **Removed, not future work** — Cline, Cline Nightly. Don't re-propose them as
+  "another option" for this stack.
 
 ## Best-use guidance by task type
 
 | Task type | Primary | Fallback |
 |---|---|---|
 | High-stakes synthesis / architecture | Claude Pro / Claude Code | free ChatGPT → free Gemini |
-| Coding and repo edits | Claude Code | Cursor (secondary drafting only — see below) |
+| Coding and repo edits | Claude Code / Cursor Pro | Continue.dev + Ollama / Open WebUI for small drafts |
 | Research and comparison | Perplexity Pro | free ChatGPT → free Gemini → manual |
 | Critique / second-pass review | A *different* tool than the one that produced the first draft (e.g. Gemini reviewing Claude output) | any other available tier-2 tool |
 | Note filing / Obsidian formatting | Claude Code (Chief's own logging responsibility) | manual by David if the vault is unreachable |
-| Cheap fallback when credits are low | Continue.dev (local Ollama, $0) | free ChatGPT/Gemini/DeepSeek/Kimi (manual) |
+| Cheap fallback when credits are low | Continue.dev / Open WebUI (local Ollama, $0) | free ChatGPT/Gemini/Grok/DeepSeek/Kimi (manual) |
 
 ---
 
@@ -209,8 +208,8 @@ citations live on each tool's block in `docs/TOOL_CATALOG.md`:
 | Gemini (free) | AI Studio itself is unlimited/free to browse; a free API key gets ~1,500 req/day, 1M TPM on Gemini 2.5 Flash (Pro is far more limited, ~50 req/day, API access paid-only since Apr 2026) | Large-context/multimodal, and free-form chat via AI Studio | [Gemini API rate limits](https://ai.google.dev/gemini-api/docs/rate-limits) |
 | DeepSeek (free) | Web chat (chat.deepseek.com) — unlimited flagship-model access, no Plus/Pro tier exists; API — 5M free tokens for new accounts (30-day expiry), no hard per-user rate cap after | Manual overflow chat; cheapest option if API access is ever wired in | [DeepSeek API docs](https://api-docs.deepseek.com/quick_start/pricing) |
 | Kimi (free) | kimi.com "Adagio" plan — unlimited basic chat/file upload, no account required; agent/deep-research/coding modes are metered separately; API capped ~1,000 req/day | Manual overflow chat; not for agentic/coding workloads on the free plan | [Moonshot AI platform](https://platform.moonshot.ai/) |
-| GitHub Copilot (free) | 2,000 code completions/mo + 50 chat messages/mo, auto model selection only | **Reference only — stays excluded from this stack per the `removed` decision below; not proposed for use** | [GitHub Copilot plans](https://docs.github.com/en/copilot/get-started/plans) |
-| Ollama local (`qwen2.5-coder:7b`/`14b`, current config) | $0, fully offline, no quota | Editor autocomplete + cheap/routine chat (Continue.dev) | see `docs/TOOL_CATALOG.md` `ollama-local` notes for a non-binding Qwen3-Coder upgrade path |
+| GitHub Copilot (free) | 2,000 code completions/mo + 50 chat messages/mo, auto model selection only | **Paused/optional — not required/default; prefer Continue.dev + Ollama** | [GitHub Copilot plans](https://docs.github.com/en/copilot/get-started/plans) |
+| Ollama local (`qwen2.5-coder:7b`/`14b`, current config) | $0, fully offline, no quota | Editor autocomplete + cheap/routine chat (Continue.dev); Open WebUI browser UI | see `docs/TOOL_CATALOG.md` `ollama-local` / `open-webui` |
 
 ---
 
@@ -224,11 +223,10 @@ OneDrive. Also not covered: **VS Code** (David's own editor, not agent-critical)
 real entry here (and to `docs/TOOL_CATALOG.md` first) once any of these is actually
 adopted — don't pre-build governance for a tool that isn't in use.
 
-**Deliberately excluded, not a gap:** Cline, Cline Nightly, GitHub Copilot Chat —
-see `docs/TOOL_CATALOG.md`'s `status: removed` entries and `CLAUDE.md` § Tool
-routing. These were twice-cleaned-up duplicate agent tooling as of 2026-07-03; no
-fallback chain is needed for a tool that's deliberately not in the stack. Don't
-reintroduce them without an explicit reprioritization request, per Scope Guardrail.
+**Deliberately excluded, not a gap:** Cline, Cline Nightly — see
+`docs/TOOL_CATALOG.md` `status: removed`. **GitHub Copilot** is `paused` (optional,
+not default) — do not treat it as core stack without an explicit request.
+Open WebUI is cataloged as local-only (`open-webui`) — not a dashboard integration.
 
 ## Related
 
