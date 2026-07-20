@@ -19,6 +19,7 @@
     "db:status": "supabase migration list",
     "obsidian:log": "npx tsx scripts/obsidian-log.ts",
     "obsidian:setup-vault": "npx tsx scripts/setup-obsidian-vault.ts",
+    "discovery:file": "npx tsx scripts/file-discovery-note.ts",
     "llm": "npx tsx scripts/llm-task.ts"
   },
   "dependencies": {
