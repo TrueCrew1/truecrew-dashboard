@@ -7,12 +7,17 @@ import {
 import { buildRepoHygieneSummary } from "../lib/ops/repoHygieneSummary.js";
 import { detectV1CapabilityPresence } from "../lib/ops/capabilityPresence.js";
 
-const { requireInternalAuthMock } = vi.hoisted(() => ({
+const { requireInternalAuthMock, isVaultConfiguredMock } = vi.hoisted(() => ({
   requireInternalAuthMock: vi.fn(),
+  isVaultConfiguredMock: vi.fn(),
 }));
 
 vi.mock("../lib/auth.js", () => ({
   requireInternalAuth: requireInternalAuthMock,
+}));
+
+vi.mock("../lib/obsidian/config.js", () => ({
+  isVaultConfigured: isVaultConfiguredMock,
 }));
 
 import handler from "../api/chief/approvals/index.js";
@@ -76,6 +81,7 @@ describe("operational readiness summary", () => {
   });
 
   it("keeps chief ready while surfacing env warnings when vault is unset", () => {
+    isVaultConfiguredMock.mockReturnValue(false);
     const summary = buildOperationalReadinessSummary();
     const chief = summary.domains.find((domain) => domain.id === "chief");
 
