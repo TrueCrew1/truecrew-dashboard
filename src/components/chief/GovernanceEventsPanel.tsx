@@ -12,6 +12,9 @@ const EVENT_TYPE_LABEL: Record<ChiefGovernanceEvent["type"], string> = {
   card_created: "Card created",
   card_decided: "Card decided",
   task_reprioritized: "Task reprioritized",
+  search_query: "Search query",
+  search_action_routed: "Search action routed",
+  search_error: "Search error",
 };
 
 /**

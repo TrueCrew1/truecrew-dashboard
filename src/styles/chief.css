@@ -3269,6 +3269,33 @@ button.chief-brief-metric {
   line-height: 1.5;
 }
 
+.agent-work-filter-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 6px 10px;
+  border: 1px solid var(--orange-border);
+  background: var(--orange-glow);
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--text);
+}
+
+.agent-work-filter-clear {
+  background: transparent;
+  border: none;
+  color: var(--orange);
+  font-size: 11px;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.agent-work-filter-clear:hover {
+  text-decoration: underline;
+}
+
 .agent-work-lanes {
   display: flex;
   flex-direction: column;

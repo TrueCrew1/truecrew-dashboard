@@ -23,22 +23,22 @@ import { useMonitorHealth } from "@/hooks/useMonitorHealth";
 import { ApprovalBoard } from "./ApprovalBoard";
 import { ChiefQueueStrip } from "./ChiefQueueStrip";
 import { CommandHistory } from "./CommandHistory";
-import { buildApprovalFromResponse, buildHistoryEntry } from "./chiefMock";
 import { approvalActionSuccessMessage, type ApprovalActionState } from "./chiefApproval";
 import {
   isResearchProjectSummaryHandoffProposal,
   projectIdForResearchProjectSummaryHandoffProposal,
 } from "./researchProjectSummaryHandoff";
-import { classifyChiefEvaluation, evaluationInputFromChiefResponse } from "./chiefDecisionTier";
-import { deriveChiefBoardItems, resolveChiefCommand } from "./chiefLiveContext";
+import { runChiefCommand } from "./chiefCommandRunner";
+import { deriveChiefBoardItems } from "./chiefLiveContext";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
+import { useChiefUI } from "./ChiefUIContext";
 import { SpecialistCards } from "./SpecialistCards";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
 import { ChiefBoard } from "./ChiefBoard";
 import { AgentWorkBoard } from "./AgentWorkBoard";
 import { GovernanceEventsPanel } from "./GovernanceEventsPanel";
 import { chiefLog } from "./chiefLog";
-import type { ApprovalAction, ChiefResponse } from "./types";
+import type { ApprovalAction, ChiefResponse, ChiefTab } from "./types";
 import type { ApprovalStatusFilter } from "./approvalStatus";
 import {
   approvalCardElementId,
@@ -57,8 +57,6 @@ const EXAMPLE_COMMANDS = [
   "Show open alerts",
 ];
 
-type ChiefTab = "command" | "board" | "agents" | "approvals" | "history" | "dev";
-
 export function ChiefPanel() {
   const { data, loading, source } = useData();
   const {
@@ -73,8 +71,17 @@ export function ChiefPanel() {
     addHistoryEntry,
     sessionApprovalActivity,
   } = useChiefApprovals();
+  const { tabRequest } = useChiefUI();
 
   const [activeTab, setActiveTab] = useState<ChiefTab>("command");
+
+  // The global command bar (TopBar) can ask Chief to switch tabs — e.g. to
+  // reveal the Agents board after routing a command to the ecosystem. `nonce`
+  // lets the same tab be requested twice in a row and still take effect.
+  useEffect(() => {
+    if (!tabRequest) return;
+    setActiveTab(tabRequest.tab);
+  }, [tabRequest]);
   const [input, setInput] = useState("");
   const [response, setResponse] = useState<ChiefResponse | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -336,25 +343,15 @@ export function ChiefPanel() {
     setResponse(null);
 
     window.setTimeout(() => {
-      const resolved = resolveChiefCommand(command, data, liveContext, approvals);
-      // Read-only operating-layer classification — chiefDecisionTier.ts never
-      // executes or writes anything, it only tags this response with a tier
-      // and (when escalating) the reasoning behind it.
-      const evaluation = classifyChiefEvaluation(evaluationInputFromChiefResponse(resolved));
-      const result: ChiefResponse = {
-        ...resolved,
-        decisionTier: evaluation.tier,
-        approvalPacket: evaluation.approvalPacket,
-      };
-      setResponse(result);
-      addHistoryEntry(buildHistoryEntry(command, result));
+      const result = runChiefCommand(command, data, liveContext, approvals);
+      setResponse(result.response);
+      addHistoryEntry(result.historyEntry);
 
-      const newApproval = buildApprovalFromResponse(command, result);
-      if (newApproval) {
+      if (result.newApproval) {
         // Extension point: a "card created" notification hook would fire
         // here too, alongside any future real approval sources (GitHub PRs,
         // agent job queue) that push a new ApprovalCard into this list.
-        addCommandApproval(newApproval);
+        addCommandApproval(result.newApproval);
       }
 
       setIsProcessing(false);

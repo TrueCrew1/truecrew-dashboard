@@ -12,6 +12,7 @@ import {
 } from "./chiefLiveContext";
 import { getApprovalUrgencyBadge, OVERDUE_HOURS } from "./chiefApprovalUrgency";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
+import { useChiefUI } from "./ChiefUIContext";
 import { useData } from "@/context/DataContext";
 import { useProjectSummaryHandoffMissions } from "@/hooks/useProjectSummaryHandoffMissions";
 import type { AgentWorkItem, AgentWorkStatus, ApprovalProposal } from "./types";
@@ -101,6 +102,7 @@ function AgentWorkCard({
 export function AgentWorkBoard() {
   const { data } = useData();
   const { approvals } = useChiefApprovals();
+  const { agentFilter, clearAgentFilter } = useChiefUI();
   const { missions: handoffMissions } = useProjectSummaryHandoffMissions();
   const buildItems = useMemo(() => deriveBuildAgentWorkItems(data.tasks), [data.tasks]);
   const workflowGateItems = useMemo(
@@ -145,6 +147,20 @@ export function AgentWorkBoard() {
     [buildItems, workflowGateItems, researchItems, handoffItems, librarianItems, awaitingApprovalItems],
   );
 
+  // Set by the global command bar (e.g. "show agents working on X") via
+  // ChiefUIContext — narrows the board to items whose agent, task, or note
+  // text matches, without a separate filtered data source.
+  const filteredItems = useMemo(() => {
+    const q = agentFilter?.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter(
+      (item) =>
+        item.agent.toLowerCase().includes(q) ||
+        item.task.toLowerCase().includes(q) ||
+        item.note.toLowerCase().includes(q),
+    );
+  }, [items, agentFilter]);
+
   if (items.length === 0) {
     return (
       <ApprovalSectionShell className="agent-work-board">
@@ -161,7 +177,7 @@ export function AgentWorkBoard() {
     <ApprovalSectionShell
       className="agent-work-board"
       title="Agent work board"
-      count={`${items.length} item${items.length === 1 ? "" : "s"}`}
+      count={`${filteredItems.length} item${filteredItems.length === 1 ? "" : "s"}`}
     >
       <p className="agent-work-board-note">
         Snapshot of what each agent is carrying right now. Build, Workflow Gate, Research,
@@ -170,9 +186,26 @@ export function AgentWorkBoard() {
         queue; other agents are still mock for this slice. Read-only — no actions taken here.
       </p>
 
+      {agentFilter ? (
+        <div className="agent-work-filter-chip">
+          <span>
+            Filtered by <strong>&ldquo;{agentFilter}&rdquo;</strong> from search
+          </span>
+          <button type="button" onClick={clearAgentFilter} className="agent-work-filter-clear">
+            Clear ×
+          </button>
+        </div>
+      ) : null}
+
+      {agentFilter && filteredItems.length === 0 ? (
+        <ApprovalSurfaceEmpty
+          lead="No agent work matches this search"
+          description={`Nothing carried by an agent mentions "${agentFilter}" right now.`}
+        />
+      ) : (
       <div className="agent-work-lanes">
         {AGENT_WORK_STATUS_CONFIG.map((laneConfig) => {
-          const laneItems = itemsForStatus(items, laneConfig.status);
+          const laneItems = itemsForStatus(filteredItems, laneConfig.status);
           const isAwaitingLane = laneConfig.status === "awaiting_approval";
           const awaitingOverdueCount = isAwaitingLane
             ? laneItems.filter((item) => {
@@ -219,6 +252,7 @@ export function AgentWorkBoard() {
           );
         })}
       </div>
+      )}
     </ApprovalSectionShell>
   );
 }

@@ -1,4 +1,5 @@
 import { useData } from "@/context/DataContext";
+import { CommandBar } from "./CommandBar";
 
 interface TopBarProps {
   onToggleRail: () => void;
@@ -13,14 +14,7 @@ export function TopBar({ onToggleRail, railOpen, railAvailable = true }: TopBarP
 
   return (
     <header className="topbar">
-      <div className="topbar-search">
-        <span className="topbar-search-icon">⌕</span>
-        <input
-          type="search"
-          placeholder="Search tasks, services, customers, notes…"
-          aria-label="Global search"
-        />
-      </div>
+      <CommandBar railOpen={railOpen} onOpenRail={onToggleRail} />
 
       <div className="topbar-actions">
         {source !== "mock" ? (
