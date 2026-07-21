@@ -2,6 +2,14 @@
 
 Minimal local-first logging from True Crew into your live Obsidian vault. Obsidian stays the markdown knowledge layer; Supabase remains the app database.
 
+## Chief and Obsidian logging
+
+Writing concise logs/briefs for approvals and outcomes into the vault paths below
+(`Operations/Logs`, `Decisions`, `True Crew/Hot Context.md`) is Chief's own
+responsibility, per `docs/AGENT_RUNBOOK.md` § Chief — a governance requirement, not a
+change to any CLI or script. The actual write path stays exactly as currently
+implemented in `scripts/obsidian-log.ts` and `lib/obsidian/`.
+
 ## Recommended repo files
 
 | File | Role |

@@ -14,6 +14,20 @@ No agent — Planner, Build, Research, Content, or any future one — asks the a
 
 This pass wires the pattern with one example request per agent (illustrative, not live agent output yet) — the pattern is the deliverable, not a full integration.
 
+## Chief workflow summary
+
+Restating the two sections above and below in one place: Chief is the approvals router
+only — it never bypasses PR, merge, deploy, or external messaging (see Approval routing
+above). The Phase 1 operating pattern below governs how Chief-adjacent work actually
+flows:
+- Think/draft via AGENT-ELIGIBLE tools in propose-only mode (e.g. Cursor, local
+  Ollama/Continue.dev).
+- Log and brief via the Obsidian Build Log/roadmap.
+- Execute repo changes only through PRs reviewed by a human, using Claude Code.
+
+See `docs/TOOL_CATALOG.md` for the exact AGENT-ELIGIBLE / HUMAN-ONLY classification
+behind each tool named here.
+
 ## Phase 1 operating pattern
 
 Given the access links formalized in `docs/AGENT_RUNBOOK.md` § Chief ("Chief
