@@ -1,3 +1,14 @@
+/**
+ * Maps a command response into an ApprovalProposal only when the work is
+ * executable (known missionKind + missionProjectId). Informational / stub
+ * responses must not become approval cards.
+ */
+
+import {
+  RESEARCH_MONITOR_INCIDENT_POSTMORTEM_KIND,
+  RESEARCH_PROJECT_SUMMARY_HANDOFF_KIND,
+} from "../../../lib/missions/types";
+import { isExecutableMissionKind } from "../../../lib/chief/workTruth";
 import type {
   ApprovalProposal,
   ChiefResponse,
@@ -58,14 +69,34 @@ export function buildHistoryEntry(
   };
 }
 
+/**
+ * Enqueues only executable Research missions. Non-executable approvalNeeded
+ * flags are ignored (guarded upstream; this is a hard backstop).
+ */
 export function buildApprovalFromResponse(
   command: string,
   response: ChiefResponse,
 ): ApprovalProposal | null {
   if (!response.approvalNeeded) return null;
+  if (response.workTruth === "stub" || response.workTruth === "informational") {
+    return null;
+  }
+
+  const missionKind = response.missionKind;
+  const missionProjectId = response.missionProjectId;
+  if (!isExecutableMissionKind(missionKind) || !missionProjectId) {
+    return null;
+  }
+
+  let id = stableChiefId("apr-cmd", `${command}|${response.approvalTitle ?? ""}`);
+  if (missionKind === RESEARCH_MONITOR_INCIDENT_POSTMORTEM_KIND) {
+    id = stableChiefId("apr-research-incident", missionProjectId);
+  } else if (missionKind === RESEARCH_PROJECT_SUMMARY_HANDOFF_KIND) {
+    id = stableChiefId("apr-research-psh", missionProjectId);
+  }
 
   return {
-    id: stableChiefId("apr-cmd", `${command}|${response.approvalTitle ?? ""}`),
+    id,
     title: response.approvalTitle ?? `Approval: ${command.slice(0, 48)}`,
     summary: response.summary,
     recommendedAction: response.recommendedAction,
@@ -76,5 +107,9 @@ export function buildApprovalFromResponse(
       response.routedTo !== "Chief"
         ? response.routedTo
         : response.specialists?.[0]?.specialist,
+    missionKind,
+    missionProjectId,
+    source: "research_agent",
+    workTruth: "executable",
   };
 }

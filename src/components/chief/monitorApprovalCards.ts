@@ -76,6 +76,7 @@ export function deriveMonitorApprovalCards(input: {
       source: "ops_change",
       recommendedDecision: "hold",
       checklist,
+      workTruth: "grounded",
       routeTo: CHIEF_ROUTES.monitor,
       routeLabel: "Monitor",
     },

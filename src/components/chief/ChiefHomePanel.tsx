@@ -2,11 +2,9 @@ import { FormEvent, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Panel } from "@/components/ui";
 import { useData } from "@/context/DataContext";
-import { buildApprovalFromResponse, buildHistoryEntry } from "./chiefMock";
 import {
   deriveChiefBoardItems,
   deriveResearchAgentWorkItems,
-  resolveChiefCommand,
 } from "./chiefLiveContext";
 import { CHIEF_ROUTES } from "./chiefRoutes";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
@@ -17,7 +15,12 @@ import { ChiefSituationBrief } from "./ChiefSituationBrief";
 import { ChiefOperationalStatusPanel } from "./ChiefOperationalStatusPanel";
 import { ChiefDailyTurnoverPanel } from "./ChiefDailyTurnoverPanel";
 import { AgentStatusStrip } from "./AgentStatusStrip";
+import { submitChiefCommand } from "./submitChiefCommand";
 import type { AgentWorkItem, ApprovalProposal, ChiefBoardItem, ChiefResponse } from "./types";
+import {
+  APPROVAL_WORK_TRUTH_BADGE,
+  APPROVAL_WORK_TRUTH_LABEL,
+} from "./chiefApproval";
 
 const SNAPSHOT_LIMIT = 4;
 
@@ -104,6 +107,10 @@ export function ChiefHomePanel() {
     () => approvals.filter((proposal) => proposal.status === "pending"),
     [approvals],
   );
+  const pendingExecutable = useMemo(
+    () => pendingApprovals.filter((proposal) => proposal.workTruth === "executable"),
+    [pendingApprovals],
+  );
 
   const boardItems = useMemo(
     () => deriveChiefBoardItems(liveContext, approvals),
@@ -151,26 +158,32 @@ export function ChiefHomePanel() {
 
   const [command, setCommand] = useState("");
   const [response, setResponse] = useState<ChiefResponse | null>(null);
+  const [commandError, setCommandError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleSubmit = (event: FormEvent) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     const trimmed = command.trim();
     if (!trimmed || isProcessing) return;
 
     setIsProcessing(true);
-    window.setTimeout(() => {
-      const result = resolveChiefCommand(trimmed, data, liveContext, approvals);
-      setResponse(result);
-      addHistoryEntry(buildHistoryEntry(trimmed, result));
+    setCommandError(null);
 
-      const newApproval = buildApprovalFromResponse(trimmed, result);
-      if (newApproval) {
-        addCommandApproval(newApproval);
-      }
+    const result = await submitChiefCommand({
+      prompt: trimmed,
+      source: "home",
+      data,
+      liveContext,
+      approvals,
+      addHistoryEntry,
+      addCommandApproval,
+      classify: true,
+      context: { page: "today", section: "chief-home" },
+    });
 
-      setIsProcessing(false);
-    }, 320);
+    setResponse(result.response);
+    setCommandError(result.error);
+    setIsProcessing(false);
   };
 
   return (
@@ -259,16 +272,32 @@ export function ChiefHomePanel() {
             </button>
           </div>
 
-          {response ? (
+          {commandError ? (
+            <div className="chief-home-response" role="alert">
+              <p className="chief-home-response-summary">Command failed: {commandError}</p>
+              <p className="chief-home-response-action">
+                Check live API settings, then retry.
+              </p>
+            </div>
+          ) : null}
+
+          {response && !commandError ? (
             <div className="chief-home-response" aria-live="polite">
+              {response.workTruth ? (
+                <p className="chief-home-response-truth">
+                  <span className={`badge ${APPROVAL_WORK_TRUTH_BADGE[response.workTruth]}`}>
+                    {APPROVAL_WORK_TRUTH_LABEL[response.workTruth]}
+                  </span>
+                </p>
+              ) : null}
               <p className="chief-home-response-summary">{response.summary}</p>
               <p className="chief-home-response-action">
                 <span className="chief-home-response-label">Recommended:</span>{" "}
                 {response.recommendedAction}
               </p>
-              {response.approvalNeeded ? (
+              {response.approvalNeeded && response.workTruth === "executable" ? (
                 <p className="chief-home-response-approval">
-                  Needs approval — filed to the Chief panel's Approvals tab for review.
+                  Executable mission queued — review and approve in the Chief Approvals tab.
                 </p>
               ) : null}
             </div>
@@ -281,15 +310,36 @@ export function ChiefHomePanel() {
               <h3 className="chief-home-snapshot-title">Needs approval</h3>
               <span className="chief-board-lane-count">{pendingApprovals.length}</span>
             </header>
+            {pendingExecutable.length > 0 ? (
+              <p className="chief-home-snapshot-note">
+                {pendingExecutable.length} executable mission
+                {pendingExecutable.length === 1 ? "" : "s"} ready to approve.
+              </p>
+            ) : null}
             {pendingApprovals.length === 0 ? (
               <p className="agent-work-lane-empty">No pending proposals — queue is clear.</p>
             ) : (
               <ul className="chief-board-list">
-                {pendingApprovals.slice(0, SNAPSHOT_LIMIT).map((proposal) => (
+                {[...pendingApprovals]
+                  .sort((a, b) => {
+                    const rank = (t: string | undefined) => (t === "executable" ? 0 : 1);
+                    return rank(a.workTruth) - rank(b.workTruth);
+                  })
+                  .slice(0, SNAPSHOT_LIMIT)
+                  .map((proposal) => (
                   <li key={proposal.id}>
-                    <div className="chief-board-card chief-board-card--critical">
+                    <div
+                      className={`chief-board-card chief-board-card--${
+                        proposal.workTruth === "executable" ? "critical" : "warn"
+                      }`}
+                    >
                       <div className="chief-board-card-header">
                         <span className="chief-board-card-title">{proposal.title}</span>
+                        {proposal.workTruth ? (
+                          <span className={`badge ${APPROVAL_WORK_TRUTH_BADGE[proposal.workTruth]}`}>
+                            {APPROVAL_WORK_TRUTH_LABEL[proposal.workTruth]}
+                          </span>
+                        ) : null}
                       </div>
                       <p className="chief-board-card-detail">{proposal.summary}</p>
                     </div>

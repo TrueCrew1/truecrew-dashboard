@@ -151,6 +151,7 @@ export function createApprovalCardFromBuildRequest(request: BuildApprovalRequest
 export function createApprovalCardFromResearchRequest(
   request: ResearchApprovalRequest,
 ): ApprovalCard {
+  const hasMission = Boolean(request.missionKind && request.missionProjectId);
   return {
     ...baseCardFields(
       request,
@@ -162,6 +163,7 @@ export function createApprovalCardFromResearchRequest(
     ),
     missionKind: request.missionKind,
     missionProjectId: request.missionProjectId,
+    workTruth: hasMission ? "executable" : "grounded",
   };
 }
 
@@ -241,9 +243,29 @@ export const EXAMPLE_CONTENT_REQUEST: ContentApprovalRequest = {
   createdAt: "2026-07-04T12:15:00.000Z",
 };
 
-export const AGENT_APPROVAL_CARDS: ApprovalCard[] = [
-  createApprovalCardFromPlannerRequest(EXAMPLE_PLANNER_REQUEST),
-  createApprovalCardFromBuildRequest(BUILD_REQUEST_DUPLICATE_AUTH_FIX),
-  createApprovalCardFromResearchRequest(EXAMPLE_RESEARCH_REQUEST),
-  createApprovalCardFromContentRequest(EXAMPLE_CONTENT_REQUEST),
+/**
+ * Illustrative / historical seed cards only.
+ * Not loaded into the operator approval queue unless
+ * VITE_SHOW_CHIEF_STUB_APPROVALS=true (see lib/chief/workTruth.ts).
+ */
+export const STUB_AGENT_APPROVAL_CARDS: ApprovalCard[] = [
+  {
+    ...createApprovalCardFromPlannerRequest(EXAMPLE_PLANNER_REQUEST),
+    workTruth: "stub",
+  },
+  {
+    ...createApprovalCardFromBuildRequest(BUILD_REQUEST_DUPLICATE_AUTH_FIX),
+    workTruth: "stub",
+  },
+  {
+    ...createApprovalCardFromResearchRequest(EXAMPLE_RESEARCH_REQUEST),
+    workTruth: "stub",
+  },
+  {
+    ...createApprovalCardFromContentRequest(EXAMPLE_CONTENT_REQUEST),
+    workTruth: "stub",
+  },
 ];
+
+/** @deprecated Use STUB_AGENT_APPROVAL_CARDS — kept for test imports that still reference the old name. */
+export const AGENT_APPROVAL_CARDS: ApprovalCard[] = STUB_AGENT_APPROVAL_CARDS;

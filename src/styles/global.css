@@ -188,33 +188,9 @@
   flex-shrink: 0;
 }
 
-.topbar-search {
+.topbar-brand-slot {
   flex: 1;
-  max-width: 420px;
-  position: relative;
-}
-
-.topbar-search input {
-  width: 100%;
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 7px 12px 7px 32px;
-  color: var(--text);
-  outline: none;
-}
-
-.topbar-search input:focus {
-  border-color: var(--orange-border);
-}
-
-.topbar-search-icon {
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--steel-dim);
-  font-size: 12px;
+  min-width: 0;
 }
 
 .topbar-actions {

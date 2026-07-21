@@ -15,10 +15,8 @@ import {
   isLiveApiEnabled,
   recordChiefApprovalDecision,
 } from "@/lib/api/client";
-import { AGENT_APPROVAL_CARDS } from "./agentApprovalGates";
 import { chiefLog } from "./chiefLog";
-import { MOCK_PR_APPROVAL_CARDS } from "./chiefApprovalCardMocks";
-import { REPO_CHANGE_APPROVAL_CARDS } from "./repoChangeApprovals";
+import { getChiefOperatorSeedApprovals } from "./chiefApprovalSeeds";
 import { APPROVAL_ACTION_DELAY_MS, approvalActionToStatus } from "./chiefApproval";
 import {
   buildChiefLiveContext,
@@ -34,6 +32,7 @@ import {
   notifyGovernedApprovalCreated,
   notifyGovernedMonitorState,
 } from "@/lib/api/governedSlackNotify";
+import { isOperatorVisibleWorkTruth } from "../../../lib/chief/workTruth";
 import type { ApprovalActivityRecord } from "../../../lib/approvals/types";
 import { buildApprovalActivityRecord } from "../../../lib/approvals/approvalActivity";
 import type {
@@ -81,17 +80,12 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
     [data, liveContext],
   );
 
-  // Seeded with demo PR cards (chiefApprovalCardMocks.ts), the one real
-  // wired source (pending local repo changes, repoChangeApprovals.ts), and
-  // one example request per agent (agentApprovalGates.ts) — so every
-  // approval, from any source or surface, routes through this one shared
-  // queue. See agentApprovalGates.ts's header and docs/AGENT_WORKFLOW.md
-  // for the single-queue rule this preserves.
-  const [commandApprovals, setCommandApprovals] = useState<ApprovalProposal[]>([
-    ...MOCK_PR_APPROVAL_CARDS,
-    ...REPO_CHANGE_APPROVAL_CARDS,
-    ...AGENT_APPROVAL_CARDS,
-  ]);
+  // Operator path: no mock/demo seed. Real cards come from live derive,
+  // monitor probes, and executable command intents. Stubs only when
+  // VITE_SHOW_CHIEF_STUB_APPROVALS=true (see chiefApprovalSeeds.ts).
+  const [commandApprovals, setCommandApprovals] = useState<ApprovalProposal[]>(() =>
+    getChiefOperatorSeedApprovals(),
+  );
   const [approvalDecisions, setApprovalDecisions] = useState<Record<string, ApprovalDecision>>({});
   const [history, setHistory] = useState<CommandHistoryEntry[]>([]);
   const [sessionApprovalActivity, setSessionApprovalActivity] = useState<ApprovalActivityRecord[]>(
@@ -227,16 +221,24 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
       commandApprovals,
       monitorApprovals,
     );
-    return merged.map((proposal) => {
-      const decision = approvalDecisions[proposal.id];
-      if (!decision) return proposal;
-      return {
-        ...proposal,
-        status: decision.status,
-        decidedAt: decision.decidedAt,
-        decidedBy: decision.actor ?? undefined,
-      };
-    });
+    return merged
+      .map((proposal) => {
+        const decision = approvalDecisions[proposal.id];
+        const withTruth: ApprovalProposal = {
+          ...proposal,
+          workTruth:
+            proposal.workTruth ??
+            (proposal.missionKind && proposal.missionProjectId ? "executable" : "grounded"),
+        };
+        if (!decision) return withTruth;
+        return {
+          ...withTruth,
+          status: decision.status,
+          decidedAt: decision.decidedAt,
+          decidedBy: decision.actor ?? undefined,
+        };
+      })
+      .filter((proposal) => isOperatorVisibleWorkTruth(proposal.workTruth));
   }, [derivedApprovals, commandApprovals, monitorApprovals, approvalDecisions]);
 
   const pendingApprovalCount = useMemo(
