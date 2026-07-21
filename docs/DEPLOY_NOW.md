@@ -26,7 +26,14 @@ PR #3 is merged to `main`. Complete these steps once — then every push to `mai
 | `VITE_SUPABASE_URL` | Same as SUPABASE_URL |
 | `VITE_SUPABASE_ANON_KEY` | From Step 1 |
 | `VITE_USE_LIVE_API` | `true` |
+| `INTERNAL_API_SECRET` | Generate: `openssl rand -hex 32` |
+| `VITE_INTERNAL_KEY` | Same value as `INTERNAL_API_SECRET` |
 | `GITHUB_WEBHOOK_SECRET` | Generate: `openssl rand -hex 32` |
+| `SLACK_WEBHOOK_URL` | Optional — outbound governed notify / turnover |
+| `VERCEL_API_TOKEN` | Optional — Monitor deploy probe (`/api/monitor?target=vercel`) |
+| `VERCEL_PROJECT_ID` | Optional — pairs with `VERCEL_API_TOKEN` (app runtime) |
+
+> **Naming note:** App Monitor uses `VERCEL_API_TOKEN` + `VERCEL_PROJECT_ID`. GitHub Actions deploy (Step 3) uses a different token name: `VERCEL_TOKEN` + `VERCEL_ORG_ID` + `VERCEL_PROJECT_ID`. Do not set `OBSIDIAN_VAULT_PATH` on Vercel (local-only).
 
 4. Deploy → copy your production URL (e.g. `https://truecrew-dashboard.vercel.app`)
 
