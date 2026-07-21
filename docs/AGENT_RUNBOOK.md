@@ -539,6 +539,10 @@ and no new runtime agent code. External-system writes remain gated, not
 linked, until a future phase adds its own explicit policy and verification
 pass — see Change Control below.
 
+Chief voice and AI fallback runtime behavior is specified in the draft
+#121/#122/#123 stack but not yet merged; this runbook describes current
+behavior on `main`.
+
 ---
 
 ## Incidents, Pauses, and Escalation
