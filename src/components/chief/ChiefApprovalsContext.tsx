@@ -87,8 +87,13 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
   // approval, from any source or surface, routes through this one shared
   // queue. See agentApprovalGates.ts's header and docs/AGENT_WORKFLOW.md
   // for the single-queue rule this preserves.
+  //
+  // MOCK_PR_APPROVAL_CARDS is demo-only data proving the PR-approval-card
+  // pattern, not live GitHub data — it's dropped once live mode is on
+  // (VITE_USE_LIVE_API=true) so production doesn't show two
+  // permanently-pending demo PR cards (PR #62/#63) alongside real approvals.
   const [commandApprovals, setCommandApprovals] = useState<ApprovalProposal[]>([
-    ...MOCK_PR_APPROVAL_CARDS,
+    ...(isLiveApiEnabled() ? [] : MOCK_PR_APPROVAL_CARDS),
     ...REPO_CHANGE_APPROVAL_CARDS,
     ...AGENT_APPROVAL_CARDS,
   ]);
