@@ -2,11 +2,9 @@ import { FormEvent, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Panel } from "@/components/ui";
 import { useData } from "@/context/DataContext";
-import { buildApprovalFromResponse, buildHistoryEntry } from "./chiefMock";
 import {
   deriveChiefBoardItems,
   deriveResearchAgentWorkItems,
-  resolveChiefCommand,
 } from "./chiefLiveContext";
 import { CHIEF_ROUTES } from "./chiefRoutes";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
@@ -17,6 +15,7 @@ import { ChiefSituationBrief } from "./ChiefSituationBrief";
 import { ChiefOperationalStatusPanel } from "./ChiefOperationalStatusPanel";
 import { ChiefDailyTurnoverPanel } from "./ChiefDailyTurnoverPanel";
 import { AgentStatusStrip } from "./AgentStatusStrip";
+import { submitChiefCommand } from "./submitChiefCommand";
 import type { AgentWorkItem, ApprovalProposal, ChiefBoardItem, ChiefResponse } from "./types";
 
 const SNAPSHOT_LIMIT = 4;
@@ -151,26 +150,32 @@ export function ChiefHomePanel() {
 
   const [command, setCommand] = useState("");
   const [response, setResponse] = useState<ChiefResponse | null>(null);
+  const [commandError, setCommandError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleSubmit = (event: FormEvent) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     const trimmed = command.trim();
     if (!trimmed || isProcessing) return;
 
     setIsProcessing(true);
-    window.setTimeout(() => {
-      const result = resolveChiefCommand(trimmed, data, liveContext, approvals);
-      setResponse(result);
-      addHistoryEntry(buildHistoryEntry(trimmed, result));
+    setCommandError(null);
 
-      const newApproval = buildApprovalFromResponse(trimmed, result);
-      if (newApproval) {
-        addCommandApproval(newApproval);
-      }
+    const result = await submitChiefCommand({
+      prompt: trimmed,
+      source: "home",
+      data,
+      liveContext,
+      approvals,
+      addHistoryEntry,
+      addCommandApproval,
+      classify: true,
+      context: { page: "today", section: "chief-home" },
+    });
 
-      setIsProcessing(false);
-    }, 320);
+    setResponse(result.response);
+    setCommandError(result.error);
+    setIsProcessing(false);
   };
 
   return (
@@ -259,7 +264,16 @@ export function ChiefHomePanel() {
             </button>
           </div>
 
-          {response ? (
+          {commandError ? (
+            <div className="chief-home-response" role="alert">
+              <p className="chief-home-response-summary">Command failed: {commandError}</p>
+              <p className="chief-home-response-action">
+                Check live API settings, then retry.
+              </p>
+            </div>
+          ) : null}
+
+          {response && !commandError ? (
             <div className="chief-home-response" aria-live="polite">
               <p className="chief-home-response-summary">{response.summary}</p>
               <p className="chief-home-response-action">

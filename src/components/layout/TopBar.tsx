@@ -6,6 +6,10 @@ interface TopBarProps {
   railAvailable?: boolean;
 }
 
+/**
+ * Top bar actions only. Global “search” was removed — it was an uncontrolled
+ * dead input. Command intake lives on Chief (Today Ask Chief + sidebar Command).
+ */
 export function TopBar({ onToggleRail, railOpen, railAvailable = true }: TopBarProps) {
   const { data, source } = useData();
   const alertCount = data.alerts.length;
@@ -13,14 +17,7 @@ export function TopBar({ onToggleRail, railOpen, railAvailable = true }: TopBarP
 
   return (
     <header className="topbar">
-      <div className="topbar-search">
-        <span className="topbar-search-icon">⌕</span>
-        <input
-          type="search"
-          placeholder="Search tasks, services, customers, notes…"
-          aria-label="Global search"
-        />
-      </div>
+      <div className="topbar-brand-slot" aria-hidden="true" />
 
       <div className="topbar-actions">
         {source !== "mock" ? (
