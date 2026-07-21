@@ -24,6 +24,8 @@ import {
   APPROVAL_STATUS_BADGE,
   APPROVAL_STATUS_LABEL,
   APPROVAL_STATUS_ORDER,
+  APPROVAL_WORK_TRUTH_BADGE,
+  APPROVAL_WORK_TRUTH_LABEL,
   type ApprovalActionState,
 } from "./chiefApproval";
 import {
@@ -87,6 +89,10 @@ export function ApprovalBoard({
   const sortedProposals = useMemo(
     () =>
       [...filteredProposals].sort((a, b) => {
+        const truthRank = (truth: string | undefined) =>
+          truth === "executable" ? 0 : truth === "grounded" ? 1 : 2;
+        const truthDiff = truthRank(a.workTruth) - truthRank(b.workTruth);
+        if (truthDiff !== 0) return truthDiff;
         const statusDiff = APPROVAL_STATUS_ORDER[a.status] - APPROVAL_STATUS_ORDER[b.status];
         if (statusDiff !== 0) return statusDiff;
         // Pending: stale-first, so the longest-waiting proposals surface at
@@ -97,6 +103,15 @@ export function ApprovalBoard({
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       }),
     [filteredProposals],
+  );
+
+  const executableProposals = useMemo(
+    () => sortedProposals.filter((p) => p.workTruth === "executable"),
+    [sortedProposals],
+  );
+  const groundedProposals = useMemo(
+    () => sortedProposals.filter((p) => p.workTruth !== "executable"),
+    [sortedProposals],
   );
 
   // The single most urgent open item: first pending entry in the already
@@ -234,7 +249,7 @@ export function ApprovalBoard({
       {proposals.length === 0 ? (
         <ApprovalSurfaceEmpty
           lead="No proposals"
-          description="Chief will surface actions here when your approval is required."
+          description="Only real escalations and executable missions appear here — ask Chief to propose a postmortem or handoff when you need Research work."
         />
       ) : sortedProposals.length === 0 && statusFilter !== "all" ? (
         <div className="chief-approval-filter-empty">
@@ -270,7 +285,12 @@ export function ApprovalBoard({
           ) : null}
 
           <div className="chief-approval-list">
-            {sortedProposals.map((proposal) => {
+            {executableProposals.length > 0 ? (
+              <p className="chief-approval-lane-label">
+                Executable work · {executableProposals.length}
+              </p>
+            ) : null}
+            {executableProposals.map((proposal) => {
               const urgencyBadge = getApprovalUrgencyBadge(proposal);
               const isFocused = focusProposalId === proposal.id;
               const isTopPriority = proposal.id === topPriorityProposalId;
@@ -300,6 +320,7 @@ export function ApprovalBoard({
                   variant="card"
                 />
               );
+              const workTruth = proposal.workTruth ?? "executable";
 
               return (
                 <article
@@ -321,45 +342,49 @@ export function ApprovalBoard({
                     </span>
                   </div>
 
-                  {proposal.source || proposal.recommendedDecision || urgencyBadge || isTopPriority ? (
-                    <div className="chief-approval-card-tags">
-                      {isTopPriority ? (
-                        <button
-                          type="button"
-                          className="badge badge-orange chief-approval-badge--top-priority chief-approval-badge--clickable"
-                          title="Chief's #1 pick — the longest-waiting pending approval. Click to jump to its decision."
-                          onClick={handleJumpToTopPriorityDecision}
-                        >
-                          Top priority
-                        </button>
-                      ) : null}
-                      {urgencyBadge ? (
-                        <span
-                          className={`badge ${urgencyBadge.badgeClass}`}
-                          title={
-                            urgencyBadge.escalate
-                              ? `Pending ${OVERDUE_HOURS}h+ — consider escalating to the operator.`
-                              : `Pending since ${formatChiefTimestamp(proposal.createdAt)}.`
-                          }
-                        >
-                          {urgencyBadge.label}
-                        </span>
-                      ) : null}
-                      {proposal.source ? (
-                        <span className={`badge ${APPROVAL_SOURCE_BADGE[proposal.source]}`}>
-                          {APPROVAL_SOURCE_LABEL[proposal.source]}
-                        </span>
-                      ) : null}
-                      {proposal.recommendedDecision ? (
-                        <span
-                          className={`badge ${APPROVAL_RECOMMENDED_DECISION_BADGE[proposal.recommendedDecision]} chief-approval-badge--recommendation`}
-                          title="Chief's suggested call — the operator's decision below is what actually counts."
-                        >
-                          {APPROVAL_RECOMMENDED_DECISION_LABEL[proposal.recommendedDecision]}
-                        </span>
-                      ) : null}
-                    </div>
-                  ) : null}
+                  <div className="chief-approval-card-tags">
+                    <span
+                      className={`badge ${APPROVAL_WORK_TRUTH_BADGE[workTruth]}`}
+                      title="Approve launches a real Research mission."
+                    >
+                      {APPROVAL_WORK_TRUTH_LABEL[workTruth]}
+                    </span>
+                    {isTopPriority ? (
+                      <button
+                        type="button"
+                        className="badge badge-orange chief-approval-badge--top-priority chief-approval-badge--clickable"
+                        title="Chief's #1 pick — the longest-waiting pending approval. Click to jump to its decision."
+                        onClick={handleJumpToTopPriorityDecision}
+                      >
+                        Top priority
+                      </button>
+                    ) : null}
+                    {urgencyBadge ? (
+                      <span
+                        className={`badge ${urgencyBadge.badgeClass}`}
+                        title={
+                          urgencyBadge.escalate
+                            ? `Pending ${OVERDUE_HOURS}h+ — consider escalating to the operator.`
+                            : `Pending since ${formatChiefTimestamp(proposal.createdAt)}.`
+                        }
+                      >
+                        {urgencyBadge.label}
+                      </span>
+                    ) : null}
+                    {proposal.source ? (
+                      <span className={`badge ${APPROVAL_SOURCE_BADGE[proposal.source]}`}>
+                        {APPROVAL_SOURCE_LABEL[proposal.source]}
+                      </span>
+                    ) : null}
+                    {proposal.recommendedDecision ? (
+                      <span
+                        className={`badge ${APPROVAL_RECOMMENDED_DECISION_BADGE[proposal.recommendedDecision]} chief-approval-badge--recommendation`}
+                        title="Chief's suggested call — the operator's decision below is what actually counts."
+                      >
+                        {APPROVAL_RECOMMENDED_DECISION_LABEL[proposal.recommendedDecision]}
+                      </span>
+                    ) : null}
+                  </div>
 
                   <p className="chief-approval-card-summary">{proposal.summary}</p>
 
@@ -396,10 +421,182 @@ export function ApprovalBoard({
                     <BuildTestSuggestionHelper proposal={proposal} />
                   </div>
 
-                  <div
-                    className="tc-approval-footer"
-                    style={approvalFooterStyle}
-                  >
+                  <div className="tc-approval-footer" style={approvalFooterStyle}>
+                    <footer
+                      className={`chief-approval-card-footer${proposal.specialist ? "" : " chief-approval-card-footer--solo"}`}
+                    >
+                      {proposal.specialist ? (
+                        <span className="chief-approval-card-meta">
+                          <span className="chief-approval-card-meta-label">Via</span>
+                          <span className="chief-approval-card-meta-value">{proposal.specialist}</span>
+                        </span>
+                      ) : null}
+                      <time className="chief-approval-card-time" dateTime={proposal.createdAt}>
+                        {formatChiefTimestamp(proposal.createdAt)}
+                      </time>
+                    </footer>
+                  </div>
+
+                  {proposal.status === "pending" ? (
+                    <div
+                      id={`approval-decision-${proposal.id}`}
+                      className="chief-approval-decision-zone"
+                    >
+                      <span className="chief-approval-decision-label">Decision required</span>
+                      {actionsNode}
+                    </div>
+                  ) : (
+                    actionsNode
+                  )}
+
+                  <ChiefEvidenceTrailSection
+                    proposal={proposal}
+                    liveApiEnabled={liveApiEnabled}
+                    mission={missionsByProposalId?.get(proposal.id) ?? null}
+                    actionState={actionState}
+                    activityRecords={approvalActivityRecords}
+                  />
+                </article>
+              );
+            })}
+
+            {groundedProposals.length > 0 ? (
+              <p className="chief-approval-lane-label">
+                Needs judgment · no auto-run · {groundedProposals.length}
+              </p>
+            ) : null}
+            {groundedProposals.map((proposal) => {
+              const urgencyBadge = getApprovalUrgencyBadge(proposal);
+              const isFocused = focusProposalId === proposal.id;
+              const isTopPriority = proposal.id === topPriorityProposalId;
+              const actionState = approvalActionStates[proposal.id];
+              const executionFeedback = deriveApprovalExecutionFeedback({
+                proposal,
+                liveApiEnabled,
+                mission: missionsByProposalId?.get(proposal.id) ?? null,
+                launchError: launchErrorFromApprovalActionMessage(
+                  actionState?.message,
+                  actionState?.action,
+                ),
+                isLaunching: actionState?.phase === "loading" && actionState.action === "approved",
+              });
+              const resultLinks = deriveApprovalResultLinks({
+                mission: missionsByProposalId?.get(proposal.id) ?? null,
+                missionKind: proposal.missionKind,
+                liveApiEnabled,
+              });
+              const actionsNode = (
+                <ChiefApprovalActions
+                  proposal={proposal}
+                  actionState={actionState}
+                  executionFeedback={executionFeedback}
+                  resultLinks={resultLinks}
+                  onAction={onApprovalAction}
+                  variant="card"
+                />
+              );
+              const workTruth = proposal.workTruth ?? "grounded";
+
+              return (
+                <article
+                  key={proposal.id}
+                  id={`approval-proposal-${proposal.id}`}
+                  className={[
+                    "chief-approval-card",
+                    `chief-approval-card--${proposal.status}`,
+                    urgencyBadge?.urgency === "overdue" ? "chief-approval-card--overdue" : "",
+                    isFocused ? "chief-approval-card--focused" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
+                  <div className="chief-approval-card-header">
+                    <h3 className="chief-approval-card-title">{proposal.title}</h3>
+                    <span className={`badge ${APPROVAL_STATUS_BADGE[proposal.status]}`}>
+                      {APPROVAL_STATUS_LABEL[proposal.status]}
+                    </span>
+                  </div>
+
+                  <div className="chief-approval-card-tags">
+                    <span
+                      className={`badge ${APPROVAL_WORK_TRUTH_BADGE[workTruth]}`}
+                      title="Grounded in live state, but approve does not launch a mission yet."
+                    >
+                      {APPROVAL_WORK_TRUTH_LABEL[workTruth]}
+                    </span>
+                    {isTopPriority ? (
+                      <button
+                        type="button"
+                        className="badge badge-orange chief-approval-badge--top-priority chief-approval-badge--clickable"
+                        title="Chief's #1 pick — the longest-waiting pending approval. Click to jump to its decision."
+                        onClick={handleJumpToTopPriorityDecision}
+                      >
+                        Top priority
+                      </button>
+                    ) : null}
+                    {urgencyBadge ? (
+                      <span
+                        className={`badge ${urgencyBadge.badgeClass}`}
+                        title={
+                          urgencyBadge.escalate
+                            ? `Pending ${OVERDUE_HOURS}h+ — consider escalating to the operator.`
+                            : `Pending since ${formatChiefTimestamp(proposal.createdAt)}.`
+                        }
+                      >
+                        {urgencyBadge.label}
+                      </span>
+                    ) : null}
+                    {proposal.source ? (
+                      <span className={`badge ${APPROVAL_SOURCE_BADGE[proposal.source]}`}>
+                        {APPROVAL_SOURCE_LABEL[proposal.source]}
+                      </span>
+                    ) : null}
+                    {proposal.recommendedDecision ? (
+                      <span
+                        className={`badge ${APPROVAL_RECOMMENDED_DECISION_BADGE[proposal.recommendedDecision]} chief-approval-badge--recommendation`}
+                        title="Chief's suggested call — the operator's decision below is what actually counts."
+                      >
+                        {APPROVAL_RECOMMENDED_DECISION_LABEL[proposal.recommendedDecision]}
+                      </span>
+                    ) : null}
+                  </div>
+
+                  <p className="chief-approval-card-summary">{proposal.summary}</p>
+
+                  <div className="chief-approval-card-details">
+                    <div className="chief-approval-card-field">
+                      <span className="chief-approval-card-label">Recommended</span>
+                      <p className="chief-approval-card-value">{proposal.recommendedAction}</p>
+                    </div>
+
+                    <div className="chief-approval-card-field chief-approval-card-field--risk">
+                      <span className="chief-approval-card-label">Risk / impact</span>
+                      <p className="chief-approval-card-value">{proposal.riskNote}</p>
+                    </div>
+
+                    {proposal.checklist && proposal.checklist.length > 0 ? (
+                      <div className="chief-approval-card-field">
+                        <span className="chief-approval-card-label">Checklist</span>
+                        <ul className="chief-approval-checklist">
+                          {proposal.checklist.map((item) => (
+                            <li
+                              key={item.label}
+                              className={`chief-approval-checklist-item chief-approval-checklist-item--${item.status}`}
+                            >
+                              <span aria-hidden="true">
+                                {APPROVAL_CHECKLIST_STATUS_ICON[item.status]}
+                              </span>
+                              {item.label}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+
+                    <BuildTestSuggestionHelper proposal={proposal} />
+                  </div>
+
+                  <div className="tc-approval-footer" style={approvalFooterStyle}>
                     <footer
                       className={`chief-approval-card-footer${proposal.specialist ? "" : " chief-approval-card-footer--solo"}`}
                     >

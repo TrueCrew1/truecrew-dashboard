@@ -48,6 +48,7 @@ function toChiefResponse(result: {
   resolution?: ChiefResponse["resolution"];
   missionKind?: string;
   missionProjectId?: string;
+  workTruth?: ChiefResponse["workTruth"];
 }): ChiefResponse {
   return {
     summary: result.summary,
@@ -63,6 +64,7 @@ function toChiefResponse(result: {
     resolution: result.resolution,
     missionKind: result.missionKind,
     missionProjectId: result.missionProjectId,
+    workTruth: result.workTruth,
   };
 }
 

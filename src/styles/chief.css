@@ -1556,6 +1556,14 @@ button.chief-brief-metric {
   margin-bottom: 10px;
 }
 
+.chief-approval-lane-label {
+  margin: 12px 0 6px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+}
+
 .chief-approval-checklist {
   display: flex;
   flex-direction: column;

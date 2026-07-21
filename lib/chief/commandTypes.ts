@@ -109,6 +109,11 @@ export interface ChiefCommandResult {
   /** When set, approve → existing Research mission runners. */
   missionKind?: string;
   missionProjectId?: string;
+  /**
+   * Truth label for operator honesty.
+   * executable | grounded | informational | stub
+   */
+  workTruth?: import("./workTruth.js").ChiefWorkTruth;
 }
 
 export type WorkflowForCommand = Pick<

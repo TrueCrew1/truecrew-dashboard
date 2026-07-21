@@ -71,14 +71,17 @@ Demo mode (`VITE_USE_LIVE_API` not true): client runs local deterministic resolv
 
 | Intent | Behavior |
 |--------|----------|
-| Risk/status, blockers, approvals list, missing context, incidents, alerts, knowledge search | Deterministic Q&A; some may enqueue **propose-only** approvals (no `missionKind`) |
-| “Propose a postmortem…” / research+incident wording | Approval with `missionKind: research:monitor-incident-postmortem` + incident id → **approve runs existing postmortem mission** |
-| “Propose a project summary handoff…” | Approval with `missionKind: research:project-summary-handoff` + workflow id → **approve runs existing handoff mission** |
-| Unmatched free text | AI fallback when live API + Azure configured; otherwise unavailable message |
+| Risk/status, blockers, approvals list, missing context, incidents, alerts, knowledge search | Deterministic **informational** Q&A — does **not** enqueue approvals |
+| “Propose a postmortem…” / research+incident wording | **Executable** — `missionKind: research:monitor-incident-postmortem` → approve runs postmortem mission |
+| “Propose a project summary handoff…” | **Executable** — `missionKind: research:project-summary-handoff` → approve runs handoff mission |
+| Unmatched free text | AI fallback when live API + Azure configured; otherwise unavailable message (informational) |
 
-This is **not** a full AI OS. It is a wired command surface: one submit path, real endpoint, rules first, AI second, and two Research mission intents on the existing approve → execute path.
+See `docs/CHIEF_WORK_TRUTH.md` for operator-path stub gating and grounded vs executable cards.
+
+This is **not** a full AI OS. It is a wired command surface: one submit path, real endpoint, rules first, AI second, and Research mission intents on the existing approve → execute path.
 
 ## Env
 
 - Client live calls: `VITE_USE_LIVE_API=true`, `VITE_INTERNAL_KEY` (matches server `INTERNAL_API_SECRET`)
 - AI fallback: `AZURE_OPENAI_API_KEY`, `AZURE_AI_RESOURCE_ENDPOINT` (or `AZURE_OPENAI_ENDPOINT`)
+- Stub/demo approvals: `VITE_SHOW_CHIEF_STUB_APPROVALS=true` (default off)

@@ -1,7 +1,6 @@
 import type { MockData } from "@/data/mockData";
 import {
   WorkflowStage,
-  type AlertItem,
   type Artifact,
   type Incident,
   type IncidentSeverity,
@@ -21,11 +20,9 @@ import {
 import {
   NO_CUSTOMER_LINKED,
   resolveCustomerForTask,
-  resolveTaskContextFromTask,
 } from "../../../lib/task-context";
 import {
   CHIEF_ROUTES,
-  routeForEntityRef,
   routeForFocusItem,
   routeForTask,
   routeLabelForPath,
@@ -35,6 +32,7 @@ import { noteToArtifact } from "../../../lib/librarian/artifact";
 import { isObsidianFilingCandidate, workItemFromTask } from "../../../lib/librarian/workItem";
 import type { ChiefCommandResult } from "../../../lib/chief/commandTypes";
 import { resolveChiefCommand as resolveChiefCommandCore } from "../../../lib/chief/resolveCommand";
+import { stableChiefId } from "./chiefMock";
 import type {
   AgentWorkAgentName,
   AgentWorkItem,
@@ -184,58 +182,27 @@ function alertTitleFromProposal(proposal: ApprovalProposal): string | null {
   return match?.[1] ?? null;
 }
 
-function alertProposalFromItem(alert: AlertItem, coveredIds: Set<string>): ApprovalProposal | null {
-  const entityId = alert.entityRef?.id;
-  if (entityId && coveredIds.has(entityId)) return null;
-
-  const route = alert.entityRef
-    ? routeForEntityRef(alert.entityRef)
-    : alert.type === "inbox"
-      ? CHIEF_ROUTES.operations
-      : CHIEF_ROUTES.today;
-
-  const recommendedAction =
-    alert.type === "incident"
-      ? `Triage ${entityId ?? "incident"} and confirm repair workflow status.`
-      : alert.type === "gate_block"
-        ? `Review build gates blocking ${alert.entityRef?.label ?? "deploy"}.`
-        : alert.type === "waiting"
-          ? `Review onboarding checklist for ${alert.entityRef?.label ?? "customer"}.`
-          : alert.type === "deploy"
-            ? `Confirm deploy readiness for ${alert.entityRef?.label ?? "release"}.`
-            : `Review inbox item and propose next action.`;
-
-  return {
-    id: `apr-alert-${alert.id}`,
-    title: `Respond to alert: ${alert.title}`,
-    summary: alert.message,
-    recommendedAction,
-    riskNote: "Proposal only — operator confirms before any workflow change.",
-    status: "pending",
-    createdAt: alert.timestamp,
-    specialist: alert.type === "incident" ? "Research Agent" : "Workflow Gate Agent",
-    category: "alert_action",
-    ...proposalRoute(route),
-  };
-}
-
+/**
+ * Derives operator approval candidates from live ops state.
+ *
+ * Operator path rules (see docs/CHIEF_WORK_TRUTH.md):
+ * - Only escalate when a real decision is needed or a real mission can launch.
+ * - Executable: active Sev 1–2 incident without repair → Research postmortem mission.
+ * - Grounded: blocked build gates / held deploys (judgment needed; no auto-runner yet).
+ * - Does NOT invent customer-link / focus / overdue / onboarding / alert cards —
+ *   those stay on the Board as signals, not fake approvals.
+ */
 export function deriveApprovalCandidates(
   data: MockData,
   ctx: ChiefLiveContext,
 ): ApprovalProposal[] {
   const proposals: ApprovalProposal[] = [];
-  const coveredEntityIds = new Set<string>();
-  const contextData = { customers: data.customers, workflows: data.workflows };
-
-  const trackEntity = (id: string | undefined) => {
-    if (id) coveredEntityIds.add(id);
-  };
+  void data;
 
   for (const task of ctx.blockingTasks.filter((t) => t.workflowType === "build").slice(0, 2)) {
     const blockingGates = getBlockingGates(task.gates);
     if (blockingGates.length === 0 && !task.blocker) continue;
 
-    trackEntity(task.id);
     const route = CHIEF_ROUTES.builds;
     proposals.push({
       id: `apr-gate-${task.id}`,
@@ -244,145 +211,53 @@ export function deriveApprovalCandidates(
         blockingGates.length > 0
           ? `${task.title} has ${blockingGates.length} open required gate(s).`
           : `${task.title} is blocked: ${task.blocker}`,
-      recommendedAction: `Document reason and advance ${task.id} past open gates.`,
+      recommendedAction: `Document reason and advance ${task.id} past open gates in Builds (manual — no auto-override mission).`,
       riskNote: gateRiskNote(task),
       status: "pending",
       createdAt: new Date().toISOString(),
       specialist: "Workflow Gate Agent",
       category: "gate_override",
+      source: "ops_change",
+      workTruth: "grounded",
       ...proposalRoute(route),
     });
   }
 
   for (const incident of ctx.activeIncidents.filter((i) => !i.linkedRepairId).slice(0, 1)) {
-    trackEntity(incident.id);
     proposals.push({
-      id: `apr-repair-${incident.id}`,
-      title: `Open repair workflow for ${incident.serviceName}`,
-      summary: `Sev ${incident.severity} incident "${incident.title}" has no linked repair task.`,
-      recommendedAction: `Create repair workflow for ${incident.serviceName} and link to ${incident.id}.`,
-      riskNote: "Repair workflow may pause dependent build and deploy tasks.",
+      id: stableChiefId("apr-research-incident", incident.id),
+      title: `Monitor incident postmortem: ${incident.title}`,
+      summary: `Sev ${incident.severity} incident "${incident.title}" on ${incident.serviceName} has no linked repair — Research can draft a postmortem mission.`,
+      recommendedAction: `Approve to run research:monitor-incident-postmortem for ${incident.id}.`,
+      riskNote: "Executable — approve launches the existing Research postmortem runner.",
       status: "pending",
       createdAt: incident.openedAt,
       specialist: "Research Agent",
       category: "incident_repair",
+      source: "ops_change",
+      workTruth: "executable",
+      missionKind: "research:monitor-incident-postmortem",
+      missionProjectId: incident.id,
+      recommendedDecision: "hold",
       ...proposalRoute(CHIEF_ROUTES.monitor),
     });
   }
 
   for (const deploy of ctx.blockedDeploys.slice(0, 1)) {
-    trackEntity(deploy.id);
     proposals.push({
       id: `apr-deploy-${deploy.id}`,
       title: `Release ${deploy.serviceName} deploy hold`,
       summary: `${deploy.title} is planned but waiting on upstream build gates.`,
-      recommendedAction: `Confirm gate clearance or approve deploy hold override for ${deploy.id}.`,
+      recommendedAction: `Confirm gate clearance in Review, or document an override (manual — no auto-deploy mission).`,
       riskNote: "Deploying before gates pass may ship unverified changes.",
       status: "pending",
       createdAt: deploy.createdAt,
       specialist: "Workflow Gate Agent",
       category: "deploy_release",
+      source: "ops_change",
+      workTruth: "grounded",
       ...proposalRoute(CHIEF_ROUTES.review),
     });
-  }
-
-  for (const customer of ctx.waitingCustomers.slice(0, 1)) {
-    trackEntity(customer.id);
-    const openGates = customer.onboardingChecklist.filter(
-      (gate) => gate.required && !gate.passed,
-    );
-    proposals.push({
-      id: `apr-onboard-${customer.id}`,
-      title: `Unblock ${customer.name} onboarding`,
-      summary:
-        openGates.length > 0
-          ? `${customer.name} onboarding stalled — ${openGates.length} checklist gate(s) open.`
-          : `${customer.name} is in Waiting stage with an external dependency.`,
-      recommendedAction: `Review onboarding checklist for ${customer.name} and propose next action.`,
-      riskNote: "Low execution risk — proposal only until operator confirms.",
-      status: "pending",
-      createdAt: customer.updatedAt,
-      specialist: "Workflow Gate Agent",
-      category: "onboarding",
-      ...proposalRoute(CHIEF_ROUTES.customers),
-    });
-  }
-
-  for (const task of ctx.tasksMissingCustomer.slice(0, 1)) {
-    trackEntity(task.id);
-    const workOrder = resolveTaskContextFromTask(task, contextData);
-    const route = routeForTask(task);
-    proposals.push({
-      id: `apr-customer-${task.id}`,
-      title: `Link customer to ${task.id}`,
-      summary: `${task.title} (${task.workflowType}) has no confirmed customer link.`,
-      recommendedAction: `Attach a customer record to ${task.id} — work order: ${workOrder.workOrderName}.`,
-      riskNote: "Missing customer context can delay SLA tracking and billing attribution.",
-      status: "pending",
-      createdAt: task.updatedAt,
-      category: "customer_link",
-      ...proposalRoute(route),
-    });
-  }
-
-  for (const task of ctx.tasksMissingWorkflow.slice(0, 1)) {
-    trackEntity(task.id);
-    const route = routeForTask(task);
-    proposals.push({
-      id: `apr-workflow-${task.id}`,
-      title: `Attach workflow to ${task.id}`,
-      summary: `${task.title} (${task.workflowType}) is not linked to a workflow or work order.`,
-      recommendedAction: `Link ${task.id} to an active workflow for stage tracking and gate visibility.`,
-      riskNote: "Unlinked tasks may be invisible to gate scans and shift stats.",
-      status: "pending",
-      createdAt: task.updatedAt,
-      specialist: "Workflow Gate Agent",
-      category: "workflow_link",
-      ...proposalRoute(route),
-    });
-  }
-
-  const focusTaskIds = new Set(ctx.focusItems.map((item) => item.taskId));
-  for (const item of ctx.focusItems.slice(0, 2)) {
-    trackEntity(item.taskId);
-    const route = routeForFocusItem(item);
-    proposals.push({
-      id: `apr-focus-${item.id}`,
-      title: `Escalate: ${item.title}`,
-      summary: `Focus queue — ${item.reason}`,
-      recommendedAction: `Review ${item.taskId} and propose unblock or stage advance.`,
-      riskNote: "At-risk item may block downstream roadmap or deploy work.",
-      status: "pending",
-      createdAt: item.dueAt ?? new Date().toISOString(),
-      specialist: item.workflowType === "decision" ? "Roadmap Agent" : "Workflow Gate Agent",
-      category: "focus_escalation",
-      ...proposalRoute(route),
-    });
-  }
-
-  for (const task of ctx.overdueTasks.filter((t) => !focusTaskIds.has(t.id)).slice(0, 1)) {
-    trackEntity(task.id);
-    const route = CHIEF_ROUTES.operationsOverdue;
-    proposals.push({
-      id: `apr-overdue-${task.id}`,
-      title: `Review overdue ${task.id}`,
-      summary: `${task.title} is past due (${task.dueAt}).`,
-      recommendedAction: `Confirm priority, reassign, or advance ${task.id} to clear overdue backlog.`,
-      riskNote: "Overdue work may breach SLA or block dependent tasks.",
-      status: "pending",
-      createdAt: task.dueAt ?? task.updatedAt,
-      specialist: "Roadmap Agent",
-      category: "overdue_review",
-      ...proposalRoute(route),
-    });
-  }
-
-  for (const alert of ctx.alerts.slice(0, 2)) {
-    const alertProposal = alertProposalFromItem(alert, coveredEntityIds);
-    if (alertProposal) {
-      if (alert.entityRef?.id) trackEntity(alert.entityRef.id);
-      proposals.push(alertProposal);
-    }
   }
 
   return proposals;
@@ -1000,5 +875,6 @@ function mapCommandResultToChiefResponse(result: ChiefCommandResult): ChiefRespo
     resolution: result.resolution,
     missionKind: result.missionKind,
     missionProjectId: result.missionProjectId,
+    workTruth: result.workTruth,
   };
 }

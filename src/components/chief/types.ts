@@ -46,6 +46,9 @@ export interface ApprovalChecklistItem {
 
 export type ApprovalRecommendedDecision = "approve" | "hold" | "needs_changes";
 
+/** @see lib/chief/workTruth.ts — operator-facing honesty about approval cards. */
+export type ChiefWorkTruth = "executable" | "grounded" | "informational" | "stub";
+
 /**
  * Where a proposal originated. Populated today: "ops_change" (live
  * operational signals, via deriveApprovalCandidates), "pr" (see
@@ -90,6 +93,14 @@ export interface ApprovalProposal {
   /** Chief's suggested call, distinct from the operator's actual decision (`status`). */
   recommendedDecision?: ApprovalRecommendedDecision;
   source?: ApprovalSource;
+  /**
+   * Operator-facing truth label.
+   * - executable: approve launches a real mission
+   * - grounded: real state, judgment needed, no auto-run yet
+   * - informational: should not appear as an approval card
+   * - stub: demo/example — hidden from operator path unless explicitly enabled
+   */
+  workTruth?: ChiefWorkTruth;
 }
 
 /**
@@ -142,6 +153,8 @@ export interface ChiefResponse {
   /** When set, approve uses existing Research mission runners. */
   missionKind?: string;
   missionProjectId?: string;
+  /** Operator-facing truth: executable / grounded / informational / stub. */
+  workTruth?: ChiefWorkTruth;
 }
 
 /**

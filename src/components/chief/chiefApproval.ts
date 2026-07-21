@@ -1,5 +1,11 @@
 import type { Persona } from "@/types";
-import type { ApprovalAction, ApprovalRecommendedDecision, ApprovalSource, ApprovalStatus } from "./types";
+import type {
+  ApprovalAction,
+  ApprovalRecommendedDecision,
+  ApprovalSource,
+  ApprovalStatus,
+  ChiefWorkTruth,
+} from "./types";
 import { formatChiefTimestamp } from "./chiefMock";
 
 export type ApprovalActionPhase = "idle" | "loading" | "success" | "error";
@@ -67,6 +73,20 @@ export const APPROVAL_SOURCE_BADGE: Record<ApprovalSource, string> = {
   planner_agent: "badge-blue",
   research_agent: "badge-steel",
   content_agent: "badge-orange",
+};
+
+export const APPROVAL_WORK_TRUTH_LABEL: Record<ChiefWorkTruth, string> = {
+  executable: "Executable",
+  grounded: "Needs judgment",
+  informational: "Informational",
+  stub: "Stub / demo",
+};
+
+export const APPROVAL_WORK_TRUTH_BADGE: Record<ChiefWorkTruth, string> = {
+  executable: "badge-green",
+  grounded: "badge-yellow",
+  informational: "badge-steel",
+  stub: "badge-blue",
 };
 
 export const APPROVAL_CHECKLIST_STATUS_ICON: Record<"pass" | "fail" | "pending", string> = {

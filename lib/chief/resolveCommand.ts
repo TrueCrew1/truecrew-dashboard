@@ -26,10 +26,11 @@ const DEFAULT_RESPONSE: ChiefCommandResult = {
   summary:
     "Reviewed your request against current operational context. No immediate conflicts detected.",
   recommendedAction:
-    "Try a focused query: at-risk items, blockers, pending approvals, or missing customer context.",
+    "Try a focused query: at-risk items, blockers, pending approvals, or propose a postmortem/handoff.",
   routedTo: "Chief",
   matched: false,
   resolution: "deterministic",
+  workTruth: "informational",
 };
 
 function formatGateBlockers(task: Task): string[] {
@@ -161,23 +162,18 @@ function resolveBlocked(ctx: ChiefCommandLiveContext): ChiefCommandResult {
   }
 
   const primaryBuild = ctx.blockingTasks.find((task) => task.workflowType === "build");
-  const primaryGates = primaryBuild ? getBlockingGates(primaryBuild.gates) : [];
 
   return {
     summary: `${blockers.length} blocker(s) across tasks and deploys. Primary constraint: ${blockers[0]}`,
     blockers: blockers.slice(0, 6),
     recommendedAction: primaryBuild
-      ? `Resolve gates on ${primaryBuild.id} (${primaryBuild.title}) before advancing deploy or closeout.`
+      ? `Resolve gates on ${primaryBuild.id} (${primaryBuild.title}) in Builds — no auto-override mission exists yet.`
       : "Clear the listed external blockers before stage advancement.",
-    approvalNeeded: Boolean(primaryBuild && (primaryGates.length > 0 || primaryBuild.blocker)),
-    approvalTitle: primaryBuild ? `Override gates for ${primaryBuild.id}` : undefined,
-    approvalPrompt: primaryBuild
-      ? `Override open gates on ${primaryBuild.title} and continue anyway?`
-      : undefined,
     riskNote: primaryBuild ? gateRiskNote(primaryBuild) : undefined,
     routedTo: "Workflow Gate Agent",
     matched: true,
     resolution: "deterministic",
+    workTruth: "informational",
     specialists: [
       {
         specialist: "Workflow Gate Agent",
@@ -251,23 +247,11 @@ function resolveMissingContext(ctx: ChiefCommandLiveContext): ChiefCommandResult
       customerGaps.length > 0
         ? `Link a customer to ${ctx.tasksMissingCustomer[0].id} first — ${ctx.tasksMissingCustomer[0].title}.`
         : `Attach ${ctx.tasksMissingWorkflow[0].id} to a workflow for work-order tracking.`,
-    approvalNeeded: gaps.length > 0,
-    approvalTitle:
-      customerGaps.length > 0
-        ? `Link customer to ${ctx.tasksMissingCustomer[0].id}`
-        : workflowGaps.length > 0
-          ? `Attach workflow to ${ctx.tasksMissingWorkflow[0].id}`
-          : undefined,
-    approvalPrompt:
-      customerGaps.length > 0
-        ? `Propose customer link for ${ctx.tasksMissingCustomer[0].title}?`
-        : workflowGaps.length > 0
-          ? `Propose workflow link for ${ctx.tasksMissingWorkflow[0].title}?`
-          : undefined,
-    riskNote: "Proposal only — context links must be confirmed in the task record.",
+    riskNote: "Informational only — no auto-link mission exists; fix the task record directly.",
     routedTo: "Chief",
     matched: true,
     resolution: "deterministic",
+    workTruth: "informational",
   };
 }
 
@@ -294,17 +278,15 @@ function resolveIncidents(ctx: ChiefCommandLiveContext): ChiefCommandResult {
       (inc) => `Sev ${inc.severity} — ${inc.serviceName}: ${inc.title}`,
     ),
     recommendedAction: needsRepair
-      ? `Triage ${primary.id} and open a repair workflow for ${primary.serviceName}.`
+      ? `Triage ${primary.id} on Monitor. To launch real Research work, ask: "Propose a postmortem for the active incident".`
       : `Continue mitigation on linked repair for ${primary.serviceName}.`,
-    approvalNeeded: needsRepair,
-    approvalTitle: needsRepair ? `Open repair workflow for ${primary.serviceName}` : undefined,
-    approvalPrompt: needsRepair
-      ? `Open repair workflow for ${primary.serviceName} incident?`
+    riskNote: needsRepair
+      ? "No repair-workflow mission is wired — do not treat this status as an executable approval."
       : undefined,
-    riskNote: "Repair workflow may pause dependent build tasks.",
     routedTo: "Research Agent",
     matched: true,
     resolution: "deterministic",
+    workTruth: "informational",
     specialists: [
       {
         specialist: "Research Agent",
@@ -344,17 +326,13 @@ function resolveAlerts(
     blockers: lines.slice(0, 6),
     recommendedAction:
       alertApprovals.length > 0
-        ? `Review ${alertApprovals.length} alert-driven proposal(s) on the Approvals tab.`
+        ? `Review ${alertApprovals.length} existing proposal(s) on the Approvals tab.`
         : `Triage highest-severity alert first: "${ctx.alerts[0].title}".`,
-    approvalNeeded: alertApprovals.length > 0,
-    approvalTitle: alertApprovals[0]?.title,
-    approvalPrompt: alertApprovals[0]
-      ? `Propose response for alert: ${alertApprovals[0].title}?`
-      : undefined,
     riskNote: alertApprovals[0]?.riskNote,
     routedTo: "Chief",
     matched: true,
     resolution: "deterministic",
+    workTruth: "informational",
     specialists: [
       {
         specialist: "Workflow Gate Agent",
@@ -482,6 +460,7 @@ function resolveProposePostmortem(
     resolution: "deterministic",
     missionKind: RESEARCH_MONITOR_INCIDENT_POSTMORTEM_KIND,
     missionProjectId: primary.id,
+    workTruth: "executable",
     specialists: [
       {
         specialist: "Research Agent",
@@ -538,6 +517,7 @@ function resolveProposeHandoff(
     resolution: "deterministic",
     missionKind: RESEARCH_PROJECT_SUMMARY_HANDOFF_KIND,
     missionProjectId: primary.id,
+    workTruth: "executable",
     specialists: [
       {
         specialist: "Research Agent",
@@ -563,6 +543,14 @@ export interface ResolveChiefCommandInput {
  * Deterministic regex/rule router. Does not call AI.
  * Unmatched prompts return matched:false so runChiefCommand can invoke AI fallback.
  */
+function ensureWorkTruth(result: ChiefCommandResult): ChiefCommandResult {
+  if (result.workTruth) return result;
+  if (result.missionKind && result.missionProjectId && result.approvalNeeded) {
+    return { ...result, workTruth: "executable" };
+  }
+  return { ...result, workTruth: "informational" };
+}
+
 export function resolveChiefCommand(input: ResolveChiefCommandInput): ChiefCommandResult {
   const trimmed = input.prompt.trim();
   if (!trimmed) return DEFAULT_RESPONSE;
@@ -575,52 +563,53 @@ export function resolveChiefCommand(input: ResolveChiefCommandInput): ChiefComma
       /\bresearch\b/i.test(trimmed) &&
       /\bincident\b/i.test(trimmed))
   ) {
-    return resolveProposePostmortem(ctx, approvals);
+    return ensureWorkTruth(resolveProposePostmortem(ctx, approvals));
   }
 
   if (
     /\b(handoff|project summary)\b/i.test(trimmed) &&
     /\b(propose|draft|run|research|ask)\b/i.test(trimmed)
   ) {
-    return resolveProposeHandoff(workflows, approvals);
+    return ensureWorkTruth(resolveProposeHandoff(workflows, approvals));
   }
 
   if (
     /\b(approv|approval)\b/i.test(trimmed) ||
     (/\b(review|pending)\b/i.test(trimmed) && /\b(show|need|my|what)\b/i.test(trimmed))
   ) {
-    return resolveApprovals(approvals);
+    return ensureWorkTruth(resolveApprovals(approvals));
   }
 
   if (
     /\b(missing|without|no)\b.*\b(customer|job|context)\b/i.test(trimmed) ||
     /\b(customer|job|context)\b.*\b(missing|gap|unlinked|link)\b/i.test(trimmed)
   ) {
-    return resolveMissingContext(ctx);
+    return ensureWorkTruth(resolveMissingContext(ctx));
   }
 
   if (/\b(block|blocking|blocked|gate|gates|stuck|deploy)\b/i.test(trimmed)) {
-    return resolveBlocked(ctx);
+    return ensureWorkTruth(resolveBlocked(ctx));
   }
 
   if (/\b(risk|at risk|today|status|overview|focus)\b/i.test(trimmed)) {
-    return resolveRiskToday(ctx);
+    return ensureWorkTruth(resolveRiskToday(ctx));
   }
 
   if (/\b(incident|monitor|sev|uptime|degrad)\b/i.test(trimmed)) {
-    return resolveIncidents(ctx);
+    return ensureWorkTruth(resolveIncidents(ctx));
   }
 
   if (/\b(alert|alerts|feed|notify|notification)\b/i.test(trimmed)) {
-    return resolveAlerts(ctx, approvals);
+    return ensureWorkTruth(resolveAlerts(ctx, approvals));
   }
 
   if (/\b(knowledge|doc|search|library|note|obsidian|runbook)\b/i.test(trimmed)) {
-    return resolveKnowledge(knowledge, trimmed);
+    return ensureWorkTruth(resolveKnowledge(knowledge, trimmed));
   }
 
-  return {
+  return ensureWorkTruth({
     ...DEFAULT_RESPONSE,
     summary: `Received: "${trimmed}". No specialist match — Chief handled this directly against live queue state (${ctx.openTaskCount} open tasks).`,
-  };
+    workTruth: "informational",
+  });
 }

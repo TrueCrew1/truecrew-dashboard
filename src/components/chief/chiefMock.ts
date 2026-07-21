@@ -1,7 +1,14 @@
+/**
+ * Maps a command response into an ApprovalProposal only when the work is
+ * executable (known missionKind + missionProjectId). Informational / stub
+ * responses must not become approval cards.
+ */
+
 import {
   RESEARCH_MONITOR_INCIDENT_POSTMORTEM_KIND,
   RESEARCH_PROJECT_SUMMARY_HANDOFF_KIND,
 } from "../../../lib/missions/types";
+import { isExecutableMissionKind } from "../../../lib/chief/workTruth";
 import type {
   ApprovalProposal,
   ChiefResponse,
@@ -63,31 +70,30 @@ export function buildHistoryEntry(
 }
 
 /**
- * Maps a command response into an ApprovalProposal.
- * When missionKind + missionProjectId are present, uses the same proposal ID
- * prefixes as researchIncidentProposal / researchProjectSummaryHandoff so
- * approve → existing mission execute path works.
+ * Enqueues only executable Research missions. Non-executable approvalNeeded
+ * flags are ignored (guarded upstream; this is a hard backstop).
  */
 export function buildApprovalFromResponse(
   command: string,
   response: ChiefResponse,
 ): ApprovalProposal | null {
   if (!response.approvalNeeded) return null;
+  if (response.workTruth === "stub" || response.workTruth === "informational") {
+    return null;
+  }
 
   const missionKind = response.missionKind;
   const missionProjectId = response.missionProjectId;
-
-  let id = stableChiefId("apr-cmd", `${command}|${response.approvalTitle ?? ""}`);
-  // Keep seeds aligned with researchIncidentProposalId / researchProjectSummaryHandoffProposalId.
-  if (missionKind === RESEARCH_MONITOR_INCIDENT_POSTMORTEM_KIND && missionProjectId) {
-    id = stableChiefId("apr-research-incident", missionProjectId);
-  } else if (missionKind === RESEARCH_PROJECT_SUMMARY_HANDOFF_KIND && missionProjectId) {
-    id = stableChiefId("apr-research-psh", missionProjectId);
+  if (!isExecutableMissionKind(missionKind) || !missionProjectId) {
+    return null;
   }
 
-  const isResearchMission =
-    missionKind === RESEARCH_MONITOR_INCIDENT_POSTMORTEM_KIND ||
-    missionKind === RESEARCH_PROJECT_SUMMARY_HANDOFF_KIND;
+  let id = stableChiefId("apr-cmd", `${command}|${response.approvalTitle ?? ""}`);
+  if (missionKind === RESEARCH_MONITOR_INCIDENT_POSTMORTEM_KIND) {
+    id = stableChiefId("apr-research-incident", missionProjectId);
+  } else if (missionKind === RESEARCH_PROJECT_SUMMARY_HANDOFF_KIND) {
+    id = stableChiefId("apr-research-psh", missionProjectId);
+  }
 
   return {
     id,
@@ -103,6 +109,7 @@ export function buildApprovalFromResponse(
         : response.specialists?.[0]?.specialist,
     missionKind,
     missionProjectId,
-    source: isResearchMission ? "research_agent" : undefined,
+    source: "research_agent",
+    workTruth: "executable",
   };
 }
