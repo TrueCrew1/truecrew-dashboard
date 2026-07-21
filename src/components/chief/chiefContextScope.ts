@@ -46,7 +46,13 @@ export function scopeDataToChiefContext(data: MockData, contextId: ChiefContextI
     ...workflows.flatMap((workflow) => refsOfType(workflow.linkedEntityIds, "deploy")),
   ]);
 
-  const scopedEntityIds = new Set([...taskIds, ...workflowIds, ...customerIds]);
+  const scopedEntityIds = new Set([
+    ...taskIds,
+    ...workflowIds,
+    ...customerIds,
+    ...incidentIds,
+    ...deployIds,
+  ]);
 
   return {
     ...data,
