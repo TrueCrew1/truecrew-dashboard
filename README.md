@@ -37,6 +37,8 @@ npm run dev:vercel       # UI + API (requires .env.local)
 | `SUPABASE_URL` | Server |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server |
 | `GITHUB_WEBHOOK_SECRET` | Server |
+| `VERCEL_API_TOKEN` | Server — optional Monitor deploy probe (`/api/monitor?target=vercel`) |
+| `VERCEL_PROJECT_ID` | Server — optional; pairs with `VERCEL_API_TOKEN` |
 | `VITE_USE_LIVE_API` | Client — set `true` for live Supabase reads |
 
 ## API routes
