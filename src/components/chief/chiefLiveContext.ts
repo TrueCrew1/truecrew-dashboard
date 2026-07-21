@@ -33,6 +33,10 @@ import { isObsidianFilingCandidate, workItemFromTask } from "../../../lib/librar
 import type { ChiefCommandResult } from "../../../lib/chief/commandTypes";
 import { resolveChiefCommand as resolveChiefCommandCore } from "../../../lib/chief/resolveCommand";
 import { stableChiefId } from "./chiefMock";
+import {
+  RESEARCH_MONITOR_INCIDENT_POSTMORTEM_KIND,
+  RESEARCH_PROJECT_SUMMARY_HANDOFF_KIND,
+} from "../../../lib/missions/types";
 import type {
   AgentWorkAgentName,
   AgentWorkItem,
@@ -197,7 +201,6 @@ export function deriveApprovalCandidates(
   ctx: ChiefLiveContext,
 ): ApprovalProposal[] {
   const proposals: ApprovalProposal[] = [];
-  void data;
 
   for (const task of ctx.blockingTasks.filter((t) => t.workflowType === "build").slice(0, 2)) {
     const blockingGates = getBlockingGates(task.gates);
@@ -228,7 +231,7 @@ export function deriveApprovalCandidates(
       id: stableChiefId("apr-research-incident", incident.id),
       title: `Monitor incident postmortem: ${incident.title}`,
       summary: `Sev ${incident.severity} incident "${incident.title}" on ${incident.serviceName} has no linked repair — Research can draft a postmortem mission.`,
-      recommendedAction: `Approve to run research:monitor-incident-postmortem for ${incident.id}.`,
+      recommendedAction: `Approve to run ${RESEARCH_MONITOR_INCIDENT_POSTMORTEM_KIND} for ${incident.id}.`,
       riskNote: "Executable — approve launches the existing Research postmortem runner.",
       status: "pending",
       createdAt: incident.openedAt,
@@ -236,10 +239,33 @@ export function deriveApprovalCandidates(
       category: "incident_repair",
       source: "ops_change",
       workTruth: "executable",
-      missionKind: "research:monitor-incident-postmortem",
+      missionKind: RESEARCH_MONITOR_INCIDENT_POSTMORTEM_KIND,
       missionProjectId: incident.id,
       recommendedDecision: "hold",
       ...proposalRoute(CHIEF_ROUTES.monitor),
+    });
+  }
+
+  // Executable Research handoff for an active build workflow (same shape Builds page proposes).
+  const handoffWorkflow = data.workflows.find(
+    (workflow) => workflow.stage === "In Progress" || workflow.stage === "Review",
+  );
+  if (handoffWorkflow) {
+    proposals.push({
+      id: stableChiefId("apr-research-psh", handoffWorkflow.id),
+      title: `Project summary handoff: ${handoffWorkflow.title}`,
+      summary: `Workflow "${handoffWorkflow.title}" is ${handoffWorkflow.stage} — Research can produce a project summary + build handoff artifact.`,
+      recommendedAction: `Approve to run ${RESEARCH_PROJECT_SUMMARY_HANDOFF_KIND} for ${handoffWorkflow.id}.`,
+      riskNote: "Executable — approve launches the existing Research handoff runner.",
+      status: "pending",
+      createdAt: new Date().toISOString(),
+      specialist: "Research Agent",
+      source: "ops_change",
+      workTruth: "executable",
+      missionKind: RESEARCH_PROJECT_SUMMARY_HANDOFF_KIND,
+      missionProjectId: handoffWorkflow.id,
+      recommendedDecision: "hold",
+      ...proposalRoute(CHIEF_ROUTES.builds),
     });
   }
 

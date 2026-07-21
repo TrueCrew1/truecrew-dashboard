@@ -34,6 +34,7 @@ Defined in `lib/chief/workTruth.ts`. Guard: `guardCommandResultWorkTruth()` stri
 | Command: “Propose a postmortem…” | `research:monitor-incident-postmortem` | Approve → `executeMonitorIncidentPostmortemMission` |
 | Command: “Propose a project summary handoff…” | `research:project-summary-handoff` | Approve → `executeProjectSummaryHandoffMission` |
 | Derived: active Sev 1–2 incident without repair | same postmortem mission | Auto-card from `deriveApprovalCandidates` |
+| Derived: In Progress / Review build workflow | same handoff mission | Auto-card from `deriveApprovalCandidates` |
 
 ## Grounded but not executable yet
 
@@ -57,9 +58,9 @@ Risk/status, blockers list, approvals list, missing context, incident status, al
 | Derived candidates (narrowed) | `src/components/chief/chiefLiveContext.ts` |
 | Seed gating | `src/components/chief/chiefApprovalSeeds.ts`, `ChiefApprovalsContext.tsx` |
 | Stub catalog | `agentApprovalGates.ts` (`STUB_AGENT_APPROVAL_CARDS`), `chiefApprovalCardMocks.ts` |
-| UI lanes + badges | `ApprovalBoard.tsx`, `chiefApproval.ts` |
+| UI lanes + badges | `ApprovalBoard.tsx`, `ChiefHomePanel.tsx`, `ChiefPanel.tsx`, `chiefApproval.ts` |
 
 ## Related
 
-- Work truth / operator path: `docs/CHIEF_WORK_TRUTH.md`
+- Command surface: `docs/CHIEF_COMMAND_SURFACE.md`
 - Mission runners: `lib/missions/types.ts`

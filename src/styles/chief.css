@@ -4252,6 +4252,10 @@ button.chief-brief-metric {
   background: var(--bg-elevated);
 }
 
+.chief-home-response-truth {
+  margin: 0 0 8px;
+}
+
 .chief-home-response-summary {
   margin: 0 0 6px;
   font-size: 12px;
@@ -4276,6 +4280,12 @@ button.chief-brief-metric {
   font-size: 11px;
   font-weight: 600;
   color: var(--orange);
+}
+
+.chief-home-snapshot-note {
+  margin: 0 0 8px;
+  font-size: 11px;
+  color: var(--steel);
 }
 
 .chief-home-snapshots {

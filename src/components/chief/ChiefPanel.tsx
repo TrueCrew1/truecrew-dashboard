@@ -40,6 +40,10 @@ import { submitChiefCommand } from "./submitChiefCommand";
 import type { ApprovalAction, ChiefResponse } from "./types";
 import type { ApprovalStatusFilter } from "./approvalStatus";
 import {
+  APPROVAL_WORK_TRUTH_BADGE,
+  APPROVAL_WORK_TRUTH_LABEL,
+} from "./chiefApproval";
+import {
   approvalCardElementId,
   clearChiefApprovalDeepLink,
   parseChiefApprovalDeepLink,
@@ -536,6 +540,14 @@ export function ChiefPanel() {
                   <div className="chief-speaker-row">
                     <h3 className="chief-response-label">Chief</h3>
                     <span className="chief-speaker-badge">Response</span>
+                    {response.workTruth ? (
+                      <span
+                        className={`badge ${APPROVAL_WORK_TRUTH_BADGE[response.workTruth]}`}
+                        title="Whether this result can launch real work"
+                      >
+                        {APPROVAL_WORK_TRUTH_LABEL[response.workTruth]}
+                      </span>
+                    ) : null}
                   </div>
                   <p className="chief-response-text">{response.summary}</p>
                 </div>
@@ -558,10 +570,10 @@ export function ChiefPanel() {
                   </p>
                 </div>
 
-                {response.approvalNeeded ? (
+                {response.approvalNeeded && response.workTruth === "executable" ? (
                   <div className="chief-response-section chief-approval">
                     <div className="chief-approval-header">
-                      <h3 className="chief-response-label">Approval needed</h3>
+                      <h3 className="chief-response-label">Executable mission queued</h3>
                       <span className="chief-approval-badge">Required</span>
                     </div>
                     <p className="chief-response-text chief-approval-prompt">
