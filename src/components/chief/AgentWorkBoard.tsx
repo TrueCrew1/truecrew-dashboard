@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { ApprovalSectionHeader, ApprovalSectionShell, ApprovalSurfaceEmpty } from "./approvalWrappers";
 import { AGENT_WORK_ITEMS, AGENT_WORK_STATUS_CONFIG } from "./agentWorkBoardMock";
+import { isLiveApiEnabled } from "@/lib/api/client";
 import { formatChiefTimestamp } from "./chiefMock";
 import {
   deriveAgentAwaitingApprovalWorkItems,
@@ -132,6 +133,11 @@ export function AgentWorkBoard() {
     }
     return map;
   }, [approvals]);
+  // AGENT_WORK_ITEMS (agentWorkBoardMock.ts) is mock-only placeholder data —
+  // dropped once live mode is on (VITE_USE_LIVE_API=true) so the board
+  // doesn't show permanently-stuck "Roadmap Agent"/"Marketer Agent" cards
+  // alongside real agent work in production.
+  const mockAgentItems = useMemo(() => (isLiveApiEnabled() ? [] : AGENT_WORK_ITEMS), []);
   const items = useMemo(
     () => [
       ...buildItems,
@@ -140,9 +146,17 @@ export function AgentWorkBoard() {
       ...handoffItems,
       ...librarianItems,
       ...awaitingApprovalItems,
-      ...AGENT_WORK_ITEMS,
+      ...mockAgentItems,
     ],
-    [buildItems, workflowGateItems, researchItems, handoffItems, librarianItems, awaitingApprovalItems],
+    [
+      buildItems,
+      workflowGateItems,
+      researchItems,
+      handoffItems,
+      librarianItems,
+      awaitingApprovalItems,
+      mockAgentItems,
+    ],
   );
 
   if (items.length === 0) {
@@ -167,7 +181,9 @@ export function AgentWorkBoard() {
         Snapshot of what each agent is carrying right now. Build, Workflow Gate, Research,
         Librarian, and Awaiting approval rows marked <span className="badge badge-green">live</span>{" "}
         reflect real task/incident/artifact data or pending proposals from the shared Approvals
-        queue; other agents are still mock for this slice. Read-only — no actions taken here.
+        queue{mockAgentItems.length > 0
+          ? "; other agents are still mock for this slice"
+          : ""}. Read-only — no actions taken here.
       </p>
 
       <div className="agent-work-lanes">
