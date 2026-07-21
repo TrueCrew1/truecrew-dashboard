@@ -1,7 +1,6 @@
 import { isLiveApiEnabled } from "@/lib/api/client";
 import { useMonitorHealth } from "@/hooks/useMonitorHealth";
 import { useProjectSummaryHandoffMissions } from "@/hooks/useProjectSummaryHandoffMissions";
-import { useData } from "@/context/DataContext";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { deriveLibrarianAgentWorkItems } from "./chiefLiveContext";
 import { useBuildTasks } from "./hooks/useBuildTasks";
@@ -14,13 +13,12 @@ import {
 
 export function AgentStatusStrip() {
   const liveApi = isLiveApiEnabled();
-  const { data } = useData();
-  const { approvals } = useChiefApprovals();
+  const { chiefData, approvals } = useChiefApprovals();
   const { missions, error: handoffError } = useProjectSummaryHandoffMissions(null);
   const platformHealth = useMonitorHealth();
   const { buildGateTasks } = useBuildTasks();
 
-  const librarianItems = deriveLibrarianAgentWorkItems(data.tasks, data.notes);
+  const librarianItems = deriveLibrarianAgentWorkItems(chiefData.tasks, chiefData.notes);
   const pendingBuildApprovals = approvals.filter(
     (proposal) =>
       proposal.status === "pending" &&

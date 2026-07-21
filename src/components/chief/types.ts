@@ -1,4 +1,5 @@
 import type { Persona, TaskPriority } from "@/types";
+import type { ChiefContextId } from "./chiefContext";
 
 export type ChiefSpecialist =
   | "Workflow Gate Agent"
@@ -90,6 +91,15 @@ export interface ApprovalProposal {
   /** Chief's suggested call, distinct from the operator's actual decision (`status`). */
   recommendedDecision?: ApprovalRecommendedDecision;
   source?: ApprovalSource;
+  /**
+   * Which Chief context this proposal belongs to — set explicitly on
+   * project-scoped static cards (see msPaintingApprovals.ts) and stamped
+   * onto command-created proposals at creation time. Absent means it's one
+   * of the pre-existing global/demo sources (chiefApprovalCardMocks.ts,
+   * repoChangeApprovals.ts, agentApprovalGates.ts) and only shows in the
+   * "global" context.
+   */
+  contextId?: ChiefContextId;
 }
 
 /**

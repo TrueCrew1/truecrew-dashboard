@@ -12,7 +12,7 @@ import {
 } from "./chiefLiveContext";
 import { getApprovalUrgencyBadge, OVERDUE_HOURS } from "./chiefApprovalUrgency";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
-import { useData } from "@/context/DataContext";
+import { useChiefContext } from "@/context/ChiefContextProvider";
 import { useProjectSummaryHandoffMissions } from "@/hooks/useProjectSummaryHandoffMissions";
 import type { AgentWorkItem, AgentWorkStatus, ApprovalProposal } from "./types";
 import type { TaskPriority } from "@/types";
@@ -99,25 +99,33 @@ function AgentWorkCard({
 }
 
 export function AgentWorkBoard() {
-  const { data } = useData();
-  const { approvals } = useChiefApprovals();
+  const { chiefData, approvals } = useChiefApprovals();
+  const { activeContext } = useChiefContext();
   const { missions: handoffMissions } = useProjectSummaryHandoffMissions();
-  const buildItems = useMemo(() => deriveBuildAgentWorkItems(data.tasks), [data.tasks]);
+  // Missions carry their own projectId (a workflow id) — scope them to the
+  // active context's own workflows the same way every other Chief-derived
+  // list here is scoped, instead of showing every project's missions.
+  const scopedHandoffMissions = useMemo(() => {
+    if (activeContext === "global") return handoffMissions;
+    const workflowIds = new Set(chiefData.workflows.map((workflow) => workflow.id));
+    return handoffMissions.filter((mission) => workflowIds.has(mission.projectId));
+  }, [handoffMissions, activeContext, chiefData.workflows]);
+  const buildItems = useMemo(() => deriveBuildAgentWorkItems(chiefData.tasks), [chiefData.tasks]);
   const workflowGateItems = useMemo(
-    () => deriveWorkflowGateAgentWorkItems(data.tasks),
-    [data.tasks],
+    () => deriveWorkflowGateAgentWorkItems(chiefData.tasks),
+    [chiefData.tasks],
   );
   const researchItems = useMemo(
-    () => deriveResearchAgentWorkItems(data.incidents),
-    [data.incidents],
+    () => deriveResearchAgentWorkItems(chiefData.incidents),
+    [chiefData.incidents],
   );
   const handoffItems = useMemo(
-    () => deriveProjectSummaryHandoffWorkItems(handoffMissions),
-    [handoffMissions],
+    () => deriveProjectSummaryHandoffWorkItems(scopedHandoffMissions),
+    [scopedHandoffMissions],
   );
   const librarianItems = useMemo(
-    () => deriveLibrarianAgentWorkItems(data.tasks, data.notes),
-    [data.tasks, data.notes],
+    () => deriveLibrarianAgentWorkItems(chiefData.tasks, chiefData.notes),
+    [chiefData.tasks, chiefData.notes],
   );
   const awaitingApprovalItems = useMemo(
     () => deriveAgentAwaitingApprovalWorkItems(approvals),
@@ -132,6 +140,9 @@ export function AgentWorkBoard() {
     }
     return map;
   }, [approvals]);
+  // AGENT_WORK_ITEMS (Roadmap/Marketer mock rows) are global platform demo
+  // data — not M&S Painting work — so they only render in the global
+  // context, same rule as the static approval-card sources.
   const items = useMemo(
     () => [
       ...buildItems,
@@ -140,9 +151,17 @@ export function AgentWorkBoard() {
       ...handoffItems,
       ...librarianItems,
       ...awaitingApprovalItems,
-      ...AGENT_WORK_ITEMS,
+      ...(activeContext === "global" ? AGENT_WORK_ITEMS : []),
     ],
-    [buildItems, workflowGateItems, researchItems, handoffItems, librarianItems, awaitingApprovalItems],
+    [
+      buildItems,
+      workflowGateItems,
+      researchItems,
+      handoffItems,
+      librarianItems,
+      awaitingApprovalItems,
+      activeContext,
+    ],
   );
 
   if (items.length === 0) {
