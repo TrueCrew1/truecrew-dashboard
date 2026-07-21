@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ApprovalAuditTimeline } from "./ApprovalAuditTimeline";
 import { ApprovalStatusDashboard } from "./ApprovalStatusDashboard";
 import { buildApprovalAuditEntries } from "./approvalAudit";
@@ -142,6 +142,18 @@ export function ApprovalBoard({
       .querySelector(".chief-approval-board")
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+
+  // External focus request (see chiefApprovalFocus.ts / ChiefPanel) — same
+  // scrollIntoView-by-id pattern as the jump-to handlers above, just driven
+  // by a prop instead of a click inside this component. `isFocused` above
+  // already applies the `.chief-approval-card--focused` pulse class; this
+  // only handles bringing that card into view.
+  useEffect(() => {
+    if (!focusProposalId) return;
+    document
+      .getElementById(`approval-proposal-${focusProposalId}`)
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [focusProposalId]);
 
   const approvalFooterStyle = {
     marginTop: 8,
@@ -358,6 +370,28 @@ export function ApprovalBoard({
                           ))}
                         </ul>
                       </div>
+                    ) : null}
+
+                    {proposal.suggestedWorkflow &&
+                    proposal.suggestedWorkflow.steps.length > 0 ? (
+                      <details className="chief-approval-workflow">
+                        <summary className="chief-approval-workflow-summary">
+                          <span className="chief-approval-card-label">Suggested workflow</span>
+                          <span className="chief-approval-workflow-title">
+                            {proposal.suggestedWorkflow.title}
+                          </span>
+                          <span className="chief-approval-workflow-hint">
+                            {proposal.suggestedWorkflow.steps.length} steps · advisory
+                          </span>
+                        </summary>
+                        <ol className="chief-approval-workflow-steps">
+                          {proposal.suggestedWorkflow.steps.map((step) => (
+                            <li key={step} className="chief-approval-workflow-step">
+                              {step}
+                            </li>
+                          ))}
+                        </ol>
+                      </details>
                     ) : null}
                   </div>
 

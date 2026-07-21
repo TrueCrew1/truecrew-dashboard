@@ -4,16 +4,22 @@ import { askOllama, isOllamaReachable, type OllamaModel } from "../ollama/client
 export type ChiefFallbackCategory = "general" | "code" | "reasoning";
 export type ChiefFallbackSource = "azure" | "ollama";
 
+/** Which caller is routing through this — for logging/identification only, does not affect model selection. */
+export type ChiefFallbackLane = "chief" | "builder" | "research";
+
 export interface ChiefFallbackResult {
   summary: string;
   source: ChiefFallbackSource;
   model: string;
   category: ChiefFallbackCategory;
+  lane: ChiefFallbackLane;
 }
 
 export interface ChiefRouteOptions {
   /** Skip Azure entirely and only try Ollama — e.g. the UI's "Prefer local only" toggle. */
   localOnly?: boolean;
+  /** Caller identity for logging (defaults to "chief"). Model/category selection is unaffected. */
+  lane?: ChiefFallbackLane;
 }
 
 const CODE_PATTERN = /\b(code|refactor|function|typescript|javascript|api|schema|migration|long[- ]?context|bug|pull request|pr)\b/i;
@@ -68,15 +74,16 @@ function buildMessages(query: string, contextSummary: string) {
 async function tryOllama(
   category: ChiefFallbackCategory,
   messages: ReturnType<typeof buildMessages>,
+  lane: ChiefFallbackLane,
 ): Promise<ChiefFallbackResult | null> {
   if (!(await isOllamaReachable())) return null;
 
   const model = OLLAMA_MODEL_BY_CATEGORY[category];
   try {
     const content = await askOllama(model, messages);
-    return { summary: content, source: "ollama", model, category };
+    return { summary: content, source: "ollama", model, category, lane };
   } catch (error) {
-    console.error(`Chief AI fallback: Ollama (${model}) failed`, error);
+    console.error(`Chief AI fallback (${lane}): Ollama (${model}) failed`, error);
     return null;
   }
 }
@@ -89,6 +96,10 @@ async function tryOllama(
  * Order: local-only mode -> Ollama only. Otherwise: Azure (model chosen by
  * category) -> Ollama on Azure failure -> null (caller keeps the canned
  * generic response). Every tier is flag-gated off by default.
+ *
+ * `options.lane` identifies the caller (Chief/Builder/Research) for logging
+ * only — it never changes which model gets picked, that's still driven
+ * entirely by `classifyChiefFallbackQuery`.
  */
 export async function routeChiefFallback(
   query: string,
@@ -96,12 +107,13 @@ export async function routeChiefFallback(
   options: ChiefRouteOptions = {},
 ): Promise<ChiefFallbackResult | null> {
   const localOnly = options.localOnly ?? isLocalOnlyModeDefault();
+  const lane = options.lane ?? "chief";
   const category = classifyChiefFallbackQuery(query);
   const messages = buildMessages(query, contextSummary);
 
   if (localOnly) {
     if (!isOllamaFallbackEnabled()) return null;
-    return tryOllama(category, messages);
+    return tryOllama(category, messages, lane);
   }
 
   if (isCloudFallbackEnabled()) {
@@ -109,15 +121,15 @@ export async function routeChiefFallback(
     if (isAzureAiConfigured(azureModel)) {
       try {
         const content = await askAzureAi(azureModel, messages);
-        return { summary: content, source: "azure", model: azureModel, category };
+        return { summary: content, source: "azure", model: azureModel, category, lane };
       } catch (error) {
-        console.error(`Chief AI fallback: Azure (${azureModel}) failed, trying Ollama`, error);
+        console.error(`Chief AI fallback (${lane}): Azure (${azureModel}) failed, trying Ollama`, error);
       }
     }
   }
 
   if (isOllamaFallbackEnabled()) {
-    return tryOllama(category, messages);
+    return tryOllama(category, messages, lane);
   }
 
   return null;

@@ -9,7 +9,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "qa": "npm run lint && npm run build",
+    "test": "tsx --test",
+    "qa": "npm run lint && npm run build && npm run test",
     "qa:nightly": "bash scripts/nightly-qa.sh",
     "preview": "vite preview",
     "db:push": "supabase db push",
@@ -17,7 +18,9 @@
     "db:status": "supabase migration list",
     "obsidian:log": "npx tsx scripts/obsidian-log.ts",
     "obsidian:setup-vault": "npx tsx scripts/setup-obsidian-vault.ts",
-    "research:file": "npx tsx scripts/file-research-finding.ts"
+    "second-brain:sync": "npx tsx scripts/second-brain-sync.ts",
+    "research:file": "npx tsx scripts/file-research-finding.ts",
+    "build:plan-helper": "npx tsx scripts/build-plan-helper.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.8",

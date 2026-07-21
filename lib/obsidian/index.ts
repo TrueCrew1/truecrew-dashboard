@@ -11,6 +11,10 @@ export {
   ROLLING_LOG_PATHS,
   sanitizeFilenameSegment,
 } from "./paths.js";
+export { seedVaultTemplates } from "./seed.js";
+export { runSecondBrainSync } from "./sync.js";
+export type { SeedVaultTemplatesResult } from "./seed.js";
+export type { SecondBrainSyncOptions, SecondBrainSyncSummary } from "./sync.js";
 export type {
   BuildLogEntry,
   DecisionLogEntry,

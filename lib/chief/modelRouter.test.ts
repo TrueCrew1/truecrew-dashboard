@@ -126,6 +126,48 @@ test("routeChiefFallback: Azure failure falls back to Ollama before canned gener
   );
 });
 
+test("routeChiefFallback: lane defaults to 'chief' when omitted", async () => {
+  await withEnv(
+    {
+      CHIEF_AI_FALLBACK_ENABLED: "true",
+      CHIEF_OLLAMA_FALLBACK_ENABLED: "false",
+      CHIEF_LOCAL_ONLY_MODE: "false",
+      AZURE_AI_ENDPOINT: "https://example.azure.test/openai/v1",
+      AZURE_AI_KEY: "test-key",
+      AZURE_AI_DEPLOYMENT_GPT5_MINI: "gpt-5-mini",
+    },
+    () =>
+      withMockFetch(
+        () => jsonResponse({ choices: [{ message: { content: "hi" } }] }),
+        async () => {
+          const result = await routeChiefFallback("how's the weather?", "");
+          assert.equal(result?.lane, "chief");
+        },
+      ),
+  );
+});
+
+test("routeChiefFallback: passed lane is echoed on the result", async () => {
+  await withEnv(
+    {
+      CHIEF_AI_FALLBACK_ENABLED: "true",
+      CHIEF_OLLAMA_FALLBACK_ENABLED: "false",
+      CHIEF_LOCAL_ONLY_MODE: "false",
+      AZURE_AI_ENDPOINT: "https://example.azure.test/openai/v1",
+      AZURE_AI_KEY: "test-key",
+      AZURE_AI_DEPLOYMENT_GPT5_MINI: "gpt-5-mini",
+    },
+    () =>
+      withMockFetch(
+        () => jsonResponse({ choices: [{ message: { content: "hi" } }] }),
+        async () => {
+          const result = await routeChiefFallback("how's the weather?", "", { lane: "builder" });
+          assert.equal(result?.lane, "builder");
+        },
+      ),
+  );
+});
+
 test("routeChiefFallback: cloud tier picks Kimi for a code-shaped query", async () => {
   let requestedModel: string | undefined;
   await withEnv(

@@ -543,6 +543,16 @@
   gap: 8px;
 }
 
+.chief-local-only-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--steel-dim);
+  cursor: pointer;
+}
+
 .chief-input {
   flex: 1;
   min-width: 0;
@@ -961,6 +971,15 @@ button.chief-brief-metric {
   line-height: 1.45;
 }
 
+.chief-brief-footnote--issue {
+  color: var(--red);
+  font-weight: 600;
+}
+
+.chief-brief-footnote--healthy {
+  color: var(--green);
+}
+
 .chief-brief-link {
   color: var(--orange);
   text-decoration: none;
@@ -1028,6 +1047,76 @@ button.chief-brief-metric {
   flex-shrink: 0;
   color: var(--steel-dim);
   font-size: 9px;
+}
+
+.chief-approval-activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.chief-approval-activity-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+}
+
+.chief-approval-activity-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.chief-approval-activity-main {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.chief-approval-activity-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.chief-approval-activity-meta {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chief-approval-activity-time {
+  color: var(--steel-dim);
+  font-size: 9px;
+}
+
+.chief-approval-activity-action {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--orange);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.chief-approval-activity-action:hover {
+  text-decoration: underline;
+}
+
+.chief-approval-activity-action--button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
 }
 
 .chief-board {
@@ -1581,6 +1670,72 @@ button.chief-brief-metric {
 
 .chief-approval-checklist-item--pending {
   color: var(--steel-dim);
+}
+
+/*
+ * Advisory workflow guidance (ApprovalCard.suggestedWorkflow). Collapsed by
+ * default via native <details> — the card stays scannable, and the steps are
+ * one click away for whoever actually acts on them.
+ */
+.chief-approval-workflow {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+
+.chief-approval-workflow-summary {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.chief-approval-workflow-summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Disclosure caret, rotated when open. */
+.chief-approval-workflow-summary::before {
+  content: "▸";
+  font-size: 9px;
+  color: var(--steel-dim);
+  transition: transform 120ms ease;
+}
+
+.chief-approval-workflow[open] .chief-approval-workflow-summary::before {
+  transform: rotate(90deg);
+}
+
+.chief-approval-workflow-summary:focus-visible {
+  outline: 1px solid var(--orange);
+  outline-offset: 2px;
+}
+
+.chief-approval-workflow-title {
+  font-size: 11px;
+  color: var(--text);
+  line-height: 1.45;
+}
+
+.chief-approval-workflow-hint {
+  font-size: 10px;
+  color: var(--steel-dim);
+  white-space: nowrap;
+}
+
+.chief-approval-workflow-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0 0;
+  padding: 0 0 0 18px;
+}
+
+.chief-approval-workflow-step {
+  font-size: 11px;
+  color: var(--steel);
+  line-height: 1.45;
 }
 
 .chief-approval-card-details {
@@ -3436,6 +3591,17 @@ button.chief-brief-metric {
   color: var(--text);
 }
 
+/*
+ * Build-readiness caveat when research backing a Work Story is provisional
+ * or missing (describeResearchForBuildReadiness().caveat) — deliberately
+ * distinct from the plain checklist text around it so a degraded research
+ * state can't visually blend in and read as just another routine step.
+ */
+.agent-work-story-caveat {
+  color: var(--yellow);
+  font-weight: 600;
+}
+
 .agent-work-lanes {
   display: flex;
   flex-direction: column;
@@ -3872,6 +4038,95 @@ button.chief-brief-metric {
   border-bottom: none;
 }
 
+.chief-home-priority-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.chief-home-priority-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.chief-home-priority-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+}
+
+.chief-home-priority-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 320px;
+}
+
+.chief-home-priority-value--unwired,
+.chief-home-priority-value--empty {
+  font-weight: 500;
+  color: var(--steel-dim);
+  font-style: italic;
+}
+
+button.chief-home-priority-value--link {
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+button.chief-home-priority-value--link:hover {
+  color: var(--orange);
+  text-decoration: underline;
+}
+
+.chief-lane-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.chief-lane-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chief-lane-name {
+  flex-shrink: 0;
+  min-width: 56px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--steel);
+}
+
+.chief-lane-detail {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--steel-dim);
+}
+
 .chief-home-intake {
   padding-top: 14px;
   border-top: 1px solid var(--border);
@@ -3994,4 +4249,99 @@ button.chief-brief-metric {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+}
+
+/* V2 Upgrade Program board (src/components/chief/V2ProgramBoard.tsx) */
+
+.v2-program-card {
+  margin-bottom: 12px;
+}
+
+.v2-program-card--master {
+  border-left: 3px solid var(--orange-border);
+  background: rgba(255, 122, 26, 0.03);
+}
+
+.v2-program-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.v2-program-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.v2-program-card-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.v2-program-card--master .v2-program-card-title {
+  font-size: 15px;
+}
+
+.v2-program-card-purpose {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.v2-program-card-fields {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 10px;
+}
+
+.v2-program-card-field dt {
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+  margin-bottom: 2px;
+}
+
+.v2-program-card-field dd {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.45;
+}
+
+.v2-program-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 10px;
+  color: var(--steel-dim);
+}
+
+.v2-program-card-repo,
+.v2-program-card-doc {
+  font-family: var(--font-mono, monospace);
+}
+
+.v2-program-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.v2-program-grid .v2-program-card {
+  margin-bottom: 0;
 }

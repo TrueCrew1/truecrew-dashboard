@@ -71,6 +71,15 @@ guesses — see `docs/TOOL_CATALOG.md` for the researched source per tool
 | Note filing / Obsidian formatting | Claude Code (Chief's own logging responsibility) | manual by David if the vault is unreachable |
 | Cheap fallback when credits are low | Continue.dev (local Ollama, $0) | free ChatGPT/Gemini/DeepSeek/Kimi (manual) |
 
+## Perplexity / Grok research lane
+
+- **PRIMARY research:** Perplexity Pro — default for cited web research, standards/docs, competitive analysis, and day-to-day questions; can be used as much as needed while current Perplexity Pro credits are available.
+- **Normal Pro:** fast single-shot / quick comparisons / "what does this source say?"
+- **Deep Research:** multi-source synthesis or longer investigations (included in Pro; can be used freely while included in the plan — no extra tool/spend approval; product actions still use existing gates).
+- **Grok (NON-PROD_WEB_AI):** X/social sentiment / "what are people saying?" only — never the default research lane.
+- **Grok guardrails:** no MSHA-sensitive or customer-identifiable data in any prompt, upload, or pasted context — no production/bulk workloads; no xAI API or pipeline wiring without explicit governance approval.
+- **Outputs:** capture findings in notes/`knowledge/`; chat is not merged product truth by itself.
+
 ---
 
 ### claude-code
@@ -131,7 +140,10 @@ guesses — see `docs/TOOL_CATALOG.md` for the researched source per tool
   the actual task on it; note the gap and backfill as soon as possible.
 
 ### perplexity-pro
-- **role:** Research's live web-search tool
+- **role:** Research's live web-search tool. Normal usage policy (Perplexity vs.
+  Deep Research, Grok's narrow role, guardrails) lives in "## Perplexity / Grok
+  research lane" above — this block covers degraded/low-credit fallback behavior
+  only, not restated here.
 - **owner_agent:** Research
 - **fallback chain:** primary Perplexity Pro → first fallback free ChatGPT → second
   fallback free Gemini → degraded path David runs the search manually and hands

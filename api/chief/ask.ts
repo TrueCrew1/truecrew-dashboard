@@ -27,7 +27,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const localOnly = body.localOnly === true;
 
   try {
-    const result = await routeChiefFallback(body.query, contextSummary, { localOnly });
+    const result = await routeChiefFallback(body.query, contextSummary, { localOnly, lane: "chief" });
     if (!result) {
       return res.status(503).json({ error: "No AI fallback available" });
     }

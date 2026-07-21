@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { CHIEF_ROUTES } from "./chiefRoutes";
 import type { PendingApprovalUrgencySummary } from "./chiefApprovalUrgency";
 import type { ChiefLiveContext } from "./chiefLiveContext";
+import { derivePlatformBriefSummary } from "./platformHealthSummary";
 import type { PlatformHealthState } from "@/types/monitor";
 
 interface ChiefSituationBriefProps {
@@ -13,30 +14,6 @@ interface ChiefSituationBriefProps {
   platformHealth?: PlatformHealthState;
   /** Gates the platform-health line so mock-mode data is never shown as real. */
   liveApiEnabled?: boolean;
-}
-
-/** Null when Vercel is fine — only describes an actual reported problem. */
-function vercelIssueLabel(vercel: PlatformHealthState["vercel"]): string | null {
-  if (vercel.error) return `Vercel: ${vercel.error}`;
-  if (vercel.data && vercel.data.ok === false) {
-    return `Vercel: ${vercel.data.error ?? "reporting an error"}`;
-  }
-  if (vercel.data?.latest?.state && vercel.data.latest.state.toUpperCase() === "ERROR") {
-    return "Vercel: latest deploy failed";
-  }
-  return null;
-}
-
-/** Null when Supabase is fine — only describes an actual reported problem. */
-function supabaseIssueLabel(supabase: PlatformHealthState["supabase"]): string | null {
-  if (supabase.error) return `Supabase: ${supabase.error}`;
-  if (supabase.data && supabase.data.ok === false) {
-    return `Supabase: ${supabase.data.error ?? supabase.data.message ?? "reporting an error"}`;
-  }
-  if (supabase.data && supabase.data.db_reachable === false) {
-    return "Supabase: database unreachable";
-  }
-  return null;
 }
 
 interface BriefMetric {
@@ -74,12 +51,7 @@ export function ChiefSituationBrief({
   const contextGapCount =
     context.tasksMissingCustomer.length + context.tasksMissingWorkflow.length;
 
-  const platformIssues =
-    liveApiEnabled && platformHealth
-      ? [vercelIssueLabel(platformHealth.vercel), supabaseIssueLabel(platformHealth.supabase)].filter(
-          (issue): issue is string => issue !== null,
-        )
-      : [];
+  const platformSituation = derivePlatformBriefSummary(platformHealth, Boolean(liveApiEnabled));
 
   const urgencySublabel = pendingUrgency
     ? formatPendingUrgencySublabel(pendingUrgency)
@@ -198,14 +170,28 @@ export function ChiefSituationBrief({
         </p>
       ) : null}
 
-      {platformIssues.length > 0 ? (
-        <p className="chief-brief-footnote" role="status">
-          Platform issue — {platformIssues.join(" · ")} —{" "}
-          <Link to={CHIEF_ROUTES.monitor} className="chief-brief-link">
-            view on Monitor
-          </Link>
+      {platformSituation.tone === "loading" ? null : (
+        <p
+          className={`chief-brief-footnote${
+            platformSituation.tone === "issue"
+              ? " chief-brief-footnote--issue"
+              : platformSituation.tone === "healthy"
+                ? " chief-brief-footnote--healthy"
+                : ""
+          }`}
+          role="status"
+        >
+          {platformSituation.headline}
+          {platformSituation.tone === "issue" ? (
+            <>
+              {" — "}
+              <Link to={CHIEF_ROUTES.monitor} className="chief-brief-link">
+                view on Monitor
+              </Link>
+            </>
+          ) : null}
         </p>
-      ) : null}
+      )}
     </section>
   );
 }

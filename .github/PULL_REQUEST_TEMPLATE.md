@@ -17,6 +17,7 @@ below, or replace this template body with it.
 ## Checklist
 
 - [ ] Tests run (or not applicable)
+- [ ] `scripts/check-governance.sh` passes (lint/build/test and governed-loop coverage)
 - [ ] Aligns with `docs/AGENT_RUNBOOK.md` and `docs/TOOL_CATALOG.md` (tool usage and workflow)
 - [ ] Uses Chief / Claude Code / CodeRabbit correctly
 - [ ] No secrets added

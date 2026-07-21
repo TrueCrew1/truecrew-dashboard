@@ -11,18 +11,30 @@
  */
 import { loadSessionState, saveSessionState } from "./chiefSessionStorage";
 import type { ApprovalAction } from "./types";
+// Sanctioned barrel, not a direct import of taskTimeResearch.ts — see
+// docs/AGENT_RUNBOOK.md § Knowledge Precedence & Task-Time Retrieval.
+import type { TaskTimeResearchStatus } from "@/lib/knowledge/index";
 
 /** Observability-only — not authorization. Failures must never block approvals. */
 export type ChiefGovernanceEventType =
   | "approval_proposal_created"
   | "approval_decision_recorded"
-  | "task_reprioritized";
+  | "task_reprioritized"
+  | "research_integrity_checked";
 
-export type ChiefGovernanceAction = "created" | ApprovalAction | "reprioritized";
+export type ChiefGovernanceAction =
+  | "created"
+  | ApprovalAction
+  | "reprioritized"
+  | TaskTimeResearchStatus;
 
 export interface ChiefGovernanceEventBase {
   type: ChiefGovernanceEventType;
-  /** Id of the entity this event is about — a proposal id, or (for task_reprioritized) a task id. */
+  /**
+   * Id of the entity this event is about — a proposal id, a task id (for
+   * task_reprioritized), or a WorkStoryDefinition.id (for
+   * research_integrity_checked).
+   */
   proposalId: string;
   actor: string;
   action: ChiefGovernanceAction;
@@ -46,10 +58,27 @@ export interface ChiefGovernanceTaskReprioritizedEvent extends ChiefGovernanceEv
   action: "reprioritized";
 }
 
+/**
+ * Logged whenever Chief resolves a Work Story's task-time research state
+ * (docs/AGENT_RUNBOOK.md § Knowledge Precedence & Task-Time Retrieval) —
+ * `action` is the resolved TaskTimeResearchStatus itself
+ * (authoritative/provisional/unavailable), and `rationale` carries the
+ * human-readable detail (see describeResearchForChief() in
+ * taskTimeResearch.ts), so this session's Governance panel and Recent
+ * Activity strip make it possible to tell, after the fact, whether a
+ * decision that touched a given Work Story had authoritative research behind
+ * it, only provisional research, or none at all.
+ */
+export interface ChiefGovernanceResearchIntegrityCheckedEvent extends ChiefGovernanceEventBase {
+  type: "research_integrity_checked";
+  action: TaskTimeResearchStatus;
+}
+
 export type ChiefGovernanceEvent =
   | ChiefGovernanceProposalCreatedEvent
   | ChiefGovernanceDecisionRecordedEvent
-  | ChiefGovernanceTaskReprioritizedEvent;
+  | ChiefGovernanceTaskReprioritizedEvent
+  | ChiefGovernanceResearchIntegrityCheckedEvent;
 
 export type ChiefGovernanceEventListener = (event: ChiefGovernanceEvent) => void;
 
@@ -65,6 +94,7 @@ const GOVERNANCE_EVENT_TYPES: ReadonlySet<string> = new Set([
   "approval_proposal_created",
   "approval_decision_recorded",
   "task_reprioritized",
+  "research_integrity_checked",
 ]);
 
 function isChiefGovernanceEvent(value: unknown): value is ChiefGovernanceEvent {
@@ -177,6 +207,31 @@ export function emitTaskReprioritized(
     proposalId: taskId,
     actor: "Chief",
     action: "reprioritized",
+    timestamp,
+    rationale,
+  });
+}
+
+/**
+ * Logged whenever a Work Story's task-time research gate is resolved for
+ * display (see `resolveTaskTimeResearch()` in taskTimeResearch.ts, called
+ * from `WorkStoryPanel` in AgentWorkBoard.tsx) — the session record of
+ * whether a Work Story had authoritative research behind it, only
+ * provisional research, or none at all. `rationale` should be the same
+ * human-readable detail already shown to the operator (e.g.
+ * `describeResearchForChief(result).detail`), not a separate summary.
+ */
+export function emitResearchIntegrityChecked(
+  workStoryId: string,
+  status: TaskTimeResearchStatus,
+  rationale: string,
+  timestamp: string = new Date().toISOString(),
+): void {
+  emitChiefGovernanceEvent({
+    type: "research_integrity_checked",
+    proposalId: workStoryId,
+    actor: "Chief",
+    action: status,
     timestamp,
     rationale,
   });

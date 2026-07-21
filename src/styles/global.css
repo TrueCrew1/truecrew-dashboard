@@ -873,11 +873,31 @@
   color: var(--green);
 }
 
+/* Today page section label */
+.today-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+  margin: 0 0 8px;
+}
+
+/* Small static caption noting demo data may appear in a panel */
+.panel-demo-hint {
+  margin: 0 0 10px;
+  font-size: 11px;
+  color: var(--steel-dim);
+}
+
 /* Shift stats strip (Today) */
+.shift-stats-block {
+  margin-bottom: 20px;
+}
+
 .shift-stats-strip {
   display: flex;
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: 14px;
   overflow-x: auto;
   padding-bottom: 2px;
   -webkit-overflow-scrolling: touch;
@@ -888,13 +908,19 @@
   display: none;
 }
 
+.shift-stats-hint {
+  margin: 6px 2px 0;
+  font-size: 11px;
+  color: var(--steel-dim);
+}
+
 .shift-stats-card {
   flex: 1 1 0;
   min-width: 132px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px 14px;
+  gap: 10px;
+  padding: 16px 18px;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -1268,12 +1294,12 @@
 .task-cell {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   min-width: 0;
 }
 
 .task-cell-title {
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1291,7 +1317,7 @@
 }
 
 .task-context-customer {
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text);
 }
 
@@ -1542,4 +1568,30 @@
 
 .health-card-error-text {
   color: var(--red);
+}
+
+.monitor-guidance-summary {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.monitor-guidance-detail {
+  margin: 0;
+  font-size: 12px;
+  color: var(--steel-dim);
+  line-height: 1.5;
+}
+
+.monitor-guidance-checklist {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: var(--steel-dim);
+  line-height: 1.6;
+}
+
+.monitor-guidance-checklist li {
+  margin-bottom: 2px;
 }

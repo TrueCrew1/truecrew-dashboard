@@ -83,7 +83,7 @@ function useMonitorHealth() {
     void fetchVercel();
     void fetchSupabase();
 
-    // Poll every 30-60 seconds
+    // Poll every 45 seconds
     const interval = setInterval(() => {
       void fetchVercel();
       void fetchSupabase();

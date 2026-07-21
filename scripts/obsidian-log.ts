@@ -8,6 +8,7 @@ import {
   logPr,
   updateHotContext,
 } from "../lib/obsidian/index";
+import { DECISION_CONTROLLED_TAGS, type DecisionControlledTag } from "../lib/obsidian/types";
 
 type Command = "build" | "decision" | "pr" | "hot-context" | "artifact";
 
@@ -16,11 +17,20 @@ function usage(): string {
 
 Usage:
   npm run obsidian:log -- build --result <success|failure|cancelled|unknown> [--branch <name>] [--commit <sha>] [--notes <text>]
-  npm run obsidian:log -- decision --title <text> --decision <text> [--context <text>] [--consequences <text>]
+  npm run obsidian:log -- decision --title <text> --decision <text> --summary <text>
+    [--context <text>] [--alternatives <text>] [--impact <text>] [--follow-ups <text>]
+    [--status active|deprecated] [--tags <comma-separated, controlled vocab only>]
+    [--related <comma-separated note titles, max 3>]
   npm run obsidian:log -- pr --number <n> --title <text> --status <opened|merged|closed|updated> [--url <url>] [--notes <text>]
   npm run obsidian:log -- hot-context --body <text>
   npm run obsidian:log -- hot-context --file <path>
   npm run obsidian:log -- artifact --task-id <id> [--use-ai]
+
+Decision tag vocabulary (controlled — invalid tags are rejected):
+  ${DECISION_CONTROLLED_TAGS.join(", ")}
+
+Decisions are written to True Crew/05-Decisions/YYYY-MM-DD - <slug>.md in the vault
+(Knowledge Architecture V1 — see docs/FILE_SECOND_BRAIN_KNOWLEDGE_ARCHITECTURE_V1.md).
 
 Environment:
   OBSIDIAN_VAULT_PATH  Absolute path to your local Obsidian vault root
@@ -57,6 +67,36 @@ function requireFlag(flags: Map<string, string>, key: string): string {
   return value;
 }
 
+function parseCommaList(value: string | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function parseDecisionTags(value: string | undefined): DecisionControlledTag[] {
+  const requested = parseCommaList(value);
+  const invalid = requested.filter(
+    (tag) => !DECISION_CONTROLLED_TAGS.includes(tag as DecisionControlledTag),
+  );
+  if (invalid.length > 0) {
+    throw new Error(
+      `Invalid tag(s): ${invalid.join(", ")}. Controlled vocabulary is: ${DECISION_CONTROLLED_TAGS.join(", ")}. ` +
+        `Adding a new tag is a human decision recorded on the Second Brain hub — agents never invent tags.`,
+    );
+  }
+  return requested as DecisionControlledTag[];
+}
+
+function parseDecisionStatus(value: string | undefined): "active" | "deprecated" | undefined {
+  if (!value) return undefined;
+  if (value !== "active" && value !== "deprecated") {
+    throw new Error(`--status must be "active" or "deprecated" (got "${value}")`);
+  }
+  return value;
+}
+
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   if (args.length === 0 || args.includes("-h") || args.includes("--help")) {
@@ -82,14 +122,22 @@ async function main(): Promise<void> {
         notes: flags.get("notes"),
       });
       break;
-    case "decision":
+    case "decision": {
+      const related = parseCommaList(flags.get("related")).slice(0, 3);
       result = await logDecision({
         title: requireFlag(flags, "title"),
+        summary: requireFlag(flags, "summary"),
         context: flags.get("context"),
         decision: requireFlag(flags, "decision"),
-        consequences: flags.get("consequences"),
+        alternatives: flags.get("alternatives"),
+        impact: flags.get("impact"),
+        followUps: flags.get("follow-ups"),
+        status: parseDecisionStatus(flags.get("status")),
+        tags: parseDecisionTags(flags.get("tags")),
+        related,
       });
       break;
+    }
     case "pr":
       result = await logPr({
         number: Number(requireFlag(flags, "number")),

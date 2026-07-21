@@ -1,0 +1,26 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "truecrew-dashboard-chief-persist",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 5199,
+      "autoPort": true
+    },
+    {
+      "name": "truecrew-dashboard-planner-checklist",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 5321,
+      "autoPort": true
+    },
+    {
+      "name": "truecrew-dashboard-mock-cards",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 5322,
+      "autoPort": true
+    }
+  ]
+}

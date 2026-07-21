@@ -172,9 +172,162 @@ new report format like Chief Intake's template above.
 
 ---
 
+## Knowledge Precedence & Task-Time Retrieval
+
+Companion to the Global Standard above: knowing what to trust, and what to check
+first, is part of the quality bar, not a separate nicety. This section defines one
+hierarchy and one read-first sequence, referenced by the agent sections below
+instead of restated in each.
+
+### Authoritative Knowledge Hierarchy
+
+When two sources disagree about the same claim, the higher tier wins. Cite the tier
+and the specific artifact used (a file path, a command actually run, a named vault
+page) — never just "checked the vault" or "should be the case."
+
+1. **Repo source code, tests, and config** (current working tree/HEAD,
+   `.env.example`, a passing `npm run qa`) — ground truth for what the system
+   actually contains and does right now. Wins any dispute about current behavior,
+   including a dispute with this runbook's own prose (see
+   `knowledge/lessons/check-code-not-runbook-prose.md` — docs and code have drifted
+   before).
+2. **Production/runtime evidence** (live CI status, Vercel deploy status, Supabase
+   state, an actually-observed response) — ground truth for what's live right now,
+   which can lag or diverge from tier 1 (an undeployed merge, a failed migration).
+   When tiers 1 and 2 disagree, that disagreement **is** the finding — say so
+   plainly, don't silently pick one. See `knowledge/concepts/vercel-status-checks.md`
+   for the read-only pattern for checking this tier.
+3. **Runbooks / governance docs** — `docs/AGENT_RUNBOOK.md` → `docs/TOOL_CATALOG.md`
+   → `docs/agents/CHIEF_OPERATING_SYSTEM.md` → `docs/AGENT_CAPABILITIES_SUMMARY.md`
+   → `docs/AGENT_TOOL_LANES.md`, per `CLAUDE.md`'s precedence order. Authoritative
+   for **policy and process** — what's allowed, what gate applies — never a
+   substitute for tiers 1–2 on what the code/system currently does.
+4. **Second-brain notes** — `knowledge/` (repo-internal) and the external Obsidian
+   vault (`docs/SECOND-BRAIN.md`, `OBSIDIAN_VAULT_PATH`). Durable memory for
+   continuity and orientation, but per Memory Governance below, **not permanent
+   truth**. Trust a note directly only when its `status` is `active` and nothing
+   relevant has changed since `last_reviewed`; anything it asserts about current
+   code, config, tool wiring, or deploy state must be re-checked against tiers 1–3
+   before being restated as still true.
+5. **Ad hoc research outputs** — `drafts/`, an unfiled finding, raw output from an
+   external tool (Perplexity, Gemini, etc.), or general model knowledge. Lowest
+   precedence for any claim about True Crew itself — never asserted as fact until
+   filed as a `knowledge/sources/` note per the Research Agent's filing process
+   below. For claims about the external world (a vendor's actual capabilities,
+   current pricing) that no higher tier can answer, a **filed** source note is the
+   operative authority — but it still outranks a raw, unfiled draft, and both must
+   disclose what was actually checked vs. assumed.
+
+### Read-first sequence (any task, not just the named workflows below)
+
+The Agent Workflows below already run a "Second Brain check" (0a/0b/0c) before
+periodic passes. The same discipline applies to **every** task, including one-off
+work that isn't a named workflow — this makes it explicit per lane:
+
+- **Research**, before starting a new finding: `knowledge/MEMORY.md` → search
+  `knowledge/index.md`/`knowledge/sources/` for an existing finding on the topic
+  (don't re-research what's already filed) → `knowledge/reference/tool-fallbacks.md`
+  if a tool/vendor is involved → then run the plan → gather → critique → gap-fill
+  → synthesize → verify loop already defined below, and file the result (see
+  "Packaging research" below).
+- **Chief**, before recommending, approving, or routing anything: the existing
+  Chief Intake Rule (`knowledge/MEMORY.md` → Master Priority List → Current
+  Priority List → active-task doc) → `knowledge/decisions/` and
+  `knowledge/concepts/` on the specific topic (existing "What Chief checks" list
+  below) → **`knowledge/sources/` filed under the request's Work Story** (via
+  `src/lib/knowledge/latestResearchSource.ts`), not just decisions/concepts — a
+  recommendation that ignores a filed, relevant finding isn't vault-aware
+  regardless of how sound the reasoning looks otherwise.
+- **Build**, before starting implementation on any task, not only inside the six
+  periodic workflows below: `knowledge/MEMORY.md` → the relevant
+  `knowledge/concepts/`/`knowledge/decisions/` page(s) for the area being touched
+  → **`knowledge/sources/` filed for the relevant Work Story/topic** → then the
+  existing Operating checklist (branch/uncommitted-state check, minimal file
+  reads, etc.). This is what makes Research's work actually reach Build during
+  real development, not just get referenced in a periodic pass.
+
+### Inline verification standard (development and research claims)
+
+Generalizes `CLAUDE.md`'s top-level verification standard beyond tool-wiring
+questions (`docs/AGENT_CAPABILITIES_SUMMARY.md`'s six-label system stays the
+authority for "is X wired?" specifically) to any claim made while doing dev or
+research work:
+
+- **Verified** — checked directly, this task: repo code/config actually read, a
+  command actually run with its real output observed, or a cited section actually
+  opened just now. Name the exact file/line, command, or section — a claim isn't
+  Verified because it's probably true.
+- **Cited** — backed by a specific, named source that was actually opened this
+  task (a `knowledge/sources/*.md` note, a runbook section, a decision page) but
+  not independently re-checked against current repo/runtime state. Name the
+  source. If its `status` is `tentative`/`deprecated`, or `last_reviewed` predates
+  a relevant change, downgrade to Provisional instead of citing it as settled.
+- **Provisional / Uncertain** — anything else: general knowledge/memory, an
+  unfiled draft, an assumption, a stale vault page. Label it as such in the
+  output — never smoothed into a Verified-sounding claim. **Never assert Verified
+  from memory.**
+
+### Packaging research so Chief and Build can use it safely
+
+A Research finding is safe for Chief or Build to retrieve and act on **only once**
+it clears all three:
+
+1. **Filed** as a `knowledge/sources/*.md` note, per Research Agent's "How to file
+   one research finding" steps below — an in-conversation answer that was never
+   filed isn't part of the second brain and shouldn't be treated as retrievable by
+   anyone else later.
+2. **Tagged** with the matching `work_story_id` (`src/lib/chief/workStories.ts`) so
+   `src/lib/knowledge/latestResearchSource.ts` actually surfaces it against the
+   right Work Story — an untagged note is filed but not task-time-retrievable.
+3. **Labeled** with the Inline Verification Standard above via the note's own
+   `verification:` frontmatter field (`verified` / `cited` / `provisional` —
+   `knowledge/templates/source-template.md`) so Chief/Build inherit the right
+   confidence level instead of treating a filed note as uniformly certain.
+
+**Enforced, not just documented.** `src/lib/knowledge/taskTimeResearch.ts`'s
+`resolveTaskTimeResearch(workStoryId, summaries)` is the hard gate: it returns
+`"authoritative"` only for a note that maps to a real `WorkStoryDefinition.id`,
+resolves to a path actually under `knowledge/sources/`, **and** carries
+`verification: verified` or `verification: cited`; a real `provisional` label,
+a missing/unrecognized label, an unmapped id, a note found only by the legacy
+title-fallback lookup, or a note outside `knowledge/sources/` all resolve to
+`"provisional"` or `"unavailable"` instead — never silently treated as settled.
+`WorkStoryPanel` (`src/components/chief/AgentWorkBoard.tsx`) renders the result
+through `describeResearchForChief()` (badge + detail — provisional/unavailable
+never render with the same tone as authoritative) and
+`describeResearchForBuildReadiness()` (a distinctly-styled caveat appended to
+the Planner/build-readiness line whenever research isn't authoritative, so
+provisional-only research can't silently count as settled input). Chief's home
+lane summary (`ChiefHomePanel.tsx`'s Research lane) runs the same gate across
+every Work Story rather than showing "Active" for any filed note regardless of
+its label. Each resolution is also logged to the session's governance record
+(`emitResearchIntegrityChecked()` in `chiefGovernanceEvents.ts`, visible in the
+Governance Events panel and Recent Activity strip) so it's possible to tell,
+after the fact, whether a decision touching a Work Story had authoritative
+research behind it, only provisional, or none. See
+`src/lib/knowledge/taskTimeResearch.test.ts` for the covered cases.
+
+**One sanctioned interface, not several call sites reaching in.** At task
+time, research state is surfaced only via `src/lib/knowledge/index.ts` — the
+barrel that re-exports `resolveTaskTimeResearch()` and its display helpers;
+UI and agent logic must import from there, never by reading
+`latestResearchSource.ts`'s raw summaries directly. `src/lib/knowledge/index.test.ts`
+locks in that every current Chief/Build research consumer does.
+
+---
+
 ## Planner Agent
 
 **Purpose:** Slice features, roadmap, and phases. Never writes code or migrations.
+
+**Mandate (Planner / Orchestrator):**
+- **MUST** keep slices, sequencing, and priority drafts inside the active Priority / Current Task
+  and the existing lane/tool law.
+- **MUST NOT** write code, create a new agent or lane, or treat a draft policy or partial runtime
+  surface as settled ship law.
+- **MUST escalate** any reprioritization, phase change, operating-model change, or plan that
+  depends on a `PARTIAL`/`BLOCKED` surface being treated as `REAL` under
+  `docs/SYSTEM_LAW_TRUTH_MERGE_DECISION_TABLE_V1.md`.
 
 **Allowed without approval:**
 - Refine internal plans, notes, and non-binding options
@@ -207,9 +360,53 @@ say explicitly whether the request extends, revises, or is independent of it.
 
 ---
 
+## Standards Review (pre-Chief gate role)
+
+**Purpose:** Narrow law-and-evidence pass on a pending request before Chief recommends on it. This
+is a role, not a new agent or a new tool lane.
+
+**Mandate:**
+- **MUST** check that request language matches the cited evidence, Truth Map status, and any
+  existing decision/runbook rule it relies on.
+- **MUST NOT** approve work, widen scope, invent new policy, or exercise tool authority beyond the
+  originating lane's existing read-only evidence access.
+- **MUST escalate** any mismatch between request wording and runtime truth, any contradiction
+  between code/docs/vault law, or any regulated/sensitive-content handling question before Chief
+  recommends approval.
+
+---
+
 ## Build Agent
 
 **Purpose:** Implement, refactor, and wire features in code.
+
+**Mandate (Cursor execution lane):**
+- **MUST** keep repo edits scoped to the current slice, report actual evidence, and label any
+  ship-readiness claim against the Truth Map plus
+  `docs/SYSTEM_LAW_TRUTH_MERGE_DECISION_TABLE_V1.md`.
+- **MUST NOT** make governance/law decisions, widen a capability claim beyond verified runtime
+  truth, or convert `PARTIAL`/`MOCK`/`BLOCKED` work into "done" by wording alone.
+- **MUST escalate** approval-logic changes, migrations, security/auth/external-API impact, or any
+  blocked/human-only dependency before treating the work as ready.
+
+**Operating checklist, every task** (session-level defaults — narrows *how*
+work happens before any gate below is even reached, doesn't replace those
+gates):
+- Inspect only the exact files a task actually needs — no speculative
+  repo-wide reads.
+- Confirm the current branch and any uncommitted changes before starting
+  (`git status`) — never assume a clean tree.
+- Ship one small, reversible slice per task, not a bundle of unrelated
+  changes.
+- Run the real local checks that apply (lint/build/tests) and report the
+  actual result — never claim a check ran that didn't (see Verification
+  below).
+- Report clearly — what changed, what was verified, what's still open —
+  before anything is committed.
+- **Commit, push, or open a PR only when explicitly instructed to for that
+  task.** `docs/AGENT_WORKFLOW.md`'s implement → PR → approve flow is what
+  happens once a PR is actually authorized; absent that instruction, work is
+  prepared and verified, not committed.
 
 **Allowed without approval:**
 - Tiny refactors and non-breaking improvements in feature branches
@@ -233,7 +430,9 @@ say explicitly whether the request extends, revises, or is independent of it.
   whichever concept applies) and any relevant `knowledge/decisions/*.md` before proposing. PR
   descriptions reference the pages they follow when applicable — e.g. "This PR follows the rules
   in `dashboard-maintenance.md` and `approval-load.md`" — so a reviewer doesn't have to
-  reconstruct the reasoning from scratch.
+  reconstruct the reasoning from scratch. This check happens at task start, not just before
+  approval — see § Knowledge Precedence & Task-Time Retrieval's read-first sequence for Build,
+  including the `knowledge/sources/` step.
 - **Meets the Global Standard** (see § Global Standard — Premium SaaS Quality Bar):
   architecture, security, accessibility, performance, and operational reliability
   considered, not just "does it pass `npm run qa`."
@@ -255,6 +454,15 @@ independent of it.
 
 **Purpose:** Gather tools, patterns, vendors, and trade-offs. Never adopts anything unilaterally.
 
+**Mandate (Discovery / Research):**
+- **MUST** gather from real sources, mark verification honestly, and file durable findings under
+  `knowledge/sources/` using the source template.
+- **MUST NOT** create a parallel discovery tree, treat drafts/unfiled notes as authoritative, or
+  turn research into adoption or policy by itself.
+- **MUST escalate** any adopt/remove recommendation, any contradiction between filed research and
+  repo/governance truth, and any regulated/sensitive-content handling question before the finding
+  becomes approval input.
+
 **Iterative by default.** Research runs this loop, not a single pass: **plan** (what's
 actually being asked) → **gather** (real sources, not memory) → **critique** (poke
 holes in the first pass — what's weak, unverified, or one-sided) → **gap-fill**
@@ -275,7 +483,8 @@ obvious answer, not a comparison or a recommendation) — if it's worth a
 **Verification before asking for approval:**
 - At least two options compared, not a single default
 - Clear rationale and impact on True Crew specifically (not generic pros/cons)
-- Claims checked against actual docs, not memory — cite what was checked in `testsOrChecksDone`
+- Claims checked against actual docs, not memory — cite what was checked in `testsOrChecksDone`,
+  labeled Verified / Cited / Provisional per § Knowledge Precedence & Task-Time Retrieval
 - **Reliability-aware:** check `knowledge/reference/tool-fallbacks.md` before
   relying on Perplexity/Claude Pro/etc.; if a fallback was used because the primary
   was `DEGRADED`/`BLOCKED`, say so in the output — don't present a fallback result
@@ -322,11 +531,133 @@ copying/writing markdown by hand.
 There is no `fileFinding.ts` or automated filing pipeline yet — this manual
 path is the only way to close the loop today.
 
+### Research Workflow Library
+
+The Research lane owns a small, static library of **workflow playbooks** — the
+codified version of "how agents should be working" for situations that recur.
+It lives in `src/data/researchWorkflows.ts` (typed TS data, versioned in git —
+no database, no LLM call, no network) and is read through
+`src/lib/research/researchGateway.ts`.
+
+**Advisory, never executable.** A playbook is text an agent *quotes*, not a
+script anything runs. The gateway is read-only: it returns static data and has
+no way to perform a step. Attaching a workflow to a request does not change the
+gate, the recommended decision, or what the operator must do — it only adds
+suggested next steps to the card. An agent still routes anything gate-worthy
+through the normal `*ApprovalRequest` path.
+
+**How to reference a workflow:**
+
+- `listWorkflows(filter?)` — all playbooks, optionally narrowed by `lane`,
+  `scenario`, or `riskLevel`. Multiple filter fields are AND-ed.
+- `getWorkflowById(id)` — one playbook, or `null` if the id is unknown.
+- `getWorkflowForScenario(scenario)` — the usual entry point: an agent knows the
+  situation it is in, not a workflow id.
+- `summarizeWorkflowSteps(id, limit?)` — the first steps as `"who: what"` lines,
+  for attaching to a task or card.
+
+Unknown ids return `null`/`[]` rather than throwing, so a stale reference
+degrades to "no workflow attached" instead of breaking an otherwise valid request.
+
+**Attaching one to a Research approval request.** Set the optional `workflowId`
+on a `ResearchApprovalRequest`; `createApprovalCardFromResearchRequest()` then
+appends an advisory "Suggested workflow" line to the card's `riskNote`. See
+`EXAMPLE_RESEARCH_DOC_DRIFT_REQUEST` in
+`src/components/chief/agentApprovalGates.ts` for a worked example.
+
+**Playbooks today** — three scenarios, each codifying a workflow this runbook
+already describes in prose:
+
+| id | scenario | lane | risk |
+| --- | --- | --- | --- |
+| `wf-prod-incident-triage` | `prod-incident` | reliability | high |
+| `wf-gated-build-failure` | `gated-build-failure` | build | medium |
+| `wf-doc-drift` | `doc-drift` | librarian | low |
+
+**Adding or updating a playbook.** A workflow is repo content, so it changes
+like any other repo change — a reviewed PR:
+
+1. Confirm the pattern is *real and recurring*. A playbook describes what strong
+   agents already do here, not an aspiration. If it has happened once, it is a
+   Build Log entry, not a workflow.
+2. Add an entry to `RESEARCH_WORKFLOWS` in `src/data/researchWorkflows.ts`.
+   Widening `WorkflowScenario` or `WorkflowLane` is a deliberate edit to those
+   unions — they are closed on purpose so a caller cannot attach a workflow for
+   a scenario that has no playbook.
+3. Give every step a `who` (an existing lane) and a one-action `what`, numbered
+   from 1 in order.
+4. Point `links` only at paths that exist today. A link to a file that is not in
+   the repo is exactly the `doc-drift` failure this library is meant to catch.
+5. Update the table above, and run `npm run qa` — `researchGateway.test.ts`
+   enforces unique ids and correctly ordered, non-empty steps.
+
+If a change to a playbook would loosen or tighten what an agent may do without
+approval, open it as a Build approval request first, per **Change Control** —
+same rule as any other edit to this runbook.
+
+---
+
+## Librarian Agent
+
+**Purpose:** File Task and Agent work items into the external Obsidian vault
+(`OBSIDIAN_VAULT_PATH`) as part of the Second Brain system, so the
+locally-maintained vault stays synchronized with the repo's knowledge of
+ongoing work. Distinct from Research's filing path above (`knowledge/sources/`,
+repo-internal) — Librarian never writes to `knowledge/`, and Research never
+writes to the external vault.
+
+**Responsibilities:**
+- Transform approved work items (from Planner, Build, or Chief) into
+  structured Obsidian notes using the vault templates in
+  `docs/vault-templates/`.
+- Maintain links and indexes in the vault (MOC pages, project pages) so notes
+  stay findable and non-duplicate, per the Second Brain safeguards (no
+  orphaned pages, no duplicate topics, no uncontrolled renaming — see §
+  Second Brain Starter Pass).
+- Respect the existing Obsidian write rules (`docs/OBSIDIAN_LOGGING.md`,
+  `docs/decisions/ADR-001-auditor-system.md` § 6): writes refuse any path
+  outside `OBSIDIAN_VAULT_PATH`; no secrets in notes; if the vault and the
+  repo disagree, **the repo wins** and the vault note gets corrected, never
+  the reverse.
+
+**Allowed without approval:**
+- Writing or updating a vault note for a work item already reflected in the
+  repo (a merged PR, a decided `ApprovalCard`, an explicit instruction from
+  Chief or David) — this is filing, not deciding.
+
+**Limits:**
+- **Never edits this repo.** Librarian only writes to the external vault;
+  any repo change still goes through Build/Claude Code and a normal PR.
+- **Never files its own `ApprovalCard`.** Librarian has no `*ApprovalRequest`
+  type in `agentApprovalGates.ts` and creates no new decision points — it
+  acts only on work already cleared (a merged PR, an approved card, an
+  explicit Chief/operator instruction), never on its own initiative.
+- **Does not invent vault structure.** Uses only the existing templates and
+  layout in `docs/vault-templates/` and the structure defined in
+  `docs/decisions/ADR-001-auditor-system.md` — a new MOC, folder, or note
+  type is a Scope Guardrail question (§ Scope Guardrail above), not
+  something Librarian adds unprompted.
+
+**Verification before writing:**
+- The work item being filed is actually reflected in the repo (a real PR,
+  Task, or cleared `ApprovalCard`) — never file a note for work that hasn't
+  actually happened.
+- The target path resolves inside `OBSIDIAN_VAULT_PATH` — refuse and report
+  rather than write if it doesn't.
+
 ---
 
 ## Content Agent
 
 **Purpose:** Draft internal/external copy, docs, and UX text. Never publishes externally itself.
+
+**Mandate (Content & Media):**
+- **MUST** draft against verified shipped truth, name the audience/surface, and keep True Crew's
+  industrial tone.
+- **MUST NOT** invent product claims, publish directly, or treat unapproved copy as settled policy
+  or shipped behavior.
+- **MUST escalate** any public/client copy, legal/terms/privacy/support-policy wording, critical UI
+  wording, or regulated/sensitive-content handling question before release.
 
 **Allowed without approval:**
 - Internal notes, preliminary copy drafts, non-public docs
@@ -496,6 +827,29 @@ operator's decision.
   job is to reduce how many decisions David has to make, not just route every request through.
 - Log outcomes in the Build Log / Agent Log.
 
+### Decision Rubric (approve / escalate / reject)
+
+Chief's recommendation posture is set by two sources together:
+
+- runtime evidence: `docs/internal/chief-command-center-runtime-truth.md`,
+- decision law: `docs/SYSTEM_LAW_TRUTH_MERGE_DECISION_TABLE_V1.md`.
+
+Use them this way:
+
+- **Approve** when the request is in scope, the cited surface is `REAL`, checks are complete, and
+  no unresolved sensitivity override applies.
+- **Escalate** when the cited surface is `PARTIAL` or `BLOCKED`, when a human-only unblocker or
+  operator preference call is still needed, or when regulated/sensitive content is present and
+  source, audience, release surface, or handling still need David's call. In card terms this maps
+  to **Send back / Hold**, not Approve.
+- **Reject** when the request depends on `MOCK` or `NOT STARTED` capability being treated as live,
+  contradicts the Truth Map or an existing decision, or attempts to ship regulated/sensitive claims
+  without cleared evidence and authority.
+
+For this rubric, regulated/sensitive content includes legal/terms/privacy/support-policy wording,
+client/public copy, security/auth or external-message surfaces, and customer-identifiable or
+MSHA-sensitive material.
+
 **What Chief checks before recommending anything** (beyond the mechanical risk mapping —
 `riskLevel` low/medium/high → `recommendedDecision` approve/hold/needs_changes):
 - Verify the agent's claims directly (CI status, build output, docs) rather than trusting
@@ -508,6 +862,9 @@ operator's decision.
   `knowledge/concepts/` — if so, the resulting `ApprovalCard` links to that page and states
   whether it extends, revises, or is independent of it, so David doesn't have to re-derive
   context the vault already holds.
+- Check `knowledge/sources/` for a filed research finding under the request's Work Story (per
+  § Knowledge Precedence & Task-Time Retrieval) — not just `decisions/`/`concepts/`. A
+  recommendation that ignores a filed, relevant finding isn't vault-aware.
 - **Reliability-aware:** if the request depended on a tool `docs/TOOL_CATALOG.md`
   marks `DEGRADED`/`BLOCKED`, confirm the agent used the documented fallback (or
   disclosed the degradation) rather than silently proceeding on a known-bad tool.
@@ -519,6 +876,100 @@ operator's decision.
   back/Reject only ever update in-memory card state and the Audit log; real automation of those
   actions is a documented extension point, not current behavior, until an explicit signoff rule
   for it is approved separately.
+
+**Response and escalation rules (product behavior):** see
+`docs/agents/CHIEF_OPERATING_SYSTEM.md` § 2 → "Response and escalation
+rules" — the concise/fact-based response standard, auto-handling of
+low-risk questions without a card, the recommended-best-option requirement
+on every approval card, and daily/weekly briefs (Slack once wired). That
+subsection is the source of truth for these rules; this file's Rules above
+still govern approval-gate authority and are unaffected by it.
+
+### Chief AI Fallback Routing
+
+**Status: partially wired, off by default.** Chief's command router
+(`resolveChiefCommand` in `src/components/chief/chiefCommandRouter.ts`) is
+deterministic-first — keyword/regex dispatch against live operational data — and
+that does not change. This section governs the one branch that changes: what
+happens when no specialist matches.
+
+**Order of precedence (`lib/chief/modelRouter.ts`, `routeChiefFallback`):**
+1. **Deterministic match** — always wins. If any specialist rule matches, that
+   response is returned and this whole section never runs.
+2. **No match (`isGenericFallback: true`)** — only here does an AI fallback get a
+   chance to run, and only if at least one fallback tier is flag-enabled.
+3. **Local-only mode** (`CHIEF_LOCAL_ONLY_MODE` server default, or the Chief
+   panel's per-request "Prefer local only" toggle) — skips Azure entirely, tries
+   Ollama only.
+4. **Cloud tier** (`CHIEF_AI_FALLBACK_ENABLED`) — Azure AI Foundry
+   (`azure-ai-foundry` in `docs/TOOL_CATALOG.md`), model chosen by query
+   category, no manual override:
+   - general / unclassified → **GPT-5-mini**
+   - code, refactor, long-context → **Kimi K2.6**
+   - reasoning, strategy, analysis → **DeepSeek V4 Pro**
+5. **Azure failure, or cloud tier disabled** — falls through to the local tier
+   (`CHIEF_OLLAMA_FALLBACK_ENABLED`, `ollama-local` in `docs/TOOL_CATALOG.md`):
+   same category mapping, `llama3` for general/code, `deepseek-r1` for
+   reasoning. Only reachable in local dev (`vercel dev` on the same machine as
+   Ollama) — a deployed Vercel function cannot reach `localhost:11434`, so this
+   tier is effectively a no-op in production today.
+6. **Everything failed or disabled** — Chief keeps the original canned generic
+   response (`DEFAULT_RESPONSE`). Never a hard failure the operator sees — every
+   tier fails soft to the next.
+
+**Gate:** no per-call `ApprovalCard` — this is read-only advisory text shown to
+the operator for their own judgment, same reasoning as other `READ-ONLY` rows in
+`docs/TOOL_CATALOG.md`. What *does* stay human-only: flipping any of the feature
+flags above, and setting the Azure/Ollama env vars themselves — that's Vercel
+project config, covered by the existing Auth / infra table below.
+
+**Reliability:** both tools default to `HEALTHY` (Reliability reserved, not yet
+monitoring). If either tier is later observed failing routinely, the fix is a
+`docs/TOOL_CATALOG.md` health_state update plus a `knowledge/reference/repair-playbook.md`
+entry, not a change to this routing order.
+
+**Azure as primary sustained-execution lane (while Startup credits last):**
+Azure AI Foundry is the intended default execution tier while Azure Startup
+credits are active — Ollama stays the local-dev fallback, not the primary
+lane, during this window. Once the credits expire, flip
+`CHIEF_AI_FALLBACK_ENABLED=false` (the router already falls back to Ollama
+automatically on any Azure error, but that still burns a request against a
+dead/unpaid endpoint first — disabling the flag avoids that). At that point
+routing degrades to the local Ollama tier where reachable, or the canned
+generic response otherwise, per the order above.
+
+**Lane field (`ChiefRouteOptions.lane`, `ChiefFallbackResult.lane`):**
+`routeChiefFallback()` accepts an optional `lane: "chief" | "builder" |
+"research"`, defaulting to `"chief"`. It identifies which caller is routing
+through this function (used in error logs and the returned result) and does
+**not** change model selection — category classification
+(`classifyChiefFallbackQuery`) is still what picks the model. Today only
+Chief (`api/chief/ask.ts`) and Builder (`lib/chief/buildPlanHelper.ts`, its
+build-plan-helper CLI) call this function; Research has no live LLM call
+site yet (`researchAgentTestProposal.ts` is a mock, and
+`src/lib/research/requests.ts` / `scripts/file-research-finding.ts` are
+deterministic filing scripts) — `lane: "research"` exists for whenever that
+changes, and should be used at that point rather than adding a new
+mechanism.
+
+### Voice Prep (Scaffold Only)
+
+**Status: scaffold, not a live feature.** Chief's voice UX today
+(`src/components/chief/useChiefVoice.ts`) is entirely client-side: browser
+Web Speech API for both push-to-talk input and "Speak" output on a response
+card. No server round-trip exists for either direction yet.
+
+Intended future path, if/when server-side voice is actually built: **speech-in
+-> transcription -> Chief routing (`resolveChiefCommand` /
+`lib/chief/modelRouter.ts`) -> text response -> TTS**. Two placeholder routes
+exist to define that contract without committing to a vendor or building
+realtime infrastructure prematurely:
+- `api/chief/transcribe.ts` — always returns `501 Not Implemented`.
+- `api/chief/speak.ts` — always returns `501 Not Implemented`.
+
+Neither is wired into any UI. Picking a transcription/TTS provider, adding its
+env vars, and building the real integration is unscoped future work, not part
+of this pass.
 
 ---
 
@@ -641,6 +1092,27 @@ notes and/or cards.
 - **Good output:** one digest note. No cards of its own — see **Approval Load** below for how Chief handles a backlog of pending cards surfaced by other workflows.
 - **Approval gate:** none — this is reporting, not an action; nothing here changes state.
 - **Logging:** Build Log entry with the digest, so it's part of the same record as everything else.
+
+### Approval Feedback Review
+- **Purpose:** once per month, review rejected and sent-back approvals for rule drift, repeated
+  failure modes, and missing decision law — without auto-changing anything.
+- **Steps:**
+  - **1. Pull the evidence** — read rejected/sent-back approval history from the existing Chief
+    approvals record (`/api/chief/approvals` or the same Supabase data read directly in a
+    read-only way). No new schema, no background automation.
+  - **2. Cluster the patterns** — group by cause: missing evidence, Truth Map mismatch, scope
+    violation, blocked dependency, regulated/sensitive-content handling, or unclear operator
+    preference.
+  - **3. Decide whether the pattern is local or law-level** — one-off execution failures stay as
+    notes; repeated drift becomes a governance candidate.
+  - **4. Propose changes through normal docs PRs** — update
+    `docs/SYSTEM_LAW_TRUTH_MERGE_DECISION_TABLE_V1.md`, the Truth Map, or the Chief/runbook rubric
+    only by reviewed docs PR. If the proposal loosens or tightens agent authority, follow **Change
+    Control** first.
+- **Agent owner:** Chief, with Standards Review as the pre-Chief evidence pass.
+- **Good output:** one short review note or one docs PR proposal. No automatic rule updates.
+- **Approval gate:** reporting-only unless the proposed docs change alters agent authority, in which
+  case the normal Build approval path applies.
 
 ### Research–Planner–Build Correlation Pass
 - **Purpose:** catch overlaps where a Research recommendation, a Planner roadmap item, and Build's actual code/PRs disagree or duplicate effort on the same capability — before the operator discovers the conflict after the fact.

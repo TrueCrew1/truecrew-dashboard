@@ -3,9 +3,20 @@ import path from "node:path";
 
 const VAULT_ENV = "OBSIDIAN_VAULT_PATH";
 
-/** Local iCloud vault — used only when the directory exists on disk. */
-export const DEFAULT_VAULT_PATH =
-  "/Users/truecrew/Library/Mobile Documents/iCloud~md~obsidian/Documents/TRUE CREW-SECOND BRAIN";
+/**
+ * Primary Obsidian vault — True Crew Second Brain (Knowledge Architecture V1).
+ * See docs/FILE_SECOND_BRAIN_KNOWLEDGE_ARCHITECTURE_V1.md for the full spec.
+ * Used only when the directory exists on disk.
+ */
+export const DEFAULT_VAULT_PATH = "/Users/truecrew/ObsidianVault";
+
+/**
+ * Legacy vault path — deprecated. Superseded by DEFAULT_VAULT_PATH above per the
+ * True Crew Second Brain — Knowledge Architecture V1 decision. Not read by any
+ * code path; kept only as a historical reference for anyone still Sync-ing here.
+ */
+// const LEGACY_ICLOUD_VAULT_PATH =
+//   "/Users/truecrew/Library/Mobile Documents/iCloud~md~obsidian/Documents/TRUE CREW-SECOND BRAIN";
 
 function resolveExistingVaultPath(candidate: string): string | null {
   const resolved = path.resolve(candidate);
@@ -46,7 +57,7 @@ export function describeVaultResolution(): string {
     lines.push(`    ${envRaw}`, "");
   } else {
     lines.push(`  ${VAULT_ENV} is not set.`);
-    lines.push(`  Default iCloud path also not found:`);
+    lines.push(`  Default vault path also not found:`);
     lines.push(`    ${DEFAULT_VAULT_PATH}`, "");
   }
 

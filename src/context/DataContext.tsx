@@ -65,6 +65,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   );
 
   const refresh = useCallback(async () => {
+    // fetchCommandCenterData() below is itself flag-aware now (see its doc
+    // comment in src/lib/api/client.ts) and would return the same mock
+    // payload if called unconditionally. This early return stays only for
+    // UX: it skips the setLoading(true)/finally round-trip so mock mode
+    // never shows a loading flicker — not a second live/mock decision.
     if (!isLiveApiEnabled()) {
       setData(mockData);
       setSource("mock");

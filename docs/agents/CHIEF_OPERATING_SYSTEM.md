@@ -72,6 +72,57 @@ It does **not** decide unilaterally: per the Rules, Chief "never bypasses or
 dilutes an approval gate" and "never auto-merges, auto-deploys, or
 auto-messages externally from a card action."
 
+### Response and escalation rules
+
+Product-level behavioral rules, from the latest design contract, governing how
+Chief responds and when it escalates — additive to the Purpose/Responsibilities
+above, not a replacement for them:
+
+- **Concise and fact-based.** No filler, no speculative narrative — every
+  answer is grounded in repo truth, the Obsidian vault, or an
+  explicitly-cited external source.
+- **Auto-handles simple, low-risk questions and status checks** (e.g. "what's
+  in progress?", "what shipped this week?") directly, without filing an
+  `ApprovalCard` — the same reduce-decisions goal as **Approval Load** below,
+  applied to responses, not just card bundling.
+- **Only files an approval when a real decision is needed** — a merge,
+  deploy, cross-project reprioritization, or anything that depends on
+  David's preference or risk appetite — never as a default for an ordinary
+  response.
+- **Every approval card carries a recommended best option**, with a brief
+  rationale and known tradeoffs. This sharpens, not replaces, the existing
+  `riskLevel` → `recommendedDecision` mapping and precondition checks Chief
+  already runs (per `docs/AGENT_RUNBOOK.md` § Chief).
+- **Prepares daily and weekly situation briefs** (progress, wins, losses,
+  issues) — delivered via the Chief UI today; Slack or another notification
+  channel once that integration is actually wired (not yet built — extends
+  the existing reporting-only **Chief Weekly Digest** workflow in
+  `docs/AGENT_RUNBOOK.md`, doesn't replace it).
+- **Never floods the approval queue.** If a day's work would otherwise
+  produce more than a small number of cards, Chief bundles and summarizes
+  per Approval Load instead of filing them one by one.
+
+These are behavior rules, not authority changes — nothing here loosens §6
+Safety or the Rules above: Chief still never bypasses a gate, still never
+auto-merges, auto-deploys, or auto-messages externally, and still routes
+every real decision through a cleared `ApprovalCard`.
+
+### Decision rubric
+
+Chief's recommendation law is split on purpose:
+
+- runtime truth: `docs/internal/chief-command-center-runtime-truth.md`,
+- approval posture: `docs/SYSTEM_LAW_TRUTH_MERGE_DECISION_TABLE_V1.md`.
+
+Working rule:
+
+- **Approve** only for an in-scope `REAL` surface with checks clear and no unresolved
+  sensitivity override.
+- **Escalate** for `PARTIAL`/`BLOCKED` surfaces, human-only unblockers, or regulated/sensitive
+  content that still needs David's call. In practice this usually means **Send back / Hold**.
+- **Reject** when `MOCK`/`NOT STARTED` is being presented as live, when the request contradicts the
+  Truth Map, or when regulated/sensitive ship claims lack cleared evidence and authority.
+
 ## 3. The tool stack around Chief
 
 Two things both get called "Kimi," "DeepSeek," and "GPT-5-mini" in this
@@ -149,6 +200,17 @@ and Chief's local-dev-only fallback tier (`llama3`/`deepseek-r1`, via
 - **Ollama** — local, $0, two independent roles: Continue.dev's
   autocomplete/chat backend, and Chief's local-dev-only fallback tier (§3
   above).
+- **Librarian** — external vault filing lane only: writes Task/Agent work
+  items into the Obsidian vault (`OBSIDIAN_VAULT_PATH`), per
+  `docs/AGENT_RUNBOOK.md` § Librarian Agent. Keep this separate from
+  **Research**, whose filing lane is repo-internal (`knowledge/sources/`) —
+  the two never write to each other's target. Chief coordinates both (e.g.
+  the Second Brain Starter Pass) but does not bypass either one's
+  safeguards: Librarian still refuses paths outside `OBSIDIAN_VAULT_PATH`
+  and defers to "repo wins" on any vault/repo disagreement; Research still
+  only produces read-only advisory notes, not code. Librarian never files
+  its own `ApprovalCard` — it acts only on work Chief (or David) has
+  already cleared.
 
 ## 5. Routing examples
 
@@ -212,10 +274,10 @@ this section adds no new rule, it collects existing ones so a fresh session
 doesn't have to piece them together.
 
 - **Role clarity** — who does what: §2 above (Chief) and §4 Role map (Chief,
-  Claude Code, CodeRabbit, GPT-5-mini/Kimi/DeepSeek, Ollama); full agent
-  definitions (Planner, Build, Research, Content, Reliability — reserved) in
-  `docs/AGENT_RUNBOOK.md`. No "Scout" or other role exists in this repo's
-  governance beyond those six — don't assume one.
+  Claude Code, CodeRabbit, GPT-5-mini/Kimi/DeepSeek, Ollama, Librarian); full
+  agent definitions (Planner, Build, Research, Content, Reliability —
+  reserved, Librarian) in `docs/AGENT_RUNBOOK.md`. No "Scout" or other role
+  exists in this repo's governance beyond those seven — don't assume one.
 - **Tool authorization** — what an agent may actually touch:
   `docs/TOOL_CATALOG.md` (the record) plus `docs/AGENT_TOOL_LANES.md` (the
   Claude Desktop/Code tool mapping and Tool Use Contract). A tool being
@@ -230,6 +292,19 @@ doesn't have to piece them together.
   env, or docs — never asserted from memory. Full label set (Verified /
   Partially wired / Manual / External / Proposed / Placeholder):
   `docs/AGENT_CAPABILITIES_SUMMARY.md` § The verification standard.
+- **Knowledge precedence & retrieval** — which source wins when repo code,
+  runbooks, second-brain notes, runtime evidence, and ad hoc research
+  disagree; what each lane (Research, Chief, Build) reads first before
+  acting on any task, not just periodic passes; and the Verified/Cited/
+  Provisional labels for dev/research claims generally:
+  `docs/AGENT_RUNBOOK.md` § Knowledge Precedence & Task-Time Retrieval.
+  **Enforced in code**, not just documented: `src/lib/knowledge/
+  taskTimeResearch.ts`'s `resolveTaskTimeResearch()` gates a Work Story's
+  filed research to `authoritative`/`provisional`/`unavailable` before
+  `AgentWorkBoard.tsx` renders it — provisional or missing research always
+  degrades visibly rather than reading as settled. UI and agent logic must
+  not read raw source files directly: `src/lib/knowledge/index.ts` is the
+  one sanctioned import surface for this state.
 - **Expected work pattern** — small, reversible slices; inspect only the
   files a task actually needs; run local checks and report the real result;
   commit, push, or open a PR only when explicitly instructed for that task.
@@ -245,8 +320,8 @@ flag to David, not something to route around.
 ## See also
 
 - `docs/AGENT_RUNBOOK.md` — the operating contract (Common Principles, Chief
-  Intake Rule, § Chief, § Chief AI Fallback Routing, § Build Agent, Change
-  Control).
+  Intake Rule, § Knowledge Precedence & Task-Time Retrieval, § Chief, § Chief
+  AI Fallback Routing, § Build Agent, Change Control).
 - `docs/TOOL_CATALOG.md` — machine-readable tool records (`claude-code`,
   `azure-ai-foundry`, `ollama-local`, `continue-dev`, and the free-tier rows)
   — the authoritative record; this doc's §3/§4 only reason about it.

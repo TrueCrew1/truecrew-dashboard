@@ -9,6 +9,7 @@ import {
   isLiveApiEnabled,
 } from "@/lib/api/client";
 import { useMonitorHealth } from "@/hooks/useMonitorHealth";
+import { subscribeChiefApprovalFocus } from "./chiefApprovalFocus";
 import { ApprovalAlertsPanel } from "./ApprovalAlertsPanel";
 import { ApprovalBoard } from "./ApprovalBoard";
 import { ChiefQueueStrip } from "./ChiefQueueStrip";
@@ -22,6 +23,7 @@ import { SpecialistCards } from "./SpecialistCards";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
 import { ChiefBoard } from "./ChiefBoard";
 import { AgentWorkBoard } from "./AgentWorkBoard";
+import { V2ProgramBoard } from "./V2ProgramBoard";
 import { GovernanceEventsPanel } from "./GovernanceEventsPanel";
 import { RecentActivityStrip } from "./RecentActivityStrip";
 import { emitTaskReprioritized } from "./chiefGovernanceEvents";
@@ -37,7 +39,7 @@ const EXAMPLE_COMMANDS = [
   "Show open alerts",
 ];
 
-type ChiefTab = "command" | "board" | "agents" | "approvals" | "history" | "governance";
+type ChiefTab = "command" | "board" | "agents" | "programs" | "approvals" | "history" | "governance";
 
 /** Dev-only observability tab — never shown in production builds. */
 const SHOW_GOVERNANCE_TAB = import.meta.env.DEV;
@@ -122,6 +124,28 @@ export function ChiefPanel() {
     setApprovalStatusFilter(filter);
     setActiveTab("approvals");
   }, []);
+
+  const [focusProposalId, setFocusProposalId] = useState<string | null>(null);
+
+  // Lets any surface (e.g. Today's Approval Activity card) land on one
+  // proposal's exact card here — see chiefApprovalFocus.ts. Always resets
+  // the status filter to "all" first so a stale filter can't hide the
+  // target; ApprovalBoard does the actual scroll/highlight once it has the id.
+  useEffect(() => {
+    return subscribeChiefApprovalFocus((proposalId) => {
+      setApprovalStatusFilter("all");
+      setActiveTab("approvals");
+      setFocusProposalId(proposalId);
+    });
+  }, []);
+
+  // Temporary highlight only (matches .chief-approval-card--focused's 2s
+  // pulse) — clears itself so the outline doesn't linger indefinitely.
+  useEffect(() => {
+    if (!focusProposalId) return;
+    const timeout = setTimeout(() => setFocusProposalId(null), 2200);
+    return () => clearTimeout(timeout);
+  }, [focusProposalId]);
 
   const boardItems = useMemo(
     () => deriveChiefBoardItems(liveContext, approvals),
@@ -359,6 +383,17 @@ export function ChiefPanel() {
         <button
           type="button"
           role="tab"
+          id="chief-tab-programs"
+          aria-selected={activeTab === "programs"}
+          aria-controls="chief-panel-programs"
+          className={`chief-tab${activeTab === "programs" ? " chief-tab--active" : ""}`}
+          onClick={() => setActiveTab("programs")}
+        >
+          Programs
+        </button>
+        <button
+          type="button"
+          role="tab"
           id="chief-tab-approvals"
           aria-selected={activeTab === "approvals"}
           aria-controls="chief-panel-approvals"
@@ -560,6 +595,17 @@ export function ChiefPanel() {
           </div>
         ) : null}
 
+        {activeTab === "programs" ? (
+          <div
+            id="chief-panel-programs"
+            role="tabpanel"
+            aria-labelledby="chief-tab-programs"
+            className="chief-tab-panel"
+          >
+            <V2ProgramBoard />
+          </div>
+        ) : null}
+
         {activeTab === "approvals" ? (
           <div
             id="chief-panel-approvals"
@@ -573,6 +619,7 @@ export function ChiefPanel() {
               onApprovalAction={handleApprovalAction}
               statusFilter={approvalStatusFilter}
               onStatusFilterChange={setApprovalStatusFilter}
+              focusProposalId={focusProposalId}
             />
             <ApprovalAlertsPanel />
           </div>
