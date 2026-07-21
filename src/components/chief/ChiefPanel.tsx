@@ -9,6 +9,7 @@ import {
   isLiveApiEnabled,
 } from "@/lib/api/client";
 import { useMonitorHealth } from "@/hooks/useMonitorHealth";
+import { subscribeChiefApprovalFocus } from "./chiefApprovalFocus";
 import { ApprovalAlertsPanel } from "./ApprovalAlertsPanel";
 import { ApprovalBoard } from "./ApprovalBoard";
 import { ChiefQueueStrip } from "./ChiefQueueStrip";
@@ -122,6 +123,28 @@ export function ChiefPanel() {
     setApprovalStatusFilter(filter);
     setActiveTab("approvals");
   }, []);
+
+  const [focusProposalId, setFocusProposalId] = useState<string | null>(null);
+
+  // Lets any surface (e.g. Today's Approval Activity card) land on one
+  // proposal's exact card here — see chiefApprovalFocus.ts. Always resets
+  // the status filter to "all" first so a stale filter can't hide the
+  // target; ApprovalBoard does the actual scroll/highlight once it has the id.
+  useEffect(() => {
+    return subscribeChiefApprovalFocus((proposalId) => {
+      setApprovalStatusFilter("all");
+      setActiveTab("approvals");
+      setFocusProposalId(proposalId);
+    });
+  }, []);
+
+  // Temporary highlight only (matches .chief-approval-card--focused's 2s
+  // pulse) — clears itself so the outline doesn't linger indefinitely.
+  useEffect(() => {
+    if (!focusProposalId) return;
+    const timeout = setTimeout(() => setFocusProposalId(null), 2200);
+    return () => clearTimeout(timeout);
+  }, [focusProposalId]);
 
   const boardItems = useMemo(
     () => deriveChiefBoardItems(liveContext, approvals),
@@ -573,6 +596,7 @@ export function ChiefPanel() {
               onApprovalAction={handleApprovalAction}
               statusFilter={approvalStatusFilter}
               onStatusFilterChange={setApprovalStatusFilter}
+              focusProposalId={focusProposalId}
             />
             <ApprovalAlertsPanel />
           </div>

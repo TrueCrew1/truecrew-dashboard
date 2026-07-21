@@ -166,16 +166,28 @@ enumerate tools in code.
 ### ollama-local
 - name: Ollama (local)
 - category: ai
-- owner_agent: — (David's own tooling, not a Chief-system agent)
-- access_type: launch-only
+- owner_agent: — (David's own tooling, Continue.dev role); Chief (fallback role,
+  see below) — two independent uses of the same local install
+- access_type: launch-only (Continue.dev); read (Chief fallback — generates
+  advisory text only)
 - interface: cli / local
 - launch_target: local machine
-- model_type: local open models
+- model_type: local open models (`qwen2.5-coder` for Continue.dev; `llama3` /
+  `deepseek-r1` for Chief, see `lib/ollama/client.ts`)
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
-- status: launch-only
+- status: launch-only (Continue.dev); partially-wired (Chief fallback)
 - approval_required: no
-- notes: powers Continue.dev autocomplete per `CLAUDE.md` — not wired to any
-  Planner/Build/Research/Content/Chief workflow. Research note (2026-07-04, non-binding
+- notes: **classification update** — this row previously stated Ollama was "not
+  wired to any Planner/Build/Research/Content/Chief workflow." That's no longer
+  true for Chief specifically: `lib/chief/modelRouter.ts` now calls local Ollama
+  as the fallback tier below Azure (or the only tier in local-only mode), off by
+  default (`CHIEF_OLLAMA_FALLBACK_ENABLED`), same no-match-only gate as
+  `azure-ai-foundry` above. Only reachable when the serving process runs on the
+  same machine as Ollama (local dev via `vercel dev` — not a deployed Vercel
+  function), so this is a local-dev-only fallback tier, not a production one.
+  The Continue.dev autocomplete role is unaffected and remains separate. See
+  `docs/AGENT_RUNBOOK.md` § Chief AI Fallback Routing.
+  Research note (2026-07-04, non-binding
   — no config change made): the currently-configured `qwen2.5-coder:7b`/`14b` (see
   `continue-dev` below) is still a solid, well-benchmarked choice, but Qwen3-Coder
   (community default now at 14B, Q4_K_M quantization, ~12GB VRAM) benchmarks ahead of
@@ -201,6 +213,131 @@ enumerate tools in code.
 - notes: the decided, $0-cost editor-AI lane alongside Claude Code — see
   `CLAUDE.md` § Tool routing. Covers both autocomplete and cheap/routine chat in
   one extension; config already built, no further setup needed.
+
+### azure-ai-foundry
+- name: Azure AI Foundry (DeepSeek V4 Pro / GPT-5-mini / Kimi K2.6)
+- category: ai
+- owner_agent: Chief
+- access_type: read (generates advisory text only — no write/execute capability)
+- interface: api
+- launch_target: `https://true-crew-resource.services.ai.azure.com` (project
+  `true-crew`) — server-side only, never launched directly by a human or agent
+- model_type: DeepSeek V4 Pro, GPT-5-mini, Kimi K2.6 (three deployments on one
+  Azure AI Foundry resource, key-based auth)
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
+- status: partially-wired
+- approval_required: no — read-only text generation shown for the operator's own
+  review, nothing executes; the feature flags that enable it at all
+  (`CHIEF_AI_FALLBACK_ENABLED`, Vercel env vars) are HUMAN-ONLY to set, per Auth
+  / infra below
+- notes: distinct from the pre-existing `free-deepseek`/`kimi-free` rows above —
+  those are David's manual web-chat overflow lanes (chat.deepseek.com,
+  kimi.com), unrelated accounts/quotas from this API-based Azure deployment.
+  Only ever called from `lib/chief/modelRouter.ts`, and only when
+  `resolveChiefCommand` (`src/components/chief/chiefCommandRouter.ts`) finds no
+  deterministic specialist match — a real match always wins and never reaches
+  this tool. Off by default. See `docs/AGENT_RUNBOOK.md` § Chief AI Fallback
+  Routing for the model-selection rules.
+
+### gpt5-mini
+- name: GPT-5 mini
+- category: ai
+- owner_agent: Chief (fallback tier)
+- access_type: read (generates advisory text only — no write/execute capability)
+- interface: api
+- launch_target: shares the `azure-ai-foundry` resource above — server-side only,
+  never launched directly by a human or agent
+- model_type: GPT-5-mini (OpenAI model family, served via an Azure AI Foundry
+  deployment — not a direct OpenAI account)
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
+- status: partially-wired
+- approval_required: no — same reasoning as `azure-ai-foundry`; read-only advisory
+  text, nothing executes
+- notes: one of three deployments on the single `azure-ai-foundry` resource — see
+  that row for the shared access/approval reasoning. Routed to for
+  general/unclassified fallback queries per `docs/AGENT_RUNBOOK.md` § Chief AI
+  Fallback Routing. Env vars (`.env.example`): `AZURE_AI_ENDPOINT`, `AZURE_AI_KEY`,
+  `AZURE_AI_DEPLOYMENT_GPT5_MINI` (see `lib/azureAi/client.ts`). There is no
+  separate `OPENAI_API_KEY` in this repo — this is an Azure-hosted deployment, not
+  a direct OpenAI account.
+
+### deepseek-v4-pro
+- name: DeepSeek V4 Pro
+- category: ai
+- owner_agent: Chief (fallback tier)
+- access_type: read (generates advisory text only — no write/execute capability)
+- interface: api
+- launch_target: shares the `azure-ai-foundry` resource above — server-side only
+- model_type: DeepSeek V4 Pro (DeepSeek model family, served via an Azure AI
+  Foundry deployment — not a direct DeepSeek account)
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
+- status: partially-wired
+- approval_required: no — same reasoning as `azure-ai-foundry`
+- notes: one of three deployments on the single `azure-ai-foundry` resource.
+  Routed to for reasoning/strategy/analysis fallback queries per
+  `docs/AGENT_RUNBOOK.md` § Chief AI Fallback Routing. Env vars: `AZURE_AI_ENDPOINT`,
+  `AZURE_AI_KEY`, `AZURE_AI_DEPLOYMENT_DEEPSEEK_V4_PRO`. Distinct from the
+  `deepseek-free` row above (chat.deepseek.com manual overflow) — a different
+  account and auth mechanism entirely. No separate `DEEPSEEK_API_KEY` or
+  `DEEPSEEK_BASE_URL` exists in this repo.
+
+### kimi-k2-6
+- name: Kimi K2.6
+- category: ai
+- owner_agent: Chief (fallback tier)
+- access_type: read (generates advisory text only — no write/execute capability)
+- interface: api
+- launch_target: shares the `azure-ai-foundry` resource above — server-side only
+- model_type: Kimi K2.6 (Moonshot AI model family, served via an Azure AI Foundry
+  deployment — not a direct Kimi/Moonshot account)
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
+- status: partially-wired
+- approval_required: no — same reasoning as `azure-ai-foundry`
+- notes: one of three deployments on the single `azure-ai-foundry` resource.
+  Routed to for code/refactor/long-context fallback queries per
+  `docs/AGENT_RUNBOOK.md` § Chief AI Fallback Routing. Env vars: `AZURE_AI_ENDPOINT`,
+  `AZURE_AI_KEY`, `AZURE_AI_DEPLOYMENT_KIMI_K2_6`. Distinct from the `kimi-free` row
+  above (kimi.com manual overflow). No separate `KIMI_API_KEY` or `KIMI_BASE_URL`
+  exists in this repo.
+
+### chief-voice-v1
+- name: Chief Voice v1 (browser Web Speech API)
+- category: ai
+- owner_agent: Chief
+- access_type: read (speech-to-text input); write (text-to-speech "Speak" output)
+  — both local to the browser, nothing sent to a server
+- interface: web (native browser API — `SpeechRecognition`/`webkitSpeechRecognition`
+  and `SpeechSynthesis`)
+- launch_target: in-app — Chief panel push-to-talk button and the per-response
+  "Speak" button, wherever Chief renders
+- model_type: n/a — no LLM or external speech vendor; browser-native recognition/
+  synthesis only
+- health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
+- status: fully-wired
+- approval_required: no
+- notes: real and live today, entirely client-side
+  (`src/components/chief/useChiefVoice.ts`); degrades gracefully to text-only when
+  the browser doesn't support `SpeechRecognition` (`recognitionSupported` check).
+  No env vars required. **Not the same as server-side voice**: `api/chief/transcribe.ts`
+  and `api/chief/speak.ts` are placeholder routes that always return
+  `501 Not Implemented` — a defined contract for a *future* server-side provider,
+  vendor explicitly "not scoped/decided" per both files' own TODO comments. Do not
+  treat those routes, or any transcription/TTS vendor env var, as wired — see
+  `docs/AGENT_RUNBOOK.md` § Voice Prep (Scaffold Only).
+
+## Continue.dev + Ollama (Lane 3)
+
+Quick-reference config companion to the `continue-dev` catalog entry above.
+
+- Role: local AI coding assistant for the `truecrew-dashboard` repo.
+- Config file: `~/.continue/config.yaml` (not checked in, but recommended structure
+  below).
+- Recommended models (matches the locally installed config as of 2026-07-18):
+  - Chat/edit: `qwen2.5-coder:14b` via Ollama.
+  - Autocomplete: `qwen2.5-coder:1.5b-base` via Ollama.
+  - Embeddings: `nomic-embed-text:latest` via Ollama (if used).
+
+See `docs/internal/continue_config_example.md` for a sample config.
 
 ## Dev
 

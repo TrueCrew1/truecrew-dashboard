@@ -66,6 +66,7 @@ export function TodayPage() {
         subtitle="Focus items, overdue gates, and active Sev 1–2 incidents"
       />
 
+      <p className="today-section-label">Today&rsquo;s top operational signals</p>
       <ShiftStatsStrip />
 
       <div className="page-stack">
@@ -210,6 +211,9 @@ export function TodayPage() {
             activeKind={gatePanel.warningKind}
             onKindSelect={gatePanel.setWarningKind}
           />
+          <p className="panel-demo-hint">
+            Panels may reflect demo data in non-production environments.
+          </p>
           {blockingTasks.length === 0 ? (
             <PanelEmpty
               emptyKey="gates"

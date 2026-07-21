@@ -15,6 +15,8 @@ import { ApprovalAlertsPanel } from "@/components/chief/ApprovalAlertsPanel";
 import { enqueueResearchAgentTestProposal } from "@/components/chief/researchAgentTestProposal";
 import { useChiefApprovals } from "@/components/chief/ChiefApprovalsContext";
 import { PlatformHealthCard } from "@/components/monitor/PlatformHealthCard";
+import { MonitorGuidancePanel } from "@/components/monitor/MonitorGuidancePanel";
+import { deriveMonitorGuidance } from "@/components/monitor/monitorGuidance";
 import { useData } from "@/context/DataContext";
 import { useSelection } from "@/context/SelectionContext";
 import { isLiveApiEnabled } from "@/lib/api/client";
@@ -60,6 +62,7 @@ export function MonitorPage() {
   );
 
   const filterLabel = filter === "active-incidents" ? SHIFT_FILTER_LABELS["active-incidents"] : null;
+  const guidance = deriveMonitorGuidance(health, liveApiEnabled);
 
   // Vercel card state
   const vercelLoading = health.vercel.loading;
@@ -124,6 +127,8 @@ export function MonitorPage() {
       </div>
 
       <div className="page-stack">
+        <MonitorGuidancePanel guidance={guidance} />
+
         <Panel
           title="Research Agent approval test"
           action={

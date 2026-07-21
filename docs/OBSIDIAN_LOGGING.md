@@ -2,6 +2,8 @@
 
 Minimal local-first logging from True Crew into your live Obsidian vault. Obsidian stays the markdown knowledge layer; Supabase remains the app database.
 
+**Authoritative vault architecture:** see [`docs/FILE_SECOND_BRAIN_KNOWLEDGE_ARCHITECTURE_V1.md`](FILE_SECOND_BRAIN_KNOWLEDGE_ARCHITECTURE_V1.md) for the full vault folder layout, frontmatter schema, and note conventions. This page describes how the logging script writes into that vault; the spec is the source of truth if the two ever disagree.
+
 ## Recommended repo files
 
 | File | Role |
@@ -20,10 +22,14 @@ Minimal local-first logging from True Crew into your live Obsidian vault. Obsidi
 |----------|------------|------------|
 | **Build log** | `Operations/Logs/Build Log.md` | Append section |
 | **PR log** | `Operations/Logs/PR Log.md` | Append section |
-| **Decision log** | `Decisions/{YYYY-MM-DD} — {title}.md` | New note per decision |
+| **Decision log** | `True Crew/05-Decisions/{YYYY-MM-DD} - {slug}.md` | New note per decision |
 | **Hot context** | `True Crew/Hot Context.md` | Overwrite (single living note) |
 
-These align with existing seed/mock conventions (`Decisions/…`, `Operations/…`) and keep rolling logs separate from one-off deploy/runbook notes.
+Decision filenames use a plain hyphen (`" - "`, space-hyphen-space) per Knowledge Architecture V1 — never an em-dash. The slug should be ≤ 6 words and state the decision, not just the topic (e.g. `2026-07-03 - Exclude preview from SSO wall.md`, not `...vercel-protection.md`).
+
+> **Legacy (deprecated):** earlier versions of this script wrote decisions to `Decisions/{YYYY-MM-DD} — {title}.md` at the vault root, with an em-dash separator, inside the legacy iCloud vault. That convention is historical only — do not recreate it. See the Pre-Creation Lock List in the V1 spec for the reconciliation this superseded.
+
+Build/PR rolling logs and Hot Context keep their existing paths — the V1 spec's `06-Operations/Agent Logs/` convention is for per-slice agent logs (one file per slice, written manually/by an agent), which is a separate concept from this script's rolling `Operations/Logs/Build Log.md` and `Operations/Logs/PR Log.md` files. This script does not currently write per-slice agent logs.
 
 ## Setup
 
@@ -31,17 +37,24 @@ These align with existing seed/mock conventions (`Decisions/…`, `Operations/�
 
 ```bash
 # .env.local
-OBSIDIAN_VAULT_PATH=/absolute/path/to/your/vault
+OBSIDIAN_VAULT_PATH=/Users/truecrew/ObsidianVault
 ```
 
 2. Log from the repo root:
 
 ```bash
 npm run obsidian:log -- build --result success --branch main --commit abc1234 --notes "CI green"
-npm run obsidian:log -- decision --title "Q3 pricing" --decision "Keep seat-based starter tier" --context "Reviewed usage data"
+npm run obsidian:log -- decision \
+  --title "Keep seat-based starter tier" \
+  --decision "Keep seat-based starter tier for Q3" \
+  --summary "Q3 pricing stays seat-based rather than moving to usage-based." \
+  --context "Reviewed usage data" \
+  --tags truecrew,dashboard
 npm run obsidian:log -- pr --number 42 --title "Obsidian logging slice" --status merged --url "https://github.com/..."
 npm run obsidian:log -- hot-context --body "Current focus: ship Phase C read path. Blocker: none."
 ```
+
+`--summary` is required for decisions (Knowledge Architecture V1 [M] frontmatter field — must be enough to triage the note from that line alone). `--tags` must be drawn from the controlled vocabulary (`truecrew, dashboard, infra, tooling, agents, ux, governance, daily`) — the script rejects anything else. Run `npm run obsidian:log -- decision --help`-equivalent (no args) to see the full flag list, including `--alternatives`, `--impact`, `--follow-ups`, `--related`, and `--status`.
 
 Obsidian Sync (or git on the vault) propagates notes to your second brain.
 

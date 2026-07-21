@@ -1,8 +1,15 @@
-import type {
-  ApprovalCard,
-  ApprovalChecklistItem,
-  ApprovalRecommendedDecision,
-  ApprovalSource,
+import {
+  getWorkflowById,
+  summarizeWorkflowSteps,
+  type WorkflowId,
+} from "@/lib/research/researchGateway";
+import {
+  createSuggestedWorkflow,
+  type ApprovalCard,
+  type ApprovalChecklistItem,
+  type ApprovalRecommendedDecision,
+  type ApprovalSource,
+  type SuggestedWorkflow,
 } from "./types";
 
 /**
@@ -98,6 +105,23 @@ export interface BuildApprovalRequest extends Omit<BaseAgentApprovalRequest, "ga
 
 export interface ResearchApprovalRequest extends BaseAgentApprovalRequest {
   alternativesConsidered: string[];
+  /**
+   * Optional id of a playbook in the Research Workflow Library
+   * (src/data/researchWorkflows.ts). Typed as `WorkflowId`, the closed union
+   * of real playbook ids — not `string` — so this field can only ever name an
+   * entry that actually exists in `RESEARCH_WORKFLOWS`; a typo or invented id
+   * fails to compile instead of silently resolving to nothing. There is no
+   * way to attach free-text workflow guidance through this field.
+   *
+   * When set, the card gains a `suggestedWorkflow` block that the Chief
+   * Approvals panel renders as its own collapsed section, separate from
+   * `riskNote`.
+   *
+   * Advisory only: attaching a workflow never runs a step, never changes the
+   * recommended decision, and never gates the card. See
+   * docs/AGENT_RUNBOOK.md -> "Research Workflow Library".
+   */
+  workflowId?: WorkflowId;
 }
 
 export interface ContentApprovalRequest extends BaseAgentApprovalRequest {
@@ -145,13 +169,50 @@ export function createApprovalCardFromBuildRequest(request: BuildApprovalRequest
 export function createApprovalCardFromResearchRequest(
   request: ResearchApprovalRequest,
 ): ApprovalCard {
-  return baseCardFields(
+  const card = baseCardFields(
     request,
     "Research",
     "research_agent",
     request.alternativesConsidered.length > 0
       ? `Alternatives considered: ${request.alternativesConsidered.join(", ")}.`
       : "No alternatives recorded.",
+  );
+
+  const suggestedWorkflow = resolveSuggestedWorkflow(request.workflowId);
+  return suggestedWorkflow === null ? card : { ...card, suggestedWorkflow };
+}
+
+/**
+ * The attached playbook as a display shape, or `null` when no workflow is
+ * attached or the id doesn't resolve — in which case the card is returned
+ * untouched and renders exactly as it did before workflows existed.
+ *
+ * This is the one call site the rest of the app treats as "the" constructor
+ * for a `SuggestedWorkflow`. The actual brand-stamping happens in
+ * `createSuggestedWorkflow()` (types.ts) — the only function with access to
+ * the private brand symbol, so it's the only place a value of this type can
+ * be produced at all — but this is the only function that calls it, so in
+ * practice a `SuggestedWorkflow` only ever comes from here. It never accepts
+ * freeform text: the input is a `WorkflowId` (or `undefined`), and every
+ * field of the result is read straight off a real `RESEARCH_WORKFLOWS` entry
+ * through the gateway. The `getWorkflowById(workflowId) === null` branch
+ * stays even though `workflowId` is already typed as `WorkflowId`: it is the
+ * runtime backstop for the one case the type system cannot cover — a
+ * `WorkflowId` that was valid when a request was authored but whose playbook
+ * has since been removed from the store. The returned object is frozen so
+ * nothing downstream can mutate a card's guidance after the fact.
+ */
+function resolveSuggestedWorkflow(workflowId: WorkflowId | undefined): SuggestedWorkflow | null {
+  if (workflowId === undefined) return null;
+  const workflow = getWorkflowById(workflowId);
+  if (workflow === null) return null;
+
+  return Object.freeze(
+    createSuggestedWorkflow({
+      id: workflow.id,
+      title: workflow.title,
+      steps: summarizeWorkflowSteps(workflow.id),
+    }),
   );
 }
 
@@ -201,6 +262,33 @@ export const BUILD_REQUEST_DUPLICATE_AUTH_FIX: BuildApprovalRequest = {
   createdAt: "2026-07-04T07:20:01.000Z",
 };
 
+/**
+ * Real, not illustrative: a Builder v1 slice adding
+ * src/components/chief/chiefMock.test.ts, unit tests for the previously
+ * untested stableChiefId() helper (used by buildApprovalFromResponse() to
+ * derive deterministic approval-proposal ids). Test-only file, no production
+ * code changed — same "Build proposes real, verifiable work" pattern as
+ * BUILD_REQUEST_DUPLICATE_AUTH_FIX above, used here to give Builder v1 a
+ * second real (not mocked) request to route through Chief.
+ */
+export const BUILD_REQUEST_CHIEF_MOCK_TEST_COVERAGE: BuildApprovalRequest = {
+  id: "apr-build-chiefmock-test-coverage",
+  gate: BUILD_APPROVAL_GATES[0],
+  summary:
+    "Add src/components/chief/chiefMock.test.ts — unit tests for stableChiefId() " +
+    "(determinism, seed sensitivity, id format, prefix independence). No production code changed.",
+  riskLevel: "low",
+  testsOrChecksDone: [
+    { label: "npm run test (new suite passes, no regressions in existing suites)", status: "pass" },
+    { label: "npm run lint", status: "pass" },
+    { label: "npm run build (tsc -b && vite build)", status: "pass" },
+    { label: "Operator review before merge to main", status: "pending" },
+  ],
+  requestedAction: "Approve merging this test-only PR, or send back if broader coverage is wanted.",
+  filesOrAreas: ["src/components/chief/chiefMock.test.ts"],
+  createdAt: "2026-07-17T00:00:00.000Z",
+};
+
 export const EXAMPLE_RESEARCH_REQUEST: ResearchApprovalRequest = {
   id: "apr-research-example-notification-vendor",
   gate: APPROVAL_GATES.research[1],
@@ -214,6 +302,30 @@ export const EXAMPLE_RESEARCH_REQUEST: ResearchApprovalRequest = {
   requestedAction: "Approve a vendor to unblock the notification-hook build, or hold for a wider survey.",
   alternativesConsidered: ["Resend", "Postmark"],
   createdAt: "2026-07-04T12:10:00.000Z",
+};
+
+/**
+ * Illustrative (EXAMPLE_*, same as the others in this file — not live agent
+ * output) request showing how an agent attaches a Research Workflow Library
+ * playbook to a request via `workflowId`. The attached workflow adds advisory
+ * next-steps to the card's riskNote; it does not change the gate, the
+ * recommended decision, or anything the operator must do.
+ */
+export const EXAMPLE_RESEARCH_DOC_DRIFT_REQUEST: ResearchApprovalRequest = {
+  id: "apr-research-example-doc-drift",
+  gate: APPROVAL_GATES.research[0],
+  summary:
+    "Reconcile docs/AGENT_RUNBOOK.md against real repo state before the next runbook edit — several sections describe paths and scripts that need verifying against what exists today.",
+  riskLevel: "low",
+  testsOrChecksDone: [
+    { label: "Listed every file path the runbook names", status: "pass" },
+    { label: "Confirmed each path exists in the repo today", status: "pending" },
+  ],
+  requestedAction:
+    "Approve filing the reconciliation as a knowledge/sources/ note, or hold until the runbook's next scheduled edit.",
+  alternativesConsidered: ["Fix drift ad hoc as it is noticed", "Full reconciliation pass now"],
+  workflowId: "wf-doc-drift",
+  createdAt: "2026-07-18T09:00:00.000Z",
 };
 
 export const EXAMPLE_CONTENT_REQUEST: ContentApprovalRequest = {
@@ -234,6 +346,8 @@ export const EXAMPLE_CONTENT_REQUEST: ContentApprovalRequest = {
 export const AGENT_APPROVAL_CARDS: ApprovalCard[] = [
   createApprovalCardFromPlannerRequest(EXAMPLE_PLANNER_REQUEST),
   createApprovalCardFromBuildRequest(BUILD_REQUEST_DUPLICATE_AUTH_FIX),
+  createApprovalCardFromBuildRequest(BUILD_REQUEST_CHIEF_MOCK_TEST_COVERAGE),
   createApprovalCardFromResearchRequest(EXAMPLE_RESEARCH_REQUEST),
+  createApprovalCardFromResearchRequest(EXAMPLE_RESEARCH_DOC_DRIFT_REQUEST),
   createApprovalCardFromContentRequest(EXAMPLE_CONTENT_REQUEST),
 ];

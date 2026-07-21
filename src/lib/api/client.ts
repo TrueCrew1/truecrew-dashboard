@@ -18,10 +18,49 @@ import type {
   WorkItem,
 } from "@/types";
 
-function apiFetch(input: string, init: RequestInit = {}): Promise<Response> {
-  return fetch(input, init);
+/**
+ * Attaches the x-internal-key header (client copy of INTERNAL_API_SECRET,
+ * see .env.example) required by every requireInternalAuth-gated /api route.
+ * Pulled out as a pure function (no import.meta dependency) so it's testable
+ * under plain node:test — see client.test.ts.
+ */
+export function withInternalAuthHeader(
+  headers: HeadersInit | undefined,
+  internalKey: string | undefined,
+): Headers {
+  const merged = new Headers(headers);
+  if (internalKey?.trim()) {
+    merged.set("x-internal-key", internalKey.trim());
+  }
+  return merged;
 }
 
+// Was previously never attached here, so requireInternalAuth-gated routes
+// 401'd from the browser regardless of the server-side secret's value.
+function apiFetch(input: string, init: RequestInit = {}): Promise<Response> {
+  const internalKey = import.meta.env.VITE_INTERNAL_KEY as string | undefined;
+  const headers = withInternalAuthHeader(init.headers, internalKey);
+  return fetch(input, { ...init, headers });
+}
+
+/**
+ * The single live-vs-mock gate for Command Center's data path.
+ *
+ * OFF (default, `VITE_USE_LIVE_API` unset or not `"true"`): every read below
+ * returns `src/data/mockData.ts` verbatim, `source: "mock"`, no network call
+ * — matches this repo's `npm run dev` default.
+ * ON: reads hit the real Supabase-backed routes (`GET /api/data`,
+ * `GET /api/tasks`), gated server-side by `requireInternalAuth` +
+ * `isSupabaseConfigured()`. `source` becomes `"supabase"`, or
+ * `"mock-fallback"` if the live response came back with zero tasks (see
+ * `mergeWithMockFallback` below) — never a silent empty state.
+ *
+ * This flag is checked once, inside `fetchCommandCenterData`/
+ * `fetchTasksFromApi` themselves — callers never need to branch on it
+ * before calling. `DataContext` still pre-checks it too, only to skip
+ * `setLoading(true)` on the synchronous mock path (a UX nicety, not a
+ * second source of truth) — see the comment there.
+ */
 export function isLiveApiEnabled(): boolean {
   return import.meta.env.VITE_USE_LIVE_API === "true";
 }
@@ -41,11 +80,52 @@ export interface CommandCenterPayload {
   source?: string;
 }
 
-export async function fetchCommandCenterData(): Promise<CommandCenterPayload> {
-  const response = await apiFetch("/api/data");
-  if (!response.ok) {
-    throw new Error(`Data API returned ${response.status}`);
+interface CommandCenterApiErrorPayload {
+  error?: string;
+  code?: string;
+  message?: string;
+  hint?: string;
+}
+
+/**
+ * Typed, stable error shape for `GET /api/data` / `GET /api/tasks` failures
+ * — carries the backend's structured `code`/`hint` (see those routes) so a
+ * future UI can branch on `.code` instead of parsing `.message` text.
+ * Never leaks a raw Supabase error to the caller.
+ */
+export class CommandCenterApiError extends Error {
+  status: number;
+  code?: string;
+  hint?: string;
+
+  constructor(status: number, payload: CommandCenterApiErrorPayload | null) {
+    super(payload?.message ?? payload?.error ?? `Data API returned ${status}`);
+    this.name = "CommandCenterApiError";
+    this.status = status;
+    this.code = payload?.code;
+    this.hint = payload?.hint;
   }
+}
+
+export async function fetchCommandCenterData(): Promise<CommandCenterPayload> {
+  if (!isLiveApiEnabled()) {
+    console.log("[data-rail] mock_path_used", { route: "/api/data" });
+    return { ...mockData, source: "mock" };
+  }
+
+  const response = await apiFetch("/api/data");
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as CommandCenterApiErrorPayload | null;
+    console.error("[data-rail] live_path_error", {
+      route: "/api/data",
+      status: response.status,
+      code: payload?.code,
+    });
+    throw new CommandCenterApiError(response.status, payload);
+  }
+
+  console.log("[data-rail] live_path_used", { route: "/api/data" });
   return response.json() as Promise<CommandCenterPayload>;
 }
 
@@ -275,35 +355,53 @@ export async function fetchTaskArtifacts(taskId: string): Promise<Artifact[]> {
 export interface ChiefAiFallbackResult {
   summary: string;
   model: string;
+  source?: "azure" | "ollama";
+  category?: "general" | "code" | "reasoning";
 }
 
 export function isChiefAiFallbackEnabled(): boolean {
   return import.meta.env.VITE_CHIEF_AI_FALLBACK_ENABLED === "true";
 }
 
+export function isChiefLocalOnlyModeDefault(): boolean {
+  return import.meta.env.VITE_CHIEF_LOCAL_ONLY_MODE === "true";
+}
+
 /**
- * Asks the Azure AI Foundry fallback model for a response when
- * resolveChiefCommand couldn't match a specialist. Returns null (rather than
- * throwing) on any failure or when the backend feature flag is off, so
- * callers can silently keep the deterministic response.
+ * Asks the model router (Azure, then Ollama, per lib/chief/modelRouter.ts's
+ * rules) for a response when resolveChiefCommand couldn't match a
+ * specialist. Returns null (rather than throwing) on any failure or when no
+ * fallback tier is enabled, so callers can silently keep the deterministic
+ * response.
  */
 export async function askChiefAiFallback(
   query: string,
   contextSummary?: string,
+  localOnly?: boolean,
 ): Promise<ChiefAiFallbackResult | null> {
   try {
     const response = await apiFetch("/api/chief/ask", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query, contextSummary }),
+      body: JSON.stringify({ query, contextSummary, localOnly: localOnly === true }),
     });
 
     if (!response.ok) return null;
 
-    const body = (await response.json()) as { summary?: string; model?: string };
+    const body = (await response.json()) as {
+      summary?: string;
+      model?: string;
+      source?: "azure" | "ollama";
+      category?: "general" | "code" | "reasoning";
+    };
     if (!body.summary) return null;
 
-    return { summary: body.summary, model: body.model ?? "unknown" };
+    return {
+      summary: body.summary,
+      model: body.model ?? "unknown",
+      source: body.source,
+      category: body.category,
+    };
   } catch {
     return null;
   }

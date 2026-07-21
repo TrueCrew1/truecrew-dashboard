@@ -9,6 +9,22 @@ const SOURCE_NOTE_MODULES = import.meta.glob("../../../knowledge/sources/*.md", 
   eager: true,
 }) as Record<string, string>;
 
+/**
+ * The Inline Verification Standard's three labels (docs/AGENT_RUNBOOK.md §
+ * Knowledge Precedence & Task-Time Retrieval), applied to a filed note as a
+ * whole. Only `verified`/`cited` notes are authoritative task-time research —
+ * `provisional` (or a missing/unrecognized label, which parses to the same
+ * fail-safe value) is a degraded, advisory-only state. See
+ * `./taskTimeResearch.ts` for the gate that enforces this.
+ */
+export type ResearchVerificationState = "verified" | "cited" | "provisional";
+
+const VALID_VERIFICATION_STATES: ReadonlySet<string> = new Set<ResearchVerificationState>([
+  "verified",
+  "cited",
+  "provisional",
+]);
+
 export interface LatestResearchSummary {
   title: string;
   origin: string;
@@ -18,6 +34,8 @@ export interface LatestResearchSummary {
   path: string;
   /** WorkStoryDefinition.id this note was filed for, if any — absent on older/unlinked notes. */
   workStoryId?: string;
+  /** Defaults to "provisional" when the frontmatter field is missing or unrecognized — never assumed authoritative. */
+  verification: ResearchVerificationState;
 }
 
 function extractFrontmatterField(frontmatterBlock: string, key: string): string {
@@ -54,6 +72,10 @@ function parseSourceNote(raw: string, repoPath: string): LatestResearchSummary |
   if (!createdDate) return null;
 
   const workStoryId = extractFrontmatterField(frontmatterBlock, "work_story_id");
+  const rawVerification = extractFrontmatterField(frontmatterBlock, "verification").toLowerCase();
+  const verification: ResearchVerificationState = VALID_VERIFICATION_STATES.has(rawVerification)
+    ? (rawVerification as ResearchVerificationState)
+    : "provisional";
 
   return {
     title: extractFrontmatterField(frontmatterBlock, "title") || repoPath,
@@ -62,6 +84,7 @@ function parseSourceNote(raw: string, repoPath: string): LatestResearchSummary |
     createdDate,
     path: repoPath,
     workStoryId: workStoryId || undefined,
+    verification,
   };
 }
 

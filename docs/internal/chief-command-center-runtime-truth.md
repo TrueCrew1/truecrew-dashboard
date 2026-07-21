@@ -22,6 +22,23 @@ underneath them — so it stays honest until that rename/de-wire actually
 lands. If/when it does, this file's classifications should be re-verified
 against the new component names, not assumed to carry over unchanged.
 
+## V1 decision-law companion
+
+This file is the runtime evidence side of Chief's V1 Truth Map. Decision
+posture lives separately in
+`docs/SYSTEM_LAW_TRUTH_MERGE_DECISION_TABLE_V1.md`.
+
+When Chief cites this map for an approval recommendation, use the crosswalk
+below before recommending **Approve**, **Escalate**, or **Reject**:
+
+| Runtime classification in this file | V1 law status |
+|---|---|
+| **Real** / **Real, mode-honest** | **REAL** |
+| **Partially wired** / **Derived only** | **PARTIAL** |
+| Explicit mock / demo / placeholder-only surface | **MOCK** |
+| Explicitly blocked surface | **BLOCKED** |
+| No implemented path | **NOT STARTED** |
+
 ## Runtime truth, in short
 
 Chief's own derivation layer (`chiefLiveContext.ts`) is pure, synchronous,
@@ -44,6 +61,8 @@ no-deterministic-match fallback case.
 | Agent & work status | Build/Workflow Gate/Research/Librarian lanes: derived synchronously from `data.tasks`/`data.incidents`/`data.notes`; Awaiting-approval lane: derived from the (partially-live) approvals queue; two agent rows (Roadmap Agent, Marketer Agent): static, no backing system | **Partially wired** | The two static rows have no real system to point to yet — closing that gap means building those agents, not rewiring existing code. |
 | Recent activity / situation brief | Situation-brief metrics: same derived `chiefLiveContext` numbers as Priorities. Recent-activity feed: real, live-emitted client events (ADR-001, `chiefGovernanceEvents.ts`), buffered in-memory + `localStorage`, never sent to a server | **Partially wired** | The activity feed is real-time and accurate but not durable — surviving reload/cross-device visibility would need a new server-side events table + route, a real but non-trivial addition. |
 | Next recommended actions | Deterministic `recommendedAction` template strings baked into each derived proposal (rule-based, not AI); separately, `POST /api/chief/ask` → `lib/chief/modelRouter.ts` → Azure AI Foundry/Ollama, real but off by default and scoped only to the generic-fallback case | **Partially wired** | The templated text has no code gap — it's a scope ceiling, not a bug. The AI path would move toward "more live" simply by a human flipping `CHIEF_AI_FALLBACK_ENABLED` (Vercel env config, no code change). |
+| Platform health line (situation brief) | `useMonitorHealth()` (same hook/endpoints Monitor uses, polling `/api/monitor/vercel` and `/api/monitor/supabase`) → `derivePlatformBriefSummary()` (`platformHealthSummary.ts`) → rendered in `ChiefSituationBrief.tsx` | **Real, mode-honest** | No code gap: mock mode, missing server config, and an in-flight fetch each render their own truthful label — none of them are shown as "healthy." Only remaining limitation is environmental, not code: `/api/monitor/*` are Vercel serverless functions with no local dev proxy, so they're only reachable under `vercel dev` or a deployed preview, not plain `vite dev`. |
+| Approval activity → source deep link (Today) | `selectRecentApprovalActivity()` + `deriveApprovalActivityAction()` (`approvalActivityAction.ts`), rendered by `ApprovalActivityCard.tsx` on Today. Route actions use the same `proposal.routeTo`/`routeLabel` fields `ApprovalBoard`/`ChiefBoard` already render; the no-route fallback ("Open in Chief") calls `requestChiefApprovalFocus()` (`chiefApprovalFocus.ts`), which `ChiefPanel.tsx` subscribes to and forwards into `ApprovalBoard`'s pre-existing but previously-unwired `focusProposalId` prop | **Real** | No code gap. The action is never invented: a proposal either has a real `routeTo` or falls back to highlighting its actual card in Chief (always real, since the activity list is itself derived from the same live `approvals` array) — never neither, never a placeholder link. |
 
 ## Evidence
 
@@ -52,11 +71,14 @@ no-deterministic-match fallback case.
 - **Agent & work status**: `chiefApprovalBoard.ts`'s own comment on `deriveBuildAgentWorkItems`: *"Real, not mock: derives Build's Agents-tab entries from the same live task data... no separate agent-status source exists."* `agentWorkBoardMock.ts`'s own comment: *"Mock only... Workflow Gate, Research, and Librarian entries are now derived from real data... other agents there still run on mock."*
 - **Recent activity**: `chiefGovernanceEvents.ts`'s file header: *"Chief governance events — client tier of the auditor system (ADR-001)... They are not authorization signals: they do not approve, merge, deploy, or trigger agent work."* Events are stored via `saveSessionState`/`loadSessionState` (localStorage), not any API call.
 - **Next recommended actions**: `api/chief/ask.ts` — `POST`-only, returns `503` if neither `isCloudFallbackEnabled()` nor `isOllamaFallbackEnabled()` is true; wraps `lib/chief/modelRouter.ts`'s `routeChiefFallback()`, whose own doc comment states it's *"Only ever called after resolveChiefCommand's deterministic router finds no specialist match."*
+- **Platform health line**: `src/components/chief/platformHealthSummary.ts` — `derivePlatformBriefSummary(platformHealth, liveApiEnabled)` is a pure function (see `platformHealthSummary.test.ts`) with four tones — `mock` (mock mode or missing monitor state), `loading` (a service hasn't resolved yet), `issue` (a real reported Vercel/Supabase problem), `healthy` (both resolved with no issue) — and only `issue`/`healthy` require a completed live fetch. `ChiefPanel.tsx` and `ChiefHomePanel.tsx` both call `useMonitorHealth()` directly (no second monitor system) and pass its raw state straight into `ChiefSituationBrief`.
 
 ## Sources
 
 - `src/components/chief/chiefLiveContext.ts`, `src/components/chief/ChiefApprovalsContext.tsx` — inspected directly, read-only, per this task's explicit allowance.
 - `api/chief/approvals/index.ts`, `api/chief/ask.ts`, `api/data/index.ts`, `api/tasks/index.ts` — inspected directly (prior session pass, re-confirmed unchanged via `git log` on each).
 - `src/lib/api/client.ts`, `src/context/DataContext.tsx`, `lib/chief/modelRouter.ts` — the typed-client and data-switch layer underneath the above.
-- `docs/agents/CHIEF_OPERATING_SYSTEM.md`, `docs/AGENT_RUNBOOK.md` — cross-checked for consistency; no contradiction found.
+- `docs/agents/CHIEF_OPERATING_SYSTEM.md`, `docs/AGENT_RUNBOOK.md`,
+  `docs/SYSTEM_LAW_TRUTH_MERGE_DECISION_TABLE_V1.md` — cross-checked for
+  consistency; no contradiction found.
 - Premise check: `grep -rln "ChiefCommandCenterPage\|ChiefCommandCenterView" src/` (no matches), route search across `src/` (no matches), `git branch -a` and `git log --all --oneline -i --grep="command-center\|ChiefCommandCenter"` (no relevant matches), `git grep` for `ChiefCommandCenterPage` across every local branch tip (no matches).

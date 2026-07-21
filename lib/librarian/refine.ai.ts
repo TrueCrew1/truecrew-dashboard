@@ -21,7 +21,7 @@ export async function refineWithAi(
   draft: ArtifactDraft,
 ): Promise<ArtifactDraft & { refinementSource: "ai" }> {
   const host = process.env.OLLAMA_HOST?.trim() || "http://127.0.0.1:11434";
-  const model = process.env.OLLAMA_MODEL?.trim() || "llama3.2";
+  const model = process.env.OLLAMA_MODEL?.trim() || "llama3.1:8b";
 
   const prompt = `You refine Obsidian artifact metadata for a work task. Reply with JSON only:
 {"title":"...","summary":"...","tags":["..."],"pathSegment":"..."}

@@ -27,5 +27,19 @@ while true; do
   fi
 
   echo "=== QA_LOOP_END code=${code} ===" >> "$LOG_FILE"
+
+  # Best-effort: log this run to the Second Brain (skips cleanly if
+  # OBSIDIAN_VAULT_PATH isn't reachable from this machine/environment).
+  qa_result="success"
+  if [ "$code" -ne 0 ]; then qa_result="failure"; fi
+  branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)"
+  commit="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+  npm run second-brain:sync -- \
+    --result "$qa_result" \
+    --branch "$branch" \
+    --commit "$commit" \
+    --notes "nightly qa (mode=${MODE})" \
+    >> "$LOG_FILE" 2>&1 || true
+
   sleep "$INTERVAL_SECONDS"
 done

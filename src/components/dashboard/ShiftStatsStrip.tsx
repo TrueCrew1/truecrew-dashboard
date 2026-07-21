@@ -44,26 +44,34 @@ export function ShiftStatsStrip({ stats }: { stats?: ShiftStats }) {
   const resolved = stats ?? deriveShiftStats(data);
 
   return (
-    <nav className="shift-stats-strip" aria-label="Shift at-a-glance stats">
-      <StatCard
-        label="Open Work Orders"
-        count={resolved.openWorkOrders}
-        href={SHIFT_STAT_LINKS.openWorkOrders}
-        loading={loading}
-      />
-      <StatCard
-        label="Overdue PMs"
-        count={resolved.overduePMs}
-        href={SHIFT_STAT_LINKS.overduePMs}
-        loading={loading}
-      />
-      <StatCard
-        label="Active Incidents"
-        count={resolved.activeIncidents}
-        href={SHIFT_STAT_LINKS.activeIncidents}
-        loading={loading}
-        warning
-      />
-    </nav>
+    <div className="shift-stats-block">
+      <nav className="shift-stats-strip" aria-label="Shift at-a-glance stats">
+        <StatCard
+          label="Open Work Orders"
+          count={resolved.openWorkOrders}
+          href={SHIFT_STAT_LINKS.openWorkOrders}
+          loading={loading}
+        />
+        <StatCard
+          label="Overdue PMs"
+          count={resolved.overduePMs}
+          href={SHIFT_STAT_LINKS.overduePMs}
+          loading={loading}
+        />
+        <StatCard
+          label="Active Incidents"
+          count={resolved.activeIncidents}
+          href={SHIFT_STAT_LINKS.activeIncidents}
+          loading={loading}
+          warning
+        />
+      </nav>
+      <p
+        className="shift-stats-hint"
+        title="Mirrors the same priority data shown in Chief's Command Center."
+      >
+        Stats may use demo data in non-production environments.
+      </p>
+    </div>
   );
 }

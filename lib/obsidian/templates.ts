@@ -18,6 +18,18 @@ function yamlFrontmatter(fields: Record<string, string>): string {
   return `---\n${lines.join("\n")}\n---\n\n`;
 }
 
+function yamlArrayLiteral(values: readonly string[]): string {
+  return `[${values.join(", ")}]`;
+}
+
+function yamlQuotedWikilinks(titles: readonly string[]): string {
+  return `[${titles.map((title) => `"[[${title}]]"`).join(", ")}]`;
+}
+
+function formatDateOnly(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
 export function renderBuildLogSection(entry: BuildLogEntry): string {
   const loggedAt = entry.loggedAt ?? new Date();
   const headline = [
@@ -65,12 +77,20 @@ export function renderPrLogSeed(): string {
   });
 }
 
+/** Renders a Knowledge Architecture V1 Template 1 decision note. */
 export function renderDecisionNote(entry: DecisionLogEntry): string {
   const loggedAt = entry.loggedAt ?? new Date();
+  const tags = entry.tags?.length ? entry.tags : ["truecrew"];
+  const status = entry.status ?? "active";
+  const related = (entry.related ?? []).slice(0, 3);
+
   const frontmatter = yamlFrontmatter({
     type: "decision",
-    source: "true-crew",
-    logged_at: formatIso(loggedAt),
+    status,
+    tags: yamlArrayLiteral(tags),
+    created: formatDateOnly(loggedAt),
+    summary: entry.summary,
+    related: related.length ? yamlQuotedWikilinks(related) : "[]",
   });
 
   const sections = [`# ${entry.title}`, ""];
@@ -78,9 +98,21 @@ export function renderDecisionNote(entry: DecisionLogEntry): string {
     sections.push("## Context", "", entry.context, "");
   }
   sections.push("## Decision", "", entry.decision, "");
-  if (entry.consequences) {
-    sections.push("## Consequences", "", entry.consequences, "");
+  if (entry.alternatives) {
+    sections.push("## Alternatives considered", "", entry.alternatives, "");
   }
+  if (entry.impact) {
+    sections.push("## Impact / risk", "", entry.impact, "");
+  }
+  if (entry.followUps) {
+    sections.push("## Follow-ups", "", entry.followUps, "");
+  }
+  sections.push(
+    "## Links",
+    "",
+    related.length ? related.map((title) => `- [[${title}]]`).join("\n") : "_(none yet)_",
+    "",
+  );
 
   return frontmatter + sections.join("\n");
 }

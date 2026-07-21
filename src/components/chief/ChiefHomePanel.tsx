@@ -5,15 +5,40 @@ import {
   askChiefAiFallback,
   isChiefAiFallbackEnabled,
   isChiefLocalOnlyModeDefault,
+  isLiveApiEnabled,
 } from "@/lib/api/client";
+import { useMonitorHealth } from "@/hooks/useMonitorHealth";
+import { useBuildTasks } from "./hooks/useBuildTasks";
 import { buildApprovalFromResponse, buildHistoryEntry } from "./chiefMock";
 import { deriveChiefBoardItems } from "./chiefApprovalBoard";
+import { compareApprovalsByAge } from "./chiefApprovalUrgency";
 import { buildChiefContextSummary, resolveChiefCommand } from "./chiefCommandRouter";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
+import { ApprovalActivityCard } from "./ApprovalActivityCard";
+// Task-time research state comes only from the sanctioned @/lib/knowledge
+// barrel — never from latestResearchSource or taskTimeResearch directly. See
+// docs/AGENT_RUNBOOK.md § Knowledge Precedence & Task-Time Retrieval.
+import { getRecentResearchActivity } from "@/lib/knowledge/index";
+import { getResearchRequests } from "@/lib/research/requests";
 import type { ChiefResponse } from "./types";
 
 const SNAPSHOT_LIMIT = 4;
+
+type LaneTone = "green" | "yellow" | "red" | "steel";
+
+interface LaneStatus {
+  state: string;
+  tone: LaneTone;
+  detail: string;
+}
+
+// Build-time read of knowledge/sources/ (see @/lib/knowledge/index) and the
+// static manual queue (see requests.ts) — same module-level caching
+// AgentWorkBoard already uses for these calls; neither changes per render.
+const RECENT_RESEARCH_ACTIVITY = getRecentResearchActivity();
+const RESEARCH_REQUESTS = getResearchRequests();
+const HAS_FILED_RESEARCH = RECENT_RESEARCH_ACTIVITY !== null;
 
 export function ChiefHomePanel() {
   const { data } = useData();
@@ -23,11 +48,85 @@ export function ChiefHomePanel() {
   // merged, decision-applied queue, so counts here stay in sync with the
   // sidebar within the same session instead of only matching at load.
   const { liveContext, approvals, addCommandApproval, addHistoryEntry } = useChiefApprovals();
+  const liveApi = isLiveApiEnabled();
+  // Same hook and endpoints Monitor already uses — no new polling or data source.
+  const platformHealth = useMonitorHealth();
 
   const pendingApprovals = useMemo(
     () => approvals.filter((proposal) => proposal.status === "pending"),
     [approvals],
   );
+
+  // Oldest pending approval first — same stale-first derivation ChiefQueueStrip
+  // uses for its "Current" field, so this header agrees with the Chief panel
+  // instead of inventing a second notion of "current task."
+  const currentTask = useMemo(() => {
+    const pending = approvals.filter((proposal) => proposal.status === "pending");
+    pending.sort(compareApprovalsByAge);
+    return pending[0] ?? null;
+  }, [approvals]);
+
+  // Same live task/gate signal ChiefBoard's Build gates lane and the Agents
+  // tab's Work Story panels already use (useBuildTasks) — no separate
+  // Builder-status source invented here.
+  const { buildGateTasks, isLoading: buildGateTasksLoading } = useBuildTasks();
+
+  const chiefLane: LaneStatus = useMemo(() => {
+    const pending = pendingApprovals.length;
+    const blocked = liveContext.blockingTasks.length;
+    return {
+      state: pending > 0 ? "Awaiting decisions" : blocked > 0 ? "Monitoring blockers" : "Clear",
+      tone: pending > 0 ? "red" : blocked > 0 ? "yellow" : "green",
+      detail: `${pending} pending approval${pending === 1 ? "" : "s"} · ${blocked} blocked`,
+    };
+  }, [pendingApprovals.length, liveContext.blockingTasks.length]);
+
+  const builderLane: LaneStatus = useMemo(() => {
+    if (buildGateTasksLoading) {
+      return { state: "Loading…", tone: "steel", detail: "Checking build gate data…" };
+    }
+    if (buildGateTasks.length === 0) {
+      return { state: "Queue empty", tone: "steel", detail: "No build tasks awaiting required gates." };
+    }
+    const hasOverdue = buildGateTasks.some((task) => task.tone === "critical");
+    const top = buildGateTasks[0];
+    return {
+      state: hasOverdue ? "Gate overdue" : "Awaiting gates",
+      tone: hasOverdue ? "red" : "yellow",
+      detail: `${buildGateTasks.length} task${buildGateTasks.length === 1 ? "" : "s"} · ${top.title}`,
+    };
+  }, [buildGateTasks, buildGateTasksLoading]);
+
+  // Same real signal AgentWorkBoard's Research lane uses (manual request
+  // queue + filed knowledge/sources/ notes) — no invented "live" status.
+  // Gate-aware, not just "any note filed" — a filed-but-Provisional (or
+  // unmapped) note must not read as the same "Active"/green claim as a real
+  // Verified/Cited one. See docs/AGENT_RUNBOOK.md § Knowledge Precedence &
+  // Task-Time Retrieval and src/lib/knowledge/taskTimeResearch.ts.
+  const researchLane: LaneStatus = useMemo(() => {
+    if (RESEARCH_REQUESTS.length === 0 && !HAS_FILED_RESEARCH) {
+      return {
+        state: "Awaiting live work feed",
+        tone: "steel",
+        detail: "No research requests queued or notes filed yet.",
+      };
+    }
+    if (RECENT_RESEARCH_ACTIVITY) {
+      // Honestly labeled via the note's own verification (getRecentResearchActivity,
+      // @/lib/knowledge/index) — a Provisional note never reads with the same
+      // green "Active" tone as a real Verified/Cited one.
+      return {
+        state: RECENT_RESEARCH_ACTIVITY.badgeTone === "green" ? "Active" : "Provisional only",
+        tone: RECENT_RESEARCH_ACTIVITY.badgeTone,
+        detail: `Latest: ${RECENT_RESEARCH_ACTIVITY.title} — ${RECENT_RESEARCH_ACTIVITY.badgeLabel} (${RECENT_RESEARCH_ACTIVITY.createdDate})`,
+      };
+    }
+    return {
+      state: "Active",
+      tone: "green",
+      detail: `${RESEARCH_REQUESTS.length} request${RESEARCH_REQUESTS.length === 1 ? "" : "s"} queued`,
+    };
+  }, []);
 
   const boardItems = useMemo(
     () => deriveChiefBoardItems(liveContext, approvals),
@@ -99,12 +198,63 @@ export function ChiefHomePanel() {
   return (
     <Panel title="Chief">
       <div className="chief-home-panel">
+        <header className="chief-home-priority-header">
+          <div className="chief-home-priority-item">
+            <span className="chief-home-priority-label">Priority served</span>
+            {/* No live Master Priority List / active-task source is wired into the
+                app yet (docs/AGENT_RUNBOOK.md's Chief Intake Rule reads those from
+                knowledge/ by hand) — show that honestly instead of inventing one. */}
+            <span className="chief-home-priority-value chief-home-priority-value--unwired">
+              Not wired yet
+            </span>
+          </div>
+          <div className="chief-home-priority-item">
+            <span className="chief-home-priority-label">Current task</span>
+            {currentTask ? (
+              <button
+                type="button"
+                className="chief-home-priority-value chief-home-priority-value--link"
+                onClick={() =>
+                  approvalSnapshotRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+                }
+                title={currentTask.summary}
+              >
+                {currentTask.title}
+              </button>
+            ) : (
+              <span className="chief-home-priority-value chief-home-priority-value--empty">
+                Queue clear
+              </span>
+            )}
+          </div>
+        </header>
+
+        <section className="chief-lane-rail" aria-label="Chief, Builder, and Research lane status">
+          <div className="chief-lane-row">
+            <span className="chief-lane-name">Chief</span>
+            <span className={`badge badge-${chiefLane.tone}`}>{chiefLane.state}</span>
+            <span className="chief-lane-detail">{chiefLane.detail}</span>
+          </div>
+          <div className="chief-lane-row">
+            <span className="chief-lane-name">Builder</span>
+            <span className={`badge badge-${builderLane.tone}`}>{builderLane.state}</span>
+            <span className="chief-lane-detail">{builderLane.detail}</span>
+          </div>
+          <div className="chief-lane-row">
+            <span className="chief-lane-name">Research</span>
+            <span className={`badge badge-${researchLane.tone}`}>{researchLane.state}</span>
+            <span className="chief-lane-detail">{researchLane.detail}</span>
+          </div>
+        </section>
+
         <ChiefSituationBrief
           context={liveContext}
           pendingApprovalCount={pendingApprovals.length}
           onOpenApprovals={() =>
             approvalSnapshotRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
           }
+          platformHealth={platformHealth}
+          liveApiEnabled={liveApi}
         />
 
         <form className="chief-home-intake" onSubmit={handleSubmit}>
@@ -220,6 +370,8 @@ export function ChiefHomePanel() {
             ) : null}
           </div>
         </div>
+
+        <ApprovalActivityCard approvals={approvals} />
       </div>
     </Panel>
   );

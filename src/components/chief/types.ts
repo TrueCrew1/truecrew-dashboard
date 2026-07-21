@@ -1,4 +1,5 @@
 import type { Persona, TaskPriority } from "@/types";
+import type { WorkflowId } from "@/lib/research/researchGateway";
 
 export type ChiefSpecialist =
   | "Workflow Gate Agent"
@@ -47,6 +48,53 @@ export interface ApprovalChecklistItem {
 export type ApprovalRecommendedDecision = "approve" | "hold" | "needs_changes";
 
 /**
+ * Private brand key. Not exported — that's the entire enforcement mechanism.
+ * Only code in this file can write a property under this symbol, so only code
+ * in this file can produce a value that structurally satisfies
+ * `SuggestedWorkflow` (see `createSuggestedWorkflow` below). A hand-written
+ * object literal elsewhere with matching `id`/`title`/`steps` still fails to
+ * compile — it's missing a property nothing outside this module can name.
+ */
+const SUGGESTED_WORKFLOW_BRAND = Symbol("SuggestedWorkflow");
+
+/**
+ * A playbook attached to a card for guidance. `steps` are pre-rendered
+ * "who: what" lines (see `summarizeWorkflowSteps()` in
+ * src/lib/research/researchGateway.ts) so this type stays a plain display
+ * shape — the Chief panel never needs to import the workflow store to render it.
+ *
+ * `id: WorkflowId` (not `string`) closes off free text at the type level, and
+ * the private brand field closes off hand construction entirely: the only way
+ * to produce a value of this type is `createSuggestedWorkflow()` below, which
+ * `resolveSuggestedWorkflow()` in agentApprovalGates.ts calls and freezes.
+ * The brand is a symbol key, so it's invisible to normal reads, `Object.keys`,
+ * and `JSON.stringify` — consumers just see `id`/`title`/`steps` as usual.
+ */
+export interface SuggestedWorkflow {
+  readonly id: WorkflowId;
+  readonly title: string;
+  readonly steps: readonly string[];
+  readonly [SUGGESTED_WORKFLOW_BRAND]: true;
+}
+
+/**
+ * The only function anywhere that can produce a `SuggestedWorkflow` — it's
+ * the sole holder of `SUGGESTED_WORKFLOW_BRAND`. Deliberately *not* the place
+ * that freezes the result or resolves a `WorkflowId` to real playbook data;
+ * `resolveSuggestedWorkflow()` in agentApprovalGates.ts still owns both of
+ * those, so it remains the one call site the rest of the app treats as "the"
+ * constructor. This function only exists to hold the brand in the same
+ * lexical scope as its private symbol.
+ */
+export function createSuggestedWorkflow(fields: {
+  id: WorkflowId;
+  title: string;
+  steps: readonly string[];
+}): SuggestedWorkflow {
+  return { ...fields, [SUGGESTED_WORKFLOW_BRAND]: true };
+}
+
+/**
  * Where a proposal originated. Populated today: "ops_change" (live
  * operational signals, via deriveApprovalCandidates), "pr" (see
  * chiefApprovalCardMocks.ts, demo data only), "repo_change" (see
@@ -83,6 +131,17 @@ export interface ApprovalProposal {
   decidedBy?: Persona;
   /** Structured review checklist — optional; renders only when present. */
   checklist?: ApprovalChecklistItem[];
+  /**
+   * Advisory playbook from the Research Workflow Library
+   * (src/data/researchWorkflows.ts) — optional; renders only when present, in
+   * its own collapsed section rather than inside `riskNote`.
+   *
+   * Guidance only, and deliberately kept separate from `checklist`: checklist
+   * items are verification the agent already *did*, whereas these are steps
+   * merely *suggested* to whoever acts next. Nothing here gates the card,
+   * changes `recommendedDecision`, or executes on its own.
+   */
+  suggestedWorkflow?: SuggestedWorkflow;
   /** Chief's suggested call, distinct from the operator's actual decision (`status`). */
   recommendedDecision?: ApprovalRecommendedDecision;
   source?: ApprovalSource;

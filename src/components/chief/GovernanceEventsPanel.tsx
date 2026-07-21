@@ -12,12 +12,14 @@ const EVENT_TYPE_LABEL: Record<ChiefGovernanceEvent["type"], string> = {
   approval_proposal_created: "Proposal created",
   approval_decision_recorded: "Decision recorded",
   task_reprioritized: "Task reprioritized",
+  research_integrity_checked: "Research integrity checked",
 };
 
 const EVENT_ENTITY_LABEL: Record<ChiefGovernanceEvent["type"], string> = {
   approval_proposal_created: "Proposal",
   approval_decision_recorded: "Proposal",
   task_reprioritized: "Task",
+  research_integrity_checked: "Work story",
 };
 
 function formatEventType(type: ChiefGovernanceEvent["type"]): string {

@@ -5,7 +5,7 @@ status: active
 confidence: high
 last_reviewed: 2026-07-04
 created: 2026-07-04
-updated: 2026-07-04
+updated: 2026-07-13
 related_pages: [chief-approvals, dashboard-audit-july-2026, second-brain-setup]
 related_prs: []
 related_cards: []
@@ -41,6 +41,35 @@ Recent real threads, all live at once:
   check (see `decisions/vercel-preview-secret-scope.md`).
 - **Second Brain / knowledge base** — this vault itself (see
   `projects/second-brain-setup.md`).
+- **Work Story / Research Activity system** — Chief Agents-tab pairing of
+  Planner checklists with a manual Research queue and filed notes (see
+  "Work Story / Research Activity system" below).
+
+## Work Story / Research Activity system
+
+Reusable, config-driven pairing of Chief's Board-tab Planner checklists with a
+manual Research queue and filed `knowledge/sources/` notes — lives entirely in
+these files, all real and present on this branch:
+
+- `src/lib/chief/workStories.ts` — `WorkStoryDefinition`/`WORK_STORIES`, the
+  per-scenario config.
+- `src/lib/research/requests.ts` — `ResearchRequest`/`RESEARCH_REQUESTS`, the
+  manual research queue.
+- `src/lib/knowledge/latestResearchSource.ts` — build-time reader
+  (`import.meta.glob`, no API route, no runtime filesystem access) that
+  resolves each story's latest filed `knowledge/sources/*.md` note by
+  `work_story_id`.
+- `src/components/chief/AgentWorkBoard.tsx` — the `WorkStoryPanel` /
+  `AgentActivityStatusRow` rendering surface, shown on Chief's Agents tab.
+
+Current reality, verified against these files: 2 Work Stories exist —
+"Billing API rate limiter" (`story-billing-rate-limiter`, **Live** — has a
+real open Build-gate task backing it) and "Transactional email vendor for
+notification hooks" (`story-notification-vendor`, **Structured** — no live
+Build task backs it yet). A third queued request, `req-obsidian-sync-cost`,
+has no Work Story or filed note yet. **This system was independently
+duplicated on an unmerged branch (`origin/claude/chief-planner-verify-jba89n`)
+before being reconciled — check here first before rebuilding any part of it.**
 
 ## Key milestones / timeline
 

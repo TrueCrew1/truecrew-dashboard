@@ -12,6 +12,7 @@ const ACTIVITY_TYPE_LABEL: Record<ChiefGovernanceEvent["type"], string> = {
   approval_proposal_created: "Proposal created",
   approval_decision_recorded: "Decision recorded",
   task_reprioritized: "Task reprioritized",
+  research_integrity_checked: "Research integrity checked",
 };
 
 /** Prefers the human-readable rationale when present; falls back to action + id. */

@@ -396,3 +396,9 @@ playbooks. Full reasoning in the Obsidian Build Log entry of the same name.
   `docs/AGENT_WORKFLOW.md`, which already serve that purpose in this repo.
 - No dashboard UI or app code changed; no new VS Code extension was actually
   installed by this pass — governance/docs only.
+
+---
+
+## 2026-07-13 — Work Story / Research Activity system documented
+
+- 2026-07-13 — updated — `projects/truecrew-dashboard.md` — added a "Work Story / Research Activity system" subsection naming its canonical files (`workStories.ts`, `requests.ts`, `latestResearchSource.ts`, `AgentWorkBoard.tsx`) and current Live/Structured status, after the system was found independently duplicated on an unmerged branch and reconciled.
