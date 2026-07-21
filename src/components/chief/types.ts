@@ -116,6 +116,11 @@ export interface CommandHistoryEntry {
   status: CommandHistoryStatus;
 }
 
+export type ChiefCommandResolution =
+  | "deterministic"
+  | "ai_fallback"
+  | "ai_fallback_unavailable";
+
 export interface ChiefResponse {
   summary: string;
   blockers?: string[];
@@ -130,6 +135,13 @@ export interface ChiefResponse {
   decisionTier?: ChiefDecisionTier;
   /** Only present when decisionTier is "approve" — the structured escalation behind the card, not the card itself. */
   approvalPacket?: ChiefApprovalPacket;
+  /** False when no deterministic branch matched (AI fallback may apply). */
+  matched?: boolean;
+  /** How the response was produced. */
+  resolution?: ChiefCommandResolution;
+  /** When set, approve uses existing Research mission runners. */
+  missionKind?: string;
+  missionProjectId?: string;
 }
 
 /**

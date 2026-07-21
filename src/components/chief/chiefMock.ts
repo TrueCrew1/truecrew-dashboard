@@ -1,3 +1,7 @@
+import {
+  RESEARCH_MONITOR_INCIDENT_POSTMORTEM_KIND,
+  RESEARCH_PROJECT_SUMMARY_HANDOFF_KIND,
+} from "../../../lib/missions/types";
 import type {
   ApprovalProposal,
   ChiefResponse,
@@ -58,14 +62,35 @@ export function buildHistoryEntry(
   };
 }
 
+/**
+ * Maps a command response into an ApprovalProposal.
+ * When missionKind + missionProjectId are present, uses the same proposal ID
+ * prefixes as researchIncidentProposal / researchProjectSummaryHandoff so
+ * approve → existing mission execute path works.
+ */
 export function buildApprovalFromResponse(
   command: string,
   response: ChiefResponse,
 ): ApprovalProposal | null {
   if (!response.approvalNeeded) return null;
 
+  const missionKind = response.missionKind;
+  const missionProjectId = response.missionProjectId;
+
+  let id = stableChiefId("apr-cmd", `${command}|${response.approvalTitle ?? ""}`);
+  // Keep seeds aligned with researchIncidentProposalId / researchProjectSummaryHandoffProposalId.
+  if (missionKind === RESEARCH_MONITOR_INCIDENT_POSTMORTEM_KIND && missionProjectId) {
+    id = stableChiefId("apr-research-incident", missionProjectId);
+  } else if (missionKind === RESEARCH_PROJECT_SUMMARY_HANDOFF_KIND && missionProjectId) {
+    id = stableChiefId("apr-research-psh", missionProjectId);
+  }
+
+  const isResearchMission =
+    missionKind === RESEARCH_MONITOR_INCIDENT_POSTMORTEM_KIND ||
+    missionKind === RESEARCH_PROJECT_SUMMARY_HANDOFF_KIND;
+
   return {
-    id: stableChiefId("apr-cmd", `${command}|${response.approvalTitle ?? ""}`),
+    id,
     title: response.approvalTitle ?? `Approval: ${command.slice(0, 48)}`,
     summary: response.summary,
     recommendedAction: response.recommendedAction,
@@ -76,5 +101,8 @@ export function buildApprovalFromResponse(
       response.routedTo !== "Chief"
         ? response.routedTo
         : response.specialists?.[0]?.specialist,
+    missionKind,
+    missionProjectId,
+    source: isResearchMission ? "research_agent" : undefined,
   };
 }

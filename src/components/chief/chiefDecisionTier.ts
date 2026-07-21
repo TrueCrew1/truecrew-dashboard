@@ -4,8 +4,8 @@ import type { ChiefApprovalPacket, ChiefDecisionTier, ChiefResponse, ChiefRiskLe
  * What Chief needs to evaluate a single item against the decision-tier
  * rules below. Deliberately minimal — this is the read-only, rules-first
  * triage layer, distinct from the deterministic command router
- * (chiefLiveContext.ts's resolveChiefCommand) and the AI fallback
- * (chiefAiFallback.ts). No AI involved here on purpose.
+ * (chiefLiveContext.ts's resolveChiefCommand / lib/chief/resolveCommand.ts) and the AI fallback
+ * (lib/chief/chiefAiFallback.ts). No AI involved here on purpose.
  */
 export interface ChiefEvaluationInput {
   /** Short description of the item being evaluated. */

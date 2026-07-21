@@ -23,14 +23,12 @@ import { useMonitorHealth } from "@/hooks/useMonitorHealth";
 import { ApprovalBoard } from "./ApprovalBoard";
 import { ChiefQueueStrip } from "./ChiefQueueStrip";
 import { CommandHistory } from "./CommandHistory";
-import { buildApprovalFromResponse, buildHistoryEntry } from "./chiefMock";
 import { approvalActionSuccessMessage, type ApprovalActionState } from "./chiefApproval";
 import {
   isResearchProjectSummaryHandoffProposal,
   projectIdForResearchProjectSummaryHandoffProposal,
 } from "./researchProjectSummaryHandoff";
-import { classifyChiefEvaluation, evaluationInputFromChiefResponse } from "./chiefDecisionTier";
-import { deriveChiefBoardItems, resolveChiefCommand } from "./chiefLiveContext";
+import { deriveChiefBoardItems } from "./chiefLiveContext";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { SpecialistCards } from "./SpecialistCards";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
@@ -38,6 +36,7 @@ import { ChiefBoard } from "./ChiefBoard";
 import { AgentWorkBoard } from "./AgentWorkBoard";
 import { GovernanceEventsPanel } from "./GovernanceEventsPanel";
 import { chiefLog } from "./chiefLog";
+import { submitChiefCommand } from "./submitChiefCommand";
 import type { ApprovalAction, ChiefResponse } from "./types";
 import type { ApprovalStatusFilter } from "./approvalStatus";
 import {
@@ -53,8 +52,8 @@ const EXAMPLE_COMMANDS = [
   "What is at risk today?",
   "What's blocked?",
   "Show approvals I need to review",
-  "What tasks are missing customer context?",
-  "Show open alerts",
+  "Propose a postmortem for the active incident",
+  "Propose a project summary handoff",
 ];
 
 type ChiefTab = "command" | "board" | "agents" | "approvals" | "history" | "dev";
@@ -77,6 +76,7 @@ export function ChiefPanel() {
   const [activeTab, setActiveTab] = useState<ChiefTab>("command");
   const [input, setInput] = useState("");
   const [response, setResponse] = useState<ChiefResponse | null>(null);
+  const [commandError, setCommandError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [approvalActionStates, setApprovalActionStates] = useState<
     Record<string, ApprovalActionState>
@@ -326,7 +326,7 @@ export function ChiefPanel() {
     [proposalsById, recordDecision, decisionsHydrated, liveApi, refreshHandoffMissions, refreshPostmortemMissions],
   );
 
-  const handleSubmit = (event: FormEvent) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     const command = input.trim();
     if (!command || isProcessing) return;
@@ -334,31 +334,23 @@ export function ChiefPanel() {
     setIsProcessing(true);
     setActiveTab("command");
     setResponse(null);
+    setCommandError(null);
 
-    window.setTimeout(() => {
-      const resolved = resolveChiefCommand(command, data, liveContext, approvals);
-      // Read-only operating-layer classification — chiefDecisionTier.ts never
-      // executes or writes anything, it only tags this response with a tier
-      // and (when escalating) the reasoning behind it.
-      const evaluation = classifyChiefEvaluation(evaluationInputFromChiefResponse(resolved));
-      const result: ChiefResponse = {
-        ...resolved,
-        decisionTier: evaluation.tier,
-        approvalPacket: evaluation.approvalPacket,
-      };
-      setResponse(result);
-      addHistoryEntry(buildHistoryEntry(command, result));
+    const result = await submitChiefCommand({
+      prompt: command,
+      source: "sidebar",
+      data,
+      liveContext,
+      approvals,
+      addHistoryEntry,
+      addCommandApproval,
+      classify: true,
+      context: { page: "chief-panel", section: "command" },
+    });
 
-      const newApproval = buildApprovalFromResponse(command, result);
-      if (newApproval) {
-        // Extension point: a "card created" notification hook would fire
-        // here too, alongside any future real approval sources (GitHub PRs,
-        // agent job queue) that push a new ApprovalCard into this list.
-        addCommandApproval(newApproval);
-      }
-
-      setIsProcessing(false);
-    }, 480);
+    setResponse(result.response);
+    setCommandError(result.error);
+    setIsProcessing(false);
   };
 
   const handleExample = (example: string) => {
@@ -489,12 +481,12 @@ export function ChiefPanel() {
               liveApiEnabled={liveApi}
             />
 
-            {!response && !isProcessing ? (
+            {!response && !isProcessing && !commandError ? (
               <div className="chief-empty">
                 <p className="chief-empty-lead">Ask Chief</p>
                 <p className="chief-empty-desc">
-                  Summarize status, check gates, or route to a specialist. Responses are
-                  advisory—nothing executes without your approval.
+                  Summarize status, check gates, or propose Research work (postmortem /
+                  handoff). Responses are advisory—nothing executes without your approval.
                 </p>
                 <div className="chief-examples">
                   <span className="chief-examples-label">Examples</span>
@@ -516,7 +508,7 @@ export function ChiefPanel() {
               <div className="chief-processing-card" aria-live="polite" aria-busy="true">
                 <div className="chief-processing-header">
                   <span className="chief-processing-dot" aria-hidden="true" />
-                  Routing command…
+                  Running command…
                 </div>
                 <div className="chief-processing-lines" aria-hidden="true">
                   <span className="chief-skeleton-line chief-skeleton-line--long" />
@@ -526,7 +518,19 @@ export function ChiefPanel() {
               </div>
             ) : null}
 
-            {response && !isProcessing ? (
+            {commandError && !isProcessing ? (
+              <div className="chief-response-card" role="alert">
+                <div className="chief-response-section">
+                  <h3 className="chief-response-label">Command failed</h3>
+                  <p className="chief-response-text">{commandError}</p>
+                  <p className="chief-response-text chief-response-text--action">
+                    Check VITE_USE_LIVE_API / VITE_INTERNAL_KEY, then retry.
+                  </p>
+                </div>
+              </div>
+            ) : null}
+
+            {response && !isProcessing && !commandError ? (
               <article className="chief-response-card">
                 <div className="chief-response-section chief-response-section--chief">
                   <div className="chief-speaker-row">
