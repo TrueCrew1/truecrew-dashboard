@@ -193,6 +193,8 @@ export interface ChiefBoardLaneConfig {
   emptyMessage: string;
 }
 
+export type ChiefTab = "command" | "board" | "agents" | "approvals" | "history" | "dev";
+
 export type AgentWorkStatus = "queued" | "active" | "blocked" | "awaiting_approval" | "completed";
 
 /**

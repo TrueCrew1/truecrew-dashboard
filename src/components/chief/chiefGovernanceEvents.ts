@@ -14,7 +14,10 @@ export type ChiefGovernanceEventType =
   | "packet_created"
   | "card_created"
   | "card_decided"
-  | "task_reprioritized";
+  | "task_reprioritized"
+  | "search_query"
+  | "search_action_routed"
+  | "search_error";
 
 export interface ChiefGovernanceEvent {
   id: string;

@@ -1,5 +1,6 @@
 @import "./tokens.css";
 @import "./chief.css";
+@import "./command-bar.css";
 
 .app-shell {
   display: grid;
@@ -186,6 +187,12 @@
   background: rgba(10, 11, 13, 0.85);
   backdrop-filter: blur(12px);
   flex-shrink: 0;
+  /* backdrop-filter already creates a stacking context here; without an
+     explicit position + z-index that context paints in plain DOM order and
+     loses to .main-workspace below it, so the command bar's dropdown (a
+     descendant) would render underneath page content instead of above it. */
+  position: relative;
+  z-index: 5;
 }
 
 .topbar-search {
