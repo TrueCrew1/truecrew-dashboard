@@ -40,8 +40,8 @@ export function AgentStatusStrip() {
       <header className="agent-status-strip-header">
         <h3 className="agent-status-strip-title">Agent status</h3>
         <p className="agent-status-strip-subtitle">
-          Live-derived from handoff missions, build gates, librarian filing signals, and Monitor
-          probes.
+          Specialists report through Chief — load from missions, gates, filing signals, and
+          Monitor probes.
         </p>
       </header>
       <ul className="agent-status-strip-list">

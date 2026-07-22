@@ -65,17 +65,18 @@ export function TodayPage() {
     <>
       <PageHeader
         title="Today"
-        subtitle="Focus items, overdue gates, and active Sev 1–2 incidents"
+        accent="Chief"
+        subtitle="Operations desk — Chief is the single voice. Queue, blockers, and next actions."
       />
 
       <ShiftStatsStrip />
 
       <div className="page-stack">
+        <ChiefHomePanel />
+
         <AgentMissionsCard />
 
         <ApprovalActivityCard />
-
-        <ChiefHomePanel />
 
         <div className="grid-2">
           <Panel title="Focus queue">
