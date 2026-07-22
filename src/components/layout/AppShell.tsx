@@ -4,6 +4,7 @@ import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { ChiefPanel } from "@/components/chief/ChiefPanel";
 import { ChiefApprovalsProvider } from "@/components/chief/ChiefApprovalsContext";
+import { ChiefContextProvider } from "@/context/ChiefContextProvider";
 import { ContextRail } from "./ContextRail";
 import { SelectionContext } from "@/context/SelectionContext";
 
@@ -67,35 +68,37 @@ export function AppShell() {
 
   return (
     <SelectionContext.Provider value={{ selectedEntityId, setSelectedEntityId }}>
-      <ChiefApprovalsProvider>
-        <div className={shellClass}>
-          <Sidebar
-            collapsed={sidebarCollapsed}
-            onToggle={() => setSidebarCollapsed((v) => !v)}
-          />
-
-          <div className="main-column">
-            <TopBar
-              railOpen={railOpen}
-              railAvailable={railAvailable}
-              onToggleRail={toggleRail}
+      <ChiefContextProvider>
+        <ChiefApprovalsProvider>
+          <div className={shellClass}>
+            <Sidebar
+              collapsed={sidebarCollapsed}
+              onToggle={() => setSidebarCollapsed((v) => !v)}
             />
-            <div className="main-workspace">
-              <main className="page-content">
-                <Outlet />
-              </main>
+
+            <div className="main-column">
+              <TopBar
+                railOpen={railOpen}
+                railAvailable={railAvailable}
+                onToggleRail={toggleRail}
+              />
+              <div className="main-workspace">
+                <main className="page-content">
+                  <Outlet />
+                </main>
+              </div>
             </div>
+
+            <ChiefPanel />
+
+            <ContextRail
+              open={railOpen}
+              onClose={closeRail}
+              selectedEntityId={selectedEntityId}
+            />
           </div>
-
-          <ChiefPanel />
-
-          <ContextRail
-            open={railOpen}
-            onClose={closeRail}
-            selectedEntityId={selectedEntityId}
-          />
-        </div>
-      </ChiefApprovalsProvider>
+        </ChiefApprovalsProvider>
+      </ChiefContextProvider>
     </SelectionContext.Provider>
   );
 }

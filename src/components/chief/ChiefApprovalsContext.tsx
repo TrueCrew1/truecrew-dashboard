@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { useData } from "@/context/DataContext";
+import { useChiefContext } from "@/context/ChiefContextProvider";
 import {
   ChiefApprovalConflictError,
   fetchChiefApprovalDecisions,
@@ -19,6 +20,8 @@ import { AGENT_APPROVAL_CARDS } from "./agentApprovalGates";
 import { chiefLog } from "./chiefLog";
 import { MOCK_PR_APPROVAL_CARDS } from "./chiefApprovalCardMocks";
 import { REPO_CHANGE_APPROVAL_CARDS } from "./repoChangeApprovals";
+import { MS_PAINTING_APPROVAL_CARDS } from "./msPaintingApprovals";
+import { scopeDataToChiefContext } from "./chiefContextScope";
 import { APPROVAL_ACTION_DELAY_MS, approvalActionToStatus } from "./chiefApproval";
 import {
   buildChiefLiveContext,
@@ -36,6 +39,7 @@ import {
 } from "@/lib/api/governedSlackNotify";
 import type { ApprovalActivityRecord } from "../../../lib/approvals/types";
 import { buildApprovalActivityRecord } from "../../../lib/approvals/approvalActivity";
+import type { MockData } from "@/data/mockData";
 import type {
   ApprovalAction,
   ApprovalDecision,
@@ -44,6 +48,8 @@ import type {
 } from "./types";
 
 interface ChiefApprovalsContextValue {
+  /** Data already filtered to Chief's active context (chiefContextScope.ts) — global is a passthrough. Use this, not useData()'s raw `data`, for anything Chief-surfaced. */
+  chiefData: MockData;
   liveContext: ChiefLiveContext;
   /** Fully merged, decision-applied approval queue — the one source both ChiefPanel and the homepage panel read. */
   approvals: ApprovalProposal[];
@@ -75,23 +81,37 @@ const ChiefApprovalsContext = createContext<ChiefApprovalsContextValue | null>(n
 
 export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
   const { data, source } = useData();
-  const liveContext = useMemo(() => buildChiefLiveContext(data), [data]);
+  const { activeContext } = useChiefContext();
+  // The real context switch: everything below derives from chiefData, not
+  // the raw global `data` — so approval candidates, board items, and command
+  // routing all see only the active context's tasks/workflow/customer once
+  // activeContext !== "global". See chiefContextScope.ts.
+  const chiefData = useMemo(() => scopeDataToChiefContext(data, activeContext), [data, activeContext]);
+  const liveContext = useMemo(() => buildChiefLiveContext(chiefData), [chiefData]);
   const derivedApprovals = useMemo(
-    () => deriveApprovalCandidates(data, liveContext),
-    [data, liveContext],
+    () => deriveApprovalCandidates(chiefData, liveContext),
+    [chiefData, liveContext],
   );
 
-  // Seeded with demo PR cards (chiefApprovalCardMocks.ts), the one real
-  // wired source (pending local repo changes, repoChangeApprovals.ts), and
-  // one example request per agent (agentApprovalGates.ts) — so every
-  // approval, from any source or surface, routes through this one shared
-  // queue. See agentApprovalGates.ts's header and docs/AGENT_WORKFLOW.md
-  // for the single-queue rule this preserves.
-  const [commandApprovals, setCommandApprovals] = useState<ApprovalProposal[]>([
-    ...MOCK_PR_APPROVAL_CARDS,
-    ...REPO_CHANGE_APPROVAL_CARDS,
-    ...AGENT_APPROVAL_CARDS,
-  ]);
+  // Static approval sources are context-scoped, not merged once and filtered
+  // after: global's demo PR cards (chiefApprovalCardMocks.ts), the one real
+  // wired repo-change source (repoChangeApprovals.ts), and one example
+  // request per agent (agentApprovalGates.ts) only ever appear in the
+  // "global" context. M&S Painting has its own source instead
+  // (msPaintingApprovals.ts) — a real governed Research mission wired to its
+  // workflow, not a copy of the global demo cards. See
+  // docs/CHIEF_CONTEXT_SWITCHING.md.
+  const contextStaticApprovalCards = useMemo(() => {
+    if (activeContext === "ms-painting") return MS_PAINTING_APPROVAL_CARDS;
+    return [...MOCK_PR_APPROVAL_CARDS, ...REPO_CHANGE_APPROVAL_CARDS, ...AGENT_APPROVAL_CARDS];
+  }, [activeContext]);
+
+  // Dynamic proposals the operator creates by typing a Chief command
+  // (addCommandApproval) — each stamped with the context it was created in
+  // (see addCommandApproval below) so switching context filters these too,
+  // same as every other source. Starts empty; the old static seed list
+  // moved to contextStaticApprovalCards above.
+  const [commandApprovals, setCommandApprovals] = useState<ApprovalProposal[]>([]);
   const [approvalDecisions, setApprovalDecisions] = useState<Record<string, ApprovalDecision>>({});
   const [history, setHistory] = useState<CommandHistoryEntry[]>([]);
   const [sessionApprovalActivity, setSessionApprovalActivity] = useState<ApprovalActivityRecord[]>(
@@ -221,11 +241,26 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
     setApprovalDecisions((prev) => ({ ...prev, [decision.proposalId]: decision }));
   }, []);
 
+  // Command-created proposals are tagged with the context they were made in
+  // (addCommandApproval below); only the active context's own proposals
+  // surface. Monitor/platform-health cards are inherently global
+  // infrastructure signal, not project work — they never appear outside the
+  // "global" context.
+  const contextCommandApprovals = useMemo(
+    () => commandApprovals.filter((proposal) => (proposal.contextId ?? "global") === activeContext),
+    [commandApprovals, activeContext],
+  );
+  const contextMonitorApprovals = useMemo(
+    () => (activeContext === "global" ? monitorApprovals : []),
+    [activeContext, monitorApprovals],
+  );
+
   const approvals = useMemo(() => {
     const merged = mergeApprovalSources(
       derivedApprovals,
-      commandApprovals,
-      monitorApprovals,
+      contextStaticApprovalCards,
+      contextCommandApprovals,
+      contextMonitorApprovals,
     );
     return merged.map((proposal) => {
       const decision = approvalDecisions[proposal.id];
@@ -237,7 +272,13 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
         decidedBy: decision.actor ?? undefined,
       };
     });
-  }, [derivedApprovals, commandApprovals, monitorApprovals, approvalDecisions]);
+  }, [
+    derivedApprovals,
+    contextStaticApprovalCards,
+    contextCommandApprovals,
+    contextMonitorApprovals,
+    approvalDecisions,
+  ]);
 
   const pendingApprovalCount = useMemo(
     () => approvals.filter((proposal) => proposal.status === "pending").length,
@@ -250,18 +291,21 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
   );
 
   const addCommandApproval = useCallback((proposal: ApprovalProposal) => {
-    setCommandApprovals((prev) => [proposal, ...prev]);
+    // Stamp with the context Chief was operating in when the command ran, so
+    // a later context switch filters it the same as any other source.
+    const tagged: ApprovalProposal = { ...proposal, contextId: proposal.contextId ?? activeContext };
+    setCommandApprovals((prev) => [tagged, ...prev]);
     // Canonical Chief observability event (see chiefLog.ts / chiefGovernanceEvents.ts) — observability-only, must not block enqueue.
-    chiefLog.cardCreated(proposal);
+    chiefLog.cardCreated(tagged);
 
     if (liveApi) {
       notifyGovernedApprovalCreated({
-        approvalId: proposal.id,
-        missionKind: proposal.missionKind,
-        missionProjectId: proposal.missionProjectId,
+        approvalId: tagged.id,
+        missionKind: tagged.missionKind,
+        missionProjectId: tagged.missionProjectId,
       });
     }
-  }, [liveApi]);
+  }, [liveApi, activeContext]);
 
   const addHistoryEntry = useCallback((entry: CommandHistoryEntry) => {
     setHistory((prev) => [entry, ...prev]);
@@ -370,6 +414,7 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<ChiefApprovalsContextValue>(
     () => ({
+      chiefData,
       liveContext,
       approvals,
       pendingApprovalCount,
@@ -385,6 +430,7 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
       lastActivityPersistError,
     }),
     [
+      chiefData,
       liveContext,
       approvals,
       pendingApprovalCount,

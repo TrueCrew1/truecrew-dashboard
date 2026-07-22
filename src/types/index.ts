@@ -107,6 +107,8 @@ export interface Task extends EntityBase {
   linkedEntities: LinkedEntityRef[];
   githubRef?: string;
   obsidianNoteId?: string;
+  /** Scopes this task to a Chief project context (e.g. "ms-painting"). Absent = global/parent dashboard. */
+  projectId?: string;
 }
 
 export interface Workflow extends EntityBase {
@@ -118,6 +120,8 @@ export interface Workflow extends EntityBase {
   gates: GateCheck[];
   linkedTaskIds: string[];
   linkedEntityIds: LinkedEntityRef[];
+  /** Scopes this workflow to a Chief project context (e.g. "ms-painting"). Absent = global/parent dashboard. */
+  projectId?: string;
 }
 
 export interface Incident extends EntityBase {

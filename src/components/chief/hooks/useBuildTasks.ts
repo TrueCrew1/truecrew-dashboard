@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useData } from "@/context/DataContext";
+import { useChiefApprovals } from "../ChiefApprovalsContext";
 import { Task, GateCheck, WorkflowStage } from "@/types";
 
 export interface PendingGate {
@@ -57,15 +58,19 @@ export function useBuildTasks(): {
   isLoading: boolean;
   error: string | null;
 } {
-  const { tasks, loading, error } = useData();
+  const { loading, error } = useData();
+  // Scoped to Chief's active context (chiefData), not useData()'s raw global
+  // tasks — so Builders-tab/board gate signal matches whatever project
+  // Chief is currently operating in.
+  const { chiefData } = useChiefApprovals();
 
   const buildGateTasks = useMemo(
     () =>
-      (tasks as Task[])
+      (chiefData.tasks as Task[])
         .filter((task) => task.workflowType === "build" && !TERMINAL_STAGES.includes(task.stage))
         .map(mapTaskToBuildGateTask)
         .filter((task): task is BuildGateTask => task !== null),
-    [tasks],
+    [chiefData.tasks],
   );
 
   return { buildGateTasks, isLoading: loading, error };

@@ -93,6 +93,44 @@ export const mockTasks: Task[] = [
     ],
     linkedEntities: [],
   },
+  {
+    id: "task-ms-001",
+    title: "M&S Painting jobsite intake checklist",
+    description:
+      "Build the mobile jobsite intake checklist (surface prep, primer batch, coat count, photo proof) M&S Painting crews fill out on-site.",
+    stage: WorkflowStage.InProgress,
+    workflowType: "build",
+    priority: "high",
+    assignee: "founder",
+    createdAt: iso(48),
+    updatedAt: iso(3),
+    createdBy: "founder",
+    projectId: "ms-painting",
+    gates: [
+      { id: "g1", label: "Checklist fields confirmed with crew lead", required: true, passed: true },
+      { id: "g2", label: "Offline photo capture tested on jobsite Wi-Fi dead zone", required: true, passed: false },
+    ],
+    linkedEntities: [{ type: "customer", id: "cust-ms-painting", label: "M&S Painting" }],
+  },
+  {
+    id: "task-ms-002",
+    title: "M&S Painting onboarding kickoff",
+    description: "Provision M&S Painting crew accounts and roll out the jobsite checklist.",
+    stage: WorkflowStage.Waiting,
+    workflowType: "onboarding",
+    priority: "medium",
+    assignee: "operator",
+    blocker: "Waiting on crew roster from M&S Painting's office manager",
+    createdAt: iso(96),
+    updatedAt: iso(5),
+    createdBy: "operator",
+    projectId: "ms-painting",
+    gates: [
+      { id: "g1", label: "Kickoff call scheduled", required: true, passed: true },
+      { id: "g2", label: "Crew accounts provisioned", required: true, passed: false },
+    ],
+    linkedEntities: [{ type: "customer", id: "cust-ms-painting", label: "M&S Painting" }],
+  },
 ];
 
 export const mockWorkflows: Workflow[] = [
@@ -146,6 +184,24 @@ export const mockWorkflows: Workflow[] = [
       { type: "incident", id: "inc-001", label: "Auth p99 latency spike" },
       { type: "tool", id: "tool-002", label: "Auth Service" },
     ],
+  },
+  {
+    id: "wf-ms-001",
+    title: "M&S Painting jobsite checklist build",
+    type: "build",
+    stage: WorkflowStage.InProgress,
+    owner: "founder",
+    summary: "Mobile jobsite intake checklist and offline photo capture for M&S Painting crews.",
+    createdAt: iso(48),
+    updatedAt: iso(3),
+    createdBy: "founder",
+    projectId: "ms-painting",
+    gates: [
+      { id: "g1", label: "Checklist fields confirmed with crew lead", required: true, passed: true },
+      { id: "g2", label: "Offline photo capture tested on jobsite Wi-Fi dead zone", required: true, passed: false },
+    ],
+    linkedTaskIds: ["task-ms-001"],
+    linkedEntityIds: [{ type: "customer", id: "cust-ms-painting", label: "M&S Painting" }],
   },
 ];
 
@@ -356,6 +412,25 @@ export const mockCustomers: Customer[] = [
     updatedAt: iso(720),
     createdBy: "operator",
   },
+  {
+    id: "cust-ms-painting",
+    name: "M&S Painting",
+    slug: "ms-painting",
+    tier: "growth",
+    stage: WorkflowStage.Waiting,
+    primaryContact: "Mike Sorrentino",
+    email: "mike@mspainting.example",
+    healthScore: 78,
+    status: "onboarding",
+    linkedTicketIds: [],
+    onboardingChecklist: [
+      { id: "g1", label: "Kickoff call scheduled", required: true, passed: true },
+      { id: "g2", label: "Crew accounts provisioned", required: true, passed: false },
+    ],
+    createdAt: iso(96),
+    updatedAt: iso(5),
+    createdBy: "operator",
+  },
 ];
 
 export const mockRunbooks: Runbook[] = [
@@ -552,6 +627,15 @@ export const mockFocusItems: FocusItem[] = [
     stage: WorkflowStage.InProgress,
     workflowType: "build",
     reason: "PR gate open — blocks production deploy",
+  },
+  {
+    id: "focus-ms-001",
+    taskId: "task-ms-002",
+    title: "M&S Painting onboarding stalled on crew roster",
+    stage: WorkflowStage.Waiting,
+    workflowType: "onboarding",
+    reason: "Crew roster from M&S Painting's office manager is overdue",
+    dueAt: iso(24),
   },
 ];
 

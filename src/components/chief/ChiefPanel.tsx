@@ -32,6 +32,7 @@ import {
 import { classifyChiefEvaluation, evaluationInputFromChiefResponse } from "./chiefDecisionTier";
 import { deriveChiefBoardItems, resolveChiefCommand } from "./chiefLiveContext";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
+import { ChiefContextSwitcher } from "./ChiefContextSwitcher";
 import { SpecialistCards } from "./SpecialistCards";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
 import { ChiefBoard } from "./ChiefBoard";
@@ -60,8 +61,9 @@ const EXAMPLE_COMMANDS = [
 type ChiefTab = "command" | "board" | "agents" | "approvals" | "history" | "dev";
 
 export function ChiefPanel() {
-  const { data, loading, source } = useData();
+  const { loading, source } = useData();
   const {
+    chiefData,
     liveContext,
     approvals,
     pendingApprovalCount,
@@ -336,7 +338,7 @@ export function ChiefPanel() {
     setResponse(null);
 
     window.setTimeout(() => {
-      const resolved = resolveChiefCommand(command, data, liveContext, approvals);
+      const resolved = resolveChiefCommand(command, chiefData, liveContext, approvals);
       // Read-only operating-layer classification — chiefDecisionTier.ts never
       // executes or writes anything, it only tags this response with a tier
       // and (when escalating) the reasoning behind it.
@@ -382,6 +384,7 @@ export function ChiefPanel() {
                 : ` · ${formatDataSourceLabel(source)}`}
           </span>
         </div>
+        <ChiefContextSwitcher />
       </div>
 
       <ChiefQueueStrip

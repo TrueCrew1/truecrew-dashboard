@@ -1,7 +1,6 @@
 import { FormEvent, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Panel } from "@/components/ui";
-import { useData } from "@/context/DataContext";
 import { buildApprovalFromResponse, buildHistoryEntry } from "./chiefMock";
 import {
   deriveChiefBoardItems,
@@ -10,6 +9,8 @@ import {
 } from "./chiefLiveContext";
 import { CHIEF_ROUTES } from "./chiefRoutes";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
+import { ChiefContextSwitcher } from "./ChiefContextSwitcher";
+import { useChiefContext } from "@/context/ChiefContextProvider";
 import { isLiveApiEnabled } from "@/lib/api/client";
 import { useMonitorHealth } from "@/hooks/useMonitorHealth";
 import { useBuildTasks, type BuildGateTask } from "./hooks/useBuildTasks";
@@ -92,13 +93,14 @@ function buildResearchLaneSummary(
 }
 
 export function ChiefHomePanel() {
-  const { data } = useData();
   const approvalSnapshotRef = useRef<HTMLDivElement>(null);
+  const { activeContextDefinition } = useChiefContext();
 
   // Shared with the sidebar Chief panel (ChiefApprovalsContext) — same
   // merged, decision-applied queue, so counts here stay in sync with the
   // sidebar within the same session instead of only matching at load.
-  const { liveContext, approvals, addCommandApproval, addHistoryEntry } = useChiefApprovals();
+  const { chiefData, liveContext, approvals, addCommandApproval, addHistoryEntry } =
+    useChiefApprovals();
 
   const pendingApprovals = useMemo(
     () => approvals.filter((proposal) => proposal.status === "pending"),
@@ -160,7 +162,7 @@ export function ChiefHomePanel() {
 
     setIsProcessing(true);
     window.setTimeout(() => {
-      const result = resolveChiefCommand(trimmed, data, liveContext, approvals);
+      const result = resolveChiefCommand(trimmed, chiefData, liveContext, approvals);
       setResponse(result);
       addHistoryEntry(buildHistoryEntry(trimmed, result));
 
@@ -174,8 +176,15 @@ export function ChiefHomePanel() {
   };
 
   return (
-    <Panel title="Chief">
+    <Panel title="Chief" action={<ChiefContextSwitcher />}>
       <div className="chief-home-panel">
+        {activeContextDefinition.kind === "project" ? (
+          <p className="chief-home-context-banner" role="status">
+            Operating inside <strong>{activeContextDefinition.label}</strong> — parent/global
+            approvals and tasks are hidden. {activeContextDefinition.description}
+          </p>
+        ) : null}
+
         <ChiefSituationBrief
           context={liveContext}
           pendingApprovalCount={pendingApprovals.length}
