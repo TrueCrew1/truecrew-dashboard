@@ -4665,18 +4665,13 @@ button.chief-brief-metric {
   margin: 0;
   padding: 8px 16px;
   border-bottom: 1px solid var(--border);
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.4;
   color: var(--steel-dim);
   flex-shrink: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
-.chief-ops-desk {
-  display: flex;
+.chief-ops-desk {  display: flex;
   flex-direction: column;
   gap: 10px;
   padding: 10px 12px;
@@ -4806,7 +4801,7 @@ button.chief-ops-desk-cell:disabled {
   font-size: 12px;
   font-weight: 600;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

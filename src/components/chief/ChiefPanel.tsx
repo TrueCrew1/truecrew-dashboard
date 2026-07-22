@@ -413,7 +413,7 @@ export function ChiefPanel() {
         <div className="chief-header-text">
           <span className="chief-title">Chief</span>
           <span className="chief-subtitle">
-            Single command voice
+            Foreman
             {loading
               ? " · loading context"
               : source === "mock"
