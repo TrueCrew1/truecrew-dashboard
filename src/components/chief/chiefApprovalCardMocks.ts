@@ -1,14 +1,9 @@
 import type { ApprovalCard } from "./types";
 
 /**
- * Demo data only — proves the "PR approval card" pattern (checklist,
- * recommendedDecision, source) end-to-end through the existing Approvals
- * pipeline. Not live GitHub data.
- *
- * Extension point: replace this array with a real fetch (e.g. a GitHub PRs
- * API client under `src/lib/api/`) once that integration exists. Each real
- * PR would map to one ApprovalCard the same way these two do — same shape,
- * same Approve / Send back / Reject flow, no UI changes required.
+ * Test/extension fixture only — NOT loaded into the operator approval queue
+ * (see chiefApprovalSeeds.ts). Proves the "PR approval card" pattern for unit
+ * tests and future GitHub PR integration.
  */
 export const MOCK_PR_APPROVAL_CARDS: ApprovalCard[] = [
   {

@@ -343,6 +343,7 @@ export const EXAMPLE_CONTENT_REQUEST: ContentApprovalRequest = {
   createdAt: "2026-07-04T12:15:00.000Z",
 };
 
+/** Test and extension fixture — NOT loaded into the operator queue (see chiefApprovalSeeds.ts). */
 export const AGENT_APPROVAL_CARDS: ApprovalCard[] = [
   createApprovalCardFromPlannerRequest(EXAMPLE_PLANNER_REQUEST),
   createApprovalCardFromBuildRequest(BUILD_REQUEST_DUPLICATE_AUTH_FIX),

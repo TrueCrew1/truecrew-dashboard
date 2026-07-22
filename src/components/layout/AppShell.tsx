@@ -4,6 +4,7 @@ import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { ChiefPanel } from "@/components/chief/ChiefPanel";
 import { ChiefApprovalsProvider } from "@/components/chief/ChiefApprovalsContext";
+import { ResearchRequestsProvider } from "@/context/ResearchRequestsContext";
 import { ContextRail } from "./ContextRail";
 import { SelectionContext } from "@/context/SelectionContext";
 
@@ -68,6 +69,7 @@ export function AppShell() {
   return (
     <SelectionContext.Provider value={{ selectedEntityId, setSelectedEntityId }}>
       <ChiefApprovalsProvider>
+        <ResearchRequestsProvider>
         <div className={shellClass}>
           <Sidebar
             collapsed={sidebarCollapsed}
@@ -95,6 +97,7 @@ export function AppShell() {
             selectedEntityId={selectedEntityId}
           />
         </div>
+        </ResearchRequestsProvider>
       </ChiefApprovalsProvider>
     </SelectionContext.Provider>
   );

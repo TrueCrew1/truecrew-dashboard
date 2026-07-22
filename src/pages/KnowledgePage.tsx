@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { PageHeader, Panel, PanelEmpty, TableScroll } from "@/components/ui";
+import { ResearchQueuePanel } from "@/components/research/ResearchQueuePanel";
 import { useData } from "@/context/DataContext";
 import {
   fetchObsidianNotes,
@@ -88,6 +90,8 @@ function VaultStatusLabel({
 
 export function KnowledgePage() {
   const { data } = useData();
+  const [searchParams] = useSearchParams();
+  const highlightId = searchParams.get("highlight");
   const [obsidianNotes, setObsidianNotes] = useState<ObsidianNote[]>([]);
   const [vaultStatus, setVaultStatus] = useState<VaultStatus>("syncing");
 
@@ -117,6 +121,13 @@ export function KnowledgePage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!highlightId) return;
+    document
+      .getElementById(`research-request-${highlightId}`)
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [highlightId]);
+
   const knowledgeEntries = useMemo(
     () => mergeKnowledgeEntries(data.notes, obsidianNotes),
     [data.notes, obsidianNotes],
@@ -127,8 +138,14 @@ export function KnowledgePage() {
       <PageHeader
         title="AI &"
         accent="Knowledge"
-        subtitle="Prompt library and Obsidian-routed knowledge entries"
+        subtitle="Research queue, prompt library, and Obsidian-routed knowledge entries"
       />
+
+      <div className="knowledge-research-panel">
+        <Panel title="Research queue">
+          <ResearchQueuePanel highlightId={highlightId} />
+        </Panel>
+      </div>
 
       <div className="grid-2">
         <Panel title="Prompt library">

@@ -1,14 +1,14 @@
-import { AGENT_APPROVAL_CARDS } from "./agentApprovalGates";
-import { MOCK_PR_APPROVAL_CARDS } from "./chiefApprovalCardMocks";
-import { REPO_CHANGE_APPROVAL_CARDS } from "./repoChangeApprovals";
 import type { ApprovalCard } from "./types";
 
 /**
- * Single call site for every static approval-seed source, so the "which
- * sources feed the queue" question has one answer instead of three files
- * spread ad hoc at the call site. See agentApprovalGates.ts's header and
- * docs/AGENT_WORKFLOW.md for the single-queue rule this preserves.
+ * Single call site for static approval seeds on the operator queue.
+ *
+ * Demo PR cards (chiefApprovalCardMocks.ts), agent examples, and wired repo
+ * cards (agentApprovalGates.ts, repoChangeApprovals.ts) remain as test and
+ * extension fixtures only — they are not loaded here. The queue is filled by
+ * live-derived signals (Supabase rail), Chief command session proposals, and
+ * future real approval integrations.
  */
 export function getSeedApprovalCards(): ApprovalCard[] {
-  return [...MOCK_PR_APPROVAL_CARDS, ...REPO_CHANGE_APPROVAL_CARDS, ...AGENT_APPROVAL_CARDS];
+  return [];
 }

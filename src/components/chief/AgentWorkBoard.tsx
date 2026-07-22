@@ -12,6 +12,8 @@ import {
 import { getApprovalUrgencyBadge, OVERDUE_HOURS } from "./chiefApprovalUrgency";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { useData } from "@/context/DataContext";
+import { useResearchRequests } from "@/context/ResearchRequestsContext";
+import { ResearchQueuePanel } from "@/components/research/ResearchQueuePanel";
 import { useBuildTasks } from "./hooks/useBuildTasks";
 import type { BuildGateTask } from "./hooks/useBuildTasks";
 import {
@@ -20,8 +22,7 @@ import {
   getAllResearchSummaries,
   getLatestResearchSummary,
 } from "@/lib/knowledge/latestResearchSource";
-import { getResearchRequests } from "@/lib/research/requests";
-import type { ResearchRequest } from "@/lib/research/requests";
+import type { ResearchRequest } from "@/lib/research/types";
 import { getWorkStories } from "@/lib/chief/workStories";
 import type { WorkStoryDefinition } from "@/lib/chief/workStories";
 import type { AgentWorkItem, AgentWorkStatus, ApprovalProposal } from "./types";
@@ -30,7 +31,6 @@ import type { TaskPriority } from "@/types";
 // Build-time read of knowledge/sources/ (see latestResearchSource.ts) and the
 // static manual queue (see requests.ts) — neither changes per render.
 const LATEST_RESEARCH_SUMMARY = getLatestResearchSummary();
-const RESEARCH_REQUESTS = getResearchRequests();
 const HAS_FILED_RESEARCH = getAllResearchSummaries().length > 0;
 
 // Reusable Work Story scenarios (see workStories.ts) — adding a scenario means
@@ -68,9 +68,11 @@ function itemsForStatus(items: AgentWorkItem[], status: AgentWorkStatus): AgentW
 function AgentWorkCard({
   item,
   proposal,
+  dataSource,
 }: {
   item: AgentWorkItem;
   proposal?: ApprovalProposal;
+  dataSource: "mock" | "supabase" | "mock-fallback";
 }) {
   const urgencyBadge = proposal ? getApprovalUrgencyBadge(proposal) : null;
 
@@ -84,7 +86,15 @@ function AgentWorkCard({
           <span className="agent-work-card-agent-name">{item.agent}</span>
         </div>
         <span className="agent-work-card-badges">
-          {item.source === "live" ? <span className="badge badge-green">live</span> : null}
+          {item.source === "live" ? (
+            dataSource === "supabase" ? (
+              <span className="badge badge-green">live</span>
+            ) : (
+              <span className="badge badge-steel">mock rail</span>
+            )
+          ) : (
+            <span className="badge badge-steel">mock</span>
+          )}
           {urgencyBadge ? (
             <span
               className={`badge ${urgencyBadge.badgeClass}`}
@@ -214,8 +224,9 @@ function AgentActivityStatusRow({
 }
 
 export function AgentWorkBoard() {
-  const { data } = useData();
+  const { data, source } = useData();
   const { approvals } = useChiefApprovals();
+  const { allRequests: researchRequests } = useResearchRequests();
   const buildItems = useMemo(() => deriveBuildAgentWorkItems(data.tasks), [data.tasks]);
   const workflowGateItems = useMemo(
     () => deriveWorkflowGateAgentWorkItems(data.tasks),
@@ -243,7 +254,7 @@ export function AgentWorkBoard() {
       ? "active"
       : "idle";
   const researchLaneStatus: LaneActivityStatus =
-    RESEARCH_REQUESTS.length > 0 || HAS_FILED_RESEARCH ? "active" : "idle";
+    researchRequests.length > 0 || HAS_FILED_RESEARCH ? "active" : "idle";
   const librarianLaneStatus: LaneActivityStatus = buildGateTasksLoading
     ? "loading"
     : librarianItems.length > 0
@@ -293,10 +304,11 @@ export function AgentWorkBoard() {
       count={`${items.length} item${items.length === 1 ? "" : "s"}`}
     >
       <p className="agent-work-board-note">
-        Snapshot of what each agent is carrying right now. Build, Workflow Gate, Research,
-        Librarian, and Awaiting approval rows marked <span className="badge badge-green">live</span>{" "}
-        reflect real task/incident/artifact data or pending proposals from the shared Approvals
-        queue; other agents are still mock for this slice. Read-only — no actions taken here.
+        Snapshot of what each agent is carrying right now. Rows marked{" "}
+        <span className="badge badge-green">live</span> use the Supabase data rail;{" "}
+        <span className="badge badge-steel">mock rail</span> means derived from the current mock
+        dataset; <span className="badge badge-steel">mock</span> rows are static placeholders.
+        Read-only — no actions taken here.
       </p>
 
       <section className="agent-activity-panel" aria-label="Agent activity">
@@ -322,26 +334,7 @@ export function AgentWorkBoard() {
           </section>
         ) : null}
 
-        {RESEARCH_REQUESTS.length > 0 ? (
-          <section className="agent-research-queue" aria-label="Research queue (manual)">
-            <span className="agent-research-queue-label">Research queue (manual)</span>
-            <p className="agent-research-queue-note">
-              Chief-originated research requests waiting on a human or a future Research agent run
-              — nothing here is auto-fulfilled or auto-filed.
-            </p>
-            <ul className="agent-research-queue-list">
-              {RESEARCH_REQUESTS.map((request) => (
-                <li key={request.id} className="agent-research-queue-item">
-                  <p className="agent-research-queue-topic">{request.topic}</p>
-                  <p className="agent-research-queue-why">{request.whyItMatters}</p>
-                  <time className="agent-research-queue-time" dateTime={request.createdAt}>
-                    {formatChiefTimestamp(request.createdAt)}
-                  </time>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
+        <ResearchQueuePanel />
 
         {WORK_STORIES.map((story) => (
           <WorkStoryPanel
@@ -349,7 +342,7 @@ export function AgentWorkBoard() {
             story={story}
             buildGateTasks={buildGateTasks}
             buildGateTasksLoading={buildGateTasksLoading}
-            researchRequests={RESEARCH_REQUESTS}
+            researchRequests={researchRequests}
           />
         ))}
       </section>
@@ -391,6 +384,7 @@ export function AgentWorkBoard() {
                     <li key={item.id}>
                       <AgentWorkCard
                         item={item}
+                        dataSource={source}
                         proposal={
                           isAwaitingLane ? proposalByAwaitingWorkId.get(item.id) : undefined
                         }

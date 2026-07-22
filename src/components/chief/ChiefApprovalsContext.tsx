@@ -89,18 +89,15 @@ function isApprovalDecisionRecord(value: unknown): value is Record<string, Appro
 export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
   const { data, source } = useData();
   const liveContext = useMemo(() => buildChiefLiveContext(data), [data]);
+  // Derived dashboard signals only on the live Supabase rail — mock-rail
+  // Acme/Billing demo ops must not surface as actionable approvals.
   const derivedApprovals = useMemo(
-    () => deriveApprovalCandidates(data, liveContext),
-    [data, liveContext],
+    () => (source === "supabase" ? deriveApprovalCandidates(data, liveContext) : []),
+    [data, liveContext, source],
   );
 
-  // Seeded via getSeedApprovalCards() — demo PR cards
-  // (chiefApprovalCardMocks.ts), the one real wired source (pending local
-  // repo changes, repoChangeApprovals.ts), and one example request per
-  // agent (agentApprovalGates.ts) — so every approval, from any source or
-  // surface, routes through this one shared queue. See
-  // agentApprovalGates.ts's header and docs/AGENT_WORKFLOW.md for the
-  // single-queue rule this preserves.
+  // Static demo seeds are intentionally empty (see chiefApprovalSeeds.ts).
+  // Session proposals from Chief commands append via addCommandApproval.
   const [commandApprovals, setCommandApprovals] =
     useState<ApprovalProposal[]>(getSeedApprovalCards);
   const [approvalDecisions, setApprovalDecisions] = useState<Record<string, ApprovalDecision>>(

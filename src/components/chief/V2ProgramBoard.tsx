@@ -65,11 +65,13 @@ export function V2ProgramBoard() {
         count={`${V2_PROGRAM_CARDS.length} cards`}
       />
       <p className="agent-work-board-note">
-        ms-painting (TrueCrew1/ms-painting) repositioning initiative — from a
-        single-customer implementation into a reusable, resellable True Crew
-        platform. Every card's content is filed under{" "}
-        <code>knowledge/projects/ms-painting-v2-*.md</code>, not placeholder
-        text.
+        Adapter-backed program cards from <code>src/data/v2Program.ts</code> — static config, not
+        live deploy or ops state. Content is filed under{" "}
+        <code>knowledge/projects/ms-painting-v2-*.md</code>.
+      </p>
+      <p className="agent-work-board-note">
+        ms-painting (TrueCrew1/ms-painting) repositioning initiative — from a single-customer
+        implementation into a reusable, resellable True Crew platform. Master card renders first.
       </p>
 
       {masterCard ? <V2ProgramCardView card={masterCard} /> : null}

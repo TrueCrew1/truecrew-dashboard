@@ -10,6 +10,7 @@ import type {
 export interface ActionDispatchContext {
   navigate?: (path: string) => void;
   focusChief?: (query: string) => void;
+  createResearchRequest?: (topic: string) => { id: string; topic: string } | null;
 }
 
 function buildSuggestedActions(intent: CommandIntent, response: SearchResponse): SuggestedAction[] {
@@ -151,16 +152,23 @@ export function dispatchAction(
 
     case "start_research": {
       const topic = intent.topic ?? phrase;
-      ctx.navigate?.(CHIEF_ROUTES.knowledge);
-      ctx.focusChief?.(`Start research on ${topic}`);
+      const created = ctx.createResearchRequest?.(topic) ?? null;
+      const route = created
+        ? `${CHIEF_ROUTES.knowledge}?highlight=${encodeURIComponent(created.id)}`
+        : CHIEF_ROUTES.knowledge;
+
+      ctx.navigate?.(route);
+
       return {
         ok: true,
         action: "start_research",
-        message: `Research queued for "${topic}".`,
-        route: CHIEF_ROUTES.knowledge,
+        message: created
+          ? `Session research request created for "${topic}" — saved in this browser. See the queue on Knowledge; file a finding when ready. Nothing auto-runs.`
+          : `Opened Knowledge for "${topic}" — research request creation is unavailable in this context.`,
+        route,
         routeLabel: "Knowledge",
         assignmentTarget: "Research Agent",
-        chiefQuery: `Start research on ${topic}`,
+        createdEntityId: created?.id,
       };
     }
 

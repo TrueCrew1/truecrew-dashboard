@@ -15,7 +15,7 @@ export type SearchResultType =
   | "approval"
   | "action";
 
-export type SearchResultSource = "live" | "mock" | "adapter";
+export type SearchResultSource = "live" | "mock" | "adapter" | "session";
 
 export interface SearchResult {
   id: string;

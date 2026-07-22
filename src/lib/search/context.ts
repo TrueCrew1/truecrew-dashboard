@@ -11,6 +11,7 @@ export function buildSearchDataContext(
     dataRail?: SearchDataContext["dataRail"];
     agentWork?: AgentWorkItem[];
     approvalCandidates?: ApprovalProposal[];
+    researchRequests?: SearchDataContext["researchRequests"];
   },
 ): SearchDataContext {
   return {
@@ -18,7 +19,7 @@ export function buildSearchDataContext(
     dataRail: options?.dataRail,
     programs: V2_PROGRAM_CARDS,
     agentWork: options?.agentWork ?? AGENT_WORK_ITEMS,
-    researchRequests: getResearchRequests(),
+    researchRequests: options?.researchRequests ?? getResearchRequests(),
     approvalCandidates: options?.approvalCandidates,
   };
 }

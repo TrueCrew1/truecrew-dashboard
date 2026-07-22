@@ -12,7 +12,7 @@ test("parseCommand: start research", () => {
   const intent = parseCommand("start research on MS Painting improvement plan");
   assert.equal(intent.mode, "action");
   assert.equal(intent.action, "start_research");
-  assert.match(intent.topic ?? "", /MS Painting improvement plan/i);
+  assert.equal(intent.topic, "MS Painting improvement plan");
   assert.equal(intent.assignmentTarget, "ecosystem");
 });
 
@@ -70,12 +70,51 @@ test("dispatchAction routes research to ecosystem", () => {
     navigate: (path) => {
       route = path;
     },
-    focusChief: () => {},
+    createResearchRequest: (topic) => ({
+      id: "req-session-test",
+      topic,
+    }),
   });
   assert.equal(result.ok, true);
   assert.equal(result.action, "start_research");
   assert.equal(result.assignmentTarget, "Research Agent");
-  assert.equal(route, CHIEF_ROUTES.knowledge);
+  assert.equal(route, `${CHIEF_ROUTES.knowledge}?highlight=req-session-test`);
+  assert.match(result.message ?? "", /Session research request created/i);
+  assert.equal(result.createdEntityId, "req-session-test");
+});
+
+test("parseCommand: start research on M&S Painting", () => {
+  const intent = parseCommand("start research on M&S Painting V2 debranding");
+  assert.equal(intent.action, "start_research");
+  assert.equal(intent.topic, "M&S Painting V2 debranding");
+});
+
+test("parseCommand: start research on M&S Painting brand rollout", () => {
+  const intent = parseCommand("start research on M&S Painting brand rollout");
+  assert.equal(intent.action, "start_research");
+  assert.equal(intent.topic, "M&S Painting brand rollout");
+});
+
+test("dispatchAction: M&S Painting research creates session request and opens Knowledge", () => {
+  const intent = parseCommand("start research on M&S Painting");
+  const ctx = buildSearchDataContext(mockData, { dataRail: "mock" });
+  const response = executeUnifiedSearch(intent.rawQuery, ctx);
+  let route = "";
+  let createdTopic = "";
+  const result = dispatchAction(intent, response, {
+    navigate: (path) => {
+      route = path;
+    },
+    createResearchRequest: (topic) => {
+      createdTopic = topic;
+      return { id: "req-session-ms-painting", topic };
+    },
+  });
+  assert.equal(result.ok, true);
+  assert.equal(createdTopic, "M&S Painting");
+  assert.match(route, /^\/knowledge\?highlight=/);
+  assert.match(result.message ?? "", /saved in this browser/i);
+  assert.equal(result.createdEntityId, "req-session-ms-painting");
 });
 
 test("searchProjects marks adapter source", () => {

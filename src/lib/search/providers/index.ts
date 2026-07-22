@@ -209,7 +209,7 @@ export function searchActiveWork(ctx: SearchDataContext, query: string): SearchR
       route: CHIEF_ROUTES.knowledge,
       routeLabel: "Open research",
       score,
-      source: "adapter",
+      source: request.source === "session" ? "session" : "adapter",
     });
   }
 

@@ -31,7 +31,11 @@ export function tokenizeQuery(input: string): string[] {
 
 export function phraseAfter(input: string, pattern: RegExp): string {
   const match = input.match(pattern);
-  return match?.[1]?.trim() ?? "";
+  if (!match) return "";
+  // Prefer an explicit capture group; for prefix-only patterns (no group),
+  // the phrase is everything after the matched prefix.
+  if (match[1] !== undefined) return match[1].trim();
+  return input.slice((match.index ?? 0) + match[0].length).trim();
 }
 
 export function includesAllTerms(haystack: string, terms: string[]): boolean {

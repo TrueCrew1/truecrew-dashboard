@@ -315,6 +315,25 @@
   margin-top: 2px;
 }
 
+/* Honest source marker on search results: only non-live results are tagged, so
+   mock/adapter rows are never read as live operational data. */
+.command-bar-item-source {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--steel-dim);
+  border: 1px solid var(--steel-dim);
+}
+
+.command-bar-item-source[data-source="adapter"] {
+  color: var(--orange);
+  border-color: var(--orange);
+}
+
 .command-bar-item-action .command-bar-item-title {
   color: var(--orange);
 }

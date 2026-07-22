@@ -14,13 +14,13 @@ import { deriveChiefBoardItems } from "./chiefApprovalBoard";
 import { compareApprovalsByAge } from "./chiefApprovalUrgency";
 import { buildChiefContextSummary, resolveChiefCommand } from "./chiefCommandRouter";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
+import { useResearchRequests } from "@/context/ResearchRequestsContext";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
 import { ApprovalActivityCard } from "./ApprovalActivityCard";
 // Task-time research state comes only from the sanctioned @/lib/knowledge
 // barrel — never from latestResearchSource or taskTimeResearch directly. See
 // docs/AGENT_RUNBOOK.md § Knowledge Precedence & Task-Time Retrieval.
 import { getRecentResearchActivity } from "@/lib/knowledge/index";
-import { getResearchRequests } from "@/lib/research/requests";
 import type { ChiefResponse } from "./types";
 
 const SNAPSHOT_LIMIT = 4;
@@ -37,11 +37,11 @@ interface LaneStatus {
 // static manual queue (see requests.ts) — same module-level caching
 // AgentWorkBoard already uses for these calls; neither changes per render.
 const RECENT_RESEARCH_ACTIVITY = getRecentResearchActivity();
-const RESEARCH_REQUESTS = getResearchRequests();
 const HAS_FILED_RESEARCH = RECENT_RESEARCH_ACTIVITY !== null;
 
 export function ChiefHomePanel() {
   const { data } = useData();
+  const { allRequests: researchRequests } = useResearchRequests();
   const approvalSnapshotRef = useRef<HTMLDivElement>(null);
 
   // Shared with the sidebar Chief panel (ChiefApprovalsContext) — same
@@ -104,7 +104,7 @@ export function ChiefHomePanel() {
   // Verified/Cited one. See docs/AGENT_RUNBOOK.md § Knowledge Precedence &
   // Task-Time Retrieval and src/lib/knowledge/taskTimeResearch.ts.
   const researchLane: LaneStatus = useMemo(() => {
-    if (RESEARCH_REQUESTS.length === 0 && !HAS_FILED_RESEARCH) {
+    if (researchRequests.length === 0 && !HAS_FILED_RESEARCH) {
       return {
         state: "Awaiting live work feed",
         tone: "steel",
@@ -124,9 +124,9 @@ export function ChiefHomePanel() {
     return {
       state: "Active",
       tone: "green",
-      detail: `${RESEARCH_REQUESTS.length} request${RESEARCH_REQUESTS.length === 1 ? "" : "s"} queued`,
+      detail: `${researchRequests.length} request${researchRequests.length === 1 ? "" : "s"} queued`,
     };
-  }, []);
+  }, [researchRequests.length]);
 
   const boardItems = useMemo(
     () => deriveChiefBoardItems(liveContext, approvals),

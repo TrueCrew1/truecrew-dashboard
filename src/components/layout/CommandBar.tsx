@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { useChiefApprovals } from "@/components/chief/ChiefApprovalsContext";
+import { useResearchRequests } from "@/context/ResearchRequestsContext";
 import { requestChiefCommandFocus } from "@/components/chief/chiefCommandFocus";
 import {
   buildSearchDataContext,
@@ -11,7 +12,6 @@ import {
   type SearchResult,
   type SuggestedAction,
 } from "@/lib/search";
-import { isLiveApiEnabled } from "@/lib/api/client";
 
 const GROUP_ICONS: Record<string, string> = {
   Projects: "◆",
@@ -33,6 +33,7 @@ export function CommandBar() {
   const navigate = useNavigate();
   const { data, source } = useData();
   const { approvals } = useChiefApprovals();
+  const { allRequests, createSessionRequest } = useResearchRequests();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [response, setResponse] = useState<SearchResponse | null>(null);
@@ -41,8 +42,13 @@ export function CommandBar() {
   const rootRef = useRef<HTMLDivElement>(null);
 
   const searchContext = useMemo(
-    () => buildSearchDataContext(data, { approvalCandidates: approvals, dataRail: source }),
-    [data, approvals, source],
+    () =>
+      buildSearchDataContext(data, {
+        approvalCandidates: approvals,
+        dataRail: source,
+        researchRequests: allRequests,
+      }),
+    [data, approvals, source, allRequests],
   );
 
   const runSearch = useCallback(
@@ -109,6 +115,13 @@ export function CommandBar() {
           requestChiefCommandFocus(chiefQuery);
           setOpen(false);
         },
+        createResearchRequest: (topic) => {
+          try {
+            return createSessionRequest(topic);
+          } catch {
+            return null;
+          }
+        },
       });
       setStatusMessage(result.message);
       if (!result.ok && !result.route) {
@@ -120,7 +133,7 @@ export function CommandBar() {
         setQuery("");
       }
     },
-    [handleNavigate, searchContext],
+    [handleNavigate, searchContext, createSessionRequest],
   );
 
   const onSubmit = (event: React.FormEvent) => {
@@ -141,7 +154,14 @@ export function CommandBar() {
     handleDispatch(action.payload?.query ?? query);
   };
 
-  const sourceLabel = isLiveApiEnabled() ? "live index" : "local index";
+  // Reflect the actual data rail (from DataContext), not the VITE_USE_LIVE_API
+  // config flag — a live-API build that fell back to mock must not read as "live".
+  const sourceLabel =
+    source === "supabase"
+      ? "live data"
+      : source === "mock-fallback"
+        ? "mock (live API unavailable)"
+        : "mock data";
 
   return (
     <div className="topbar-search command-bar" ref={rootRef}>
@@ -156,6 +176,12 @@ export function CommandBar() {
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}
+          onKeyDown={(event) => {
+            if (event.key !== "Enter") return;
+            event.preventDefault();
+            if (!query.trim()) return;
+            handleDispatch(query);
+          }}
           placeholder="Search or command — tasks, agents, roadmaps…"
           aria-label="Global search and command"
           aria-expanded={open}
@@ -190,6 +216,14 @@ export function CommandBar() {
                       ) : null}
                       {result.description ? (
                         <span className="command-bar-item-description">{result.description}</span>
+                      ) : null}
+                      {result.source !== "live" ? (
+                        <span
+                          className="command-bar-item-source"
+                          data-source={result.source}
+                        >
+                          {result.source}
+                        </span>
                       ) : null}
                     </button>
                   </li>
