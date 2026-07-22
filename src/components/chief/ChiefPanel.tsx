@@ -10,6 +10,7 @@ import {
 } from "@/lib/api/client";
 import { useMonitorHealth } from "@/hooks/useMonitorHealth";
 import { subscribeChiefApprovalFocus } from "./chiefApprovalFocus";
+import { subscribeChiefCommandFocus } from "./chiefCommandFocus";
 import { ApprovalAlertsPanel } from "./ApprovalAlertsPanel";
 import { ApprovalBoard } from "./ApprovalBoard";
 import { ChiefQueueStrip } from "./ChiefQueueStrip";
@@ -136,6 +137,14 @@ export function ChiefPanel() {
       setApprovalStatusFilter("all");
       setActiveTab("approvals");
       setFocusProposalId(proposalId);
+    });
+  }, []);
+
+  useEffect(() => {
+    return subscribeChiefCommandFocus((command) => {
+      setActiveTab("command");
+      setInput(command);
+      commandInputRef.current?.focus();
     });
   }, []);
 

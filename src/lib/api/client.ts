@@ -447,3 +447,45 @@ export function formatDataSourceLabel(source: DataSourceKind): string {
       return "mock";
   }
 }
+
+export interface UnifiedSearchApiResponse {
+  query: string;
+  intent: import("@/lib/search/types").CommandIntent;
+  groups: import("@/lib/search/types").SearchResultGroup[];
+  suggestedActions: import("@/lib/search/types").SuggestedAction[];
+  totalResults: number;
+  tookMs: number;
+  actionResult?: import("@/lib/search/types").ActionDispatchResult;
+}
+
+export async function fetchUnifiedSearch(query: string): Promise<UnifiedSearchApiResponse | null> {
+  const trimmed = query.trim();
+  if (!trimmed) return null;
+
+  try {
+    const response = await apiFetch(`/api/search?q=${encodeURIComponent(trimmed)}`);
+    if (!response.ok) return null;
+    return (await response.json()) as UnifiedSearchApiResponse;
+  } catch {
+    return null;
+  }
+}
+
+export async function dispatchUnifiedSearchAction(
+  query: string,
+): Promise<UnifiedSearchApiResponse | null> {
+  const trimmed = query.trim();
+  if (!trimmed) return null;
+
+  try {
+    const response = await apiFetch("/api/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query: trimmed }),
+    });
+    if (!response.ok) return null;
+    return (await response.json()) as UnifiedSearchApiResponse;
+  } catch {
+    return null;
+  }
+}

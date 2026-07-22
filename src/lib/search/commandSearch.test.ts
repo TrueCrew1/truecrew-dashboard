@@ -1,0 +1,94 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { parseCommand } from "./commandParser.ts";
+import { executeUnifiedSearch } from "./unifiedSearch.ts";
+import { buildSearchDataContext } from "./context.ts";
+import { mockData } from "../../data/mockData.ts";
+import { dispatchAction } from "./actionRouter.ts";
+import { searchProjects } from "./providers/index.ts";
+import { CHIEF_ROUTES } from "../../components/chief/chiefRoutes.ts";
+
+test("parseCommand: start research", () => {
+  const intent = parseCommand("start research on MS Painting improvement plan");
+  assert.equal(intent.mode, "action");
+  assert.equal(intent.action, "start_research");
+  assert.match(intent.topic ?? "", /MS Painting improvement plan/i);
+  assert.equal(intent.assignmentTarget, "ecosystem");
+});
+
+test("parseCommand: assign to ecosystem", () => {
+  const intent = parseCommand("assign security review to ecosystem");
+  assert.equal(intent.action, "assign_agent");
+  assert.equal(intent.assignmentTarget, "ecosystem");
+});
+
+test("parseCommand: open roadmap", () => {
+  const intent = parseCommand("open M&S roadmap");
+  assert.equal(intent.action, "open_entity");
+  assert.match(intent.searchQuery, /M&S roadmap/i);
+});
+
+test("parseCommand: show agents on project", () => {
+  const intent = parseCommand("show agents working on ms-painting");
+  assert.equal(intent.mode, "search");
+  assert.deepEqual(intent.filters?.types, ["agent", "task", "project"]);
+});
+
+test("parseCommand: continue work", () => {
+  const intent = parseCommand("continue previous work on QuickBooks");
+  assert.equal(intent.action, "continue_work");
+  assert.match(intent.searchQuery, /QuickBooks/i);
+});
+
+test("executeUnifiedSearch returns grouped results", () => {
+  const ctx = buildSearchDataContext(mockData);
+  const response = executeUnifiedSearch("billing", ctx);
+  assert.ok(response.totalResults > 0);
+  assert.ok(response.groups.some((group) => group.type === "task"));
+});
+
+test("dispatchAction routes chief queries", () => {
+  const ctx = buildSearchDataContext(mockData, { dataRail: "mock" });
+  const response = executeUnifiedSearch("what is blocked", ctx);
+  let focused = "";
+  const result = dispatchAction(response.intent, response, {
+    focusChief: (query) => {
+      focused = query;
+    },
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.assignmentTarget, "chief");
+  assert.equal(focused, "what is blocked");
+});
+
+test("dispatchAction routes research to ecosystem", () => {
+  const intent = parseCommand("start research on notification vendor");
+  const ctx = buildSearchDataContext(mockData, { dataRail: "mock" });
+  const response = executeUnifiedSearch(intent.rawQuery, ctx);
+  let route = "";
+  const result = dispatchAction(intent, response, {
+    navigate: (path) => {
+      route = path;
+    },
+    focusChief: () => {},
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.action, "start_research");
+  assert.equal(result.assignmentTarget, "Research Agent");
+  assert.equal(route, CHIEF_ROUTES.knowledge);
+});
+
+test("searchProjects marks adapter source", () => {
+  const ctx = buildSearchDataContext(mockData, { dataRail: "mock" });
+  const results = searchProjects(ctx, "painting");
+  assert.ok(results.length > 0);
+  assert.equal(results.every((r) => r.source === "adapter"), true);
+});
+
+test("rail-backed tasks are mock on default dev rail", () => {
+  const ctx = buildSearchDataContext(mockData, { dataRail: "mock" });
+  const response = executeUnifiedSearch("billing", ctx);
+  const tasks = response.groups.find((g) => g.type === "task")?.results ?? [];
+  assert.ok(tasks.length > 0);
+  assert.equal(tasks[0]?.source, "mock");
+});

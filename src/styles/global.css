@@ -217,6 +217,124 @@
   font-size: 12px;
 }
 
+.command-bar {
+  position: relative;
+}
+
+.command-bar form {
+  position: relative;
+}
+
+.command-bar-kbd {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  color: var(--steel-dim);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  pointer-events: none;
+}
+
+.command-bar input {
+  padding-right: 52px;
+}
+
+.command-bar-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  max-height: 420px;
+  overflow: auto;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  padding: 8px;
+}
+
+.command-bar-group + .command-bar-group {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.command-bar-group-label {
+  margin: 0 0 4px;
+  padding: 0 8px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+}
+
+.command-bar-group ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.command-bar-item {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  padding: 8px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.command-bar-item:hover,
+.command-bar-item:focus-visible {
+  background: rgba(255, 122, 26, 0.08);
+  outline: none;
+}
+
+.command-bar-item-title {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.command-bar-item-subtitle {
+  display: block;
+  font-size: 11px;
+  color: var(--steel);
+  margin-top: 2px;
+}
+
+.command-bar-item-description {
+  display: block;
+  font-size: 11px;
+  color: var(--steel-dim);
+  margin-top: 2px;
+}
+
+.command-bar-item-action .command-bar-item-title {
+  color: var(--orange);
+}
+
+.command-bar-status {
+  margin: 0 0 8px;
+  padding: 8px;
+  border-radius: 6px;
+  background: rgba(255, 122, 26, 0.08);
+  color: var(--text);
+  font-size: 12px;
+}
+
+.command-bar-footer {
+  margin-top: 8px;
+  padding: 6px 8px 2px;
+  font-size: 10px;
+  color: var(--steel-dim);
+}
+
 .topbar-actions {
   display: flex;
   align-items: center;
