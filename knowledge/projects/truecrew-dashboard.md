@@ -5,7 +5,7 @@ status: active
 confidence: high
 last_reviewed: 2026-07-04
 created: 2026-07-04
-updated: 2026-07-13
+updated: 2026-07-21
 related_pages: [chief-approvals, dashboard-audit-july-2026, second-brain-setup]
 related_prs: []
 related_cards: []
@@ -44,6 +44,10 @@ Recent real threads, all live at once:
 - **Work Story / Research Activity system** — Chief Agents-tab pairing of
   Planner checklists with a manual Research queue and filed notes (see
   "Work Story / Research Activity system" below).
+- **Unified command/search** — real TopBar layer with intent parsing, multi-source
+  search, action dispatch, and Chief focus bridge (see
+  [reference/unified-command-search.md](../reference/unified-command-search.md);
+  repo: `docs/build-notes/2026-07-21-command-search.md`).
 
 ## Work Story / Research Activity system
 

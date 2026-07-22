@@ -69,6 +69,13 @@ execution. Don't treat this list as a substitute for that check.
 - [lessons/check-code-not-runbook-prose](lessons/check-code-not-runbook-prose.md) —
   verify the actual code array/enum, not just the runbook's prose, before referencing
   an indexed gate. Check before drafting a card that indexes into `APPROVAL_GATES.*`.
+- [lessons/history-rewrite-and-branch-prune](lessons/history-rewrite-and-branch-prune.md)
+  — back up (mirror + stash bundle) before any history rewrite/force-push; never delete
+  a branch until `git cherry` proves its work is already in main. Check before any
+  rewrite, force-push, or branch delete.
+- [lessons/command-bar-operational-layer](lessons/command-bar-operational-layer.md) —
+  unified command/search: parsing, routing, and source trust must stay explicit.
+  Check before extending TopBar search or mislabeling providers live vs adapter.
 
 ## Stable references
 
@@ -82,3 +89,9 @@ execution. Don't treat this list as a substitute for that check.
 - [reference/tool-fallbacks](reference/tool-fallbacks.md) — primary → fallback →
   degraded-path routing for the ~10 most critical tools. Check before proceeding on
   a tool marked `DEGRADED`/`BLOCKED`.
+- [reference/operations-index](reference/operations-index.md) — where maintenance,
+  recovery, and branch-hygiene knowledge lives. Repo docs are canonical for
+  executable procedures; start here before any maintenance/rewrite/prune work.
+- [reference/unified-command-search](reference/unified-command-search.md) — pointer map
+  for TopBar command/search: flow, live vs adapter vs mixed trust, routing, diagnostics.
+  Repo canonical: `docs/build-notes/2026-07-21-command-search.md`.

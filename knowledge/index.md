@@ -17,8 +17,8 @@ for the full rule set.
 | Projects | 3 | 5 |
 | Decisions | 4 | 15 |
 | Sources | 10 | 50 |
-| Lessons | 5 | 20 |
-| Reference | 4 | 10 |
+| Lessons | 7 | 20 |
+| Reference | 6 | 10 |
 
 ## Concepts
 
@@ -59,6 +59,12 @@ Compact, behavior-changing rules — one file per lesson, not activity logs. See
 - [Check code, not runbook prose](lessons/check-code-not-runbook-prose.md) —
   *failure-pattern, medium confidence* — verify the actual array/enum before
   referencing an indexed gate.
+- [History rewrite and branch prune](lessons/history-rewrite-and-branch-prune.md) —
+  *recovery-pattern, high confidence* — back up before any rewrite/force-push,
+  preserve stashes, and prove a branch's safety (`git cherry`) before deleting it.
+- [Unified command/search — parsing, routing, and source trust](lessons/command-bar-operational-layer.md) —
+  *orchestration-pattern, high confidence* — command bar value requires explicit
+  parsing, source trust, routing, and diagnostics; classify providers before claiming live.
 - *(Research pattern: none yet — no real Research workflow has run in this session.)*
 
 ## Projects
@@ -100,6 +106,12 @@ Stable lookup pages — no narrative, just facts for a fast check during a real 
 - [Tool Fallback Chains](reference/tool-fallbacks.md) — ~10 critical tools' primary
   → fallback → degraded-path routing. Check before relying on a tool marked
   `DEGRADED`/`BLOCKED` in `docs/TOOL_CATALOG.md`.
+- [Operations Index](reference/operations-index.md) — pointer map to where
+  maintenance / recovery / branch-hygiene knowledge lives. Repo docs are canonical
+  for executable procedures; this vault links to them, never duplicates.
+- [Unified command/search reference](reference/unified-command-search.md) — pointer map:
+  query flow, routing, live vs adapter vs mixed trust, observability. Canonical repo:
+  `docs/build-notes/2026-07-21-command-search.md`.
 
 ## Sources
 
@@ -120,6 +132,14 @@ just a folder pointer) so every note is actually reachable from this page, per t
 
 ## Recent updates
 
+- **2026-07-21** — Maintenance runbooks landed in `docs/runbooks/`; operations index and
+  history-rewrite lesson wired. Unified command/search reference + lesson indexed.
+  Repo docs are canonical for executable procedures; vault links only. See [log.md](log.md).
+- **2026-07-21** — Unified command/search layer documented: added
+  [reference/unified-command-search.md](reference/unified-command-search.md) and
+  [lessons/command-bar-operational-layer.md](lessons/command-bar-operational-layer.md).
+  Links from `MEMORY.md` and `projects/truecrew-dashboard.md`. Canonical repo doc:
+  `docs/build-notes/2026-07-21-command-search.md`. See [log.md](log.md).
 - **2026-07-04** — Knowledge base refresh + free-tool research pass: added a Slice 2
   (Supabase Health Monitor, PR #59) pointer to
   [projects/truecrew-dashboard.md](projects/truecrew-dashboard.md)'s Open items

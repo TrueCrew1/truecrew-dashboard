@@ -402,3 +402,29 @@ playbooks. Full reasoning in the Obsidian Build Log entry of the same name.
 ## 2026-07-13 — Work Story / Research Activity system documented
 
 - 2026-07-13 — updated — `projects/truecrew-dashboard.md` — added a "Work Story / Research Activity system" subsection naming its canonical files (`workStories.ts`, `requests.ts`, `latestResearchSource.ts`, `AgentWorkBoard.tsx`) and current Live/Structured status, after the system was found independently duplicated on an unmerged branch and reconciled.
+
+---
+
+## 2026-07-21 — Unified command/search second-brain capture
+
+- 2026-07-21 — added — `reference/unified-command-search.md` — operational map of TopBar
+  command/search: query flow, live vs adapter/mixed sources, Chief vs ecosystem routing,
+  observability, limitations, canonical repo links.
+- 2026-07-21 — added — `lessons/command-bar-operational-layer.md` — orchestration
+  pattern: parsing + source trust + routing + diagnostics must be explicit.
+- 2026-07-21 — updated — `MEMORY.md`, `index.md`, `projects/truecrew-dashboard.md` —
+  minimal links only; no large duplication of `docs/build-notes/2026-07-21-command-search.md`.
+- No app code changed in this pass — knowledge only.
+
+---
+
+## 2026-07-21 — Maintenance runbooks + operations index reconciliation
+
+- 2026-07-21 — added — `docs/runbooks/README.md` and five executable runbooks (backup,
+  history rewrite, branch hygiene, incident recovery, branching/release).
+- 2026-07-21 — added — `reference/operations-index.md` — pointer map; links to runbooks
+  as canonical; no procedure duplication.
+- 2026-07-21 — added — `lessons/history-rewrite-and-branch-prune.md` — recovery-pattern
+  lesson; links to runbooks for executable steps.
+- 2026-07-21 — updated — `MEMORY.md`, `index.md` — wired operations-index, history
+  lesson, unified command/search notes. No orphan pages.
