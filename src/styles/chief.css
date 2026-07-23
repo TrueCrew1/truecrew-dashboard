@@ -4653,3 +4653,306 @@ button.chief-brief-metric {
   line-height: 1.4;
   color: var(--steel-dim);
 }
+
+
+/* --- Research queue / V2 program / Knowledge page (ported) --- */
+
+.agent-research-queue {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.agent-research-queue-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+}
+
+.agent-research-queue-note {
+  margin: 0 0 10px;
+  font-size: 10px;
+  color: var(--steel-dim);
+  line-height: 1.5;
+}
+
+.agent-research-queue-sync-error {
+  color: var(--red);
+}
+
+.agent-research-queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agent-research-queue-item {
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.agent-research-queue-item:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.agent-research-queue-topic {
+  margin: 0 0 3px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.35;
+}
+
+.agent-research-queue-why {
+  margin: 0 0 4px;
+  font-size: 11px;
+  color: var(--steel);
+  line-height: 1.5;
+}
+
+.agent-research-queue-time {
+  font-size: 9px;
+  color: var(--steel-dim);
+}
+
+.agent-research-queue-item-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.agent-research-queue-outcome {
+  margin: 4px 0 0;
+  font-size: 10px;
+  color: var(--steel-dim);
+  line-height: 1.45;
+}
+
+.agent-research-queue-item--highlight {
+  border-left: 3px solid var(--orange);
+  padding-left: 8px;
+  background: rgba(255, 122, 26, 0.06);
+}
+
+.agent-research-queue-next {
+  margin: 10px 0 0;
+  font-size: 10px;
+  color: var(--steel-dim);
+  line-height: 1.45;
+}
+
+.knowledge-research-panel {
+  margin-bottom: 16px;
+}
+
+.knowledge-research-panel--split {
+  display: grid;
+  gap: 16px;
+}
+
+.agent-research-queue-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.agent-research-queue-filed,
+.agent-research-queue-blocker,
+.agent-research-queue-adapter-note {
+  margin: 4px 0 0;
+  font-size: 10px;
+  color: var(--steel-dim);
+  line-height: 1.45;
+}
+
+.agent-research-queue-blocker {
+  color: var(--red, #e85d4c);
+}
+
+.agent-research-queue-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.agent-research-queue-actions .chief-btn {
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  font-size: 10px;
+}
+
+.ms-research-status-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ms-research-status-lede,
+.ms-research-status-empty,
+.ms-research-status-path,
+.ms-research-status-focus-meta {
+  margin: 0;
+  font-size: 11px;
+  color: var(--steel);
+  line-height: 1.5;
+}
+
+.ms-research-status-counts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ms-research-status-counts li {
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  text-align: center;
+}
+
+.ms-research-status-count-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+}
+
+.ms-research-status-count-value {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.ms-research-status-focus-topic {
+  margin: 0 0 4px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.ms-research-status-link {
+  display: inline-flex;
+  margin-top: 8px;
+  width: fit-content;
+  padding: 6px 12px;
+  text-decoration: none;
+}
+
+/* V2 Upgrade Program board (src/components/chief/V2ProgramBoard.tsx) */
+
+.v2-program-card {
+  margin-bottom: 12px;
+}
+
+.v2-program-card--master {
+  border-left: 3px solid var(--orange-border);
+  background: rgba(255, 122, 26, 0.03);
+}
+
+.v2-program-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.v2-program-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.v2-program-card-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.v2-program-card--master .v2-program-card-title {
+  font-size: 15px;
+}
+
+.v2-program-card-purpose {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.v2-program-card-fields {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 10px;
+}
+
+.v2-program-card-field dt {
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+  margin-bottom: 2px;
+}
+
+.v2-program-card-field dd {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.45;
+}
+
+.v2-program-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 10px;
+  color: var(--steel-dim);
+}
+
+.v2-program-card-repo,
+.v2-program-card-doc {
+  font-family: var(--font-mono, monospace);
+}
+
+.v2-program-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.v2-program-grid .v2-program-card {
+  margin-bottom: 0;
+}
