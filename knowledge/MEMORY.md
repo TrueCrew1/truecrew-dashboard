@@ -82,3 +82,9 @@ execution. Don't treat this list as a substitute for that check.
 - [reference/tool-fallbacks](reference/tool-fallbacks.md) — primary → fallback →
   degraded-path routing for the ~10 most critical tools. Check before proceeding on
   a tool marked `DEGRADED`/`BLOCKED`.
+- [reference/knowledge-schema](reference/knowledge-schema.md) — frontmatter schema for
+  typed capture notes and regulated tagging (`regs`, `sensitivity`, `truth_level`).
+- [reference/regulated-content](reference/regulated-content.md) — how regulated notes
+  must be tagged, restricted in external tools, and cited in decisions.
+- [sources/README.md](sources/README.md) — file interviews/findings/assumptions/etc.
+  here (existing governed folder — no parallel discovery tree).

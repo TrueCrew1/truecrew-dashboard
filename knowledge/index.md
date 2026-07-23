@@ -18,7 +18,7 @@ for the full rule set.
 | Decisions | 4 | 15 |
 | Sources | 10 | 50 |
 | Lessons | 5 | 20 |
-| Reference | 4 | 10 |
+| Reference | 6 | 10 |
 
 ## Concepts
 
@@ -100,6 +100,12 @@ Stable lookup pages — no narrative, just facts for a fast check during a real 
 - [Tool Fallback Chains](reference/tool-fallbacks.md) — ~10 critical tools' primary
   → fallback → degraded-path routing. Check before relying on a tool marked
   `DEGRADED`/`BLOCKED` in `docs/TOOL_CATALOG.md`.
+- [Knowledge note schema](reference/knowledge-schema.md) — typed capture/decision
+  frontmatter (`id`, `truth_level`, `sensitivity`, `regs`, …) for notes in
+  `sources/` / `decisions/`.
+- [Regulated content policy](reference/regulated-content.md) — tagging, external-tool
+  restrictions, and citation rules for MSHA/OSHA/DOT (+ extensible regs).
+- [Sources filing guide](sources/README.md) — where typed capture notes live.
 
 ## Sources
 
@@ -120,6 +126,9 @@ just a folder pointer) so every note is actually reachable from this page, per t
 
 ## Recent updates
 
+- **2026-07-20** — Knowledge foundation (corrected): schema + regulated-content policy
+  + typed templates; capture kinds file under existing `sources/` (and `decisions/`).
+  Parallel `discovery/` tree removed — stay inside governed vault.
 - **2026-07-04** — Knowledge base refresh + free-tool research pass: added a Slice 2
   (Supabase Health Monitor, PR #59) pointer to
   [projects/truecrew-dashboard.md](projects/truecrew-dashboard.md)'s Open items
