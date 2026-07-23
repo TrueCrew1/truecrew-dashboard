@@ -1,16 +1,18 @@
 # Research Agent v1 — Packet and Workflow Spec
 
+> **Prompt contract (2026-07-23):** [prompts/RESEARCH.md](./prompts/RESEARCH.md) ·
+> system index [AGENT_SYSTEM.md](./AGENT_SYSTEM.md). Chief voice:
+> [CHIEF_SINGLE_VOICE.md](./CHIEF_SINGLE_VOICE.md).
+
 Durable design reference for how Research Agent goes from a real signal to a Chief
 `ApprovalCard`, using the `AgentPacket` and observability primitives already in the
 repo. This is a spec for future implementation — it does not itself wire a Research
 runner, and it changes no code.
 
-**Sits under, does not replace:** `docs/AGENT_RUNBOOK.md` (§ Research Agent — purpose,
-allowed-without-approval list, requires-approval list, verification steps) and
-`docs/AGENT_APPROVAL_LOOPS.md` (system law, shared approval path, Research Agent loop
-QA reference). Where this spec is silent, those docs govern. See
-[BUILDER_AGENT_PACKET_SPEC.md](BUILDER_AGENT_PACKET_SPEC.md) for the equivalent spec on
-the Build side — same shape, different agent.
+**Sits under:** `docs/AGENT_SYSTEM.md`, `docs/AGENT_RUNBOOK.md` (§ Research Agent),
+`docs/AGENT_APPROVAL_LOOPS.md`. See
+[BUILDER_AGENT_PACKET_SPEC.md](BUILDER_AGENT_PACKET_SPEC.md) for the Repo-side
+equivalent (historical “Build” name).
 
 ## Purpose
 

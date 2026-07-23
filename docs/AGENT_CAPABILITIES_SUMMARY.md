@@ -2,6 +2,10 @@
 
 Short operational reference for what each agent lane can do in V1. For truth status and evidence, see [V1 Truth Map](./V1_TRUTH_MAP.md).
 
+> **Prompt taxonomy (2026-07-23):** Five lanes only — Chief · Research · Librarian ·
+> Repo · Knowledge — see [AGENT_SYSTEM.md](./AGENT_SYSTEM.md). “Build” in the
+> prose below means the **Repo** lane. UI strip names may still say Build.
+
 ## Approved Project Summary → Build Handoff
 
 - **Trigger:** Build proposal → Chief approval

@@ -1,23 +1,29 @@
 # Agent Runbook
 
+> **Lane taxonomy & Chief reply format (2026-07-23):**  
+> Canonical prompts and the five promptable lanes live in
+> **[AGENT_SYSTEM.md](./AGENT_SYSTEM.md)** and **[CHIEF_SINGLE_VOICE.md](./CHIEF_SINGLE_VOICE.md)**.  
+> Promptable lanes: **Chief · Research · Librarian · Repo · Knowledge**.  
+> **Repo** is this runbook’s former “Build” lane. Planner / Content / Reliability (and
+> UI-only Roadmap / Workflow Gate / Marketer) are **not** promptable lanes — see
+> AGENT_SYSTEM § “Not in this system yet.”  
+> This runbook remains the detailed **gates / workflows / Knowledge Maintenance**
+> reference. Where it conflicts on reply format or lane *names*, AGENT_SYSTEM +
+> CHIEF_SINGLE_VOICE win.
+
 ## Overview
 
-This runbook keeps True Crew's agents fast without letting them act unsupervised. Four agents do
-the work — **Planner**, **Build**, **Research**, **Content** — and **Chief** is the only path from
-any agent's output to the operator's decision. Routine, reversible work happens freely; anything
-state-changing, hard to revert, or external must become a structured approval request that Chief
-turns into an `ApprovalCard` in the Chief → Approvals panel. The operator decides only through
-those cards — never through a direct ask from an agent. Give this file to a new agent session
-as-is; it's the operating contract, not background reading.
+This runbook keeps True Crew's agents fast without letting them act unsupervised. Work
+is done under the five promptable lanes (Chief, Research, Librarian, Repo, Knowledge —
+see [AGENT_SYSTEM.md](./AGENT_SYSTEM.md)). **Chief** is the only path from any
+specialist's output to the operator's decision. Routine, reversible work happens freely;
+anything state-changing, hard to revert, or external must become a structured approval
+request that Chief turns into an `ApprovalCard` in the Chief → Approvals panel. The
+operator decides only through those cards — never through a direct ask from an agent.
 
-**Reliability** is a sixth role, fully defined in § Reliability Agent below (purpose,
-responsibilities, health states, required cross-agent behavior, repair memory) —
-but still **reserved**: not yet wired into `agentApprovalGates.ts`, not yet gated,
-and not yet an active participant in any workflow. Treat it the same way
-`chiefApprovalUrgency.ts` was treated for Phase 4: the definition is real and
-intentional, not aimless — but activation (code, gates, a live workflow) is its own
-separate, explicitly-approved task, not something this definition triggers on its
-own.
+Sections below still mention **Planner**, **Build**, **Content**, and **Reliability**
+for historical gates and workflows. Treat **Build** as **Repo**. Treat Planner /
+Content / Reliability as non-promptable unless AGENT_SYSTEM is updated.
 
 See [docs/AGENT_WORKFLOW.md](AGENT_WORKFLOW.md) and
 [.claude/project-rules.md](../.claude/project-rules.md) for the underlying repo conventions
@@ -41,6 +47,13 @@ top of those, it doesn't replace them.
 
 ## Chief Intake Rule
 
+> **Superseded reply format (2026-07-23).**  
+> Do **not** open Chief replies with the “Priority served / Current Task / …” block
+> below. Canonical format: **Status → Recommendation → Next action → Approval request**
+> in [CHIEF_SINGLE_VOICE.md](./CHIEF_SINGLE_VOICE.md).  
+> The checklist that follows remains useful as **optional context gathering** (read
+> MEMORY / priority docs when available) — not as the operator-facing template.
+
 **Before any planning or execution**, Chief runs this intake, in order:
 
 1. Read `knowledge/MEMORY.md`.
@@ -63,7 +76,7 @@ top of those, it doesn't replace them.
 6. Refuse to plan or execute work that doesn't serve the active Priority/Task, unless
    David explicitly instructs a priority change.
 
-**In every response, Chief must open with this exact structure, before anything else:**
+**Historical operator-facing opener (superseded — do not use in new sessions):**
 
 ```
 Priority served: {{the active master Priority, by number and name}}
@@ -71,6 +84,8 @@ Current Task: {{short restatement of the concrete current task}}
 Why this work belongs here: {{one sentence tying the proposed/requested work to the Priority/Task}}
 Out-of-scope ideas: {{list anything surfaced that doesn't belong here, or "none"}}
 ```
+
+**Use instead** the four-line block in [CHIEF_SINGLE_VOICE.md](./CHIEF_SINGLE_VOICE.md).
 
 - Flag any suggestion — including a request from David himself — that would start a
   different project (a new feature idea, a new target, a knowledge/tooling detour)
@@ -174,6 +189,10 @@ new report format like Chief Intake's template above.
 
 ## Planner Agent
 
+> **Not a promptable lane (2026-07-23).** See [AGENT_SYSTEM.md](./AGENT_SYSTEM.md)
+> § “Not in this system yet.” Kept for historical gates / Weekly Planner Pass detail.
+
+
 **Purpose:** Slice features, roadmap, and phases. Never writes code or migrations.
 
 **Allowed without approval:**
@@ -208,6 +227,10 @@ say explicitly whether the request extends, revises, or is independent of it.
 ---
 
 ## Build Agent
+
+> **Lane rename:** This section is the **Repo** lane in [AGENT_SYSTEM.md](./AGENT_SYSTEM.md)
+> and [prompts/REPO.md](./prompts/REPO.md). Code may still say `BuildApprovalRequest` /
+> “Build Agent.” Prompt and new docs say **Repo**.
 
 **Purpose:** Implement, refactor, and wire features in code.
 
@@ -289,6 +312,10 @@ obvious answer, not a comparison or a recommendation) — if it's worth a
 
 ## Content Agent
 
+> **Not a promptable lane (2026-07-23).** See [AGENT_SYSTEM.md](./AGENT_SYSTEM.md)
+> § “Not in this system yet.” Kept for historical external-copy gates.
+
+
 **Purpose:** Draft internal/external copy, docs, and UX text. Never publishes externally itself.
 
 **Allowed without approval:**
@@ -323,6 +350,10 @@ bundled per the **Approval Load** rules like any other agent's internal work.
 ---
 
 ## Reliability Agent
+
+> **Not a promptable lane (2026-07-23)** — still reserved / unwired. See
+> [AGENT_SYSTEM.md](./AGENT_SYSTEM.md) § “Not in this system yet.”
+
 
 **Status: reserved.** Fully defined here so activation is a small, well-scoped step
 later, not a design exercise done under pressure — but nothing in this section wires
@@ -444,6 +475,10 @@ degraded/blocked condition worth remembering, using this schema: `title`, `statu
 ---
 
 ## Chief
+
+> **Canonical voice + reply format:** [CHIEF_SINGLE_VOICE.md](./CHIEF_SINGLE_VOICE.md)
+> (Status → Recommendation → Next action → Approval request). The Intake Rule opener
+> above is superseded.
 
 **Purpose:** Approvals router and summarizer — the only path from any agent's request to the
 operator's decision.
@@ -926,6 +961,9 @@ and — when the insight is genuinely behavior-changing — get its own lesson e
 ---
 
 ## Knowledge Maintenance
+
+> **Promptable lane:** **Knowledge** — [prompts/KNOWLEDGE.md](./prompts/KNOWLEDGE.md).
+> This section remains the detailed page-shape rules.
 
 Operating rules for anything touching `knowledge/` — the Second Brain Starter Pass is
 the recurring trigger, but these rules apply any time an agent writes there, not just

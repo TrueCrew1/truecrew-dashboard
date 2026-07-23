@@ -1,16 +1,18 @@
 # Builder Agent v1 — Packet and Workflow Spec
 
-Durable design reference for how Build Agent goes from a real signal to a Chief
+> **Lane rename (2026-07-23):** This packet design is for the **Repo** lane
+> ([prompts/REPO.md](./prompts/REPO.md), [AGENT_SYSTEM.md](./AGENT_SYSTEM.md)).
+> Filename and “Build/Builder” wording kept to match existing code symbols.
+
+Durable design reference for how Build/Repo Agent goes from a real signal to a Chief
 `ApprovalCard`, using the `AgentPacket` and observability primitives already in the
 repo. This is a spec for future implementation — it does not itself wire a Build
 runner, and it changes no code.
 
-**Sits under, does not replace:** `docs/AGENT_RUNBOOK.md` (§ Build Agent — purpose,
-allowed-without-approval list, requires-approval list, verification steps) and
-`docs/AGENT_APPROVAL_LOOPS.md` (system law, shared approval path, Build Agent loop QA
-reference). Where this spec is silent, those docs govern. See
-[RESEARCH_AGENT_PACKET_SPEC.md](RESEARCH_AGENT_PACKET_SPEC.md) for the equivalent spec
-on the Research side — same shape, different agent.
+**Sits under:** `docs/AGENT_SYSTEM.md`, `docs/AGENT_RUNBOOK.md` (§ Build Agent /
+Repo), `docs/AGENT_APPROVAL_LOOPS.md`, `docs/CHIEF_SINGLE_VOICE.md`. See
+[RESEARCH_AGENT_PACKET_SPEC.md](RESEARCH_AGENT_PACKET_SPEC.md) for the Research-side
+equivalent.
 
 ## Purpose
 

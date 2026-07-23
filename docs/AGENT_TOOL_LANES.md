@@ -1,5 +1,10 @@
 # Agent Tool Lanes
 
+> **Naming note:** “Lane” here means **tool access class** (READ-ONLY /
+> PROPOSE-ONLY / EXECUTE-WITH-APPROVAL), not the five promptable agent lanes
+> (Chief · Research · Librarian · Repo · Knowledge) in
+> [AGENT_SYSTEM.md](./AGENT_SYSTEM.md). Where this table says “Build,” read **Repo**.
+
 This file is a single-table matrix summary of the tool lane classifications reasoned
 through in [docs/AGENT_RUNBOOK.md](AGENT_RUNBOOK.md) §§ Tool Catalog and External
 Services Tool Catalog, plus the routing rules in [docs/AGENT_WORKFLOW.md](AGENT_WORKFLOW.md)
