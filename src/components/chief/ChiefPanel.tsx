@@ -21,7 +21,6 @@ import {
 } from "./researchMonitorIncidentPostmortem";
 import { useMonitorHealth } from "@/hooks/useMonitorHealth";
 import { ApprovalBoard } from "./ApprovalBoard";
-import { ChiefQueueStrip } from "./ChiefQueueStrip";
 import { CommandHistory } from "./CommandHistory";
 import { buildApprovalFromResponse, buildHistoryEntry } from "./chiefMock";
 import { approvalActionSuccessMessage, type ApprovalActionState } from "./chiefApproval";
@@ -33,11 +32,17 @@ import { classifyChiefEvaluation, evaluationInputFromChiefResponse } from "./chi
 import { deriveChiefBoardItems, resolveChiefCommand } from "./chiefLiveContext";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { ChiefContextSwitcher } from "./ChiefContextSwitcher";
-import { SpecialistCards } from "./SpecialistCards";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
 import { ChiefBoard } from "./ChiefBoard";
 import { AgentWorkBoard } from "./AgentWorkBoard";
 import { GovernanceEventsPanel } from "./GovernanceEventsPanel";
+import { ChiefResponseCard } from "./ChiefResponseCard";
+import { ChiefOpsDeskStrip } from "./ChiefOpsDeskStrip";
+import {
+  CHIEF_DEFAULT_LINE,
+  deriveChiefDoingNow,
+  deriveChiefOpsDeskSnapshot,
+} from "./chiefVoice";
 import { chiefLog } from "./chiefLog";
 import type { ApprovalAction, ChiefResponse } from "./types";
 import type { ApprovalStatusFilter } from "./approvalStatus";
@@ -146,6 +151,38 @@ export function ChiefPanel() {
   const boardItems = useMemo(
     () => deriveChiefBoardItems(liveContext, approvals),
     [liveContext, approvals],
+  );
+
+  const blockedItems = useMemo(
+    () =>
+      boardItems.filter(
+        (item) => item.lane === "blocked" && item.id.startsWith("board-blocked-task-"),
+      ),
+    [boardItems],
+  );
+
+  const pendingApprovals = useMemo(
+    () => approvals.filter((proposal) => proposal.status === "pending"),
+    [approvals],
+  );
+
+  const doingNow = useMemo(
+    () =>
+      deriveChiefDoingNow({
+        isProcessing,
+        pendingApprovals,
+        blockedItems,
+      }),
+    [isProcessing, pendingApprovals, blockedItems],
+  );
+
+  const opsDesk = useMemo(
+    () =>
+      deriveChiefOpsDeskSnapshot({
+        pendingApprovals,
+        blockedItems,
+      }),
+    [pendingApprovals, blockedItems],
   );
 
   const boardSignalCount = boardItems.length;
@@ -376,7 +413,7 @@ export function ChiefPanel() {
         <div className="chief-header-text">
           <span className="chief-title">Chief</span>
           <span className="chief-subtitle">
-            Command layer
+            Foreman
             {loading
               ? " · loading context"
               : source === "mock"
@@ -387,12 +424,18 @@ export function ChiefPanel() {
         <ChiefContextSwitcher />
       </div>
 
-      <ChiefQueueStrip
-        approvals={approvals}
-        pendingApprovalCount={pendingApprovalCount}
+      <p className="chief-voice-line" title={CHIEF_DEFAULT_LINE}>
+        {CHIEF_DEFAULT_LINE}
+      </p>
+
+      <ChiefOpsDeskStrip
+        doingNow={doingNow}
+        snapshot={opsDesk}
         onOpenApprovals={() => openApprovals("pending")}
-        overdueTaskCount={liveContext.overdueTasks.length}
-        onOpenBoard={() => setActiveTab("board")}
+        onFocusActiveTask={(proposalId) => {
+          openApprovals("pending");
+          setFocusProposalId(proposalId);
+        }}
       />
 
       <nav className="chief-tabs" aria-label="Chief sections" role="tablist">
@@ -496,8 +539,8 @@ export function ChiefPanel() {
               <div className="chief-empty">
                 <p className="chief-empty-lead">Ask Chief</p>
                 <p className="chief-empty-desc">
-                  Summarize status, check gates, or route to a specialist. Responses are
-                  advisory—nothing executes without your approval.
+                  Status, recommendation, and next action — short and operational. Nothing
+                  gated executes without your approval.
                 </p>
                 <div className="chief-examples">
                   <span className="chief-examples-label">Examples</span>
@@ -519,7 +562,7 @@ export function ChiefPanel() {
               <div className="chief-processing-card" aria-live="polite" aria-busy="true">
                 <div className="chief-processing-header">
                   <span className="chief-processing-dot" aria-hidden="true" />
-                  Routing command…
+                  Chief is routing…
                 </div>
                 <div className="chief-processing-lines" aria-hidden="true">
                   <span className="chief-skeleton-line chief-skeleton-line--long" />
@@ -530,88 +573,10 @@ export function ChiefPanel() {
             ) : null}
 
             {response && !isProcessing ? (
-              <article className="chief-response-card">
-                <div className="chief-response-section chief-response-section--chief">
-                  <div className="chief-speaker-row">
-                    <h3 className="chief-response-label">Chief</h3>
-                    <span className="chief-speaker-badge">Response</span>
-                  </div>
-                  <p className="chief-response-text">{response.summary}</p>
-                </div>
-
-                {response.blockers && response.blockers.length > 0 ? (
-                  <div className="chief-response-section">
-                    <h3 className="chief-response-label">Blockers</h3>
-                    <ul className="chief-blocker-list">
-                      {response.blockers.map((blocker) => (
-                        <li key={blocker}>{blocker}</li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
-
-                <div className="chief-response-section">
-                  <h3 className="chief-response-label">Recommended action</h3>
-                  <p className="chief-response-text chief-response-text--action">
-                    {response.recommendedAction}
-                  </p>
-                </div>
-
-                {response.approvalNeeded ? (
-                  <div className="chief-response-section chief-approval">
-                    <div className="chief-approval-header">
-                      <h3 className="chief-response-label">Approval needed</h3>
-                      <span className="chief-approval-badge">Required</span>
-                    </div>
-                    <p className="chief-response-text chief-approval-prompt">
-                      {response.approvalPrompt ?? "This action requires your confirmation."}
-                    </p>
-                    {response.riskNote ? (
-                      <p className="chief-approval-risk">{response.riskNote}</p>
-                    ) : null}
-                    {response.approvalPacket ? (
-                      <div>
-                        <p className="chief-response-text">
-                          <strong>Recommendation:</strong> {response.approvalPacket.recommendation}
-                        </p>
-                        <p className="chief-response-text">
-                          <strong>Risk level:</strong> {response.approvalPacket.riskLevel}
-                        </p>
-                        <p className="chief-response-text">
-                          <strong>Rationale:</strong> {response.approvalPacket.rationale}
-                        </p>
-                        {response.approvalPacket.evidence.length > 0 ? (
-                          <ul className="chief-blocker-list">
-                            {response.approvalPacket.evidence.map((item) => (
-                              <li key={item}>{item}</li>
-                            ))}
-                          </ul>
-                        ) : null}
-                        <p className="chief-response-text">
-                          <strong>Next action:</strong> {response.approvalPacket.nextAction}
-                        </p>
-                        {response.approvalPacket.improvementsMade.length > 0 ? (
-                          <p className="chief-response-text">
-                            <strong>Already filtered by Chief:</strong>{" "}
-                            {response.approvalPacket.improvementsMade.join("; ")}
-                          </p>
-                        ) : null}
-                      </div>
-                    ) : null}
-                    <button
-                      type="button"
-                      className="chief-approval-link"
-                      onClick={() => openApprovals()}
-                    >
-                      Open Approvals to review and decide
-                    </button>
-                  </div>
-                ) : null}
-
-                {response.specialists && response.specialists.length > 0 ? (
-                  <SpecialistCards specialists={response.specialists} />
-                ) : null}
-              </article>
+              <ChiefResponseCard
+                response={response}
+                onOpenApprovals={() => openApprovals()}
+              />
             ) : null}
           </div>
         ) : null}

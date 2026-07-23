@@ -18,39 +18,28 @@ import { ChiefSituationBrief } from "./ChiefSituationBrief";
 import { ChiefOperationalStatusPanel } from "./ChiefOperationalStatusPanel";
 import { ChiefDailyTurnoverPanel } from "./ChiefDailyTurnoverPanel";
 import { AgentStatusStrip } from "./AgentStatusStrip";
+import { ChiefOpsDeskStrip } from "./ChiefOpsDeskStrip";
+import { ChiefResponseCard } from "./ChiefResponseCard";
+import {
+  CHIEF_DEFAULT_LINE,
+  deriveChiefDoingNow,
+  deriveChiefOpsDeskSnapshot,
+} from "./chiefVoice";
 import type { AgentWorkItem, ApprovalProposal, ChiefBoardItem, ChiefResponse } from "./types";
 
 const SNAPSHOT_LIMIT = 4;
+
+const EXAMPLE_COMMANDS = [
+  "What is at risk today?",
+  "What's blocked?",
+  "Show approvals I need to review",
+];
 
 interface LaneSummary {
   status: string;
   detail: string;
   tone: "neutral" | "warn" | "critical";
   count: number;
-}
-
-function buildChiefLaneSummary(
-  pendingApprovals: ApprovalProposal[],
-  blockedItems: ChiefBoardItem[],
-): LaneSummary {
-  const approvalCount = pendingApprovals.length;
-  const blockedCount = blockedItems.length;
-  const status =
-    approvalCount === 0 && blockedCount === 0
-      ? "Queue clear · no blockers"
-      : [
-          approvalCount > 0 ? `${approvalCount} approval${approvalCount === 1 ? "" : "s"}` : null,
-          blockedCount > 0 ? `${blockedCount} blocker${blockedCount === 1 ? "" : "s"}` : null,
-        ]
-          .filter((part): part is string => part !== null)
-          .join(" · ");
-  return {
-    status,
-    detail:
-      pendingApprovals[0]?.title ?? blockedItems[0]?.title ?? "All caught up — nothing waiting on you.",
-    tone: approvalCount > 0 ? "critical" : blockedCount > 0 ? "warn" : "neutral",
-    count: approvalCount + blockedCount,
-  };
 }
 
 function buildBuilderLaneSummary(buildGateTasks: BuildGateTask[]): LaneSummary {
@@ -141,10 +130,6 @@ export function ChiefHomePanel() {
     [pendingApprovals],
   );
 
-  const chiefLane = useMemo(
-    () => buildChiefLaneSummary(pendingApprovals, blockedItems),
-    [pendingApprovals, blockedItems],
-  );
   const builderLane = useMemo(() => buildBuilderLaneSummary(buildGateTasks), [buildGateTasks]);
   const researchLane = useMemo(
     () => buildResearchLaneSummary(activeResearchItems, researchApprovals),
@@ -154,6 +139,29 @@ export function ChiefHomePanel() {
   const [command, setCommand] = useState("");
   const [response, setResponse] = useState<ChiefResponse | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  const doingNow = useMemo(
+    () =>
+      deriveChiefDoingNow({
+        isProcessing,
+        pendingApprovals,
+        blockedItems,
+      }),
+    [isProcessing, pendingApprovals, blockedItems],
+  );
+
+  const opsDesk = useMemo(
+    () =>
+      deriveChiefOpsDeskSnapshot({
+        pendingApprovals,
+        blockedItems,
+      }),
+    [pendingApprovals, blockedItems],
+  );
+
+  const scrollToApprovals = () => {
+    approvalSnapshotRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -175,9 +183,20 @@ export function ChiefHomePanel() {
     }, 320);
   };
 
+  const handleExample = (example: string) => {
+    setCommand(example);
+  };
+
   return (
     <Panel title="Chief" action={<ChiefContextSwitcher />}>
-      <div className="chief-home-panel">
+      <div className="chief-home-panel chief-home-panel--ops-desk">
+        <header className="chief-home-voice">
+          <p className="chief-home-voice-line">{CHIEF_DEFAULT_LINE}</p>
+          <p className="chief-home-voice-role">
+            Foreman · router · operations lead — specialists report through him.
+          </p>
+        </header>
+
         {activeContextDefinition.kind === "project" ? (
           <p className="chief-home-context-banner" role="status">
             Operating inside <strong>{activeContextDefinition.label}</strong> — parent/global
@@ -185,65 +204,19 @@ export function ChiefHomePanel() {
           </p>
         ) : null}
 
+        <ChiefOpsDeskStrip
+          doingNow={doingNow}
+          snapshot={opsDesk}
+          onOpenApprovals={scrollToApprovals}
+        />
+
         <ChiefSituationBrief
           context={liveContext}
           pendingApprovalCount={pendingApprovals.length}
-          onOpenApprovals={() =>
-            approvalSnapshotRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-          }
+          onOpenApprovals={scrollToApprovals}
           platformHealth={platformHealth}
           liveApiEnabled={liveApi}
         />
-
-        <ChiefOperationalStatusPanel />
-
-        <ChiefDailyTurnoverPanel />
-
-        <AgentStatusStrip />
-
-        <div className="chief-home-lanes">
-          <div className={`chief-home-lane chief-home-lane--${chiefLane.tone}`}>
-            <header className="chief-home-lane-header">
-              <span className="chief-home-lane-name">Chief</span>
-              <span className="chief-board-lane-count">{chiefLane.count}</span>
-            </header>
-            <p className="chief-home-lane-status">{chiefLane.status}</p>
-            <p className="chief-home-lane-detail">{chiefLane.detail}</p>
-            <button
-              type="button"
-              className="chief-home-lane-link chief-board-lane-note--link"
-              onClick={() =>
-                approvalSnapshotRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-              }
-            >
-              Review approvals →
-            </button>
-          </div>
-
-          <div className={`chief-home-lane chief-home-lane--${builderLane.tone}`}>
-            <header className="chief-home-lane-header">
-              <span className="chief-home-lane-name">Builder</span>
-              <span className="chief-board-lane-count">{builderLane.count}</span>
-            </header>
-            <p className="chief-home-lane-status">{builderLane.status}</p>
-            <p className="chief-home-lane-detail">{builderLane.detail}</p>
-            <Link to={CHIEF_ROUTES.builds} className="chief-home-lane-link">
-              Open Builds →
-            </Link>
-          </div>
-
-          <div className={`chief-home-lane chief-home-lane--${researchLane.tone}`}>
-            <header className="chief-home-lane-header">
-              <span className="chief-home-lane-name">Research</span>
-              <span className="chief-board-lane-count">{researchLane.count}</span>
-            </header>
-            <p className="chief-home-lane-status">{researchLane.status}</p>
-            <p className="chief-home-lane-detail">{researchLane.detail}</p>
-            <Link to={CHIEF_ROUTES.knowledge} className="chief-home-lane-link">
-              Open Knowledge →
-            </Link>
-          </div>
-        </div>
 
         <form className="chief-home-intake" onSubmit={handleSubmit}>
           <label className="chief-home-intake-label" htmlFor="chief-home-command">
@@ -268,24 +241,40 @@ export function ChiefHomePanel() {
             </button>
           </div>
 
-          {response ? (
-            <div className="chief-home-response" aria-live="polite">
-              <p className="chief-home-response-summary">{response.summary}</p>
-              <p className="chief-home-response-action">
-                <span className="chief-home-response-label">Recommended:</span>{" "}
-                {response.recommendedAction}
-              </p>
-              {response.approvalNeeded ? (
-                <p className="chief-home-response-approval">
-                  Needs approval — filed to the Chief panel's Approvals tab for review.
-                </p>
-              ) : null}
+          {!response && !isProcessing ? (
+            <div className="chief-home-examples">
+              <span className="chief-examples-label">Examples</span>
+              {EXAMPLE_COMMANDS.map((example) => (
+                <button
+                  key={example}
+                  type="button"
+                  className="chief-example-btn"
+                  onClick={() => handleExample(example)}
+                >
+                  {example}
+                </button>
+              ))}
             </div>
+          ) : null}
+
+          {isProcessing ? (
+            <div className="chief-processing-card" aria-live="polite" aria-busy="true">
+              <div className="chief-processing-header">
+                <span className="chief-processing-dot" aria-hidden="true" />
+                Chief is routing…
+              </div>
+            </div>
+          ) : null}
+
+          {response && !isProcessing ? (
+            <ChiefResponseCard response={response} variant="home" onOpenApprovals={scrollToApprovals} />
           ) : null}
         </form>
 
-        <div className="chief-home-snapshots">
-          <div className="chief-home-snapshot" ref={approvalSnapshotRef}>
+        <div className="chief-home-snapshots" ref={approvalSnapshotRef}>
+          <div
+            className={`chief-home-snapshot${pendingApprovals.length > 0 ? " chief-home-snapshot--approval" : ""}`}
+          >
             <header className="chief-home-snapshot-header">
               <h3 className="chief-home-snapshot-title">Needs approval</h3>
               <span className="chief-board-lane-count">{pendingApprovals.length}</span>
@@ -299,8 +288,12 @@ export function ChiefHomePanel() {
                     <div className="chief-board-card chief-board-card--critical">
                       <div className="chief-board-card-header">
                         <span className="chief-board-card-title">{proposal.title}</span>
+                        <span className="chief-approval-badge">Decide</span>
                       </div>
                       <p className="chief-board-card-detail">{proposal.summary}</p>
+                      <p className="chief-board-card-detail chief-home-snapshot-next">
+                        Next: {proposal.recommendedAction}
+                      </p>
                     </div>
                   </li>
                 ))}
@@ -309,7 +302,7 @@ export function ChiefHomePanel() {
             {pendingApprovals.length > SNAPSHOT_LIMIT ? (
               <p className="chief-board-lane-note">
                 Showing {SNAPSHOT_LIMIT} of {pendingApprovals.length} — review the rest in the
-                Chief panel's Approvals tab.
+                Chief panel&apos;s Approvals tab.
               </p>
             ) : null}
           </div>
@@ -323,7 +316,7 @@ export function ChiefHomePanel() {
               <p className="agent-work-lane-empty">No open gates or held deploys.</p>
             ) : (
               <ul className="chief-board-list">
-                {blockedItems.slice(0, SNAPSHOT_LIMIT).map((item) => (
+                {blockedItems.slice(0, SNAPSHOT_LIMIT).map((item: ChiefBoardItem) => (
                   <li key={item.id}>
                     <div className={`chief-board-card chief-board-card--${item.tone}`}>
                       <div className="chief-board-card-header">
@@ -344,6 +337,47 @@ export function ChiefHomePanel() {
             ) : null}
           </div>
         </div>
+
+        <section className="chief-home-specialists" aria-label="Specialist load — report through Chief">
+          <header className="chief-home-specialists-header">
+            <h3 className="chief-home-specialists-title">Specialists</h3>
+            <span className="chief-home-specialists-tag">Report through Chief</span>
+          </header>
+          <p className="chief-home-specialists-note">
+            Builder executes. Research builds knowledge. Neither speaks to you directly.
+          </p>
+          <div className="chief-home-lanes chief-home-lanes--subordinate">
+            <div className={`chief-home-lane chief-home-lane--subordinate chief-home-lane--${builderLane.tone}`}>
+              <header className="chief-home-lane-header">
+                <span className="chief-home-lane-name">Builder</span>
+                <span className="chief-board-lane-count">{builderLane.count}</span>
+              </header>
+              <p className="chief-home-lane-status">{builderLane.status}</p>
+              <p className="chief-home-lane-detail">{builderLane.detail}</p>
+              <Link to={CHIEF_ROUTES.builds} className="chief-home-lane-link">
+                Open Builds →
+              </Link>
+            </div>
+
+            <div className={`chief-home-lane chief-home-lane--subordinate chief-home-lane--${researchLane.tone}`}>
+              <header className="chief-home-lane-header">
+                <span className="chief-home-lane-name">Research</span>
+                <span className="chief-board-lane-count">{researchLane.count}</span>
+              </header>
+              <p className="chief-home-lane-status">{researchLane.status}</p>
+              <p className="chief-home-lane-detail">{researchLane.detail}</p>
+              <Link to={CHIEF_ROUTES.knowledge} className="chief-home-lane-link">
+                Open Knowledge →
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <AgentStatusStrip />
+
+        <ChiefOperationalStatusPanel />
+
+        <ChiefDailyTurnoverPanel />
       </div>
     </Panel>
   );
