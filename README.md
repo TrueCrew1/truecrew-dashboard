@@ -71,6 +71,12 @@ Inbox → Triage → Planned → In Progress → Waiting → Review → Done →
 
 Mock seed data: `src/data/mockData.ts` · Supabase seed: `supabase/migrations/20260626000002_seed_data.sql`
 
+## Reference
+
+- Agent context: [CLAUDE.md](CLAUDE.md)
+- Agent system (five lanes): [docs/AGENT_SYSTEM.md](docs/AGENT_SYSTEM.md)
+- Chief voice contract: [docs/CHIEF_SINGLE_VOICE.md](docs/CHIEF_SINGLE_VOICE.md)
+
 ## Legacy
 
 - Monolithic HTML prototype: `index.legacy.html`

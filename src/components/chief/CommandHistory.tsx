@@ -49,7 +49,7 @@ export function CommandHistory({ entries }: CommandHistoryProps) {
             <time className="chief-history-time" dateTime={entry.timestamp}>
               {formatChiefTimestamp(entry.timestamp)}
             </time>
-            <p className="chief-history-result">{entry.resultSummary}</p>
+            <p className="chief-history-result chief-history-result--reply">{entry.resultSummary}</p>
           </article>
         ))}
       </div>

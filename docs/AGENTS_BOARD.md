@@ -4,9 +4,15 @@ What each agent row on Chief's Agents tab shows, and where the data comes from.
 A green **live** badge means the row is derived from real app data; a gray
 **mock** badge means it's a hand-written placeholder.
 
+> **UI labels ≠ prompt taxonomy (2026-07-23).** Promptable lanes are only
+> Chief · Research · Librarian · Repo · Knowledge
+> ([AGENT_SYSTEM.md](./AGENT_SYSTEM.md)). Rows such as Build / Roadmap /
+> Workflow Gate / Marketer below are **product board labels**, not system prompts.
+> “Build Agent” on this board maps to the **Repo** lane.
+
 | Agent | Status | Data source |
 |---|---|---|
-| Build Agent | live | Tasks with `workflowType === "build"` |
+| Build Agent (shown as **Repo**) | live | Tasks with `workflowType === "build"` — display label Repo per AGENT_SYSTEM |
 | Workflow Gate Agent | live | Non-build, non-decision tasks with an open gate checklist |
 | Research Agent | live | Active/resolved incidents |
 | Librarian Agent | live | Tasks plus indexed Obsidian artifacts (filed vs. pending) |

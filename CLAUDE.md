@@ -4,7 +4,7 @@
 A SaaS command center for operations and maintenance teams. It runs the operator/supervisor
 workflow — Today → Operations → Builds/Repair → Monitor → Customers → Review — on a stack of
 Vercel (SPA + serverless `/api`), Supabase Postgres, GitHub webhooks (PR/CI gate automation),
-and Obsidian (knowledge/logging, Phase C). See `README.md` for the full stack table and routes.
+and Obsidian (knowledge/logging, Phase C). See `README.md` for the stack table and routes.
 
 ## Target users
 Supervisors and operators managing field/maintenance work day to day — not generic SaaS admins.
@@ -44,12 +44,47 @@ change with high quality and low manual effort. Avoid work that requires babysit
   not a platform team's.
 
 ## When uncertain
-Ask, don't assume. If proceeding anyway (e.g. a reasonable default is clearly right), state the
-assumption explicitly so it's easy to correct. Prefer the smallest change that's actually correct
-over a broader "while I'm in here" change.
+Ask, don't assume. **Do not fabricate values** (env vars, Supabase project IDs, keys, customer
+data, “shipped” capabilities). If proceeding anyway (e.g. a reasonable default is clearly right),
+state the assumption explicitly so it's easy to correct. Prefer the smallest change that's
+actually correct over a broader "while I'm in here" change.
+
+## Lanes (canonical — five only)
+
+| Lane | Contract | Touches |
+|------|----------|---------|
+| **Chief** | [docs/CHIEF_SINGLE_VOICE.md](docs/CHIEF_SINGLE_VOICE.md) | Operator voice; approvals routing — not direct merge/deploy |
+| **Research** | [docs/prompts/RESEARCH.md](docs/prompts/RESEARCH.md) | Grounded findings — not production secrets |
+| **Librarian** | [docs/prompts/LIBRARIAN.md](docs/prompts/LIBRARIAN.md) | Task-linked Obsidian / artifact filing |
+| **Repo** | [docs/prompts/REPO.md](docs/prompts/REPO.md) | Code via PR only (runbook formerly called this “Build”) |
+| **Knowledge** | [docs/prompts/KNOWLEDGE.md](docs/prompts/KNOWLEDGE.md) | Git-tracked `knowledge/` second brain |
+
+System index: **[docs/AGENT_SYSTEM.md](docs/AGENT_SYSTEM.md)**.  
+Planner / Content / Reliability / Roadmap / Workflow Gate / Marketer are **not** promptable
+lanes (see AGENT_SYSTEM “Not in this system yet”).
+
+Tool access matrix (historical + gates): `docs/AGENT_TOOL_LANES.md`, `docs/TOOL_CATALOG.md`.
+
+## Endangered areas (do not casually rewrite)
+- `supabase/migrations/**` and live schema
+- `lib/auth.ts` / internal API auth
+- GitHub webhook verification and deploy workflows that handle secrets
+- Vercel / Supabase production env — human-only
+- Customer-app code belongs in `TrueCrew1/ms-painting`, not here (Chief **context** seeds for M&S are OK; see `docs/PROJECT_SEPARATION_FINDINGS.md`)
+
+## Verify before ship
+
+Primary “is this repo clean?” command:
+
+```bash
+npm run verify    # lint + test + build (alias of npm run qa)
+```
+
+Ship gate checklist: **[docs/SHIP_CHECKLIST.md](docs/SHIP_CHECKLIST.md)**.
 
 ## Workflow
 This repo already has an approval-first process — don't restate or reinvent it, follow it:
+- `docs/AGENT_SYSTEM.md` + `docs/CHIEF_SINGLE_VOICE.md` — lane taxonomy and Chief reply format
 - `docs/AGENT_WORKFLOW.md` — agent implements, opens a PR, approver reviews/approves. Agents never
   ask the approver to run commands; anything that must run outside the agent environment goes in
   an **Ops to run** section.
@@ -65,9 +100,7 @@ follow them:
   Cline Nightly, and GitHub Copilot Chat were deliberately removed from this
   workspace** (twice) as duplicate/accumulated agent tooling — don't suggest
   reinstalling them "as an option."
-- **Agent-system tool governance** (which of Chief/Planner/Build/Research/Content/
-  Reliability may use which tool, at what access level) — `docs/TOOL_CATALOG.md`
-  (the stable record) and `docs/AGENT_RUNBOOK.md` §§ Tool Catalog, External Services
-  Tool Catalog, Reliability Agent (the reasoning). See also
-  `knowledge/reference/tool-fallbacks.md` for fallback chains and best-use-by-task
-  guidance.
+- **Agent-system tool governance** — `docs/TOOL_CATALOG.md` (stable tool records) and
+  `docs/AGENT_RUNBOOK.md` (detailed gates; superseded for lane *names* and Chief *reply
+  format* by `docs/AGENT_SYSTEM.md` / `docs/CHIEF_SINGLE_VOICE.md`). See also
+  `knowledge/reference/tool-fallbacks.md` for fallback chains.

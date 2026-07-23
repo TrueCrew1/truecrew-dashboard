@@ -2,15 +2,19 @@
 
 True Crew work is split into two roles. **Agents and scripts do the work.** The **approver** only reviews and approves outputs.
 
+**Canonical lanes (2026-07-23):** Chief · Research · Librarian · Repo · Knowledge —
+see [AGENT_SYSTEM.md](./AGENT_SYSTEM.md) and [CHIEF_SINGLE_VOICE.md](./CHIEF_SINGLE_VOICE.md).
+Typed helpers in code may still use historical names (`BuildApprovalRequest`, etc.).
+
 ## Approval routing (Chief only)
 
-No agent — Planner, Build, Research, Content, or any future one — asks the approver for a decision directly. Every approval routes through **Chief**:
+No specialist lane asks the approver for a decision directly. Every approval routes through **Chief**:
 
-1. The agent builds a request object for its role (`PlannerApprovalRequest`, `BuildApprovalRequest`, `ResearchApprovalRequest`, `ContentApprovalRequest` — see `src/components/chief/agentApprovalGates.ts`).
+1. The lane builds a request object (e.g. `BuildApprovalRequest` for **Repo**, `ResearchApprovalRequest` for Research — see `src/components/chief/agentApprovalGates.ts`; Planner/Content types are historical).
 2. It passes that request through the matching `createApprovalCardFrom*Request()` helper, which maps it into an `ApprovalCard` (title, summary, checklist, recommended decision, source).
 3. Chief renders the card in the Chief Approval Panel (Chief → Approvals tab, in-app). The approver only ever sees and decides through cards there — never a direct ask from an agent.
 
-`APPROVAL_GATES` in that same file lists which actions per agent require a card (e.g. Build: any change merging to `main` or a migration; Content: anything external-facing). Actions not listed there are routine enough for the agent to just do.
+`APPROVAL_GATES` in that same file lists which actions require a card (e.g. Repo/Build: any change merging to `main` or a migration). Actions not listed there are routine enough for the agent to just do.
 
 This pass wires the pattern with one example request per agent (illustrative, not live agent output yet) — the pattern is the deliverable, not a full integration.
 

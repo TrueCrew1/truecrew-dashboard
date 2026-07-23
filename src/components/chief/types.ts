@@ -206,7 +206,7 @@ export interface ChiefBoardLaneConfig {
 export type AgentWorkStatus = "queued" | "active" | "blocked" | "awaiting_approval" | "completed";
 
 /**
- * Agent names shown on the Agents tab. "Build Agent" isn't part of
+ * Agent names used on the Agents tab data model. "Build Agent" isn't part of
  * ChiefSpecialist (that vocabulary attributes build-gate work to
  * "Workflow Gate Agent" instead) — it's added here, scoped to the
  * agent-work board only, so Build can have its own live-derived lane

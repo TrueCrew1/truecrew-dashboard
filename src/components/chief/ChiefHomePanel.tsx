@@ -18,6 +18,7 @@ import { ChiefSituationBrief } from "./ChiefSituationBrief";
 import { ChiefOperationalStatusPanel } from "./ChiefOperationalStatusPanel";
 import { ChiefDailyTurnoverPanel } from "./ChiefDailyTurnoverPanel";
 import { AgentStatusStrip } from "./AgentStatusStrip";
+import { ChiefReplyBlock } from "./ChiefReplyBlock";
 import type { AgentWorkItem, ApprovalProposal, ChiefBoardItem, ChiefResponse } from "./types";
 
 const SNAPSHOT_LIMIT = 4;
@@ -53,11 +54,11 @@ function buildChiefLaneSummary(
   };
 }
 
-function buildBuilderLaneSummary(buildGateTasks: BuildGateTask[]): LaneSummary {
+function buildRepoLaneSummary(buildGateTasks: BuildGateTask[]): LaneSummary {
   if (buildGateTasks.length === 0) {
     return {
-      status: "Build queue clear",
-      detail: "No build tasks are waiting on required gates.",
+      status: "Repo queue clear",
+      detail: "No repo tasks are waiting on required gates.",
       tone: "neutral",
       count: 0,
     };
@@ -67,7 +68,7 @@ function buildBuilderLaneSummary(buildGateTasks: BuildGateTask[]): LaneSummary {
   const detail =
     buildGateTasks.length > 1 ? `${top.title} +${buildGateTasks.length - 1} more` : top.title;
   return {
-    status: hasCritical ? "Gate overdue" : "Gated build work",
+    status: hasCritical ? "Gate overdue" : "Gated repo work",
     detail,
     tone: hasCritical ? "critical" : "warn",
     count: buildGateTasks.length,
@@ -145,7 +146,7 @@ export function ChiefHomePanel() {
     () => buildChiefLaneSummary(pendingApprovals, blockedItems),
     [pendingApprovals, blockedItems],
   );
-  const builderLane = useMemo(() => buildBuilderLaneSummary(buildGateTasks), [buildGateTasks]);
+  const repoLane = useMemo(() => buildRepoLaneSummary(buildGateTasks), [buildGateTasks]);
   const researchLane = useMemo(
     () => buildResearchLaneSummary(activeResearchItems, researchApprovals),
     [activeResearchItems, researchApprovals],
@@ -220,13 +221,13 @@ export function ChiefHomePanel() {
             </button>
           </div>
 
-          <div className={`chief-home-lane chief-home-lane--${builderLane.tone}`}>
+          <div className={`chief-home-lane chief-home-lane--${repoLane.tone}`}>
             <header className="chief-home-lane-header">
-              <span className="chief-home-lane-name">Builder</span>
-              <span className="chief-board-lane-count">{builderLane.count}</span>
+              <span className="chief-home-lane-name">Repo</span>
+              <span className="chief-board-lane-count">{repoLane.count}</span>
             </header>
-            <p className="chief-home-lane-status">{builderLane.status}</p>
-            <p className="chief-home-lane-detail">{builderLane.detail}</p>
+            <p className="chief-home-lane-status">{repoLane.status}</p>
+            <p className="chief-home-lane-detail">{repoLane.detail}</p>
             <Link to={CHIEF_ROUTES.builds} className="chief-home-lane-link">
               Open Builds →
             </Link>
@@ -269,17 +270,8 @@ export function ChiefHomePanel() {
           </div>
 
           {response ? (
-            <div className="chief-home-response" aria-live="polite">
-              <p className="chief-home-response-summary">{response.summary}</p>
-              <p className="chief-home-response-action">
-                <span className="chief-home-response-label">Recommended:</span>{" "}
-                {response.recommendedAction}
-              </p>
-              {response.approvalNeeded ? (
-                <p className="chief-home-response-approval">
-                  Needs approval — filed to the Chief panel's Approvals tab for review.
-                </p>
-              ) : null}
+            <div className="chief-home-response">
+              <ChiefReplyBlock response={response} variant="home" />
             </div>
           ) : null}
         </form>

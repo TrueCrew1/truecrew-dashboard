@@ -262,24 +262,24 @@ export function ChiefBoard({
           );
         })}
 
-        {/* Build Gates Lane - Visibility Only */}
+        {/* Repo / build-type gate tasks — visibility only */}
         <section
           className="chief-board-lane"
-          aria-label="Build gates"
+          aria-label="Repo gates"
         >
           <header className="chief-board-lane-header">
-            <h3 className="chief-board-lane-title">Build gates</h3>
+            <h3 className="chief-board-lane-title">Repo gates</h3>
             <span className="chief-board-lane-count">{buildGateTasks.length}</span>
           </header>
 
           {isLoading ? (
-            <p className="chief-board-lane-empty">Loading build gate tasks…</p>
+            <p className="chief-board-lane-empty">Loading repo gate tasks…</p>
           ) : error ? (
             <p className="chief-board-lane-empty chief-board-lane-empty--error">
-              Failed to load build gate tasks: {error}
+              Failed to load repo gate tasks: {error}
             </p>
           ) : buildGateTasks.length === 0 ? (
-            <p className="chief-board-lane-empty">No build tasks waiting on required gates</p>
+            <p className="chief-board-lane-empty">No repo tasks waiting on required gates</p>
           ) : (
             <ul className="chief-board-list">
               {buildGateTasks.map((task) => (

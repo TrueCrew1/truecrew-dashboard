@@ -1,6 +1,11 @@
 # Agent approval loops (Build + Research)
 
-Durable reference for how Build and Research agent proposals enter Chief's approval
+> **Naming (2026-07-23):** Promptable lane for code changes is **Repo**
+> ([AGENT_SYSTEM.md](./AGENT_SYSTEM.md)); this doc still says “Build” where it
+> matches code symbols (`BuildApprovalRequest`, Builds page). Chief reply format:
+> [CHIEF_SINGLE_VOICE.md](./CHIEF_SINGLE_VOICE.md).
+
+Durable reference for how Build/Repo and Research agent proposals enter Chief's approval
 queue today. Describes the system as it exists — not a roadmap.
 
 ## System law

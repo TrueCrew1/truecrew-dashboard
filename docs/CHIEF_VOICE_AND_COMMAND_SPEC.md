@@ -1,16 +1,20 @@
 # Chief Voice + Text Command Intake — Spec
 
+> **Superseded for command voice and reply format (2026-07-23).**  
+> Canonical contract: **[CHIEF_SINGLE_VOICE.md](./CHIEF_SINGLE_VOICE.md)**  
+> (Status → Recommendation → Next action → Approval request; five-lane taxonomy in
+> [AGENT_SYSTEM.md](./AGENT_SYSTEM.md)).  
+> This file is retained for **future ASR/voice implementation notes** (mic, wake
+> phrase, observability event ideas). Do not use it as the Chief system prompt.
+
 Durable design reference for how voice input, if implemented, enters Chief's existing
 command system. This is a spec for future implementation — it changes no code, adds no
 UI, and wires no speech engine.
 
-**Sits under, does not replace:** `CLAUDE.md` (product tone, coding preferences),
-`docs/AGENT_WORKFLOW.md` (agent vs. approver roles), `docs/AGENT_APPROVAL_LOOPS.md`
-(system law, shared approval path), and `docs/AGENT_RUNBOOK.md` (§ Chief — approvals
-router, never auto-executes). Where this spec is silent, those docs govern. Where a
-request is agent-authored rather than operator-spoken/typed, see
-`docs/RESEARCH_AGENT_PACKET_SPEC.md` and `docs/BUILDER_AGENT_PACKET_SPEC.md` for the
-`AgentPacket` path — a related but separate intake, not superseded by this one.
+**Sits under:** `CLAUDE.md`, `docs/CHIEF_SINGLE_VOICE.md`, `docs/AGENT_SYSTEM.md`,
+`docs/AGENT_APPROVAL_LOOPS.md`. Packet path notes:
+`docs/RESEARCH_AGENT_PACKET_SPEC.md`, `docs/BUILDER_AGENT_PACKET_SPEC.md` (Repo lane;
+historical “Build” name).
 
 ## Purpose
 

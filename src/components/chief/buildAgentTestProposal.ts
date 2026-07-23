@@ -24,7 +24,7 @@ export function buildBuildAgentTestRequest(
   return {
     id: BUILD_AGENT_TEST_PROPOSAL_ID,
     gate: BUILD_APPROVAL_GATES[0],
-    summary: `Build Agent proposes adding ${BUILD_AGENT_TEST_DOC_PATH} — a one-page note documenting the agent → Chief → operator approval loop for QA.`,
+    summary: `Repo lane proposes adding ${BUILD_AGENT_TEST_DOC_PATH} — a one-page note documenting the agent → Chief → operator approval loop for QA.`,
     riskLevel: "low",
     testsOrChecksDone: [
       { label: "Scoped to docs only — no production code paths", status: "pass" },
@@ -32,7 +32,7 @@ export function buildBuildAgentTestRequest(
       { label: "Operator review before merge to main", status: "pending" },
     ],
     requestedAction:
-      "Approve to let Build Agent add the doc file, or reject to cancel this test proposal.",
+      "Approve to let the Repo lane add the doc file, or reject to cancel this test proposal.",
     filesOrAreas: [BUILD_AGENT_TEST_DOC_PATH],
     createdAt,
   };

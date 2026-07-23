@@ -6,7 +6,7 @@ import { listMonitorPlatformIssues } from "./chiefMonitorSituation";
 export type AgentStripHealth = "healthy" | "degraded" | "not_started";
 
 export interface AgentStripRow {
-  agent: "Research" | "Build" | "Librarian" | "Monitor";
+  agent: "Research" | "Repo" | "Librarian" | "Monitor";
   health: AgentStripHealth;
   label: string;
   detail: string;
@@ -88,27 +88,27 @@ export function deriveBuildAgentStripRow(
 ): AgentStripRow {
   if (input.pendingBuildApprovals > 0) {
     return {
-      agent: "Build",
+      agent: "Repo",
       health: "healthy",
       label: "Healthy",
-      detail: `${input.pendingBuildApprovals} build approval card(s) awaiting Chief.`,
+      detail: `${input.pendingBuildApprovals} repo approval card(s) awaiting Chief.`,
     };
   }
 
   if (input.buildGateTaskCount > 0) {
     return {
-      agent: "Build",
+      agent: "Repo",
       health: "degraded",
       label: "Degraded",
-      detail: `${input.buildGateTaskCount} build task(s) blocked on open gates.`,
+      detail: `${input.buildGateTaskCount} repo task(s) blocked on open gates.`,
     };
   }
 
   return {
-    agent: "Build",
+    agent: "Repo",
     health: "healthy",
     label: "Configured",
-    detail: "Chief approval path wired; no autonomous build runner.",
+    detail: "Chief approval path wired; no autonomous repo runner.",
   };
 }
 

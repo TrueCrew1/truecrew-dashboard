@@ -38,6 +38,7 @@ import { ChiefSituationBrief } from "./ChiefSituationBrief";
 import { ChiefBoard } from "./ChiefBoard";
 import { AgentWorkBoard } from "./AgentWorkBoard";
 import { GovernanceEventsPanel } from "./GovernanceEventsPanel";
+import { ChiefReplyBlock } from "./ChiefReplyBlock";
 import { chiefLog } from "./chiefLog";
 import type { ApprovalAction, ChiefResponse } from "./types";
 import type { ApprovalStatusFilter } from "./approvalStatus";
@@ -536,44 +537,20 @@ export function ChiefPanel() {
                     <h3 className="chief-response-label">Chief</h3>
                     <span className="chief-speaker-badge">Response</span>
                   </div>
-                  <p className="chief-response-text">{response.summary}</p>
-                </div>
-
-                {response.blockers && response.blockers.length > 0 ? (
-                  <div className="chief-response-section">
-                    <h3 className="chief-response-label">Blockers</h3>
-                    <ul className="chief-blocker-list">
-                      {response.blockers.map((blocker) => (
-                        <li key={blocker}>{blocker}</li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
-
-                <div className="chief-response-section">
-                  <h3 className="chief-response-label">Recommended action</h3>
-                  <p className="chief-response-text chief-response-text--action">
-                    {response.recommendedAction}
-                  </p>
+                  <ChiefReplyBlock response={response} variant="panel" />
                 </div>
 
                 {response.approvalNeeded ? (
                   <div className="chief-response-section chief-approval">
                     <div className="chief-approval-header">
-                      <h3 className="chief-response-label">Approval needed</h3>
+                      <h3 className="chief-response-label">Approval details</h3>
                       <span className="chief-approval-badge">Required</span>
                     </div>
-                    <p className="chief-response-text chief-approval-prompt">
-                      {response.approvalPrompt ?? "This action requires your confirmation."}
-                    </p>
                     {response.riskNote ? (
                       <p className="chief-approval-risk">{response.riskNote}</p>
                     ) : null}
                     {response.approvalPacket ? (
                       <div>
-                        <p className="chief-response-text">
-                          <strong>Recommendation:</strong> {response.approvalPacket.recommendation}
-                        </p>
                         <p className="chief-response-text">
                           <strong>Risk level:</strong> {response.approvalPacket.riskLevel}
                         </p>
@@ -587,9 +564,6 @@ export function ChiefPanel() {
                             ))}
                           </ul>
                         ) : null}
-                        <p className="chief-response-text">
-                          <strong>Next action:</strong> {response.approvalPacket.nextAction}
-                        </p>
                         {response.approvalPacket.improvementsMade.length > 0 ? (
                           <p className="chief-response-text">
                             <strong>Already filtered by Chief:</strong>{" "}

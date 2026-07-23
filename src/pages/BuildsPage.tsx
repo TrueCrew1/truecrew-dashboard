@@ -98,7 +98,7 @@ export function BuildsPage() {
 
       <div className="page-stack">
         <Panel
-          title="Build Agent approval test"
+          title="Repo lane approval test"
           action={
             <button type="button" className="empty-state-link" onClick={handleProposeBuildAgentTest}>
               Propose test change
@@ -106,7 +106,7 @@ export function BuildsPage() {
           }
         >
           <p className="cell-muted">
-            Queue a docs-only Build Agent proposal into Chief&apos;s approval queue for end-to-end
+            Queue a docs-only Repo-lane proposal into Chief&apos;s approval queue for end-to-end
             QA. Review on Chief → Approvals; the Agents tab shows it under Awaiting approval.
           </p>
           {buildAgentTestFeedback === "queued" ? (
