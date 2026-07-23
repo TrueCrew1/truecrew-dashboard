@@ -10,6 +10,9 @@ export default defineConfig({
   test: {
     environment: "node",
     globals: true,
-    include: ["**/*.{test,spec}.{ts,tsx}"],
+    // Vitest suites live under tests/. Files under src/**/*.test.ts use
+    // node:test (TAP) and must not be loaded here — they fail with
+    // "No test suite found" (see #194).
+    include: ["tests/**/*.{test,spec}.{ts,tsx}"],
   },
 });
