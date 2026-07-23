@@ -13,6 +13,7 @@ import {
   TaskStageSelect,
 } from "@/components/ui";
 import { proposePlannerReprioritization } from "@/components/chief/plannerReprioritizationProposal";
+import { proposePlannerNewRoadmapPhase } from "@/components/chief/plannerNewRoadmapPhaseProposal";
 import { useChiefApprovals } from "@/components/chief/ChiefApprovalsContext";
 import { TaskCell } from "@/components/tasks/TaskCell";
 import { TaskWarningSummary } from "@/components/tasks/TaskWarningSummary";
@@ -57,6 +58,8 @@ export function OperationsPage() {
   const [warningKind, setWarningKind] = useState<TaskWarningKind | null>(null);
   const [plannerSignalFeedback, setPlannerSignalFeedback] =
     useState<PlannerSignalFeedback>(null);
+  const [plannerPhaseFeedback, setPlannerPhaseFeedback] =
+    useState<PlannerSignalFeedback>(null);
 
   function handleProposePlannerReprioritization() {
     const result = proposePlannerReprioritization(liveContext, approvals);
@@ -64,6 +67,16 @@ export function OperationsPage() {
       addCommandApproval(result.card);
     }
     setPlannerSignalFeedback(
+      result.outcome === "blocked" ? "already_pending" : result.outcome,
+    );
+  }
+
+  function handleProposePlannerNewRoadmapPhase() {
+    const result = proposePlannerNewRoadmapPhase(liveContext, approvals);
+    if (result.outcome === "queued") {
+      addCommandApproval(result.card);
+    }
+    setPlannerPhaseFeedback(
       result.outcome === "blocked" ? "already_pending" : result.outcome,
     );
   }
@@ -137,6 +150,41 @@ export function OperationsPage() {
           {plannerSignalFeedback === "no_signal" ? (
             <p className="cell-muted" role="status">
               No overdue open tasks right now — nothing to re-sequence.
+            </p>
+          ) : null}
+        </Panel>
+
+        <Panel
+          title="Planner new roadmap phase signal"
+          action={
+            <button
+              type="button"
+              className="empty-state-link"
+              onClick={handleProposePlannerNewRoadmapPhase}
+            >
+              Check decision focus
+            </button>
+          }
+        >
+          <p className="cell-muted">
+            When the focus queue holds decision-type items, Planner files a new
+            roadmap phase proposal into Chief&apos;s approval queue. Review on Chief
+            &rarr; Approvals; the Agents tab shows it under Awaiting approval.
+          </p>
+          {plannerPhaseFeedback === "queued" ? (
+            <p className="cell-muted" role="status">
+              Queued for operator approval — open Chief &rarr; Approvals to decide.
+            </p>
+          ) : null}
+          {plannerPhaseFeedback === "already_pending" ? (
+            <p className="cell-muted" role="status">
+              Already awaiting approval — review the pending new-phase proposal on Chief
+              &rarr; Approvals.
+            </p>
+          ) : null}
+          {plannerPhaseFeedback === "no_signal" ? (
+            <p className="cell-muted" role="status">
+              No decision focus items right now — nothing to start as a new phase.
             </p>
           ) : null}
         </Panel>

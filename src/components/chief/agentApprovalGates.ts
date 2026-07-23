@@ -19,7 +19,8 @@ import type {
  *
  * Build's request (BUILD_REQUEST_DUPLICATE_AUTH_FIX below) is a real one,
  * grounded in verifiable repo state — not mocked. Planner's overdue-work
- * re-sequencing gate is also live (see plannerReprioritizationProposal.ts).
+ * re-sequencing gate and new-roadmap-phase gate are also live (see
+ * plannerReprioritizationProposal.ts and plannerNewRoadmapPhaseProposal.ts).
  * Research/Content still use one illustrative example each (clearly marked
  * EXAMPLE_*), not live agent output yet. Extension point: replace each
  * EXAMPLE_* constant with a real request object once that agent's workflow
@@ -171,8 +172,8 @@ export function createApprovalCardFromContentRequest(request: ContentApprovalReq
 }
 
 // --- Requests: Build is real (below); Research/Content are illustrative examples ---
-// Planner's live overdue re-sequencing signal lives in plannerReprioritizationProposal.ts
-// (not seeded here).
+// Planner live signals: plannerReprioritizationProposal.ts (overdue re-sequencing)
+// and plannerNewRoadmapPhaseProposal.ts (decision focus → new phase).
 
 /**
  * Real, not illustrative: two open PRs — #57 (build/auth-trim-fix) and #58

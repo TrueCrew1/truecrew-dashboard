@@ -231,8 +231,6 @@ law.
 
 ## Planner Agent loop — live overdue re-sequencing
 
-One of three Planner gates is live. The other two remain unwired.
-
 | Item | Current behavior |
 |------|------------------|
 | **Live gate** | `APPROVAL_GATES.planner[2]` — “Roadmap reprioritization or re-sequencing” |
@@ -242,8 +240,20 @@ One of three Planner gates is live. The other two remain unwired.
 | **Enqueue** | `proposePlannerReprioritization(liveContext, approvals)` → `addCommandApproval(card)` |
 | **Card source** | `planner_agent` |
 | **Duplicate guard** | Stable id `PLANNER_REPRIORITIZATION_PROPOSAL_ID`; block while **pending** |
-| **Unwired Planner gates** | (1) “Scope change affecting more than one phase”, (2) “New roadmap phase” |
-| **Reserved** | Research, Content, and Reliability producers are unchanged by this slice |
+
+## Planner Agent loop — live new roadmap phase
+
+| Item | Current behavior |
+|------|------------------|
+| **Live gate** | `APPROVAL_GATES.planner[1]` — “New roadmap phase” |
+| **Trigger** | **Operations** → panel **Planner new roadmap phase signal** → **Check decision focus** |
+| **Source of truth** | `ChiefLiveContext.focusItems` where `workflowType === "decision"` |
+| **Factory** | `src/components/chief/plannerNewRoadmapPhaseProposal.ts` |
+| **Enqueue** | `proposePlannerNewRoadmapPhase(liveContext, approvals)` → `addCommandApproval(card)` |
+| **Card source** | `planner_agent` |
+| **Duplicate guard** | Stable id `PLANNER_NEW_ROADMAP_PHASE_PROPOSAL_ID`; block while **pending** |
+| **Unwired Planner gate** | “Scope change affecting more than one phase” |
+| **Reserved** | Research, Content, and Reliability producers are unchanged by these slices |
 
 ## Code map (reference only)
 
@@ -255,10 +265,11 @@ One of three Planner gates is live. The other two remain unwired.
 | Research runtime test factory | `src/components/chief/researchAgentTestProposal.ts` |
 | Research real-incident factory | `src/components/chief/researchIncidentProposal.ts` |
 | Planner live overdue re-sequencing | `src/components/chief/plannerReprioritizationProposal.ts` |
+| Planner live new roadmap phase | `src/components/chief/plannerNewRoadmapPhaseProposal.ts` |
 | Packet envelope + logging | `src/components/chief/agentPacket.ts`, `chiefLog.ts`, `chiefGovernanceEvents.ts` |
 | Build trigger UI | `src/pages/BuildsPage.tsx` |
 | Research trigger UI | `src/pages/MonitorPage.tsx` |
-| Planner re-sequencing trigger UI | `src/pages/OperationsPage.tsx` |
+| Planner live-signal trigger UI | `src/pages/OperationsPage.tsx` |
 | Approvals tab UI | `src/components/chief/ApprovalBoard.tsx`, `ChiefPanel.tsx` |
 | Agents awaiting lane | `src/components/chief/AgentWorkBoard.tsx`, `deriveAgentAwaitingApprovalWorkItems()` |
 | Per-card urgency | `src/components/chief/chiefApprovalUrgency.ts` |
