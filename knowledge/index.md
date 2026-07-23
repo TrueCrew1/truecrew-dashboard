@@ -18,7 +18,7 @@ for the full rule set.
 | Decisions | 4 | 15 |
 | Sources | 10 | 50 |
 | Lessons | 5 | 20 |
-| Reference | 4 | 10 |
+| Reference | 5 | 10 |
 
 ## Concepts
 
@@ -59,7 +59,6 @@ Compact, behavior-changing rules — one file per lesson, not activity logs. See
 - [Check code, not runbook prose](lessons/check-code-not-runbook-prose.md) —
   *failure-pattern, medium confidence* — verify the actual array/enum before
   referencing an indexed gate.
-- *(Research pattern: none yet — no real Research workflow has run in this session.)*
 
 ## Projects
 
@@ -100,6 +99,9 @@ Stable lookup pages — no narrative, just facts for a fast check during a real 
 - [Tool Fallback Chains](reference/tool-fallbacks.md) — ~10 critical tools' primary
   → fallback → degraded-path routing. Check before relying on a tool marked
   `DEGRADED`/`BLOCKED` in `docs/TOOL_CATALOG.md`.
+- [Research Workflow (v1)](reference/research-workflow.md) — how Research runs an
+  investigation and files results into `knowledge/sources/`. The iterative loop,
+  output format, filing rules, and Chief ↔ Research handoff.
 
 ## Sources
 
