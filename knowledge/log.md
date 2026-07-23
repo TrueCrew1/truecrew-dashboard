@@ -400,7 +400,11 @@ playbooks. Full reasoning in the Obsidian Build Log entry of the same name.
 ## 2026-07-23 — Agent taxonomy decision (current vs historical)
 
 - 2026-07-23 — created — `decisions/agent-taxonomy-current.md` — authoritative
-  promptable lanes are Chief · Research · Librarian · Repo · Knowledge; older
-  Planner/Build/Research/Content (+ reserved Reliability) runbook list marked
-  historical. Cross-linked from `docs/AGENT_RUNBOOK.md` banner, `MEMORY.md`,
-  and `index.md`.
+  operating taxonomy for now: Chief · Research · Librarian · Repo · Knowledge;
+  older Planner/Build/Research/Content (+ reserved Reliability) runbook list
+  marked historical. Cross-linked from `docs/AGENT_RUNBOOK.md` banner,
+  `MEMORY.md`, and `index.md`.
+- 2026-07-23 — updated — `decisions/agent-taxonomy-current.md` — clarified
+  evolving system: current list is authoritative now, not forever; new lanes
+  require updating or superseding this decision (not drift). Banners/index/MEMORY
+  aligned.

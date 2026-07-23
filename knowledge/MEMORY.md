@@ -17,8 +17,9 @@ Priority and Current Task live in Obsidian — `True Crew/Master Priority List.m
 active-task doc — and must be read separately, every time, before planning or
 execution. Don't treat this list as a substitute for that check.
 
-- [decisions/agent-taxonomy-current](decisions/agent-taxonomy-current.md) — **current**
-  promptable lanes are Chief · Research · Librarian · Repo · Knowledge; older
+- [decisions/agent-taxonomy-current](decisions/agent-taxonomy-current.md) —
+  **current** operating taxonomy: Chief · Research · Librarian · Repo · Knowledge
+  (may add lanes later only by updating/superseding this decision). Older
   Planner/Build/Content runbook list is historical only.
 - [decisions/agent-runbook-adoption](decisions/agent-runbook-adoption.md) — the
   Agent Runbook itself is unmerged and has two versions in flight; check before citing

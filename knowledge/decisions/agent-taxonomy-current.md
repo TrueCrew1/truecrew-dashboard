@@ -1,5 +1,5 @@
 ---
-title: Agent taxonomy — five promptable lanes are current
+title: Agent taxonomy — current operating lanes
 type: decision
 status: approved
 confidence: high
@@ -11,18 +11,21 @@ related_prs: []
 related_cards: []
 ---
 
-# Agent taxonomy — five promptable lanes are current
+# Agent taxonomy — current operating lanes
 
 **Status: approved**
 
-**Current (authoritative):** Chief · Research · Librarian · Repo · Knowledge  
+**Current authoritative operating taxonomy:** Chief · Research · Librarian · Repo · Knowledge  
 **Historical (runbook specialist list):** Planner · Build · Research · Content (+ reserved Reliability)
+
+This list governs the system **as it exists now** (prompts, live docs, and operator
+routing). It is **not** a claim that no agents will ever be added.
 
 ---
 
 ## What was decided
 
-The **promptable agent taxonomy** for True Crew is five lanes:
+True Crew’s **current** promptable lanes are:
 
 | Lane | Role |
 |------|------|
@@ -34,17 +37,28 @@ The **promptable agent taxonomy** for True Crew is five lanes:
 
 The older runbook framing — **Planner / Build / Research / Content** as peer
 “agents,” with **Reliability** reserved — stays in `docs/AGENT_RUNBOOK.md` as
-**historical gates and workflow detail**. It is **not** the live prompt taxonomy.
+**historical** gates and workflow detail. It is **not** the live operating
+taxonomy.
 
 Name mapping when reading old sections: **Build → Repo**. Planner, Content, and
-Reliability are not promptable lanes unless a later decision adds them.
+Reliability are not current operating lanes unless added by a later decision.
+
+## Revision rule
+
+- Add or remove a lane only by **updating this decision** or issuing a
+  **superseding decision note** — not by drift, aspirational lists, or one-off
+  doc edits.
+- Live runbooks and prompts follow the **current** decision. Historical sections
+  may keep old names for gates; they do not redefine the operating taxonomy.
+- Until a revision lands, do not invent new promptable agents in prompts or
+  “current” docs.
 
 ## Why
 
-The vault and runbook drifted: live product/prompt work uses Chief + Research +
-Librarian + Repo + Knowledge, while the runbook Overview still opens with the
-older four-specialist list. Readers need one place that says which list is
-current without rewriting historical sections into a false present tense.
+The vault and runbook drifted: live work uses Chief + Research + Librarian +
+Repo + Knowledge, while the runbook Overview still opens with the older
+four-specialist list. Readers need one place that states what is current now,
+keeps history intact, and leaves a controlled path for later growth.
 
 ## Alternatives considered
 
@@ -52,15 +66,17 @@ current without rewriting historical sections into a false present tense.
   invent “current” language over old gates. Prefer a decision note + banner.
 - **Keep both lists as equally live** — rejected; causes agent/prompt confusion.
 - **Treat UI board labels (Roadmap, Workflow Gate, Marketer) as lanes** —
-  rejected; those are board rows, not promptable lanes.
+  rejected; those are board rows, not operating lanes.
+- **Freeze this list as forever architecture** — rejected; growth is allowed via
+  the revision rule above.
 
 ## Where to look
 
 | Need | Source |
 |------|--------|
-| **Current taxonomy (this note)** | You are here |
+| **Current operating taxonomy (this note)** | You are here |
 | Live gates / workflows (historical specialist names OK) | [docs/AGENT_RUNBOOK.md](../../docs/AGENT_RUNBOOK.md) |
-| UI Agents board rows (not the prompt taxonomy) | [docs/AGENTS_BOARD.md](../../docs/AGENTS_BOARD.md) |
+| UI Agents board rows (not the operating taxonomy) | [docs/AGENTS_BOARD.md](../../docs/AGENTS_BOARD.md) |
 
 ## Related PRs / cards
 
