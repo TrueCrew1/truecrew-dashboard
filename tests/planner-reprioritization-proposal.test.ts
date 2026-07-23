@@ -2,14 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   APPROVAL_GATES,
   createApprovalCardFromPlannerRequest,
-} from "./agentApprovalGates";
+} from "@/components/chief/agentApprovalGates";
 import {
   PLANNER_REPRIORITIZATION_PROPOSAL_ID,
   buildPlannerReprioritizationRequest,
   proposePlannerReprioritization,
-} from "./plannerReprioritizationProposal";
-import type { ChiefLiveContext } from "./chiefLiveContext";
-import type { ApprovalProposal } from "./types";
+} from "@/components/chief/plannerReprioritizationProposal";
+import type { ChiefLiveContext } from "@/components/chief/chiefLiveContext";
+import type { ApprovalProposal } from "@/components/chief/types";
 import { WorkflowStage, type Task } from "@/types";
 
 function task(id: string, title: string, workflowType: Task["workflowType"]): Task {
