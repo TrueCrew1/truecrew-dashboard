@@ -1,5 +1,7 @@
 # True Crew — Claude Code context
 
+**Hard safety rules:** [`REPO_RULES.md`](REPO_RULES.md) — `/api` entrypoints only, Hobby ≤12 functions, protected branches, no production secret touch during cleanup, destructive work needs human approval, fail closed. When conflicted, `REPO_RULES.md` wins.
+
 ## What True Crew is
 A SaaS command center for operations and maintenance teams. It runs the operator/supervisor
 workflow — Today → Operations → Builds/Repair → Monitor → Customers → Review — on a stack of
