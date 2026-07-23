@@ -4,7 +4,7 @@
 A SaaS command center for operations and maintenance teams. It runs the operator/supervisor
 workflow — Today → Operations → Builds/Repair → Monitor → Customers → Review — on a stack of
 Vercel (SPA + serverless `/api`), Supabase Postgres, GitHub webhooks (PR/CI gate automation),
-and Obsidian (knowledge/logging, Phase C). See `README.md` for the full stack table and routes.
+and Obsidian (knowledge/logging, Phase C). See `README.md` for the stack table and routes.
 
 ## Target users
 Supervisors and operators managing field/maintenance work day to day — not generic SaaS admins.
@@ -44,9 +44,42 @@ change with high quality and low manual effort. Avoid work that requires babysit
   not a platform team's.
 
 ## When uncertain
-Ask, don't assume. If proceeding anyway (e.g. a reasonable default is clearly right), state the
-assumption explicitly so it's easy to correct. Prefer the smallest change that's actually correct
-over a broader "while I'm in here" change.
+Ask, don't assume. **Do not fabricate values** (env vars, Supabase project IDs, keys, customer
+data, “shipped” capabilities). If proceeding anyway (e.g. a reasonable default is clearly right),
+state the assumption explicitly so it's easy to correct. Prefer the smallest change that's
+actually correct over a broader "while I'm in here" change.
+
+## Lanes (short)
+
+| Lane | Home docs | Touches |
+|------|-----------|---------|
+| Chief | `docs/AGENT_RUNBOOK.md`, `docs/AGENT_WORKFLOW.md` | Approvals routing — not direct merge/deploy |
+| Research | `docs/RESEARCH_AGENT_PACKET_SPEC.md`, `knowledge/` | Notes and findings — not production secrets |
+| Librarian | Obsidian / vault filing | Artifacts and vault notes |
+| Knowledge | `knowledge/` | Git-tracked second-brain notes (sources, decisions, concepts) |
+| Repo / Build | `docs/AGENT_RUNBOOK.md` (Build) | Code via PR only |
+
+Full tool access matrix: `docs/AGENT_TOOL_LANES.md`, `docs/TOOL_CATALOG.md`.
+
+## Endangered areas (do not casually rewrite)
+- `supabase/migrations/**` and live schema
+- `lib/auth.ts` / internal API auth
+- GitHub webhook verification and deploy workflows that handle secrets
+- Vercel / Supabase production env — human-only
+- Customer-app code belongs in `TrueCrew1/ms-painting`, not here (Chief **context** seeds for M&S are OK; see `docs/PROJECT_SEPARATION_FINDINGS.md`)
+
+## Verify before ship
+
+Primary “is this repo clean?” command:
+
+```bash
+npm run verify    # lint + test + build (alias of npm run qa)
+```
+
+Ship gate checklist: **[docs/SHIP_CHECKLIST.md](docs/SHIP_CHECKLIST.md)**.
+
+Hygiene / branch triage snapshot (reference only, not required for every PR):
+`docs/REPO_TRIAGE_SUMMARY.md`.
 
 ## Workflow
 This repo already has an approval-first process — don't restate or reinvent it, follow it:

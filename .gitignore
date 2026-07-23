@@ -1,9 +1,25 @@
 node_modules
 dist
+coverage
 .netlify
-*.local
-.env
-.env.local.bak.*
-.DS_Store
-tsconfig.tsbuildinfo
+.vercel
 .qa
+.DS_Store
+*.swp
+.idea/
+
+# Env and local overrides — never commit secrets
+.env
+.env.*
+!.env.example
+*.local
+.env.local.bak.*
+
+# TypeScript incremental
+tsconfig.tsbuildinfo
+
+# Local editor / agent tooling
+.continue/
+*.pem
+credentials.json
+**/secrets.json

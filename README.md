@@ -11,17 +11,33 @@ Command center for operations and maintenance teams — run the day from the fie
 | **GitHub** | Webhooks → automatic gate updates |
 | **Knowledge** | Obsidian Sync (Phase C) |
 
-> Full setup guide: [docs/VERCEL_SUPABASE_SETUP.md](docs/VERCEL_SUPABASE_SETUP.md)  
-> **Deploy now (5 min):** [docs/DEPLOY_NOW.md](docs/DEPLOY_NOW.md)  
-> **Agent ↔ approver workflow:** [docs/AGENT_WORKFLOW.md](docs/AGENT_WORKFLOW.md)
+> Full setup: [docs/VERCEL_SUPABASE_SETUP.md](docs/VERCEL_SUPABASE_SETUP.md) · [docs/DEPLOY_NOW.md](docs/DEPLOY_NOW.md) · [docs/AGENT_WORKFLOW.md](docs/AGENT_WORKFLOW.md)
+
+## Prerequisites
+
+- Node.js **22** and npm (matches CI)
+- For API routes locally: a filled `.env.local` (from `.env.example`) and `npm run dev:vercel`
 
 ## Quick start
 
 ```bash
+git clone https://github.com/TrueCrew1/truecrew-dashboard.git
+cd truecrew-dashboard
+cp .env.example .env.local   # fill placeholders — never commit real secrets
 npm install
-npm run dev              # UI only (mock data)
-npm run dev:vercel       # UI + API (requires .env.local)
+npm run dev                  # UI only (mock data)
+# npm run dev:vercel         # UI + /api (needs .env.local)
 ```
+
+## Verify (is this repo clean?)
+
+```bash
+npm run verify               # lint + test + build
+```
+
+Same checks run in CI on PRs to `main` and pushes to `main` / `cursor/**`.
+
+Ship checklist for agents/approvers: [docs/SHIP_CHECKLIST.md](docs/SHIP_CHECKLIST.md).
 
 ## Production deploy
 
@@ -38,6 +54,8 @@ npm run dev:vercel       # UI + API (requires .env.local)
 | `SUPABASE_SERVICE_ROLE_KEY` | Server |
 | `GITHUB_WEBHOOK_SECRET` | Server |
 | `VITE_USE_LIVE_API` | Client — set `true` for live Supabase reads |
+
+See `.env.example` for the full list (auth, LLM, Obsidian, Slack).
 
 ## API routes
 
@@ -70,6 +88,11 @@ npm run dev:vercel       # UI + API (requires .env.local)
 Inbox → Triage → Planned → In Progress → Waiting → Review → Done → Logged
 
 Mock seed data: `src/data/mockData.ts` · Supabase seed: `supabase/migrations/20260626000002_seed_data.sql`
+
+## Reference
+
+- Agent context: [CLAUDE.md](CLAUDE.md)
+- Hygiene / branch triage snapshot (2026-07-22): [docs/REPO_TRIAGE_SUMMARY.md](docs/REPO_TRIAGE_SUMMARY.md)
 
 ## Legacy
 
