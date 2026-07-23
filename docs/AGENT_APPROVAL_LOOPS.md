@@ -1,7 +1,7 @@
-# Agent approval loops (Build + Research)
+# Agent approval loops (Build + Research + Planner)
 
-Durable reference for how Build and Research agent proposals enter Chief's approval
-queue today. Describes the system as it exists — not a roadmap.
+Durable reference for how Build, Research, and Planner agent proposals enter Chief's
+approval queue today. Describes the system as it exists — not a roadmap.
 
 ## System law
 
@@ -229,6 +229,22 @@ law.
      intent.
    - Research already does this; mirror the pattern for any new agent test slice.
 
+## Planner Agent loop — live overdue re-sequencing
+
+One of three Planner gates is live. The other two remain unwired.
+
+| Item | Current behavior |
+|------|------------------|
+| **Live gate** | `APPROVAL_GATES.planner[2]` — “Roadmap reprioritization or re-sequencing” |
+| **Trigger** | **Operations** → panel **Planner re-sequencing signal** → **Check overdue work** |
+| **Source of truth** | `ChiefLiveContext.overdueTasks` only (open tasks past `dueAt`) |
+| **Factory** | `src/components/chief/plannerReprioritizationProposal.ts` |
+| **Enqueue** | `proposePlannerReprioritization(liveContext, approvals)` → `addCommandApproval(card)` |
+| **Card source** | `planner_agent` |
+| **Duplicate guard** | Stable id `PLANNER_REPRIORITIZATION_PROPOSAL_ID`; block while **pending** |
+| **Unwired Planner gates** | (1) “Scope change affecting more than one phase”, (2) “New roadmap phase” |
+| **Reserved** | Research, Content, and Reliability producers are unchanged by this slice |
+
 ## Code map (reference only)
 
 | Area | Location |
@@ -238,9 +254,11 @@ law.
 | Build runtime test factory | `src/components/chief/buildAgentTestProposal.ts` |
 | Research runtime test factory | `src/components/chief/researchAgentTestProposal.ts` |
 | Research real-incident factory | `src/components/chief/researchIncidentProposal.ts` |
+| Planner live overdue re-sequencing | `src/components/chief/plannerReprioritizationProposal.ts` |
 | Packet envelope + logging | `src/components/chief/agentPacket.ts`, `chiefLog.ts`, `chiefGovernanceEvents.ts` |
 | Build trigger UI | `src/pages/BuildsPage.tsx` |
 | Research trigger UI | `src/pages/MonitorPage.tsx` |
+| Planner re-sequencing trigger UI | `src/pages/OperationsPage.tsx` |
 | Approvals tab UI | `src/components/chief/ApprovalBoard.tsx`, `ChiefPanel.tsx` |
 | Agents awaiting lane | `src/components/chief/AgentWorkBoard.tsx`, `deriveAgentAwaitingApprovalWorkItems()` |
 | Per-card urgency | `src/components/chief/chiefApprovalUrgency.ts` |
