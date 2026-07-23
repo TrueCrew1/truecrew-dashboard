@@ -16,6 +16,7 @@ files a PROVISIONAL findings note (sources cited) at the request's target path
         │  opens a PR — this is the human quality gate
         ▼
 PATCH /api/research/:id → done + filedPath     (or blocked + blocker note)
+  (public path unchanged; rewrites to /api/research?id=:id)
         ▼
 queue, Knowledge status card, and V2 program cards update themselves
 ```
@@ -46,7 +47,8 @@ To read and update the live queue, the runner needs:
 - `TRUECREW_INTERNAL_KEY` — value of `INTERNAL_API_SECRET` (same `x-internal-key`
   header every internal route uses)
 
-Endpoints: `GET /api/research` (list), `PATCH /api/research/:id`
+Endpoints: `GET /api/research` (list), `PATCH /api/research/:id` (rewrites to
+`/api/research?id=:id` — same handler; Hobby function consolidation).
 (`{status, filedPath?, blockerNote?}` — transitions validated server-side).
 
 **Fallback when the API is unreachable or keys aren't configured:** the repo

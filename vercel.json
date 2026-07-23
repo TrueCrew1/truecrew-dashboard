@@ -10,7 +10,9 @@
   "rewrites": [
     { "source": "/api/research/project-summary-handoff", "destination": "/api/research/dispatch?kind=project-summary-handoff" },
     { "source": "/api/research/monitor-incident-postmortem", "destination": "/api/research/dispatch?kind=monitor-incident-postmortem" },
-    { "source": "/api/tasks/:id/artifacts", "destination": "/api/tasks/:id?view=artifacts" },
+    { "source": "/api/research/:id(req-[^/]+)", "destination": "/api/research?id=:id" },
+    { "source": "/api/tasks/:id/artifacts", "destination": "/api/tasks?id=:id&view=artifacts" },
+    { "source": "/api/tasks/:id", "destination": "/api/tasks?id=:id" },
     { "source": "/api/chief/approval-activity", "destination": "/api/chief/approvals?view=activity" },
     { "source": "/api/chief/operational-readiness", "destination": "/api/chief/approvals?view=operational-readiness" },
     { "source": "/api/chief/governed-slack-notify", "destination": "/api/chief/approvals?view=slack-notify" },
