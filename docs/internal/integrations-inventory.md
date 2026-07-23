@@ -65,6 +65,8 @@ This inventory lists **services the dashboard code actually references** — pur
 - **Used in:** `lib/governedLoopSlack.ts`, Chief approvals notify paths
 - **Env:** `SLACK_WEBHOOK_URL`
 - **Failure:** No-op / `console.warn`; core app unaffected. **Inbound not wired.**
+- **Do not conflate:** personal `docs/TOOL_CATALOG.md#slack` = inbound/bot
+  `future-integration`. This inventory row is **outbound webhook only** (`partial`).
 
 ## `github`
 

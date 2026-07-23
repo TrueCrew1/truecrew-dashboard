@@ -519,12 +519,13 @@ current wiring.)
 **Chief access links — phase 1.** The only access surfaces intentionally
 formalized for Chief right now, under strict least-privilege governance:
 
-- **Ollama / local-first model routing** — the default layer for cognition
-  and drafting. Realized today via Continue.dev's human-reviewed inline
-  suggestions (`docs/TOOL_CATALOG.md` → `ollama-local`, `continue-dev`;
-  `CLAUDE.md` § Tool routing) — not yet a directly agent-callable API for
-  Chief itself; formalizing it here states the intended default without
-  claiming a runtime integration that doesn't exist yet.
+- **Azure router (default sustained LLM lane)** — Research missions, suggest-tests,
+  and `npm run llm` while Azure credits remain (expire next month). Formalized as the
+  bulk/sustained preference; Pro tools stay for judgment
+  (`docs/AI_STACK.md`, `docs/TOOL_CATALOG.md`).
+- **Open WebUI / Ollama (local filter)** — preferred local day-to-day chat via Open
+  WebUI; Continue.dev secondary in-editor only. Not dashboard-runtime-wired
+  (`docs/TOOL_CATALOG.md` → `open-webui`, `ollama-local`).
 - **Obsidian logging** — the preferred audit-trail and status-brief sink.
   Already Chief's own responsibility, no gate (`docs/OBSIDIAN_LOGGING.md`,
   `docs/TOOL_CATALOG.md` → `obsidian-buildlog`).
@@ -532,7 +533,7 @@ formalized for Chief right now, under strict least-privilege governance:
   change. Every write still goes through this runbook's existing gates —
   Build's merge gate above all (`docs/TOOL_CATALOG.md` → `claude-code`).
 
-These three are the only links being intentionally formalized this phase.
+These links are the only ones being intentionally formalized this phase.
 Everything else stays exactly where it already was: no new GitHub App/bot
 permissions, no Vercel/Supabase write-path linking, no secrets-store access,
 and no new runtime agent code. External-system writes remain gated, not
@@ -1099,11 +1100,22 @@ model, by tier — layered on top of the lanes here, not a replacement for them.
 
 Core policy:
 
-- Default to the cheapest capable tier (Ollama/local, via Continue.dev) for routine,
-  low-risk tasks.
-- Escalate to a frontier/hosted model (Tier 2–3) only when risk or complexity requires
-  it — auth, RLS, CI security, production migrations, or cross-service architecture, per
-  the routing standard's escalation triggers.
+- **Default sustained/automated LLM work to the Azure router** (DeepSeek / gpt-5-mini /
+  Kimi via `npm run llm`, Research, suggest-tests). Azure credits expire next month —
+  convert them into useful work. See `docs/TOOL_CATALOG.md` § LLM usage policy.
+- Free-filter web chats and **Open WebUI** (preferred local chat; Continue.dev
+  secondary) are filter/fallback — not the bulk sustained lane.
+- Escalate to premium core (Claude Pro, Cursor Pro, Perplexity Pro) when judgment,
+  live web evidence, or architecture risk requires it — not for routine bulk loops
+  the Azure router can handle.
+- GitHub Copilot is **paused** — do **not** reinstall by default; optional only if
+  David explicitly re-approves later. Agents must not treat “paused” as permission to
+  turn Copilot back on.
+- Open WebUI is part of the **local** layer only — do not claim it is wired into
+  truecrew-dashboard runtime.
+- Keep **product** integrations (`lib/ops/integrationsInventory.ts`) separate from
+  this personal/editor catalog. **Slack split is intentional:** product = outbound
+  webhook `partial`; personal catalog = inbound/bot `future-integration`.
 - Escalating the *model* never escalates the *lane*: execution — git writes, migrations,
   deploys — still only happens through a governed lane (Claude Code, CI, an approved
   workflow), per every gate already defined above. A Tier 3 model recommending a change
@@ -1175,36 +1187,44 @@ Ranked by how proven/low-risk they already are, not alphabetically:
 
 ## External Services Tool Catalog
 
-David's actual AI/dev tool stack (per `CLAUDE.md`'s tool routing), classified the same way as
-the Tool Catalog above. Same rule applies: **nothing here is wired to any agent** — this is
-governance only. Nearly all of these (Claude Pro, Perplexity Pro, the free LLMs, Copilot) are
-**consumer chat subscriptions, not programmatic APIs** — there is no agent-callable integration
-for them today regardless of classification. "AGENT-ELIGIBLE" below means "fine in principle as a
-drafting/research input if API access is ever added," not "currently wireable." Vercel, Supabase,
-and Cursor are the exceptions — Vercel/Supabase already have real CLI/API surfaces this repo uses,
-and Cursor has real evidenced use in this repo's own PR history (many `cursor/*` branches).
+David's approved AI/dev stack (see `docs/TOOL_CATALOG.md` Approved stack), classified the
+same way as the Tool Catalog above. Same rule applies for **consumer chat** tools:
+**nothing in the premium/free web rows is agent-callable via API today** — governance
+only. "AGENT-ELIGIBLE" means "fine in principle as a drafting/research input if API
+access is ever added," not "currently wireable."
 
-| Service | What it is / likely use | Classification | Suggested agent(s) | Access level |
-|---|---|---|---|---|
-| **Claude Pro** | Consumer chat (claude.ai), separate from Claude Code (this CLI); likely ad-hoc reasoning/drafting outside repo-scale work. | AGENT-ELIGIBLE (in principle) | Research, Content | PROPOSE-ONLY — no agent-callable API today; would need separate Anthropic API credentials |
-| **Perplexity Pro** | Live web-search LLM; per `CLAUDE.md`, David's tool for research/current-events questions. | AGENT-ELIGIBLE (in principle) | Research | PROPOSE-ONLY — research notes/citations only, no execution; same no-API-today caveat |
-| **Cursor Pro / VS Cursor** | AI-assisted code editor; real, evidenced use in this repo (many historical `cursor/*` PR branches). | AGENT-ELIGIBLE | Build | PROPOSE-ONLY — suggests diffs/PR content; merge/close always goes through Build's existing gate regardless of which tool authored the change |
-| **Vercel** | Hosting/deploy platform; already deeply used this session (deploy status, preview URLs, CI checks). | AGENT-ELIGIBLE | Build | READ-ONLY for deploy status/preview URLs (already effectively how it's used); PROPOSE-ONLY for config changes; `EXECUTE-WITH-APPROVAL` only if a future explicit deploy gate is added to this runbook — not defined yet |
-| **Supabase** | Postgres DB + migrations; real, extensively used this session (e.g. `chief_approval_decisions`). | AGENT-ELIGIBLE | Build | READ-ONLY for schema/status; PROPOSE-ONLY for migrations — already covered by Build's existing "database or schema migration" gate |
-| **free ChatGPT** | Per `CLAUDE.md`: manual overflow chat when Claude credits are low, or a quick second opinion. | AGENT-ELIGIBLE (in principle) | Research, Content | PROPOSE-ONLY — same no-API-today caveat |
-| **free Kimi** | Same category as ChatGPT — manual overflow/second-opinion chat. | AGENT-ELIGIBLE (in principle) | Research, Content | PROPOSE-ONLY — same caveat |
-| **free DeepSeek** | Same category — manual overflow/second-opinion chat. | AGENT-ELIGIBLE (in principle) | Research, Content | PROPOSE-ONLY — same caveat |
-| **free Gemini** | Per `CLAUDE.md`: large-context or multimodal tasks. | AGENT-ELIGIBLE (in principle) | Research, Content | PROPOSE-ONLY — same caveat |
-| **free Copilot** | Per `CLAUDE.md`, explicitly: "only if already surfaced inside Office/Windows tools; **not wired into this dev environment**." | **HUMAN-ONLY** | — | — |
+**Exceptions with real surfaces in this repo:** Vercel/Supabase (CLI/API + product
+inventory), Cursor (evidenced `cursor/*` PRs), Azure LLM router (Research missions /
+suggest-tests / `npm run llm` — **default sustained lane** while Azure credits remain),
+Ollama + **Open WebUI** (preferred local chat; Continue.dev secondary). **Open WebUI**
+is local-only — not dashboard-wired. **GitHub Copilot** is paused — do not reinstall
+by default; only if explicitly re-approved later.
 
-Note on Copilot: unlike Cursor, `CLAUDE.md` explicitly states Copilot isn't part of this repo's
-active coding workflow — classified HUMAN-ONLY on that basis (least privilege + not currently
-relevant), not bundled in with Cursor just because both are "IDE coding assistants."
+| Service | Layer | What it is / likely use | Classification | Suggested agent(s) | Access level |
+|---|---|---|---|---|---|
+| **Claude Pro** | premium-core | Consumer chat (claude.ai); hard reasoning/drafting | AGENT-ELIGIBLE (in principle) | Research, Content | PROPOSE-ONLY — no Anthropic API in this stack today |
+| **Cursor Pro** | premium-core | AI editor + cloud agents; evidenced `cursor/*` branches | AGENT-ELIGIBLE | Build | PROPOSE-ONLY — merge/close via Build gate |
+| **Perplexity Pro** | premium-core | **PRIMARY research** — cited web, standards/docs, competitive analysis | AGENT-ELIGIBLE (in principle) | Research | PROPOSE-ONLY — notes/citations only; safer default for product/compliance-adjacent questions |
+| **free ChatGPT / Gemini / Kimi / DeepSeek** | free-filter | Overflow / second opinion before Pro | AGENT-ELIGIBLE (in principle) | Research, Content | PROPOSE-ONLY — manual relay |
+| **Grok (xAI)** | NON-PROD_WEB_AI | X/social sentiment only (https://grok.com) — **not** default research | HUMAN-ONLY (web) | Research (human) | No MSHA/customer PII; no bulk/prod; no automated/xAI API wiring without governance approval |
+| **DeepSeek / Kimi / gpt-5-mini (Azure router)** | api-sustained | **Default sustained** product/CLI LLM work | AGENT-ELIGIBLE | Research, Builder | PROPOSE-ONLY outputs; existing gates for actions |
+| **Open WebUI** | local | **Preferred** local day-to-day chat over Ollama | HUMAN-ONLY (local) | — | launch-only — **not** truecrew-dashboard runtime |
+| **Ollama** | local | Local model host; optional Librarian | AGENT-ELIGIBLE (scoped) | Librarian (when enabled) | PROPOSE-ONLY / env-gated product refine |
+| **Continue.dev** | editor-shell | Secondary in-editor autocomplete | HUMAN-ONLY | — | launch-only — not primary local chat |
+| **Docker Desktop** | local | Local containers / MCP when needed | HUMAN-ONLY | — | launch-only |
+| **VS Code + Claude Code** | editor-shell | Primary shell + governed agent runtime | AGENT-ELIGIBLE | Chief/Build | Existing runbook gates |
+| **GitHub Copilot** | paused | Do not use unless re-approved | **PAUSED** | — | No reinstall by default |
+| **Vercel** | product | Hosting/deploy; monitor probe | AGENT-ELIGIBLE | Build | READ-ONLY deploy status; config HUMAN-ONLY |
+| **Supabase** | product | Postgres + migrations | AGENT-ELIGIBLE | Build | READ-ONLY schema; PROPOSE-ONLY migrations |
+| **Slack outbound (product)** | product | Governed-loop webhook only | AGENT-ELIGIBLE (scoped) | Chief notify paths | Outbound only — inventory `partial` |
+| **Slack inbound/bot (personal)** | future | Bot/commands not built | HUMAN-ONLY / future | — | `future-integration` — do not conflate with outbound |
 
 ### Priority candidates from this list (3–5)
 
-1. **Build ↔ Vercel, READ-ONLY** — deploy status/preview URLs. Gate: none needed for reading; any config or production change stays HUMAN-ONLY until a deploy-specific gate is written.
-2. **Build ↔ Supabase, READ-ONLY (schema) / PROPOSE-ONLY (migrations)** — already Build's existing "database or schema migration" gate covers this; no new rule needed, just formalize the tool as in-scope.
-3. **Build ↔ Cursor, PROPOSE-ONLY** — Cursor drafts a diff/PR; the existing Build gate ("code change merging to main") governs whether it merges, same as any other PR regardless of authorship tool.
-4. **Research ↔ Perplexity Pro, PROPOSE-ONLY** — once API access exists: Research uses it for live web research, output is always a note or a `ResearchApprovalRequest`, never an executed action.
-5. **Research/Content ↔ a model-provider API (Claude/Gemini), PROPOSE-ONLY** — once real API credentials are provisioned (separate from the consumer subscriptions above): drafting only, routed through the normal `ResearchApprovalRequest`/`ContentApprovalRequest` path like any other agent output.
+1. **Research/Builder ↔ Azure router (DeepSeek / Kimi / gpt-5-mini)** — default sustained lane while Azure credits remain; keep Pro chat for judgment, not bulk loops.
+2. **Build ↔ Vercel, READ-ONLY** — deploy status/preview URLs. Gate: none needed for reading; any config or production change stays HUMAN-ONLY until a deploy-specific gate is written.
+3. **Build ↔ Supabase, READ-ONLY (schema) / PROPOSE-ONLY (migrations)** — already Build's existing "database or schema migration" gate covers this; no new rule needed, just formalize the tool as in-scope.
+4. **Build ↔ Cursor Pro, PROPOSE-ONLY** — Cursor drafts a diff/PR; the existing Build gate ("code change merging to main") governs whether it merges, same as any other PR regardless of authorship tool.
+5. **Research ↔ Perplexity Pro (PRIMARY), PROPOSE-ONLY** — default live web / standards /
+   competitive research by hand; output is always a note or a `ResearchApprovalRequest`.
+   Grok is X/social sentiment only — see `docs/TOOL_CATALOG.md` § Research tools.

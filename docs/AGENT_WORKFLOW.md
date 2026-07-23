@@ -34,16 +34,34 @@ Given the access links formalized in `docs/AGENT_RUNBOOK.md` § Chief ("Chief
 access links — phase 1"), the current operating pattern for any Chief-adjacent
 work is:
 
-- **Think/draft locally first**, via Ollama (Continue.dev) — cheap,
-  local-first cognition before reaching for a hosted model.
+- **Sustained / automated LLM work first via Azure router** (DeepSeek / Kimi /
+  gpt-5-mini via `npm run llm` or product Research/Builder paths —
+  [docs/AI_STACK.md](AI_STACK.md)). Azure credits expire next month — default bulk
+  work here; keep Pro tools for judgment.
+- **Filter with free tools before premium chat** — ChatGPT / Gemini / Kimi /
+  DeepSeek free web chats for second opinions; escalate to Claude Pro, Cursor Pro,
+  or **Perplexity Pro (PRIMARY research)** when judgment, multi-file work, or live
+  web evidence requires it ([docs/TOOL_CATALOG.md](TOOL_CATALOG.md) § Research tools /
+  LLM usage policy). **Grok** is NON-PROD_WEB_AI for X/social sentiment only — not
+  the default research lane.
+- **Local day-to-day chat via Open WebUI** (over Ollama) — preferred local surface;
+  Continue.dev is secondary in-editor fallback only. Open WebUI is local-only — not
+  a dashboard runtime integration.
 - **Log/brief to Obsidian** — the audit trail and status-brief sink for
   anything worth remembering ([docs/OBSIDIAN_LOGGING.md](OBSIDIAN_LOGGING.md)).
-- **Execute repo changes only through the Claude Code PR flow** — no write
-  happens outside the existing PR-only, approval-gated path below.
+- **Execute repo changes only through the Claude Code / Cursor PR flow** — no write
+  happens outside the existing PR-only, approval-gated path below. GitHub Copilot is
+  **paused** — do not reinstall by default; only if David explicitly re-approves later.
 - **Escalate anything beyond those bounds** — a new external-system link, a
   write-path permission, or anything not covered by this phase's three
   formalized surfaces goes to David as an explicit decision, not an inferred
   extension.
+
+**Stack brief for agents:** [docs/agents/CHIEF_OPERATING_SYSTEM.md](agents/CHIEF_OPERATING_SYSTEM.md).
+**Product vs personal tools:** product runtime SoT is
+`lib/ops/integrationsInventory.ts` (Slack there = **outbound webhook only**);
+personal/editor/local SoT is `docs/TOOL_CATALOG.md` (Slack inbound/bot =
+`future-integration` — intentional split).
 
 **[docs/AGENT_RUNBOOK.md](AGENT_RUNBOOK.md) is the full operating contract for Planner, Build, Research, Content, and Chief** — read it before operating as any of these agents, and give it to a new agent session as-is. It defines, per agent: purpose and scope, what's allowed without approval (routine, reversible work), what requires a Chief approval gate (state-changing, external, or hard-to-revert work — e.g. Build's merges/migrations, Content's client-facing copy), the exact fields each `*ApprovalRequest` needs, and what to verify before asking for approval. It also defines Chief's own responsibilities (turning requests into cards, checking claims rather than trusting them, never auto-merging/deploying/messaging), when an agent must stop and escalate rather than proceed, how the runbook itself gets changed (a PR, routed through Chief like any other approval-gated change), and — since this pass — how agents turn work artifacts into the `knowledge/` vault (**Second Brain Starter Pass**).
 
