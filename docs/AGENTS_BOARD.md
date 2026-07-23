@@ -4,6 +4,11 @@ What each agent row on Chief's Agents tab shows, and where the data comes from.
 A green **live** badge means the row is derived from real app data; a gray
 **mock** badge means it's a hand-written placeholder.
 
+> **Not the operating taxonomy.** Board rows below are UI work signals. Current
+> operating lanes are **Chief · Research · Librarian · Repo · Knowledge**
+> (authoritative now; may grow later by decision) —
+> [agent-taxonomy-current](../knowledge/decisions/agent-taxonomy-current.md).
+
 | Agent | Status | Data source |
 |---|---|---|
 | Build Agent | live | Tasks with `workflowType === "build"` |

@@ -77,6 +77,8 @@ Active efforts.
 One page per meaningful decision, each marked approved / pending / declined
 (outcome), plus its own `confidence`.
 
+- **Approved**, high confidence — [Agent taxonomy — current operating lanes](decisions/agent-taxonomy-current.md)
+  (Chief · Research · Librarian · Repo · Knowledge for now; older Planner/Build/Content list is historical; growth only via decision update).
 - **Approved**, high confidence — [Dashboard maintenance bundle](decisions/dashboard-maintenance-bundle.md)
   (PRs #75/#76/#77, merged).
 - **Pending**, medium confidence — [Vercel Preview secret scope](decisions/vercel-preview-secret-scope.md)
