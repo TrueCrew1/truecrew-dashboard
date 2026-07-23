@@ -38,6 +38,8 @@ import {
   launchErrorFromApprovalActionMessage,
 } from "./approvalExecutionFeedback";
 import { deriveApprovalResultLinks } from "./approvalResultLinks";
+import { useResearchAssignments } from "./ChiefResearchAssignmentBlock";
+import { formatResearchAssignmentBoardLine } from "./researchAssignmentView";
 import { ChiefEvidenceTrailSection } from "./ChiefEvidenceTrailSection";
 import type { ResearchMissionPayload } from "./researchMonitorIncidentPostmortem";
 import type { ApprovalAction, ApprovalProposal } from "./types";
@@ -69,6 +71,9 @@ export function ApprovalBoard({
   const [localStatusFilter, setLocalStatusFilter] = useState<ApprovalStatusFilter>("all");
   const statusFilter = statusFilterProp ?? localStatusFilter;
   const setStatusFilter = onStatusFilterChange ?? setLocalStatusFilter;
+
+  // Keep approval cards/feedback on the live research-assignment store (not proposal snapshots).
+  useResearchAssignments();
 
   const statusSummary = useMemo(() => summarizeApprovalStatus(proposals), [proposals]);
   const filteredProposals = useMemo(
@@ -362,6 +367,11 @@ export function ApprovalBoard({
                   ) : null}
 
                   <p className="chief-approval-card-summary">{proposal.summary}</p>
+                  {proposal.researchAssignment ? (
+                    <p className="chief-home-draft-path" role="status">
+                      {formatResearchAssignmentBoardLine(proposal.researchAssignment)}
+                    </p>
+                  ) : null}
 
                   <div className="chief-approval-card-details">
                     <div className="chief-approval-card-field">

@@ -12,6 +12,7 @@ import {
   type Tool,
   type Workflow,
 } from "@/types";
+import { MS_PAINTING_PROJECT_ID } from "@/data/projects";
 
 const now = new Date();
 const iso = (offsetHours: number) =>
@@ -105,7 +106,7 @@ export const mockTasks: Task[] = [
     createdAt: iso(48),
     updatedAt: iso(3),
     createdBy: "founder",
-    projectId: "ms-painting",
+    projectId: MS_PAINTING_PROJECT_ID,
     gates: [
       { id: "g1", label: "Checklist fields confirmed with crew lead", required: true, passed: true },
       { id: "g2", label: "Offline photo capture tested on jobsite Wi-Fi dead zone", required: true, passed: false },
@@ -124,7 +125,7 @@ export const mockTasks: Task[] = [
     createdAt: iso(96),
     updatedAt: iso(5),
     createdBy: "operator",
-    projectId: "ms-painting",
+    projectId: MS_PAINTING_PROJECT_ID,
     gates: [
       { id: "g1", label: "Kickoff call scheduled", required: true, passed: true },
       { id: "g2", label: "Crew accounts provisioned", required: true, passed: false },
@@ -195,7 +196,7 @@ export const mockWorkflows: Workflow[] = [
     createdAt: iso(48),
     updatedAt: iso(3),
     createdBy: "founder",
-    projectId: "ms-painting",
+    projectId: MS_PAINTING_PROJECT_ID,
     gates: [
       { id: "g1", label: "Checklist fields confirmed with crew lead", required: true, passed: true },
       { id: "g2", label: "Offline photo capture tested on jobsite Wi-Fi dead zone", required: true, passed: false },
@@ -415,7 +416,7 @@ export const mockCustomers: Customer[] = [
   {
     id: "cust-ms-painting",
     name: "M&S Painting",
-    slug: "ms-painting",
+    slug: MS_PAINTING_PROJECT_ID,
     tier: "growth",
     stage: WorkflowStage.Waiting,
     primaryContact: "Mike Sorrentino",

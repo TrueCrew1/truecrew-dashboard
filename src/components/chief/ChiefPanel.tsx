@@ -2,9 +2,9 @@ import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "re
 import { useSearchParams } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import {
-  ChiefApprovalConflictError,
-  formatDataSourceLabel,
   isLiveApiEnabled,
+  formatDataSourceLabel,
+  ChiefApprovalConflictError,
 } from "@/lib/api/client";
 import { executeProjectSummaryHandoffMission } from "@/lib/api/researchMission";
 import { executeMonitorIncidentPostmortemMission } from "@/lib/api/researchPostmortemMission";
@@ -33,6 +33,8 @@ import { classifyChiefEvaluation, evaluationInputFromChiefResponse } from "./chi
 import { deriveChiefBoardItems, resolveChiefCommand } from "./chiefLiveContext";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { ChiefContextSwitcher } from "./ChiefContextSwitcher";
+import { chiefContextScopeSummary } from "./chiefContext";
+import { useChiefContext } from "@/context/ChiefContextProvider";
 import { SpecialistCards } from "./SpecialistCards";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
 import { ChiefBoard } from "./ChiefBoard";
@@ -40,8 +42,23 @@ import { AgentWorkBoard } from "./AgentWorkBoard";
 import { GovernanceEventsPanel } from "./GovernanceEventsPanel";
 import { ChiefReplyBlock } from "./ChiefReplyBlock";
 import { chiefLog } from "./chiefLog";
+import {
+  matchChiefProjectToolIntent,
+  runChiefProjectToolRead,
+} from "./chiefProjectToolReads";
 import type { ApprovalAction, ChiefResponse } from "./types";
 import type { ApprovalStatusFilter } from "./approvalStatus";
+import { runApprovedProjectToolDraftMutation } from "./runApprovedProjectToolDraftMutation";
+import { mutationOutcomeToActionPhase, getProjectToolMutationAudit } from "./chiefProjectToolMutation";
+import { runResearchAssignmentDispatch } from "./researchAssignmentDispatch";
+import {
+  matchResearchAssignmentIntent,
+} from "@/lib/chief/researchAssignment";
+import {
+  buildResearchAssignmentGlobalRefusal,
+  buildResearchAssignmentResponse,
+} from "./chiefResearchAssignment";
+import { useResearchAssignments } from "./ChiefResearchAssignmentBlock";
 import {
   approvalCardElementId,
   clearChiefApprovalDeepLink,
@@ -55,14 +72,18 @@ const EXAMPLE_COMMANDS = [
   "What is at risk today?",
   "What's blocked?",
   "Show approvals I need to review",
-  "What tasks are missing customer context?",
-  "Show open alerts",
+  "List open PRs on GitHub",
+  "List Obsidian notes for this project",
+  "Draft Obsidian note about crew roster",
+  "Draft GitHub comment on PR #12",
+  "Research competitors for this project",
 ];
 
 type ChiefTab = "command" | "board" | "agents" | "approvals" | "history" | "dev";
 
 export function ChiefPanel() {
   const { loading, source } = useData();
+  const { activeContextDefinition, activeToolScope } = useChiefContext();
   const {
     chiefData,
     liveContext,
@@ -77,9 +98,13 @@ export function ChiefPanel() {
     sessionApprovalActivity,
   } = useChiefApprovals();
 
+  // Keep reply/approval feedback on the live research-assignment store.
+  useResearchAssignments();
+
   const [activeTab, setActiveTab] = useState<ChiefTab>("command");
   const [input, setInput] = useState("");
   const [response, setResponse] = useState<ChiefResponse | null>(null);
+  const [responseApprovalId, setResponseApprovalId] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [approvalActionStates, setApprovalActionStates] = useState<
     Record<string, ApprovalActionState>
@@ -293,6 +318,66 @@ export function ChiefPanel() {
               return;
             }
           }
+
+          const draftMutation = await runApprovedProjectToolDraftMutation({
+            proposal,
+            liveApi: true,
+          });
+          if (draftMutation.handled) {
+            setApprovalActionStates((prev) => ({
+              ...prev,
+              [id]: {
+                phase: mutationOutcomeToActionPhase(draftMutation),
+                action,
+                message: draftMutation.message,
+              },
+            }));
+            return;
+          }
+
+          const researchDispatch = runResearchAssignmentDispatch({ proposal });
+          if (researchDispatch.handled) {
+            setApprovalActionStates((prev) => ({
+              ...prev,
+              [id]: {
+                phase: researchDispatch.ok ? "success" : "error",
+                action,
+                message: researchDispatch.message,
+              },
+            }));
+            return;
+          }
+        }
+
+        if (action === "approved" && !liveApi) {
+          const draftMutation = await runApprovedProjectToolDraftMutation({
+            proposal,
+            liveApi: false,
+          });
+          if (draftMutation.handled) {
+            setApprovalActionStates((prev) => ({
+              ...prev,
+              [id]: {
+                phase: mutationOutcomeToActionPhase(draftMutation),
+                action,
+                message: draftMutation.message,
+              },
+            }));
+            return;
+          }
+
+          const researchDispatch = runResearchAssignmentDispatch({ proposal });
+          if (researchDispatch.handled) {
+            setApprovalActionStates((prev) => ({
+              ...prev,
+              [id]: {
+                phase: researchDispatch.ok ? "success" : "error",
+                action,
+                message: researchDispatch.message,
+              },
+            }));
+            return;
+          }
         }
 
         setApprovalActionStates((prev) => ({
@@ -337,36 +422,49 @@ export function ChiefPanel() {
     setIsProcessing(true);
     setActiveTab("command");
     setResponse(null);
+    setResponseApprovalId(null);
 
-    window.setTimeout(() => {
-      const resolved = resolveChiefCommand(command, chiefData, liveContext, approvals);
-      // Read-only operating-layer classification — chiefDecisionTier.ts never
-      // executes or writes anything, it only tags this response with a tier
-      // and (when escalating) the reasoning behind it.
+    void (async () => {
+      const toolIntent = matchChiefProjectToolIntent(command);
+      let resolved: ChiefResponse;
+      if (matchResearchAssignmentIntent(command)) {
+        resolved = activeToolScope
+          ? buildResearchAssignmentResponse({ scope: activeToolScope, command })
+          : buildResearchAssignmentGlobalRefusal();
+      } else if (toolIntent) {
+        resolved = await runChiefProjectToolRead(toolIntent, activeToolScope, command);
+      } else {
+        resolved = resolveChiefCommand(command, chiefData, liveContext, approvals);
+      }
+
       const evaluation = classifyChiefEvaluation(evaluationInputFromChiefResponse(resolved));
       const result: ChiefResponse = {
         ...resolved,
         decisionTier: evaluation.tier,
-        approvalPacket: evaluation.approvalPacket,
+        approvalPacket: evaluation.approvalPacket ?? resolved.approvalPacket,
       };
       setResponse(result);
       addHistoryEntry(buildHistoryEntry(command, result));
 
       const newApproval = buildApprovalFromResponse(command, result);
       if (newApproval) {
-        // Extension point: a "card created" notification hook would fire
-        // here too, alongside any future real approval sources (GitHub PRs,
-        // agent job queue) that push a new ApprovalCard into this list.
         addCommandApproval(newApproval);
+        setResponseApprovalId(newApproval.id);
+      } else {
+        setResponseApprovalId(null);
       }
 
       setIsProcessing(false);
-    }, 480);
+    })();
   };
 
   const handleExample = (example: string) => {
     setInput(example);
   };
+
+  const responseApproval = responseApprovalId
+    ? proposalsById.get(responseApprovalId) ?? null
+    : null;
 
   return (
     <aside className="chief-panel" aria-label="Chief command layer">
@@ -387,6 +485,13 @@ export function ChiefPanel() {
         </div>
         <ChiefContextSwitcher />
       </div>
+
+      <p
+        className={`chief-context-scope-banner chief-context-scope-banner--${activeContextDefinition.kind}`}
+        role="status"
+      >
+        {chiefContextScopeSummary(activeContextDefinition)}
+      </p>
 
       <ChiefQueueStrip
         approvals={approvals}
@@ -497,8 +602,11 @@ export function ChiefPanel() {
               <div className="chief-empty">
                 <p className="chief-empty-lead">Ask Chief</p>
                 <p className="chief-empty-desc">
-                  Summarize status, check gates, or route to a specialist. Responses are
-                  advisory—nothing executes without your approval.
+                  Summarize status, check gates, or use tools in the selected project (GitHub,
+                  Obsidian). Try “List open PRs on GitHub”, “Draft GitHub comment on PR #…”,
+                  “Research competitors for this project”, “List Obsidian notes…”, or “Draft
+                  Obsidian note…”. Drafts and research dispatch need approval. Merges, deploys,
+                  and other gated actions still need your approval.
                 </p>
                 <div className="chief-examples">
                   <span className="chief-examples-label">Examples</span>
@@ -537,7 +645,16 @@ export function ChiefPanel() {
                     <h3 className="chief-response-label">Chief</h3>
                     <span className="chief-speaker-badge">Response</span>
                   </div>
-                  <ChiefReplyBlock response={response} variant="panel" />
+                  <ChiefReplyBlock
+                    response={response}
+                    variant="panel"
+                    approvalStatus={responseApproval?.status}
+                    mutationAudit={
+                      responseApproval
+                        ? getProjectToolMutationAudit(responseApproval.id)
+                        : null
+                    }
+                  />
                 </div>
 
                 {response.approvalNeeded ? (

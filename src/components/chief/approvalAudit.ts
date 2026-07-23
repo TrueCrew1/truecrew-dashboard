@@ -5,7 +5,17 @@ import {
   resolvedApprovalMessage,
 } from "./chiefApproval";
 import { formatChiefTimestamp } from "./chiefMock";
+import {
+  formatProjectToolMutationMessage,
+  getProjectToolMutationAudit,
+} from "./chiefProjectToolMutation";
+import { formatResearchAssignmentAuditNote, resolveLiveResearchAssignmentFromProposal } from "./researchAssignmentView";
 import type { ApprovalAction, ApprovalProposal, ApprovalStatus } from "./types";
+import {
+  GITHUB_PR_COMMENT_DRAFT_KIND,
+  OBSIDIAN_PROJECT_NOTE_DRAFT_KIND,
+  RESEARCH_ASSIGNMENT_DISPATCH_KIND,
+} from "./types";
 
 export const APPROVAL_AUDIT_FALLBACK = {
   actor: "Unknown actor",
@@ -47,6 +57,33 @@ function formatAuditNote(
   proposal: ApprovalProposal,
 ): string | null {
   if (status === "pending") return null;
+
+  const mutation = getProjectToolMutationAudit(proposal.id);
+  if (mutation && status === "approved") {
+    return formatProjectToolMutationMessage(mutation);
+  }
+
+  if (status === "approved" && proposal.missionKind === RESEARCH_ASSIGNMENT_DISPATCH_KIND) {
+    const live = resolveLiveResearchAssignmentFromProposal(proposal);
+    if (live) {
+      return formatResearchAssignmentAuditNote(live);
+    }
+  }
+
+  if (
+    status === "approved" &&
+    (proposal.missionKind === OBSIDIAN_PROJECT_NOTE_DRAFT_KIND ||
+      proposal.missionKind === GITHUB_PR_COMMENT_DRAFT_KIND)
+  ) {
+    const target =
+      proposal.obsidianNoteDraft?.targetPath ??
+      (proposal.githubPrCommentDraft
+        ? `${proposal.githubPrCommentDraft.repo}#${proposal.githubPrCommentDraft.prNumber}`
+        : null);
+    return target
+      ? `Approved project tool draft for ${target} — see execution feedback for write/post outcome.`
+      : "Approved project tool draft — see execution feedback for write/post outcome.";
+  }
 
   const auditMessage = resolvedApprovalMessage(status, {
     decidedAt: proposal.decidedAt,

@@ -10,6 +10,9 @@ import {
   deriveResearchAgentWorkItems,
   deriveWorkflowGateAgentWorkItems,
 } from "./chiefLiveContext";
+import { deriveResearchAssignmentWorkItems } from "./researchAssignmentWorkItems";
+import { RESEARCH_ASSIGNMENT_EMPTY_STATE } from "./researchAssignmentView";
+import { useResearchAssignments } from "./ChiefResearchAssignmentBlock";
 import { getApprovalUrgencyBadge, OVERDUE_HOURS } from "./chiefApprovalUrgency";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { useChiefContext } from "@/context/ChiefContextProvider";
@@ -125,6 +128,16 @@ export function AgentWorkBoard() {
     () => deriveResearchAgentWorkItems(chiefData.incidents),
     [chiefData.incidents],
   );
+  const researchAssignments = useResearchAssignments();
+  const researchAssignmentItems = useMemo(
+    () =>
+      deriveResearchAssignmentWorkItems(
+        activeContext === "global"
+          ? researchAssignments
+          : researchAssignments.filter((assignment) => assignment.projectId === activeContext),
+      ),
+    [researchAssignments, activeContext],
+  );
   const handoffItems = useMemo(
     () => deriveProjectSummaryHandoffWorkItems(scopedHandoffMissions),
     [scopedHandoffMissions],
@@ -154,6 +167,7 @@ export function AgentWorkBoard() {
       ...buildItems,
       ...workflowGateItems,
       ...researchItems,
+      ...researchAssignmentItems,
       ...handoffItems,
       ...librarianItems,
       ...awaitingApprovalItems,
@@ -163,6 +177,7 @@ export function AgentWorkBoard() {
       buildItems,
       workflowGateItems,
       researchItems,
+      researchAssignmentItems,
       handoffItems,
       librarianItems,
       awaitingApprovalItems,
@@ -176,7 +191,7 @@ export function AgentWorkBoard() {
         <ApprovalSectionHeader title="Agent work board" />
         <ApprovalSurfaceEmpty
           lead="No agent work tracked"
-          description="Queued, active, blocked, awaiting-approval, and completed work will appear here once agents pick up tasks."
+          description={`${RESEARCH_ASSIGNMENT_EMPTY_STATE.description} Queued, active, blocked, awaiting-approval, and completed work will appear here once agents pick up tasks.`}
         />
       </ApprovalSectionShell>
     );

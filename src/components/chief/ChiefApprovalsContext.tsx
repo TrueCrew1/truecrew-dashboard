@@ -40,6 +40,7 @@ import {
 import type { ApprovalActivityRecord } from "../../../lib/approvals/types";
 import { buildApprovalActivityRecord } from "../../../lib/approvals/approvalActivity";
 import type { MockData } from "@/data/mockData";
+import { MS_PAINTING_PROJECT_ID } from "@/data/projects";
 import type {
   ApprovalAction,
   ApprovalDecision,
@@ -102,7 +103,7 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
   // workflow, not a copy of the global demo cards. See
   // docs/CHIEF_CONTEXT_SWITCHING.md.
   const contextStaticApprovalCards = useMemo(() => {
-    if (activeContext === "ms-painting") return MS_PAINTING_APPROVAL_CARDS;
+    if (activeContext === MS_PAINTING_PROJECT_ID) return MS_PAINTING_APPROVAL_CARDS;
     return [...MOCK_PR_APPROVAL_CARDS, ...REPO_CHANGE_APPROVAL_CARDS, ...AGENT_APPROVAL_CARDS];
   }, [activeContext]);
 

@@ -318,6 +318,131 @@ export async function fetchObsidianNotes(): Promise<ObsidianNotesResult> {
   };
 }
 
+export interface GithubPullRequestSummary {
+  repo: string;
+  number: number;
+  title: string;
+  url: string;
+  updatedAt: string;
+}
+
+export type GithubOpenPullRequestsResult =
+  | { ok: true; pullRequests: GithubPullRequestSummary[]; authMode?: string }
+  | { ok: false; error: string };
+
+/** Read-only open PR list for project-scoped GitHub repos (Chief tool read). */
+export async function fetchGithubOpenPullRequests(
+  repos: readonly string[],
+): Promise<GithubOpenPullRequestsResult> {
+  if (repos.length === 0) {
+    return { ok: false, error: "No GitHub repos in project scope." };
+  }
+
+  const params = new URLSearchParams({
+    view: "github-pull-requests",
+    repos: repos.join(","),
+  });
+
+  let response: Response;
+  try {
+    response = await apiFetch(`/api/chief/approvals?${params.toString()}`);
+  } catch {
+    return { ok: false, error: "GitHub read request failed" };
+  }
+
+  const body = (await response.json().catch(() => null)) as {
+    ok?: boolean;
+    error?: string;
+    pullRequests?: GithubPullRequestSummary[];
+    authMode?: string;
+  } | null;
+
+  if (!response.ok || body?.ok === false) {
+    return { ok: false, error: body?.error ?? `GitHub read failed (${response.status})` };
+  }
+
+  return {
+    ok: true,
+    pullRequests: body?.pullRequests ?? [],
+    authMode: body?.authMode,
+  };
+}
+
+/** Approval-gated Obsidian project note write (Chief draft → approve). */
+export async function writeObsidianProjectNote(input: {
+  relativePath: string;
+  content: string;
+  allowedPrefixes: readonly string[];
+}): Promise<{ ok: true; relativePath: string } | { ok: false; error: string }> {
+  let response: Response;
+  try {
+    response = await apiFetch("/api/chief/approvals?view=obsidian-project-note", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        relativePath: input.relativePath,
+        content: input.content,
+        allowedPrefixes: [...input.allowedPrefixes],
+      }),
+    });
+  } catch {
+    return { ok: false, error: "Obsidian write request failed" };
+  }
+
+  const body = (await response.json().catch(() => null)) as {
+    ok?: boolean;
+    error?: string;
+    relativePath?: string;
+  } | null;
+
+  if (!response.ok || body?.ok === false) {
+    return { ok: false, error: body?.error ?? `Obsidian write failed (${response.status})` };
+  }
+
+  return { ok: true, relativePath: body?.relativePath ?? input.relativePath };
+}
+
+/** Approval-gated GitHub PR comment post (Chief draft → approve). Comment only. */
+export async function postGithubPrComment(input: {
+  repo: string;
+  prNumber: number;
+  body: string;
+  allowedRepos: readonly string[];
+}): Promise<{ ok: true; commentUrl: string; commentId: number } | { ok: false; error: string }> {
+  let response: Response;
+  try {
+    response = await apiFetch("/api/chief/approvals?view=github-pr-comment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        repo: input.repo,
+        prNumber: input.prNumber,
+        body: input.body,
+        allowedRepos: [...input.allowedRepos],
+      }),
+    });
+  } catch {
+    return { ok: false, error: "GitHub comment request failed" };
+  }
+
+  const body = (await response.json().catch(() => null)) as {
+    ok?: boolean;
+    error?: string;
+    commentUrl?: string;
+    commentId?: number;
+  } | null;
+
+  if (!response.ok || body?.ok === false) {
+    return { ok: false, error: body?.error ?? `GitHub comment failed (${response.status})` };
+  }
+
+  return {
+    ok: true,
+    commentUrl: body?.commentUrl ?? "",
+    commentId: typeof body?.commentId === "number" ? body.commentId : 0,
+  };
+}
+
 export interface CreateArtifactResult {
   ok: boolean;
   workItem: WorkItem;

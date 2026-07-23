@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useRef, useState } from "react";
+import { FormEvent, useCallback, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Panel } from "@/components/ui";
 import { buildApprovalFromResponse, buildHistoryEntry } from "./chiefMock";
@@ -10,8 +10,9 @@ import {
 import { CHIEF_ROUTES } from "./chiefRoutes";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
 import { ChiefContextSwitcher } from "./ChiefContextSwitcher";
+import { chiefContextScopeSummary } from "./chiefContext";
 import { useChiefContext } from "@/context/ChiefContextProvider";
-import { isLiveApiEnabled } from "@/lib/api/client";
+import { ChiefApprovalConflictError, isLiveApiEnabled } from "@/lib/api/client";
 import { useMonitorHealth } from "@/hooks/useMonitorHealth";
 import { useBuildTasks, type BuildGateTask } from "./hooks/useBuildTasks";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
@@ -19,7 +20,38 @@ import { ChiefOperationalStatusPanel } from "./ChiefOperationalStatusPanel";
 import { ChiefDailyTurnoverPanel } from "./ChiefDailyTurnoverPanel";
 import { AgentStatusStrip } from "./AgentStatusStrip";
 import { ChiefReplyBlock } from "./ChiefReplyBlock";
-import type { AgentWorkItem, ApprovalProposal, ChiefBoardItem, ChiefResponse } from "./types";
+import { ChiefApprovalActions } from "./ChiefApprovalActions";
+import {
+  matchChiefProjectToolIntent,
+  runChiefProjectToolRead,
+} from "./chiefProjectToolReads";
+import { approvalActionSuccessMessage, type ApprovalActionState } from "./chiefApproval";
+import { runApprovedProjectToolDraftMutation } from "./runApprovedProjectToolDraftMutation";
+import {
+  getProjectToolMutationAudit,
+  mutationOutcomeToActionPhase,
+} from "./chiefProjectToolMutation";
+import { deriveApprovalExecutionFeedback } from "./approvalExecutionFeedback";
+import { runResearchAssignmentDispatch } from "./researchAssignmentDispatch";
+import { matchResearchAssignmentIntent } from "@/lib/chief/researchAssignment";
+import {
+  buildResearchAssignmentGlobalRefusal,
+  buildResearchAssignmentResponse,
+} from "./chiefResearchAssignment";
+import { useResearchAssignments } from "./ChiefResearchAssignmentBlock";
+import { formatResearchAssignmentBoardLine } from "./researchAssignmentView";
+import type {
+  AgentWorkItem,
+  ApprovalAction,
+  ApprovalProposal,
+  ChiefBoardItem,
+  ChiefResponse,
+} from "./types";
+import {
+  GITHUB_PR_COMMENT_DRAFT_KIND,
+  OBSIDIAN_PROJECT_NOTE_DRAFT_KIND,
+  RESEARCH_ASSIGNMENT_DISPATCH_KIND,
+} from "./types";
 
 const SNAPSHOT_LIMIT = 4;
 
@@ -95,18 +127,42 @@ function buildResearchLaneSummary(
 
 export function ChiefHomePanel() {
   const approvalSnapshotRef = useRef<HTMLDivElement>(null);
-  const { activeContextDefinition } = useChiefContext();
+  const { activeContextDefinition, activeToolScope } = useChiefContext();
 
   // Shared with the sidebar Chief panel (ChiefApprovalsContext) — same
   // merged, decision-applied queue, so counts here stay in sync with the
   // sidebar within the same session instead of only matching at load.
-  const { chiefData, liveContext, approvals, addCommandApproval, addHistoryEntry } =
+  const { chiefData, liveContext, approvals, addCommandApproval, addHistoryEntry, recordDecision } =
     useChiefApprovals();
+
+  // Re-render when research assignment store changes so board lines / feedback stay live.
+  useResearchAssignments();
 
   const pendingApprovals = useMemo(
     () => approvals.filter((proposal) => proposal.status === "pending"),
     [approvals],
   );
+
+  const proposalsById = useMemo(
+    () => new Map(approvals.map((proposal) => [proposal.id, proposal])),
+    [approvals],
+  );
+
+  /** Prefer draft cards (Obsidian / GitHub) so approve → write/post is reachable. */
+  const homeApprovalSnapshot = useMemo(() => {
+    const isDraft = (proposal: ApprovalProposal) =>
+      proposal.missionKind === OBSIDIAN_PROJECT_NOTE_DRAFT_KIND ||
+      proposal.missionKind === GITHUB_PR_COMMENT_DRAFT_KIND ||
+      proposal.missionKind === RESEARCH_ASSIGNMENT_DISPATCH_KIND;
+    const drafts = pendingApprovals.filter(isDraft);
+    const others = pendingApprovals.filter((proposal) => !isDraft(proposal));
+    return [...drafts, ...others].slice(0, SNAPSHOT_LIMIT);
+  }, [pendingApprovals]);
+
+  const [approvalActionStates, setApprovalActionStates] = useState<
+    Record<string, ApprovalActionState>
+  >({});
+  const [responseApprovalId, setResponseApprovalId] = useState<string | null>(null);
 
   const boardItems = useMemo(
     () => deriveChiefBoardItems(liveContext, approvals),
@@ -156,35 +212,160 @@ export function ChiefHomePanel() {
   const [response, setResponse] = useState<ChiefResponse | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const handleApprovalAction = useCallback(
+    async (id: string, action: ApprovalAction) => {
+      const proposal = proposalsById.get(id);
+      if (!proposal) {
+        setApprovalActionStates((prev) => ({
+          ...prev,
+          [id]: {
+            phase: "error",
+            action,
+            message: "Proposal not found — refresh and try again.",
+          },
+        }));
+        return;
+      }
+
+      if (proposal.status !== "pending") {
+        setApprovalActionStates((prev) => ({
+          ...prev,
+          [id]: {
+            phase: "error",
+            action,
+            message: "This proposal was already decided.",
+          },
+        }));
+        return;
+      }
+
+      setApprovalActionStates((prev) => ({
+        ...prev,
+        [id]: { phase: "loading", action },
+      }));
+
+      try {
+        await recordDecision(id, action);
+
+        if (action === "approved") {
+          const draftMutation = await runApprovedProjectToolDraftMutation({
+            proposal,
+            liveApi,
+          });
+          if (draftMutation.handled) {
+            setApprovalActionStates((prev) => ({
+              ...prev,
+              [id]: {
+                phase: mutationOutcomeToActionPhase(draftMutation),
+                action,
+                message: draftMutation.message,
+              },
+            }));
+            return;
+          }
+
+          const researchDispatch = runResearchAssignmentDispatch({ proposal });
+          if (researchDispatch.handled) {
+            setApprovalActionStates((prev) => ({
+              ...prev,
+              [id]: {
+                phase: researchDispatch.ok ? "success" : "error",
+                action,
+                message: researchDispatch.message,
+              },
+            }));
+            return;
+          }
+        }
+
+        setApprovalActionStates((prev) => ({
+          ...prev,
+          [id]: {
+            phase: "success",
+            action,
+            message: approvalActionSuccessMessage(action, proposal.routeLabel),
+          },
+        }));
+      } catch (error) {
+        if (error instanceof ChiefApprovalConflictError) {
+          setApprovalActionStates((prev) => ({
+            ...prev,
+            [id]: {
+              phase: "error",
+              action,
+              message: "This proposal was already decided.",
+            },
+          }));
+          return;
+        }
+        setApprovalActionStates((prev) => ({
+          ...prev,
+          [id]: {
+            phase: "error",
+            action,
+            message: "Decision could not be recorded — try again.",
+          },
+        }));
+      }
+    },
+    [proposalsById, recordDecision, liveApi],
+  );
+
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
     const trimmed = command.trim();
     if (!trimmed || isProcessing) return;
 
     setIsProcessing(true);
-    window.setTimeout(() => {
-      const result = resolveChiefCommand(trimmed, chiefData, liveContext, approvals);
+    void (async () => {
+      const toolIntent = matchChiefProjectToolIntent(trimmed);
+      let result: ChiefResponse;
+      if (matchResearchAssignmentIntent(trimmed)) {
+        result = activeToolScope
+          ? buildResearchAssignmentResponse({ scope: activeToolScope, command: trimmed })
+          : buildResearchAssignmentGlobalRefusal();
+      } else if (toolIntent) {
+        result = await runChiefProjectToolRead(toolIntent, activeToolScope, trimmed);
+      } else {
+        result = resolveChiefCommand(trimmed, chiefData, liveContext, approvals);
+      }
       setResponse(result);
       addHistoryEntry(buildHistoryEntry(trimmed, result));
 
       const newApproval = buildApprovalFromResponse(trimmed, result);
       if (newApproval) {
         addCommandApproval(newApproval);
+        setResponseApprovalId(newApproval.id);
+      } else {
+        setResponseApprovalId(null);
       }
 
       setIsProcessing(false);
-    }, 320);
+    })();
   };
+
+  const responseApproval = responseApprovalId
+    ? proposalsById.get(responseApprovalId) ?? null
+    : null;
 
   return (
     <Panel title="Chief" action={<ChiefContextSwitcher />}>
       <div className="chief-home-panel">
-        {activeContextDefinition.kind === "project" ? (
-          <p className="chief-home-context-banner" role="status">
-            Operating inside <strong>{activeContextDefinition.label}</strong> — parent/global
-            approvals and tasks are hidden. {activeContextDefinition.description}
-          </p>
-        ) : null}
+        <p
+          className={`chief-home-context-banner chief-home-context-banner--${activeContextDefinition.kind}`}
+          role="status"
+        >
+          {activeContextDefinition.kind === "project" ? (
+            <>
+              Operating inside <strong>{activeContextDefinition.label}</strong>.{" "}
+              {chiefContextScopeSummary(activeContextDefinition)}
+            </>
+          ) : (
+            <>
+              <strong>Global</strong>. {chiefContextScopeSummary(activeContextDefinition)}
+            </>
+          )}
+        </p>
 
         <ChiefSituationBrief
           context={liveContext}
@@ -271,7 +452,31 @@ export function ChiefHomePanel() {
 
           {response ? (
             <div className="chief-home-response">
-              <ChiefReplyBlock response={response} variant="home" />
+              <ChiefReplyBlock
+                response={response}
+                variant="home"
+                approvalStatus={responseApproval?.status}
+                mutationAudit={
+                  responseApproval ? getProjectToolMutationAudit(responseApproval.id) : null
+                }
+              />
+              {responseApproval ? (
+                <div className="chief-home-response-approval">
+                  <ChiefApprovalActions
+                    proposal={responseApproval}
+                    actionState={approvalActionStates[responseApproval.id]}
+                    executionFeedback={deriveApprovalExecutionFeedback({
+                      proposal: responseApproval,
+                      liveApiEnabled: liveApi,
+                      isLaunching:
+                        approvalActionStates[responseApproval.id]?.phase === "loading" &&
+                        approvalActionStates[responseApproval.id]?.action === "approved",
+                    })}
+                    onAction={handleApprovalAction}
+                    variant="card"
+                  />
+                </div>
+              ) : null}
             </div>
           ) : null}
         </form>
@@ -286,13 +491,42 @@ export function ChiefHomePanel() {
               <p className="agent-work-lane-empty">No pending proposals — queue is clear.</p>
             ) : (
               <ul className="chief-board-list">
-                {pendingApprovals.slice(0, SNAPSHOT_LIMIT).map((proposal) => (
+                {homeApprovalSnapshot.map((proposal) => (
                   <li key={proposal.id}>
                     <div className="chief-board-card chief-board-card--critical">
                       <div className="chief-board-card-header">
                         <span className="chief-board-card-title">{proposal.title}</span>
                       </div>
                       <p className="chief-board-card-detail">{proposal.summary}</p>
+                      {proposal.obsidianNoteDraft ? (
+                        <p className="chief-home-draft-path">
+                          Target: {proposal.obsidianNoteDraft.targetPath}
+                        </p>
+                      ) : null}
+                      {proposal.githubPrCommentDraft ? (
+                        <p className="chief-home-draft-path">
+                          Target: {proposal.githubPrCommentDraft.repo}#
+                          {proposal.githubPrCommentDraft.prNumber}
+                        </p>
+                      ) : null}
+                      {proposal.researchAssignment ? (
+                        <p className="chief-home-draft-path">
+                          {formatResearchAssignmentBoardLine(proposal.researchAssignment)}
+                        </p>
+                      ) : null}
+                      <ChiefApprovalActions
+                        proposal={proposal}
+                        actionState={approvalActionStates[proposal.id]}
+                        executionFeedback={deriveApprovalExecutionFeedback({
+                          proposal,
+                          liveApiEnabled: liveApi,
+                          isLaunching:
+                            approvalActionStates[proposal.id]?.phase === "loading" &&
+                            approvalActionStates[proposal.id]?.action === "approved",
+                        })}
+                        onAction={handleApprovalAction}
+                        variant="board"
+                      />
                     </div>
                   </li>
                 ))}
@@ -301,7 +535,7 @@ export function ChiefHomePanel() {
             {pendingApprovals.length > SNAPSHOT_LIMIT ? (
               <p className="chief-board-lane-note">
                 Showing {SNAPSHOT_LIMIT} of {pendingApprovals.length} — review the rest in the
-                Chief panel's Approvals tab.
+                Chief panel&apos;s Approvals tab.
               </p>
             ) : null}
           </div>

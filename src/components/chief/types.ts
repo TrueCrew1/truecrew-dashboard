@@ -1,5 +1,6 @@
 import type { Persona, TaskPriority } from "@/types";
 import type { ChiefContextId } from "./chiefContext";
+import type { ResearchAssignment } from "@/lib/chief/researchAssignment";
 
 export type ChiefSpecialist =
   | "Workflow Gate Agent"
@@ -100,6 +101,23 @@ export interface ApprovalProposal {
    * "global" context.
    */
   contextId?: ChiefContextId;
+  /**
+   * Proposed Obsidian project note (draft only until approved).
+   * Write runs only when missionKind is OBSIDIAN_PROJECT_NOTE_DRAFT_KIND
+   * and the operator approves.
+   */
+  obsidianNoteDraft?: ChiefObsidianNoteDraft;
+  /**
+   * Proposed GitHub PR comment (draft only until approved).
+   * Post runs only when missionKind is GITHUB_PR_COMMENT_DRAFT_KIND
+   * and the operator approves.
+   */
+  githubPrCommentDraft?: ChiefGithubPrCommentDraft;
+  /**
+   * Research assignment ready to send (dispatch only after approval).
+   * Send runs when missionKind is RESEARCH_ASSIGNMENT_DISPATCH_KIND.
+   */
+  researchAssignment?: ResearchAssignment;
 }
 
 /**
@@ -140,6 +158,77 @@ export interface ChiefResponse {
   decisionTier?: ChiefDecisionTier;
   /** Only present when decisionTier is "approve" — the structured escalation behind the card, not the card itself. */
   approvalPacket?: ChiefApprovalPacket;
+  /**
+   * Structured project-scoped tool read (GitHub PRs / Obsidian notes).
+   * Presentation-only — read-only; never implies mutation.
+   */
+  toolRead?: ChiefToolReadResult;
+  /** Proposed Obsidian note draft — not written until approval. */
+  obsidianNoteDraft?: ChiefObsidianNoteDraft;
+  /** Proposed GitHub PR comment draft — not posted until approval. */
+  githubPrCommentDraft?: ChiefGithubPrCommentDraft;
+  /** Research assignment — not sent until approval. */
+  researchAssignment?: ResearchAssignment;
+}
+
+/** Draft Obsidian note prepared by Chief for the selected project. */
+export interface ChiefObsidianNoteDraft {
+  projectId: string;
+  projectName: string;
+  scopePrefix: string;
+  targetPath: string;
+  title: string;
+  body: string;
+  preview: string;
+}
+
+/** Draft GitHub PR comment prepared by Chief for the selected project. */
+export interface ChiefGithubPrCommentDraft {
+  projectId: string;
+  projectName: string;
+  repo: string;
+  prNumber: number;
+  prTitle: string;
+  prUrl: string;
+  body: string;
+  preview: string;
+}
+
+/** Mission kind for approval-gated Obsidian project note writes. */
+export const OBSIDIAN_PROJECT_NOTE_DRAFT_KIND = "obsidian:project-note-draft";
+
+/** Mission kind for approval-gated GitHub PR comment posts. */
+export const GITHUB_PR_COMMENT_DRAFT_KIND = "github:pr-comment-draft";
+
+export {
+  RESEARCH_ASSIGNMENT_DISPATCH_KIND,
+} from "@/lib/chief/researchAssignment";
+
+/** Read-only Chief tool result for GitHub / Obsidian scoped to the selected project. */
+export type ChiefToolReadSource = "github" | "obsidian";
+
+export type ChiefToolReadState = "ok" | "empty" | "error" | "unavailable" | "no_scope";
+
+export interface ChiefToolReadItem {
+  id: string;
+  title: string;
+  detail: string;
+  href?: string;
+}
+
+export interface ChiefToolReadResult {
+  source: ChiefToolReadSource;
+  /** Selected project name, or "Global". */
+  projectLabel: string;
+  projectId: string | null;
+  /** Short result-type label, e.g. "Open pull requests". */
+  resultType: string;
+  state: ChiefToolReadState;
+  count: number;
+  /** Repo slugs or vault path prefixes in scope. */
+  scopePaths: string[];
+  items: ChiefToolReadItem[];
+  emptyMessage?: string;
 }
 
 /**

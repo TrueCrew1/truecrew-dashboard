@@ -10,8 +10,8 @@ function refsOfType(refs: LinkedEntityRef[], type: LinkedEntityRef["type"]): str
  * The real data-flow switch: filters the same MockData shape Chief already
  * consumes down to one project's tasks/workflow/customer before any
  * approval-candidate derivation, board-item derivation, or command routing
- * runs. "global" is a no-op passthrough — every other Chief context (today
- * just "ms-painting") only sees tasks/workflows tagged with its projectId,
+ * runs. "global" is a no-op passthrough — any project context id (from
+ * `src/data/projects.ts`) only sees tasks/workflows tagged with its projectId,
  * the customers those tasks link to, and the incidents/deploys/focus
  * items/alerts that reference that scoped data. This is what makes context
  * switching a source change instead of a display filter: derivation
