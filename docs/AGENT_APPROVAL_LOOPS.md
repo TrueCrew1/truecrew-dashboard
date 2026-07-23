@@ -1,7 +1,7 @@
-# Agent approval loops (Build + Research)
+# Agent approval loops (Build + Research + Planner)
 
-Durable reference for how Build and Research agent proposals enter Chief's approval
-queue today. Describes the system as it exists — not a roadmap.
+Durable reference for how Build, Research, and Planner agent proposals enter Chief's
+approval queue today. Describes the system as it exists — not a roadmap.
 
 ## System law
 
@@ -229,6 +229,37 @@ law.
      intent.
    - Research already does this; mirror the pattern for any new agent test slice.
 
+## Planner Agent loop — live overdue re-sequencing
+
+Two of three Planner gates are live. One remains unwired.
+
+| Item | Current behavior |
+|------|------------------|
+| **Live gate** | `APPROVAL_GATES.planner[2]` — “Roadmap reprioritization or re-sequencing” |
+| **Trigger** | **Operations** → panel **Planner re-sequencing signal** → **Check overdue work** |
+| **Source of truth** | `ChiefLiveContext.overdueTasks` only (open tasks past `dueAt`) |
+| **Factory** | `src/components/chief/plannerReprioritizationProposal.ts` |
+| **Enqueue** | `proposePlannerReprioritization(liveContext, approvals)` → `addCommandApproval(card)` |
+| **Card source** | `planner_agent` |
+| **Duplicate guard** | Stable id `PLANNER_REPRIORITIZATION_PROPOSAL_ID`; block while **pending** |
+
+## Planner Agent loop — live scope-change signal
+
+| Item | Current behavior |
+|------|------------------|
+| **Live gate** | `APPROVAL_GATES.planner[0]` — “Scope change affecting more than one phase” |
+| **Trigger** | **Operations** → panel **Planner scope-change signal** → **Check scope changes** |
+| **Source of truth** | `ChiefLiveContext.blockingTasks` only (open tasks with an open required gate or an external blocker); a task's `workflowType` stands in for its phase, the same convention the re-sequencing gate uses for `affectedPhases` |
+| **Signal condition** | Fires only when blocking tasks span **two or more** distinct workflow types at once |
+| **Factory** | `src/components/chief/plannerScopeChangeProposal.ts` |
+| **Enqueue** | `proposePlannerScopeChange(liveContext, approvals)` → `addCommandApproval(card)` |
+| **Card source** | `planner_agent` |
+| **Duplicate guard** | Stable id `PLANNER_SCOPE_CHANGE_PROPOSAL_ID`; block while **pending** |
+
+**Unwired Planner gate:** “New roadmap phase” — no live signal wired yet.
+
+**Reserved:** Research, Content, and Reliability producers are unchanged by this slice.
+
 ## Code map (reference only)
 
 | Area | Location |
@@ -238,9 +269,12 @@ law.
 | Build runtime test factory | `src/components/chief/buildAgentTestProposal.ts` |
 | Research runtime test factory | `src/components/chief/researchAgentTestProposal.ts` |
 | Research real-incident factory | `src/components/chief/researchIncidentProposal.ts` |
+| Planner live overdue re-sequencing | `src/components/chief/plannerReprioritizationProposal.ts` |
+| Planner live scope-change signal | `src/components/chief/plannerScopeChangeProposal.ts` |
 | Packet envelope + logging | `src/components/chief/agentPacket.ts`, `chiefLog.ts`, `chiefGovernanceEvents.ts` |
 | Build trigger UI | `src/pages/BuildsPage.tsx` |
 | Research trigger UI | `src/pages/MonitorPage.tsx` |
+| Planner re-sequencing / scope-change trigger UI | `src/pages/OperationsPage.tsx` |
 | Approvals tab UI | `src/components/chief/ApprovalBoard.tsx`, `ChiefPanel.tsx` |
 | Agents awaiting lane | `src/components/chief/AgentWorkBoard.tsx`, `deriveAgentAwaitingApprovalWorkItems()` |
 | Per-card urgency | `src/components/chief/chiefApprovalUrgency.ts` |
