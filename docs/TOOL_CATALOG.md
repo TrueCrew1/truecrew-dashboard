@@ -6,6 +6,13 @@ Reasoning behind each classification lives in `docs/AGENT_RUNBOOK.md` §§ Tool
 Catalog / External Services Tool Catalog — this file is the machine-readable record
 those sections classify *into*.
 
+**Chief tool policy (2026-07-23):** Chief is a **local-first, tool-enabled** surface —
+not advisory-only. Chief should use the smallest useful catalogued action, prefer
+read before write, stay inside the selected project, and use tool results instead of
+guessing. **GitHub** and **Obsidian** are first-class wired project surfaces; the
+project dropdown is the context-routing source. Mutating/destructive access still
+requires approval per row and per `docs/agents/CHIEF_OPERATING_SYSTEM.md`.
+
 **Schema (fixed, one block per tool):**
 - `id` — stable slug, never renamed once a UI or script references it
 - `name` — human-readable name
@@ -207,7 +214,7 @@ enumerate tools in code.
 ### github
 - name: GitHub (repo, PRs, issues)
 - category: dev
-- owner_agent: Build
+- owner_agent: Chief, Repo (runbook “Build”)
 - access_type: write (merge/close); read (browsing)
 - interface: cli (`gh`) / web
 - launch_target: https://github.com/TrueCrew1/truecrew-dashboard
@@ -215,8 +222,9 @@ enumerate tools in code.
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: fully-wired
 - approval_required: yes (merge/close); no (browsing)
-- notes: EXECUTE-WITH-APPROVAL for merge/close, READ-ONLY for browsing — already
-  proven in practice. See § Tool Catalog.
+- notes: first-class Chief surface. Scope via project dropdown (selected project’s
+  repos only; Global = non-project / explicit cross-project). READ for browsing;
+  EXECUTE-WITH-APPROVAL for merge/close. See `docs/agents/CHIEF_OPERATING_SYSTEM.md`.
 
 ### vercel
 - name: Vercel
@@ -361,22 +369,26 @@ enumerate tools in code.
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: fully-wired
 - approval_required: no
-- notes: logging is Chief's own responsibility, no gate — proven every session.
+- notes: first-class Chief surface. Routine logging is Chief’s responsibility (no
+  gate). Keep notes tied to the selected project when one is active; Global only
+  for non-project / cross-project logs. See `docs/agents/CHIEF_OPERATING_SYSTEM.md`.
 
 ### obsidian-roadmap
 - name: Obsidian — roadmap/decision docs
 - category: ops
-- owner_agent: Planner, Chief
+- owner_agent: Chief (Planner historical — not a promptable lane)
 - access_type: write (propose-only for a new decision; direct edit only to sync an
-  already-established fact)
+  already-established fact); read
 - interface: filesystem (vault)
 - launch_target: local vault
 - model_type: n/a
 - health_state: HEALTHY (default — Reliability reserved, not yet monitoring live)
 - status: partially-wired
-- approval_required: yes (a genuine change — `PlannerApprovalRequest`); no (routine
-  sync)
-- notes: see the Weekly Planner Pass precedent in the Build Log.
+- approval_required: yes (a genuine change — approval card); no (routine
+  sync / read)
+- notes: first-class Chief surface. Route vault scope via project dropdown. Genuine
+  decision or structural vault changes stay gated; routine sync of established
+  facts does not. See `docs/agents/CHIEF_OPERATING_SYSTEM.md`.
 
 ### repo-docs
 - name: Repo docs (`docs/*.md`, `README.md`)

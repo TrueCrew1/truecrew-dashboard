@@ -6,6 +6,22 @@ Short operational reference for what each agent lane can do in V1. For truth sta
 > Repo · Knowledge — see [AGENT_SYSTEM.md](./AGENT_SYSTEM.md). “Build” in the
 > prose below means the **Repo** lane. UI strip names may still say Build.
 
+## Chief (local-first, tool-enabled)
+
+Chief is **not** advisory-only. It is the operator voice **and** a local AI surface
+with governed tool access. Policy: [agents/CHIEF_OPERATING_SYSTEM.md](./agents/CHIEF_OPERATING_SYSTEM.md).
+
+- **Tools:** use catalogued helpers (GitHub, Obsidian, repo filesystem, dashboard
+  APIs) — smallest useful action, read before write, results over guesses.
+- **Surfaces:** **GitHub** and **Obsidian** are first-class wired project surfaces;
+  the project dropdown is the context-routing source.
+- **Project routing:** dropdown lists **all** projects. **Global** = non-project
+  conversations and cross-project coordination only. **M&S** is a normal project
+  option, not a global bucket. Selected project → keep tools/context inside it.
+- **Approvals:** mutating/destructive actions (merge, deploy, secrets, external
+  messages, structural vault changes) still require a Chief approval card / human
+  gate. Chat assent is never a decision.
+
 ## Approved Project Summary → Build Handoff
 
 - **Trigger:** Build proposal → Chief approval

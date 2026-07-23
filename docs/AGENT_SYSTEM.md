@@ -17,7 +17,7 @@ True Crew’s agent system has **five promptable lanes**:
 
 | Lane | Job | Prompt / contract |
 |------|-----|-------------------|
-| **Chief** | Single operator voice; approvals router; status + next action | [CHIEF_SINGLE_VOICE.md](./CHIEF_SINGLE_VOICE.md) |
+| **Chief** | Single operator voice; local-first tool-enabled surface; approvals router; status + next action | [CHIEF_SINGLE_VOICE.md](./CHIEF_SINGLE_VOICE.md), [agents/CHIEF_OPERATING_SYSTEM.md](./agents/CHIEF_OPERATING_SYSTEM.md) |
 | **Research** | Findings from real signals; grounded notes; no invented sources | [prompts/RESEARCH.md](./prompts/RESEARCH.md) |
 | **Librarian** | Task-linked Obsidian / artifact filing (`lib/librarian`, vault notes) | [prompts/LIBRARIAN.md](./prompts/LIBRARIAN.md) |
 | **Repo** | Code changes in this repository via PR (formerly “Build” in the runbook) | [prompts/REPO.md](./prompts/REPO.md) |
@@ -39,15 +39,24 @@ when needed, approval cards.
 3. **Do not fabricate values;** ask or verify (`CLAUDE.md`).
 4. **Ship gate for Repo work:** `npm run verify` + [SHIP_CHECKLIST.md](./SHIP_CHECKLIST.md).
 5. **Separation:** M&S Painting product code stays in `TrueCrew1/ms-painting`
-   (Chief context only in this repo — [CHIEF_CONTEXT_SWITCHING.md](./CHIEF_CONTEXT_SWITCHING.md)).
+   (Chief **project** context in this repo — not Global; see
+   [CHIEF_CONTEXT_SWITCHING.md](./CHIEF_CONTEXT_SWITCHING.md) and
+   [agents/CHIEF_OPERATING_SYSTEM.md](./agents/CHIEF_OPERATING_SYSTEM.md)).
+6. **Chief tools:** GitHub and Obsidian are wired surfaces; project dropdown
+   routes context; Chief is not advisory-only
+   ([agents/CHIEF_OPERATING_SYSTEM.md](./agents/CHIEF_OPERATING_SYSTEM.md)).
 
 ---
 
 ## Lane responsibilities (short)
 
 ### Chief
-Operator-facing voice. Routes to specialists. Never claims a capability that is not
-in the repo. Never treats chat assent as an approval card decision.
+Operator-facing voice and **local-first, tool-enabled** surface (GitHub, Obsidian,
+repo, dashboard APIs — governed). Routes to specialists. Uses tools for evidence;
+mutating/destructive work still needs approval. Honors project dropdown: all
+projects listed; Global = non-project / cross-project only; M&S is a project.
+Never claims a capability that is not in the repo. Never treats chat assent as an
+approval card decision. See [agents/CHIEF_OPERATING_SYSTEM.md](./agents/CHIEF_OPERATING_SYSTEM.md).
 
 ### Research
 Investigate using real inputs (repo, Monitor signals, approved sources). Separate

@@ -4,6 +4,12 @@ Chief now has a real active-context model instead of only interpreting prompt
 text. This doc explains where that state lives, how it changes what Chief
 shows, and what's still stubbed.
 
+**Routing policy (authoritative):** [agents/CHIEF_OPERATING_SYSTEM.md](./agents/CHIEF_OPERATING_SYSTEM.md)
+— project dropdown lists all projects; **Global** is only for non-project
+conversations and cross-project coordination; **M&S** is a normal project
+option, not a special global bucket; GitHub and Obsidian follow the selected
+project. This file is the runtime wiring note for that policy.
+
 ## The problem this fixes
 
 Chief's approval surface always showed the same parent/global cards — Billing
@@ -33,28 +39,33 @@ better prompt matching.
 
 ## The context model
 
-- **`src/components/chief/chiefContext.ts`** — defines `ChiefContextId`
-  (`"global" | "ms-painting"`) and a small registry (`CHIEF_CONTEXTS`) with
-  each context's label/description. Extension point for a third project.
-- **`src/context/ChiefContextProvider.tsx`** — a React context holding
-  `activeContext` as real state, persisted to `localStorage`
-  (`truecrew.chief.activeContext`) so a switch survives a reload. Wraps
-  `ChiefApprovalsProvider` in `AppShell.tsx`.
+- **`src/data/projects.ts`** — app project inventory (`KNOWN_APP_PROJECTS` +
+  `deriveAppProjects` from Task/Workflow `projectId`). Intermediate SoT for
+  the Project dropdown; later hydratable from Supabase without rewriting Chief.
+- **`src/components/chief/chiefContext.ts`** — builds Global-first
+  `ChiefContextDefinition` lists from that inventory (`buildChiefContextList` /
+  `resolveChiefProjects`). Global is not a project; every inventory row is
+  `kind: "project"`. Exposes `chiefProjectToolScope` for GitHub/Obsidian.
+- **`src/context/ChiefContextProvider.tsx`** — reads app data via `useData()`,
+  derives projects, holds `activeContext` (persisted), and exposes
+  `contextList` / `activeToolScope` to the switcher and panels.
 - **`src/components/chief/chiefContextScope.ts`** —
-  `scopeDataToChiefContext(data, contextId)`. `"global"` is a passthrough.
-  Any project context filters `tasks`/`workflows` down to records tagged
-  with that `projectId`, then filters `customers`/`incidents`/`deploys`/
-  `focusItems`/`alerts` down to only what those tasks/workflows reference.
-  Knowledge sources (`runbooks`, `prompts`, `notes`) stay unscoped — they're
-  a shared reference library, not project-owned work.
+  `scopeDataToChiefContext(data, contextId)`. `"global"` is a passthrough for
+  non-project / cross-project coordination surfaces. Any **project** context
+  filters `tasks`/`workflows` down to records tagged with that `projectId`,
+  then filters `customers`/`incidents`/`deploys`/`focusItems`/`alerts` down to
+  only what those tasks/workflows reference. Knowledge sources (`runbooks`,
+  `prompts`, `notes`) stay unscoped in the current runtime — policy still
+  says keep *tool* usage (GitHub/Obsidian) inside the selected project unless
+  the operator changes scope.
 
 `Task` and `Workflow` (`src/types/index.ts`) gained an optional `projectId?:
-string`. Absent = global/parent dashboard (existing records are untouched).
+string`. Absent = treated as Global/parent (existing records are untouched).
 
 ## How M&S Painting is wired in
 
-M&S Painting isn't a card — it's a project with its own real seed data in
-`src/data/mockData.ts`, all tagged `projectId: "ms-painting"`:
+M&S Painting is a **project** in the dropdown (not Global). Seed data in
+`src/data/mockData.ts` is tagged `projectId: "ms-painting"`:
 
 - Customer `cust-ms-painting` ("M&S Painting").
 - Two tasks (`task-ms-001` — jobsite intake checklist build; `task-ms-002` —
@@ -75,8 +86,8 @@ generic one.
 Everything else M&S Painting shows in the approvals/board/agents surfaces —
 gate overrides, onboarding-stall proposals, missing-context proposals — comes
 from `deriveApprovalCandidates` running against the *scoped* data, exactly
-the same derivation logic global uses. No separate M&S-specific rule set was
-invented for that part; scoping the input was enough.
+the same derivation logic Global uses for platform-level cards. No separate
+M&S-specific rule set was invented for that part; scoping the input was enough.
 
 ## How the switch actually changes Chief's output
 
@@ -86,12 +97,13 @@ invented for that part; scoping the input was enough.
 2. Computes `chiefData = scopeDataToChiefContext(data, activeContext)` and
    feeds that (not the raw global `data`) into `buildChiefLiveContext` and
    `deriveApprovalCandidates`.
-3. Picks the static approval-card source by context: global's demo/gate
+3. Picks the static approval-card source by context: Global’s demo/gate
    cards for `"global"`, `MS_PAINTING_APPROVAL_CARDS` for `"ms-painting"`.
    These are two different arrays now, not one array filtered after the
    fact.
 4. Filters `monitorApprovals` (platform health) to `"global"` only —
-   infrastructure health isn't a specific project's work.
+   infrastructure health is cross-project / platform coordination, not a
+   single product’s backlog.
 5. Stamps every command-created proposal (`addCommandApproval`, fired when
    an operator's typed command produces an approval) with the context it was
    created in, and filters those by the current context on read.
@@ -109,15 +121,15 @@ their output too.
 homepage Chief panel, and Chief's Agents/Board tabs). The main dashboard
 pages (Operations, Builds, Monitor, Customers, etc.) are unaffected — Chief
 operates inside a scoped job context without changing what the rest of the
-app shows, matching "M&S Painting is its own job context, not another
-dashboard card."
+app shows.
 
 ## Where you see it
 
 - **Chief panel header** (`ChiefPanel.tsx`) and the **homepage Chief panel**
   (`ChiefHomePanel.tsx`) both render `ChiefContextSwitcher` — a labeled
-  `<select>` showing "Global" or "M&S Painting," always visible, never just
-  a tooltip. Switching it calls `setActiveContext` immediately.
+  `<select>` that must list **Global** plus **every** registered project
+  (today: M&S Painting), always visible, never just a tooltip. Switching it
+  calls `setActiveContext` immediately.
 - When a project context is active, `ChiefHomePanel` also shows a banner:
   *"Operating inside M&S Painting — parent/global approvals and tasks are
   hidden."*
@@ -128,24 +140,23 @@ dashboard card."
 - The context switch itself (persisted state, not a prompt).
 - Data scoping (`scopeDataToChiefContext`) — a true filter on the input to
   every derivation function, not a post-hoc UI filter.
-- M&S Painting's task/workflow/customer records.
+- M&S Painting's task/workflow/customer records (as a project option).
 - M&S Painting's Research mission approval — executes the same live mission
   runner any workflow uses.
 - Derived gate/onboarding/context proposals for M&S Painting tasks (same
-  logic as global, scoped input).
+  logic as Global platform cards, scoped input).
 
 **Stubbed / extension points:**
-- Only one project (`ms-painting`) exists today. Adding a second means: add
-  its `ChiefContextId` + registry entry in `chiefContext.ts`, tag its
-  tasks/workflow with a `projectId` in `mockData.ts` (or a live-data
-  equivalent), and give it its own static approval source file if it needs
-  one.
-- Live Supabase-backed tasks/workflows don't have a `projectId` column yet —
+- Project inventory lives in `src/data/projects.ts`. Adding a project means:
+  add it to `KNOWN_APP_PROJECTS` and/or stamp `projectId` on tasks/workflows
+  (and optionally seed approvals). The dropdown reads
+  `resolveChiefProjects(data)` — do **not** fold new projects into Global.
+- Live Supabase-backed tasks/workflows don't have a `project_id` column yet —
   only the TS type supports it. A live record without `projectId` is treated
-  as global. Wiring live data into a project context needs a matching
-  `project_id` column/migration.
+  as Global. Hydrate the same `AppProject` shape from Supabase when ready.
 - Knowledge (runbooks/prompts/notes) is intentionally shared across
-  contexts, not project-scoped — there was no existing per-project knowledge
-  concept to hook into.
+  contexts in the current UI filter — there was no existing per-project
+  knowledge concept to hook into. Tool policy still requires GitHub/Obsidian
+  actions to respect the selected project.
 - M&S Painting has exactly one seeded build task and one onboarding task —
   enough to prove the source switch works end-to-end, not a full backlog.

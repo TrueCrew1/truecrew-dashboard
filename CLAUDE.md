@@ -53,17 +53,24 @@ actually correct over a broader "while I'm in here" change.
 
 | Lane | Contract | Touches |
 |------|----------|---------|
-| **Chief** | [docs/CHIEF_SINGLE_VOICE.md](docs/CHIEF_SINGLE_VOICE.md) | Operator voice; approvals routing — not direct merge/deploy |
+| **Chief** | [docs/agents/CHIEF_OPERATING_SYSTEM.md](docs/agents/CHIEF_OPERATING_SYSTEM.md) + [docs/CHIEF_SINGLE_VOICE.md](docs/CHIEF_SINGLE_VOICE.md) | Local-first tool-enabled operator voice; governed tools (GitHub, Obsidian, repo); approvals for mutating/destructive actions — not silent merge/deploy |
 | **Research** | [docs/prompts/RESEARCH.md](docs/prompts/RESEARCH.md) | Grounded findings — not production secrets |
 | **Librarian** | [docs/prompts/LIBRARIAN.md](docs/prompts/LIBRARIAN.md) | Task-linked Obsidian / artifact filing |
 | **Repo** | [docs/prompts/REPO.md](docs/prompts/REPO.md) | Code via PR only (runbook formerly called this “Build”) |
 | **Knowledge** | [docs/prompts/KNOWLEDGE.md](docs/prompts/KNOWLEDGE.md) | Git-tracked `knowledge/` second brain |
 
 System index: **[docs/AGENT_SYSTEM.md](docs/AGENT_SYSTEM.md)**.  
+Chief operating policy (tools + project routing): **[docs/agents/CHIEF_OPERATING_SYSTEM.md](docs/agents/CHIEF_OPERATING_SYSTEM.md)**.  
 Planner / Content / Reliability / Roadmap / Workflow Gate / Marketer are **not** promptable
 lanes (see AGENT_SYSTEM “Not in this system yet”).
 
-Tool access matrix (historical + gates): `docs/AGENT_TOOL_LANES.md`, `docs/TOOL_CATALOG.md`.
+**Project routing:** the Chief project dropdown lists **all** projects. **Global** is only
+for non-project conversations and cross-project coordination. **M&S** is a normal project
+option, not a global bucket. When a project is selected, keep tools and context inside it
+unless the operator changes scope. GitHub and Obsidian use that dropdown as the
+context-routing source.
+
+Tool access matrix (catalog + gates): `docs/TOOL_CATALOG.md`, `docs/AGENT_TOOL_LANES.md`.
 
 ## Endangered areas (do not casually rewrite)
 - `supabase/migrations/**` and live schema
@@ -84,6 +91,7 @@ Ship gate checklist: **[docs/SHIP_CHECKLIST.md](docs/SHIP_CHECKLIST.md)**.
 
 ## Workflow
 This repo already has an approval-first process — don't restate or reinvent it, follow it:
+- `docs/agents/CHIEF_OPERATING_SYSTEM.md` — Chief tool use, GitHub/Obsidian surfaces, project/Global routing
 - `docs/AGENT_SYSTEM.md` + `docs/CHIEF_SINGLE_VOICE.md` — lane taxonomy and Chief reply format
 - `docs/AGENT_WORKFLOW.md` — agent implements, opens a PR, approver reviews/approves. Agents never
   ask the approver to run commands; anything that must run outside the agent environment goes in

@@ -22,6 +22,9 @@ import {
   insertChiefApprovalDecision,
   isChiefApprovalStatus,
 } from "../../../lib/supabase/queries.js";
+import { listOpenPullRequestsForRepos } from "../../../lib/github/listOpenPullRequests.js";
+import { postScopedPullRequestComment } from "../../../lib/github/postPullRequestComment.js";
+import { writeScopedProjectNote, ObsidianScopeWriteError } from "../../../lib/obsidian/writeScopedProjectNote.js";
 
 const PERSONAS = ["founder", "operator", "observer"] as const;
 
@@ -84,6 +87,137 @@ function isDevEnvironment(): boolean {
   const nodeEnv = process.env.NODE_ENV?.trim();
   const vercelEnv = process.env.VERCEL_ENV?.trim();
   return nodeEnv !== "production" && vercelEnv !== "production";
+}
+
+async function handleObsidianProjectNoteWrite(req: VercelRequest, res: VercelResponse) {
+  if (!isVaultConfigured()) {
+    return res.status(503).json({
+      ok: false,
+      configured: false,
+      error: "OBSIDIAN_VAULT_PATH is not configured",
+    });
+  }
+
+  const body = (req.body ?? {}) as {
+    relativePath?: unknown;
+    content?: unknown;
+    allowedPrefixes?: unknown;
+  };
+
+  const relativePath =
+    typeof body.relativePath === "string" ? body.relativePath.trim() : "";
+  const content = typeof body.content === "string" ? body.content : "";
+  const allowedPrefixes = Array.isArray(body.allowedPrefixes)
+    ? body.allowedPrefixes
+        .filter((entry): entry is string => typeof entry === "string")
+        .map((entry) => entry.trim())
+        .filter(Boolean)
+    : [];
+
+  if (!relativePath || !content || allowedPrefixes.length === 0) {
+    return res.status(400).json({
+      ok: false,
+      error: "relativePath, content, and allowedPrefixes are required",
+    });
+  }
+
+  try {
+    const absolutePath = await writeScopedProjectNote({
+      relativePath,
+      content,
+      allowedPrefixes,
+    });
+    return res.status(200).json({ ok: true, absolutePath, relativePath });
+  } catch (error) {
+    if (error instanceof ObsidianScopeWriteError) {
+      return res.status(400).json({ ok: false, error: error.message });
+    }
+    console.error("Failed to write scoped Obsidian project note", error);
+    return res.status(500).json({
+      ok: false,
+      error: error instanceof Error ? error.message : "Failed to write note",
+    });
+  }
+}
+
+async function handleGithubPullRequests(req: VercelRequest, res: VercelResponse) {
+  const raw = req.query?.repos;
+  const repos =
+    typeof raw === "string"
+      ? raw
+          .split(",")
+          .map((entry) => entry.trim())
+          .filter(Boolean)
+      : [];
+
+  if (repos.length === 0) {
+    return res.status(400).json({ ok: false, error: "repos query required (comma-separated owner/name)" });
+  }
+
+  const result = await listOpenPullRequestsForRepos(repos);
+  if (!result.ok) {
+    return res.status(502).json({ ok: false, error: result.error });
+  }
+
+  return res.status(200).json({
+    ok: true,
+    pullRequests: result.pullRequests,
+    authMode: result.authMode,
+  });
+}
+
+/** Comment-only GitHub write — no merge/close. Requires allowedRepos gate. */
+async function handleGithubPrComment(req: VercelRequest, res: VercelResponse) {
+  const body = (req.body ?? {}) as {
+    repo?: unknown;
+    prNumber?: unknown;
+    body?: unknown;
+    allowedRepos?: unknown;
+  };
+
+  const repo = typeof body.repo === "string" ? body.repo.trim() : "";
+  const prNumber =
+    typeof body.prNumber === "number"
+      ? body.prNumber
+      : typeof body.prNumber === "string"
+        ? Number(body.prNumber)
+        : NaN;
+  const commentBody = typeof body.body === "string" ? body.body : "";
+  const allowedRepos = Array.isArray(body.allowedRepos)
+    ? body.allowedRepos
+        .filter((entry): entry is string => typeof entry === "string")
+        .map((entry) => entry.trim())
+        .filter(Boolean)
+    : [];
+
+  if (!repo || !Number.isFinite(prNumber) || !commentBody.trim() || allowedRepos.length === 0) {
+    return res.status(400).json({
+      ok: false,
+      error: "repo, prNumber, body, and allowedRepos are required",
+    });
+  }
+
+  const result = await postScopedPullRequestComment({
+    repo,
+    prNumber,
+    body: commentBody,
+    allowedRepos,
+  });
+
+  if (!result.ok) {
+    const status = /outside project GitHub scope|Invalid|empty|required to post/i.test(
+      result.error,
+    )
+      ? 400
+      : 502;
+    return res.status(status).json({ ok: false, error: result.error });
+  }
+
+  return res.status(200).json({
+    ok: true,
+    commentUrl: result.commentUrl,
+    commentId: result.commentId,
+  });
 }
 
 async function handleOperationalReadiness(_req: VercelRequest, res: VercelResponse) {
@@ -198,6 +332,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (req.method === "GET" && view === "operational-readiness") {
     return handleOperationalReadiness(req, res);
+  }
+
+  if (req.method === "GET" && view === "github-pull-requests") {
+    return handleGithubPullRequests(req, res);
+  }
+
+  if (req.method === "POST" && view === "obsidian-project-note") {
+    return handleObsidianProjectNoteWrite(req, res);
+  }
+
+  if (req.method === "POST" && view === "github-pr-comment") {
+    return handleGithubPrComment(req, res);
   }
 
   if (req.method === "POST" && view === "slack-test") {
