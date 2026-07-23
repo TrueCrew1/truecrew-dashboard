@@ -8,8 +8,15 @@ export type OperationalStatusTone = "neutral" | "warn" | "critical" | "muted";
 export const OPERATIONAL_STATUS_MOCK_MODE_NOTE =
   "Operational readiness is unavailable in demo mode. Enable live API mode to load the server summary.";
 
+export const OPERATIONAL_STATUS_DEV_ENDPOINT_NOTE =
+  "Operational readiness endpoint is not returning JSON in this dev mode. Use vercel dev for live APIs, or set VITE_USE_LIVE_API=false.";
+
 export const OPERATIONAL_STATUS_DOC_REFERENCE =
   "docs/internal/chief-operational-readiness.md";
+
+function isDevEndpointUnavailableMessage(message: string): boolean {
+  return /not wired in this dev mode|non-JSON|VITE_USE_LIVE_API/i.test(message);
+}
 
 export function readinessStatusTone(status: ReadinessStatus): OperationalStatusTone {
   switch (status) {
@@ -91,11 +98,12 @@ export function deriveOperationalStatusView(input: {
   }
 
   if (input.error && !input.summary) {
+    const soft = isDevEndpointUnavailableMessage(input.error);
     return {
       kind: "unavailable",
-      tone: "critical",
-      headline: "Operational status unavailable",
-      detail: input.error,
+      tone: soft ? "muted" : "critical",
+      headline: soft ? "Unavailable in this dev mode" : "Operational status unavailable",
+      detail: soft ? OPERATIONAL_STATUS_DEV_ENDPOINT_NOTE : input.error,
     };
   }
 

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { fetchOperationalReadiness, isLiveApiEnabled } from "@/lib/api/client";
+import { formatApiErrorForUi } from "@/lib/api/safeJson";
 import type { OperationalReadinessSummary } from "@/lib/ops/operationalReadinessTypes";
 
 interface UseOperationalReadinessResult {
@@ -31,7 +32,7 @@ export function useOperationalReadiness(): UseOperationalReadinessResult {
       setError(null);
     } catch (err) {
       setSummary(null);
-      setError(err instanceof Error ? err.message : "Failed to load operational readiness");
+      setError(formatApiErrorForUi(err, "Failed to load operational readiness"));
     } finally {
       setLoading(false);
     }

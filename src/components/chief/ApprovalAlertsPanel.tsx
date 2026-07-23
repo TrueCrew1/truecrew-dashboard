@@ -2,11 +2,16 @@ import { useApprovalAlerts } from "./useApprovalAlerts";
 import { APPROVAL_STATUS_BADGE, APPROVAL_STATUS_LABEL } from "./chiefApproval";
 import { ApprovalSectionShell, ApprovalSurfaceEmpty } from "./approvalWrappers";
 
+function isSoftDevUnavailable(error: string): boolean {
+  return /not wired in this dev mode|non-JSON|VITE_USE_LIVE_API/i.test(error);
+}
+
 export function ApprovalAlertsPanel() {
   const { decisions, isLoading, error } = useApprovalAlerts();
 
   // TODO: swap for useApprovalAlerts()'s own refetch once the hook exposes one.
   const handleRetry = () => window.location.reload();
+  const soft = error ? isSoftDevUnavailable(error) : false;
 
   return (
     <ApprovalSectionShell
@@ -27,8 +32,10 @@ export function ApprovalAlertsPanel() {
           </div>
         </div>
       ) : error ? (
-        <div className="chief-section-empty" role="alert">
-          <p className="chief-section-empty-lead">Couldn't load approval alerts</p>
+        <div className="chief-section-empty" role="status">
+          <p className="chief-section-empty-lead">
+            {soft ? "Unavailable in this dev mode" : "Couldn't load approval alerts"}
+          </p>
           <p className="chief-section-empty-desc">{error}</p>
           <button type="button" className="chief-approval-filter-clear" onClick={handleRetry}>
             Retry

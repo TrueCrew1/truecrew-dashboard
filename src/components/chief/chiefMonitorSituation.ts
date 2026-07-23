@@ -96,6 +96,20 @@ export function deriveChiefSituationBriefFromMonitor(input: {
   const issues = listMonitorPlatformIssues(platformHealth);
 
   if (issues.length > 0) {
+    const softUnavailable = issues.every((issue) =>
+      /not wired in this dev mode|non-JSON|VITE_USE_LIVE_API/i.test(issue),
+    );
+
+    if (softUnavailable) {
+      return {
+        tone: "unavailable",
+        headline: "Platform probes unavailable in this dev mode",
+        detail:
+          "Monitor endpoints are not returning JSON under plain Vite. Use vercel dev for live probes, or set VITE_USE_LIVE_API=false.",
+        allIssues: issues,
+      };
+    }
+
     const primaryIssue = issues[0];
     const headline =
       issues.length > 1

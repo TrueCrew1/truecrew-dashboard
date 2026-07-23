@@ -73,6 +73,22 @@ describe("deriveChiefSituationBriefFromMonitor", () => {
     expect(brief.headline).toBe("Vercel degraded");
   });
 
+  it("maps soft/dev non-JSON probe failures to unavailable (not degraded parse noise)", () => {
+    const soft =
+      "Endpoint not wired in this dev mode (/api/monitor). Use vercel dev (or disable VITE_USE_LIVE_API) for live JSON APIs.";
+    const brief = deriveChiefSituationBriefFromMonitor({
+      liveApiEnabled: true,
+      platformHealth: healthState({
+        vercel: { data: null, loading: false, error: soft },
+        supabase: { data: null, loading: false, error: soft },
+      }),
+    });
+
+    expect(brief.tone).toBe("unavailable");
+    expect(brief.headline).toMatch(/unavailable in this dev mode/i);
+    expect(brief.detail ?? "").not.toMatch(/Unexpected token/i);
+  });
+
   it("surfaces Supabase degradation", () => {
     const brief = deriveChiefSituationBriefFromMonitor({
       liveApiEnabled: true,

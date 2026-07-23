@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { isLiveApiEnabled } from "@/lib/api/client";
+import { formatApiErrorForUi, readResponseJson } from "@/lib/api/safeJson";
 import type {
   PlatformHealthState,
   SupabaseMonitorResponse,
@@ -21,7 +22,9 @@ function useMonitorHealth() {
     async function fetchVercel() {
       try {
         const response = await fetch("/api/monitor?target=vercel");
-        const data = (await response.json()) as VercelMonitorResponse;
+        const data = await readResponseJson<VercelMonitorResponse>(response, {
+          pathHint: "/api/monitor?target=vercel",
+        });
         if (mountedRef.current) {
           setState((prev) => ({
             ...prev,
@@ -35,7 +38,7 @@ function useMonitorHealth() {
             vercel: {
               data: null,
               loading: false,
-              error: err instanceof Error ? err.message : "Failed to fetch Vercel health",
+              error: formatApiErrorForUi(err, "Failed to fetch Vercel health"),
             },
           }));
         }
@@ -45,7 +48,9 @@ function useMonitorHealth() {
     async function fetchSupabase() {
       try {
         const response = await fetch("/api/monitor?target=supabase");
-        const data = (await response.json()) as SupabaseMonitorResponse;
+        const data = await readResponseJson<SupabaseMonitorResponse>(response, {
+          pathHint: "/api/monitor?target=supabase",
+        });
         if (mountedRef.current) {
           setState((prev) => ({
             ...prev,
@@ -63,7 +68,7 @@ function useMonitorHealth() {
             supabase: {
               data: null,
               loading: false,
-              error: err instanceof Error ? err.message : "Failed to fetch Supabase health",
+              error: formatApiErrorForUi(err, "Failed to fetch Supabase health"),
             },
           }));
         }

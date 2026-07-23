@@ -5,6 +5,7 @@ import {
   isLiveApiEnabled,
   type ChiefApprovalDecisionPayload,
 } from "../../lib/api/client";
+import { formatApiErrorForUi } from "../../lib/api/safeJson";
 
 export interface UseApprovalAlertsResult {
   decisions: ChiefApprovalDecisionPayload[];
@@ -35,7 +36,7 @@ export function useApprovalAlerts(): UseApprovalAlertsResult {
         }
       } catch (err) {
         if (isMounted) {
-          setError(err instanceof Error ? err.message : "Failed to load approval alerts.");
+          setError(formatApiErrorForUi(err, "Failed to load approval alerts."));
         }
       } finally {
         if (isMounted) {

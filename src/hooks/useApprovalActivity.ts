@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useChiefApprovals } from "@/components/chief/ChiefApprovalsContext";
 import { fetchApprovalActivity, isLiveApiEnabled } from "@/lib/api/client";
+import { formatApiErrorForUi } from "@/lib/api/safeJson";
 import {
   buildApprovalActivityItems,
   type ApprovalActivityItem,
@@ -52,7 +53,7 @@ export function useApprovalActivity(pollMs: number | null = DEFAULT_POLL_MS): Us
       );
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load approval activity");
+      setError(formatApiErrorForUi(err, "Failed to load approval activity"));
     } finally {
       setLoading(false);
     }
