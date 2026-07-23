@@ -45,7 +45,7 @@ function internalAuthHeaders(): HeadersInit {
   return { "x-internal-key": key };
 }
 
-function apiFetch(input: string, init: RequestInit = {}): Promise<Response> {
+export function apiFetch(input: string, init: RequestInit = {}): Promise<Response> {
   return fetch(input, {
     ...init,
     headers: { ...internalAuthHeaders(), ...init.headers },

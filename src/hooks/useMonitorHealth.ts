@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { isLiveApiEnabled } from "@/lib/api/client";
+import { apiFetch, isLiveApiEnabled } from "@/lib/api/client";
 import type {
   PlatformHealthState,
   SupabaseMonitorResponse,
@@ -44,7 +44,7 @@ function useMonitorHealth() {
 
     async function fetchSupabase() {
       try {
-        const response = await fetch("/api/monitor?target=supabase");
+        const response = await apiFetch("/api/monitor?target=supabase");
         const data = (await response.json()) as SupabaseMonitorResponse;
         if (mountedRef.current) {
           setState((prev) => ({
