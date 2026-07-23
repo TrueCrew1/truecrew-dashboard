@@ -18,11 +18,13 @@ import type {
  * statement of this rule.
  *
  * Build's request (BUILD_REQUEST_DUPLICATE_AUTH_FIX below) is a real one,
- * grounded in verifiable repo state — not mocked. Planner/Research/Content
- * still use one illustrative example each (clearly marked EXAMPLE_*), not
- * live agent output yet. Extension point: replace each EXAMPLE_* constant
- * with a real request object once that agent's workflow actually produces
- * one, following the same pattern as Build's.
+ * grounded in verifiable repo state — not mocked. Planner's overdue-work
+ * re-sequencing gate and new-roadmap-phase gate are also live (see
+ * plannerReprioritizationProposal.ts and plannerNewRoadmapPhaseProposal.ts).
+ * Research/Content still use one illustrative example each (clearly marked
+ * EXAMPLE_*), not live agent output yet. Extension point: replace each
+ * EXAMPLE_* constant with a real request object once that agent's workflow
+ * actually produces one, following the same pattern as Build's.
  */
 
 export type AgentRole = "planner" | "build" | "research" | "content";
@@ -169,23 +171,9 @@ export function createApprovalCardFromContentRequest(request: ContentApprovalReq
   return baseCardFields(request, "Content", "content_agent", `Audience: ${request.audience}.`);
 }
 
-// --- Requests: Build is real (below); Planner/Research/Content are illustrative examples ---
-
-export const EXAMPLE_PLANNER_REQUEST: PlannerApprovalRequest = {
-  id: "apr-planner-example-phase4",
-  gate: APPROVAL_GATES.planner[1],
-  summary:
-    "Propose starting Chief Approvals Roadmap Phase 4 (Alerts & Escalation) — urgency buckets and inline tags on pending approvals.",
-  riskLevel: "medium",
-  testsOrChecksDone: [
-    { label: "Reviewed against reserved chiefApprovalUrgency.ts helper", status: "pass" },
-    { label: "Scoped against shipped stale-badge slice to avoid overlap", status: "pass" },
-    { label: "Effort estimate for scheduling", status: "pending" },
-  ],
-  requestedAction: "Approve starting Phase 4 planning, or hold until Phase 3 (Persistence) ships.",
-  affectedPhases: ["Phase 4 — Alerts & Escalation"],
-  createdAt: "2026-07-04T12:00:00.000Z",
-};
+// --- Requests: Build is real (below); Research/Content are illustrative examples ---
+// Planner live signals: plannerReprioritizationProposal.ts (overdue re-sequencing)
+// and plannerNewRoadmapPhaseProposal.ts (decision focus → new phase).
 
 /**
  * Real, not illustrative: two open PRs — #57 (build/auth-trim-fix) and #58
@@ -242,7 +230,6 @@ export const EXAMPLE_CONTENT_REQUEST: ContentApprovalRequest = {
 };
 
 export const AGENT_APPROVAL_CARDS: ApprovalCard[] = [
-  createApprovalCardFromPlannerRequest(EXAMPLE_PLANNER_REQUEST),
   createApprovalCardFromBuildRequest(BUILD_REQUEST_DUPLICATE_AUTH_FIX),
   createApprovalCardFromResearchRequest(EXAMPLE_RESEARCH_REQUEST),
   createApprovalCardFromContentRequest(EXAMPLE_CONTENT_REQUEST),

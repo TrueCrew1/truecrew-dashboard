@@ -1,7 +1,7 @@
-# Agent approval loops (Build + Research)
+# Agent approval loops (Build + Research + Planner)
 
-Durable reference for how Build and Research agent proposals enter Chief's approval
-queue today. Describes the system as it exists — not a roadmap.
+Durable reference for how Build, Research, and Planner agent proposals enter Chief's
+approval queue today. Describes the system as it exists — not a roadmap.
 
 ## System law
 
@@ -229,6 +229,32 @@ law.
      intent.
    - Research already does this; mirror the pattern for any new agent test slice.
 
+## Planner Agent loop — live overdue re-sequencing
+
+| Item | Current behavior |
+|------|------------------|
+| **Live gate** | `APPROVAL_GATES.planner[2]` — “Roadmap reprioritization or re-sequencing” |
+| **Trigger** | **Operations** → panel **Planner re-sequencing signal** → **Check overdue work** |
+| **Source of truth** | `ChiefLiveContext.overdueTasks` only (open tasks past `dueAt`) |
+| **Factory** | `src/components/chief/plannerReprioritizationProposal.ts` |
+| **Enqueue** | `proposePlannerReprioritization(liveContext, approvals)` → `addCommandApproval(card)` |
+| **Card source** | `planner_agent` |
+| **Duplicate guard** | Stable id `PLANNER_REPRIORITIZATION_PROPOSAL_ID`; block while **pending** |
+
+## Planner Agent loop — live new roadmap phase
+
+| Item | Current behavior |
+|------|------------------|
+| **Live gate** | `APPROVAL_GATES.planner[1]` — “New roadmap phase” |
+| **Trigger** | **Operations** → panel **Planner new roadmap phase signal** → **Check decision focus** |
+| **Source of truth** | `ChiefLiveContext.focusItems` where `workflowType === "decision"` |
+| **Factory** | `src/components/chief/plannerNewRoadmapPhaseProposal.ts` |
+| **Enqueue** | `proposePlannerNewRoadmapPhase(liveContext, approvals)` → `addCommandApproval(card)` |
+| **Card source** | `planner_agent` |
+| **Duplicate guard** | Stable id `PLANNER_NEW_ROADMAP_PHASE_PROPOSAL_ID`; block while **pending** |
+| **Unwired Planner gate** | “Scope change affecting more than one phase” |
+| **Reserved** | Research, Content, and Reliability producers are unchanged by these slices |
+
 ## Code map (reference only)
 
 | Area | Location |
@@ -238,9 +264,12 @@ law.
 | Build runtime test factory | `src/components/chief/buildAgentTestProposal.ts` |
 | Research runtime test factory | `src/components/chief/researchAgentTestProposal.ts` |
 | Research real-incident factory | `src/components/chief/researchIncidentProposal.ts` |
+| Planner live overdue re-sequencing | `src/components/chief/plannerReprioritizationProposal.ts` |
+| Planner live new roadmap phase | `src/components/chief/plannerNewRoadmapPhaseProposal.ts` |
 | Packet envelope + logging | `src/components/chief/agentPacket.ts`, `chiefLog.ts`, `chiefGovernanceEvents.ts` |
 | Build trigger UI | `src/pages/BuildsPage.tsx` |
 | Research trigger UI | `src/pages/MonitorPage.tsx` |
+| Planner live-signal trigger UI | `src/pages/OperationsPage.tsx` |
 | Approvals tab UI | `src/components/chief/ApprovalBoard.tsx`, `ChiefPanel.tsx` |
 | Agents awaiting lane | `src/components/chief/AgentWorkBoard.tsx`, `deriveAgentAwaitingApprovalWorkItems()` |
 | Per-card urgency | `src/components/chief/chiefApprovalUrgency.ts` |

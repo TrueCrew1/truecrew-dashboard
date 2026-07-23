@@ -132,6 +132,19 @@ async function handleVercel(_req: VercelRequest, res: VercelResponse) {
   }
 }
 
+async function handleHealth(req: VercelRequest, res: VercelResponse) {
+  if (!requireInternalAuth(req, res)) return;
+
+  return res.status(200).json({
+    ok: true,
+    host: "vercel",
+    supabase: isSupabaseConfigured(),
+    githubWebhook: Boolean(process.env.GITHUB_WEBHOOK_SECRET),
+    liveApi: process.env.VITE_USE_LIVE_API === "true",
+    timestamp: new Date().toISOString(),
+  });
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const target = req.query.target;
 
@@ -143,7 +156,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return handleVercel(req, res);
   }
 
+  // Legacy GET /api/health (rewrite → ?target=health): config probe only.
+  if (target === "health") {
+    return handleHealth(req, res);
+  }
+
   return res.status(400).json({
-    error: "Missing or invalid 'target' query param. Expected target=supabase or target=vercel.",
+    error:
+      "Missing or invalid 'target' query param. Expected target=supabase, target=vercel, or target=health.",
   });
 }
