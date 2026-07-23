@@ -32,6 +32,13 @@ import {
 import { classifyChiefEvaluation, evaluationInputFromChiefResponse } from "./chiefDecisionTier";
 import { deriveChiefBoardItems, resolveChiefCommand } from "./chiefLiveContext";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
+import { useResearchRequests } from "@/context/ResearchRequestsContext";
+import {
+  buildResearchRequestCreatedResponse,
+  buildResearchRequestFailedResponse,
+  extractResearchTopic,
+} from "./chiefResearchCommand";
+import { subscribeChiefCommandFocus } from "./chiefCommandFocus";
 import { ChiefContextSwitcher } from "./ChiefContextSwitcher";
 import { SpecialistCards } from "./SpecialistCards";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
@@ -56,6 +63,7 @@ const EXAMPLE_COMMANDS = [
   "Show approvals I need to review",
   "What tasks are missing customer context?",
   "Show open alerts",
+  "Start research on M&S estimating roadmap",
 ];
 
 type ChiefTab = "command" | "board" | "agents" | "approvals" | "history" | "dev";
@@ -75,6 +83,7 @@ export function ChiefPanel() {
     addHistoryEntry,
     sessionApprovalActivity,
   } = useChiefApprovals();
+  const { createSessionRequest, rail: researchRail } = useResearchRequests();
 
   const [activeTab, setActiveTab] = useState<ChiefTab>("command");
   const [input, setInput] = useState("");
@@ -86,6 +95,15 @@ export function ChiefPanel() {
   const [approvalStatusFilter, setApprovalStatusFilter] = useState<ApprovalStatusFilter>("all");
   const [focusProposalId, setFocusProposalId] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // CommandBar's "Ask Chief" suggested action routes a query here — see
+  // requestChiefCommandFocus in chiefCommandFocus.ts.
+  useEffect(() => {
+    return subscribeChiefCommandFocus((query) => {
+      setActiveTab("command");
+      setInput(query);
+    });
+  }, []);
   const pendingDeepLinkRef = useRef<string | null>(null);
   const liveApi = isLiveApiEnabled();
   const { missions: handoffMissions, refresh: refreshHandoffMissions } =
@@ -336,6 +354,25 @@ export function ChiefPanel() {
     setIsProcessing(true);
     setActiveTab("command");
     setResponse(null);
+
+    // Chief → Research bridge: explicit research commands go straight to the
+    // live session queue (the same store the ⌘K command bar and Knowledge
+    // page use) instead of the specialist router. Session-only unless the
+    // live rail is up, operator-driven either way.
+    const researchTopic = extractResearchTopic(command);
+    if (researchTopic) {
+      let result: ChiefResponse;
+      try {
+        const request = createSessionRequest(researchTopic);
+        result = buildResearchRequestCreatedResponse(request, researchRail);
+      } catch {
+        result = buildResearchRequestFailedResponse(researchTopic);
+      }
+      setResponse(result);
+      addHistoryEntry(buildHistoryEntry(command, result));
+      setIsProcessing(false);
+      return;
+    }
 
     window.setTimeout(() => {
       const resolved = resolveChiefCommand(command, chiefData, liveContext, approvals);

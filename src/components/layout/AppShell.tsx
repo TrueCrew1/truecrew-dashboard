@@ -5,6 +5,7 @@ import { TopBar } from "./TopBar";
 import { ChiefPanel } from "@/components/chief/ChiefPanel";
 import { ChiefApprovalsProvider } from "@/components/chief/ChiefApprovalsContext";
 import { ChiefContextProvider } from "@/context/ChiefContextProvider";
+import { ResearchRequestsProvider } from "@/context/ResearchRequestsContext";
 import { ContextRail } from "./ContextRail";
 import { SelectionContext } from "@/context/SelectionContext";
 
@@ -68,8 +69,11 @@ export function AppShell() {
 
   return (
     <SelectionContext.Provider value={{ selectedEntityId, setSelectedEntityId }}>
-      <ChiefContextProvider>
-        <ChiefApprovalsProvider>
+      {/* Research outside approvals: ChiefApprovalsProvider derives research-start
+          approval cards from the queue and releases rows on approval. */}
+      <ResearchRequestsProvider>
+        <ChiefContextProvider>
+          <ChiefApprovalsProvider>
           <div className={shellClass}>
             <Sidebar
               collapsed={sidebarCollapsed}
@@ -97,8 +101,9 @@ export function AppShell() {
               selectedEntityId={selectedEntityId}
             />
           </div>
-        </ChiefApprovalsProvider>
-      </ChiefContextProvider>
+          </ChiefApprovalsProvider>
+        </ChiefContextProvider>
+      </ResearchRequestsProvider>
     </SelectionContext.Provider>
   );
 }

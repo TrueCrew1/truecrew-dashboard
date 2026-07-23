@@ -10,6 +10,8 @@ import {
 } from "react";
 import { useData } from "@/context/DataContext";
 import { useChiefContext } from "@/context/ChiefContextProvider";
+import { useResearchRequests } from "@/context/ResearchRequestsContext";
+import { deriveResearchStartApprovals } from "./researchStartApprovals";
 import {
   ChiefApprovalConflictError,
   fetchChiefApprovalDecisions,
@@ -82,6 +84,8 @@ const ChiefApprovalsContext = createContext<ChiefApprovalsContextValue | null>(n
 export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
   const { data, source } = useData();
   const { activeContext } = useChiefContext();
+  const { allRequests: researchRequests, updateRequestStatus: updateResearchRequestStatus } =
+    useResearchRequests();
   // The real context switch: everything below derives from chiefData, not
   // the raw global `data` — so approval candidates, board items, and command
   // routing all see only the active context's tasks/workflow/customer once
@@ -255,12 +259,21 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
     [activeContext, monitorApprovals],
   );
 
+  // One card per queued research request — global-only for now, same as
+  // monitor cards, since the research queue isn't yet scoped per Chief
+  // context. Approving releases the row to in_progress (see recordDecision).
+  const contextResearchStartApprovals = useMemo(
+    () => (activeContext === "global" ? deriveResearchStartApprovals(researchRequests) : []),
+    [activeContext, researchRequests],
+  );
+
   const approvals = useMemo(() => {
     const merged = mergeApprovalSources(
       derivedApprovals,
       contextStaticApprovalCards,
       contextCommandApprovals,
       contextMonitorApprovals,
+      contextResearchStartApprovals,
     );
     return merged.map((proposal) => {
       const decision = approvalDecisions[proposal.id];
@@ -277,6 +290,7 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
     contextStaticApprovalCards,
     contextCommandApprovals,
     contextMonitorApprovals,
+    contextResearchStartApprovals,
     approvalDecisions,
   ]);
 
@@ -318,6 +332,22 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  // Approval → research bridge: an approved card carrying a researchRequestId
+  // releases its queue row to in_progress — the runner's pickup signal.
+  // Failure to transition (already released, done, etc.) never fails the
+  // decision itself; the queue row's real state wins.
+  const releaseResearchRequest = useCallback(
+    (requestId: string | undefined) => {
+      if (!requestId) return;
+      try {
+        updateResearchRequestStatus(requestId, "in_progress");
+      } catch (error) {
+        console.error("[research-rail] approval_release_failed", { requestId, error });
+      }
+    },
+    [updateResearchRequestStatus],
+  );
+
   const recordDecision = useCallback(
     async (id: string, action: ApprovalAction): Promise<ApprovalDecision> => {
       const nextStatus = approvalActionToStatus(action);
@@ -356,6 +386,7 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
             actor: result.decision.actor,
           };
           applyDecision(applied);
+          if (nextStatus === "approved") releaseResearchRequest(decidedCard?.researchRequestId);
 
           if (result.activity && !result.activity.recorded) {
             setLastActivityPersistError(result.activity.error ?? "Activity log write failed");
@@ -393,6 +424,7 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
         actor: null,
       };
       applyDecision(decision);
+      if (nextStatus === "approved") releaseResearchRequest(decidedCard?.researchRequestId);
 
       if (decidedCard) {
         appendSessionActivity(
@@ -409,7 +441,7 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
 
       return decision;
     },
-    [liveApi, applyDecision, proposalsById, appendSessionActivity],
+    [liveApi, applyDecision, proposalsById, appendSessionActivity, releaseResearchRequest],
   );
 
   const value = useMemo<ChiefApprovalsContextValue>(

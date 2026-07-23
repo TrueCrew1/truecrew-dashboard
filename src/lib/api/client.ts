@@ -19,6 +19,7 @@ import type {
   WorkflowStage,
   WorkItem,
 } from "@/types";
+import type { ResearchRequest, ResearchRequestStatus } from "@/lib/research/types";
 
 let warnedMissingInternalKey = false;
 
@@ -100,6 +101,74 @@ export async function patchTaskStage(
 
   const payload = (await response.json()) as { task: Task };
   return payload.task;
+}
+
+// ---------------------------------------------------------------------------
+// Research requests (/api/research) — live rail for the Research queue. All
+// three helpers throw on failure; ResearchRequestsContext owns the honest
+// fallback to session/adapter data.
+
+export async function fetchResearchRequestsFromApi(): Promise<ResearchRequest[]> {
+  const response = await apiFetch("/api/research");
+  if (!response.ok) {
+    throw new Error(`Research requests API returned ${response.status}`);
+  }
+  const body = (await response.json()) as { requests?: ResearchRequest[] };
+  return body.requests ?? [];
+}
+
+export async function createResearchRequestOnApi(
+  request: ResearchRequest,
+): Promise<ResearchRequest> {
+  const response = await apiFetch("/api/research", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id: request.id,
+      topic: request.topic,
+      whyItMatters: request.whyItMatters,
+      suggestedOutcome: request.suggestedOutcome,
+      createdAt: request.createdAt,
+      updatedAt: request.updatedAt,
+    }),
+  });
+
+  const body = (await response.json().catch(() => ({}))) as {
+    error?: string;
+    request?: ResearchRequest;
+  };
+  // 409 = the row already exists server-side; treat as success with the
+  // server's copy so a retry after a flaky response doesn't error.
+  if (response.status === 409 && body.request) return body.request;
+  if (!response.ok || !body.request) {
+    throw new Error(body.error ?? `Research create returned ${response.status}`);
+  }
+  return body.request;
+}
+
+export async function patchResearchRequestStatusOnApi(
+  id: string,
+  status: ResearchRequestStatus,
+  options?: { filedPath?: string; blockerNote?: string },
+): Promise<ResearchRequest> {
+  const response = await apiFetch(`/api/research/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      status,
+      filedPath: options?.filedPath,
+      blockerNote: options?.blockerNote,
+    }),
+  });
+
+  const body = (await response.json().catch(() => ({}))) as {
+    error?: string;
+    request?: ResearchRequest;
+  };
+  if (!response.ok || !body.request) {
+    throw new Error(body.error ?? `Research update returned ${response.status}`);
+  }
+  return body.request;
 }
 
 export interface ChiefApprovalDecisionPayload {

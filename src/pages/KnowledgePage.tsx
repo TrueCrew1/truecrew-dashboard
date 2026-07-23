@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { PageHeader, Panel, PanelEmpty, TableScroll } from "@/components/ui";
 import { useData } from "@/context/DataContext";
 import {
@@ -7,6 +8,9 @@ import {
   type ObsidianNote,
 } from "@/lib/api/client";
 import { displayNoteType } from "../../lib/knowledge/displayNoteType";
+import { ResearchQueuePanel } from "@/components/research/ResearchQueuePanel";
+import { MsResearchStatusCard } from "@/components/research/MsResearchStatusCard";
+import { V2ProgramBoard } from "@/components/chief/V2ProgramBoard";
 import type { Note } from "@/types";
 
 type NoteSource = "supabase" | "obsidian";
@@ -94,6 +98,8 @@ function VaultStatusLabel({
 
 export function KnowledgePage() {
   const { data } = useData();
+  const [searchParams] = useSearchParams();
+  const highlightId = searchParams.get("highlight");
   const [obsidianNotes, setObsidianNotes] = useState<ObsidianNote[]>([]);
   const [vaultStatus, setVaultStatus] = useState<VaultStatus>("syncing");
 
@@ -133,8 +139,15 @@ export function KnowledgePage() {
       <PageHeader
         title="AI &"
         accent="Knowledge"
-        subtitle="Prompt library and Obsidian-routed knowledge entries"
+        subtitle="Research queue, prompt library, and Obsidian-routed knowledge entries"
       />
+
+      <div className="knowledge-research-panel knowledge-research-panel--split">
+        <ResearchQueuePanel highlightId={highlightId} />
+        <MsResearchStatusCard />
+      </div>
+
+      <V2ProgramBoard />
 
       <div className="grid-2">
         <Panel title="Prompt library">

@@ -17,6 +17,7 @@ for the full rule set.
 | Projects | 3 | 5 |
 | Decisions | 4 | 15 |
 | Sources | 10 | 50 |
+| Findings | 3 | — (V1 Research filing shelf; not under first-month source cap) |
 | Lessons | 5 | 20 |
 | Reference | 4 | 10 |
 
@@ -118,8 +119,27 @@ just a folder pointer) so every note is actually reachable from this page, per t
 - [Agent Runbook § Approval Load](sources/approval-load-runbook-section.md)
 - [Second Brain governance rules added](sources/second-brain-governance-rules.md)
 
+## Findings
+
+Operator-filed Research lane outputs (V1). Distinct from `sources/` raw artifacts.
+
+- [M&S estimating roadmap](findings/m-and-s/estimating-roadmap.md) — *draft / provisional* —
+  target path for `start research on M&S estimating roadmap` → Knowledge status card.
+- [Painter SaaS market scan](findings/m-and-s/painter-saas-market-scan.md) — *draft / provisional* —
+  competitor features/pricing/performance scaffold for the V2 "Painter SaaS Market Scan" card
+  (`req-ms-painting-v2-market-scan`).
+- [TrueCrew design standard](findings/m-and-s/truecrew-design-standard.md) — *draft / provisional* —
+  standardized TrueCrew formatting/color/layout scaffold for the V2 "TrueCrew Design Standard"
+  card (`req-ms-painting-v2-design-standard`).
+
 ## Recent updates
 
+- **2026-07-22** — Research lane live end to end: session-backed Research queue on
+  Knowledge (⌘K `start research on <topic>` or Chief command), a Supabase-backed
+  `research_requests` table + API for cross-device status, an approval card auto-releasing
+  a request to `in_progress` when approved (the scheduled research runner's pickup signal —
+  see `docs/RESEARCH_RUNNER.md`), and the V2 Upgrade Program board with two new
+  research-linked workstreams. First three finding scaffolds filed under `findings/m-and-s/`.
 - **2026-07-04** — Knowledge base refresh + free-tool research pass: added a Slice 2
   (Supabase Health Monitor, PR #59) pointer to
   [projects/truecrew-dashboard.md](projects/truecrew-dashboard.md)'s Open items
