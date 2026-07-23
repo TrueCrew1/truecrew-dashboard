@@ -26,6 +26,10 @@ PR #3 is merged to `main`. Complete these steps once — then every push to `mai
 | `VITE_SUPABASE_URL` | Same as SUPABASE_URL |
 | `VITE_SUPABASE_ANON_KEY` | From Step 1 |
 | `VITE_USE_LIVE_API` | `true` |
+| `INTERNAL_API_SECRET` | Generate: `openssl rand -hex 32` |
+| `VITE_INTERNAL_KEY` | **Same value** as `INTERNAL_API_SECRET` (required for Monitor / live `/api` calls) |
+| `VERCEL_API_TOKEN` | [vercel.com/account/tokens](https://vercel.com/account/tokens) — read deployments |
+| `VERCEL_PROJECT_ID` | This Vercel project’s id (Settings → General) |
 | `GITHUB_WEBHOOK_SECRET` | Generate: `openssl rand -hex 32` |
 
 4. Deploy → copy your production URL (e.g. `https://truecrew-dashboard.vercel.app`)

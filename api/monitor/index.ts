@@ -75,12 +75,17 @@ async function handleSupabase(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-async function handleVercel(_req: VercelRequest, res: VercelResponse) {
-  const token = process.env.VERCEL_API_TOKEN;
-  const projectId = process.env.VERCEL_PROJECT_ID;
+async function handleVercel(req: VercelRequest, res: VercelResponse) {
+  if (!requireInternalAuth(req, res)) return;
+
+  const token = process.env.VERCEL_API_TOKEN?.trim();
+  const projectId = process.env.VERCEL_PROJECT_ID?.trim();
 
   if (!token || !projectId) {
-    return errorResponse(res, "Vercel monitor is not configured");
+    return errorResponse(
+      res,
+      "Vercel monitor is not configured — set VERCEL_API_TOKEN and VERCEL_PROJECT_ID in the deployment environment",
+    );
   }
 
   try {
