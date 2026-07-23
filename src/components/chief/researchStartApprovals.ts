@@ -20,9 +20,19 @@ export function researchStartApprovalId(requestId: string): string {
   return `${RESEARCH_START_APPROVAL_ID_PREFIX}${requestId}`;
 }
 
-export function deriveResearchStartApprovals(requests: ResearchRequest[]): ApprovalProposal[] {
+/**
+ * `include`, when given, decides which queued requests get a card here at
+ * all — the caller uses this to route each request to the one Chief context
+ * it actually belongs to (see ChiefApprovalsContext: M&S-flavored requests
+ * show under "M&S Painting", everything else under "global"). Omit it to get
+ * every queued request's card, context-blind.
+ */
+export function deriveResearchStartApprovals(
+  requests: ResearchRequest[],
+  include?: (request: ResearchRequest) => boolean,
+): ApprovalProposal[] {
   return requests
-    .filter((request) => request.status === "queued")
+    .filter((request) => request.status === "queued" && (!include || include(request)))
     .map((request) => ({
       id: researchStartApprovalId(request.id),
       title: `Start research: ${request.topic}`,

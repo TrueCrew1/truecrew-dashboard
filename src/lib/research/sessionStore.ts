@@ -105,6 +105,19 @@ export function isMsEstimatingRoadmapTopic(topic: string): boolean {
   return /m\s*&\s*s|ms[\s-]?painting/i.test(topic) && /estimat/i.test(topic);
 }
 
+/**
+ * Any M&S Painting research request — broader than the estimating-roadmap
+ * check above. Single source of truth for "does this belong to the M&S
+ * Painting Chief context", shared by MsResearchStatusCard (display) and
+ * researchStartApprovals (which context's approval board shows the card).
+ */
+export function isMsPaintingResearchRequest(request: ResearchRequest): boolean {
+  return (
+    /m\s*&\s*s|ms[\s-]?painting/i.test(request.topic) ||
+    Boolean(request.filedPath?.includes("knowledge/findings/m-and-s/"))
+  );
+}
+
 /** Operator-issued research from the command bar — browser session only, not live API. */
 export function buildSessionResearchRequest(topic: string): ResearchRequest {
   const trimmed = topic.trim();

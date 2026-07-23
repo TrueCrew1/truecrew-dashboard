@@ -2,22 +2,16 @@ import { Link } from "react-router-dom";
 import { Panel } from "@/components/ui";
 import { useResearchRequests } from "@/context/ResearchRequestsContext";
 import { CHIEF_ROUTES } from "@/components/chief/chiefRoutes";
-import { isMsEstimatingRoadmapTopic } from "@/lib/research/sessionStore";
+import {
+  isMsEstimatingRoadmapTopic,
+  isMsPaintingResearchRequest,
+} from "@/lib/research/sessionStore";
 import {
   MS_ESTIMATING_ROADMAP_FINDING_PATH,
   RESEARCH_STATUS_LABEL,
-  type ResearchRequest,
   type ResearchRequestStatus,
 } from "@/lib/research/types";
 import { useMemo } from "react";
-
-function isMsResearch(request: ResearchRequest): boolean {
-  return (
-    isMsEstimatingRoadmapTopic(request.topic) ||
-    /m\s*&\s*s|ms[\s-]?painting/i.test(request.topic) ||
-    Boolean(request.filedPath?.includes("knowledge/findings/m-and-s/"))
-  );
-}
 
 const STATUS_ORDER: ResearchRequestStatus[] = ["in_progress", "queued", "blocked", "done"];
 
@@ -28,7 +22,10 @@ const STATUS_ORDER: ResearchRequestStatus[] = ["in_progress", "queued", "blocked
 export function MsResearchStatusCard() {
   const { allRequests, sessionRequests } = useResearchRequests();
 
-  const msRequests = useMemo(() => allRequests.filter(isMsResearch), [allRequests]);
+  const msRequests = useMemo(
+    () => allRequests.filter(isMsPaintingResearchRequest),
+    [allRequests],
+  );
   const estimating = useMemo(
     () => sessionRequests.filter((row) => isMsEstimatingRoadmapTopic(row.topic)),
     [sessionRequests],

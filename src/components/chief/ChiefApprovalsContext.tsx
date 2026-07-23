@@ -11,7 +11,9 @@ import {
 import { useData } from "@/context/DataContext";
 import { useChiefContext } from "@/context/ChiefContextProvider";
 import { useResearchRequests } from "@/context/ResearchRequestsContext";
+import { isMsPaintingResearchRequest } from "@/lib/research/sessionStore";
 import { deriveResearchStartApprovals } from "./researchStartApprovals";
+import type { ResearchRequest } from "@/lib/research/types";
 import {
   ChiefApprovalConflictError,
   fetchChiefApprovalDecisions,
@@ -259,13 +261,17 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
     [activeContext, monitorApprovals],
   );
 
-  // One card per queued research request — global-only for now, same as
-  // monitor cards, since the research queue isn't yet scoped per Chief
-  // context. Approving releases the row to in_progress (see recordDecision).
-  const contextResearchStartApprovals = useMemo(
-    () => (activeContext === "global" ? deriveResearchStartApprovals(researchRequests) : []),
-    [activeContext, researchRequests],
-  );
+  // One card per queued research request, routed to the context it actually
+  // belongs to (topic-based, via isMsPaintingResearchRequest — most of the
+  // current backlog is M&S Painting V2 work) rather than always "global".
+  // Approving releases the row to in_progress (see recordDecision).
+  const contextResearchStartApprovals = useMemo(() => {
+    const include =
+      activeContext === "ms-painting"
+        ? isMsPaintingResearchRequest
+        : (request: ResearchRequest) => !isMsPaintingResearchRequest(request);
+    return deriveResearchStartApprovals(researchRequests, include);
+  }, [activeContext, researchRequests]);
 
   const approvals = useMemo(() => {
     const merged = mergeApprovalSources(

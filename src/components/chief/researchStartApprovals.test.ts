@@ -57,3 +57,13 @@ test("card copy never claims execution — approval only releases the row", () =
   assert.match(card.riskNote, /nothing executes on approval/i);
   assert.match(card.recommendedAction, /move this request to in progress/i);
 });
+
+test("include predicate filters which queued requests get a card", () => {
+  const requests = [
+    requestFixture({ id: "req-a", topic: "M&S Painting estimating roadmap" }),
+    requestFixture({ id: "req-b", topic: "Generic tooling research" }),
+  ];
+  const onlyA = deriveResearchStartApprovals(requests, (r) => r.id === "req-a");
+  assert.equal(onlyA.length, 1);
+  assert.equal(onlyA[0].researchRequestId, "req-a");
+});

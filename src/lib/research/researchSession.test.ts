@@ -5,6 +5,7 @@ import {
   buildSessionResearchRequest,
   canTransitionResearchStatus,
   isMsEstimatingRoadmapTopic,
+  isMsPaintingResearchRequest,
   loadSessionResearchRequests,
   mergeResearchRequests,
   saveSessionResearchRequests,
@@ -27,6 +28,26 @@ test("buildSessionResearchRequest: M&S estimating roadmap uses finding path", ()
   assert.equal(isMsEstimatingRoadmapTopic(request.topic), true);
   assert.match(request.suggestedOutcome, /knowledge\/findings\/m-and-s\/estimating-roadmap/);
   assert.equal(request.status, "queued");
+});
+
+test("isMsPaintingResearchRequest: matches M&S topics and filed-under-m-and-s paths", () => {
+  assert.equal(
+    isMsPaintingResearchRequest(buildSessionResearchRequest("M&S Painting V2 — debranding audit")),
+    true,
+  );
+  assert.equal(
+    isMsPaintingResearchRequest(buildSessionResearchRequest("ms-painting rollout gates")),
+    true,
+  );
+  const filedElsewhere = {
+    ...buildSessionResearchRequest("Generic tooling research"),
+    filedPath: "knowledge/findings/m-and-s/some-note.md",
+  };
+  assert.equal(isMsPaintingResearchRequest(filedElsewhere), true);
+  assert.equal(
+    isMsPaintingResearchRequest(buildSessionResearchRequest("Notification vendor options")),
+    false,
+  );
 });
 
 test("research status transitions: queued → in_progress → done with filed path", () => {
