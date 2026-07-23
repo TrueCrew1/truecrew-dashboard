@@ -14,5 +14,6 @@ export default defineConfig({
     // node:test (TAP) and must not be loaded here — they fail with
     // "No test suite found" (see #194).
     include: ["tests/**/*.{test,spec}.{ts,tsx}"],
+    exclude: ["**/node_modules/**", "**/dist/**", "src/**/*.test.ts"],
   },
 });
