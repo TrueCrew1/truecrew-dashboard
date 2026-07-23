@@ -51,6 +51,9 @@ function apiFetch(input: string, init: RequestInit = {}): Promise<Response> {
   });
 }
 
+/** Shared fetch for browser → `/api/*` (attaches x-internal-key). */
+export { apiFetch };
+
 export function isLiveApiEnabled(): boolean {
   return import.meta.env.VITE_USE_LIVE_API === "true";
 }
