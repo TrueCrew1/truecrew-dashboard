@@ -1,5 +1,12 @@
 # Agent Runbook
 
+> **Taxonomy (2026-07-23):** Current promptable lanes are **Chief · Research ·
+> Librarian · Repo · Knowledge** — see vault decision
+> [agent-taxonomy-current](../knowledge/decisions/agent-taxonomy-current.md).  
+> This runbook’s **Planner / Build / Research / Content** (+ reserved
+> Reliability) framing is **historical** for gates and workflows. Treat **Build**
+> as **Repo**. Do not treat the older list as the live prompt taxonomy.
+
 ## Overview
 
 This runbook keeps True Crew's agents fast without letting them act unsupervised. Four agents do

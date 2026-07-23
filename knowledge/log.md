@@ -396,3 +396,11 @@ playbooks. Full reasoning in the Obsidian Build Log entry of the same name.
   `docs/AGENT_WORKFLOW.md`, which already serve that purpose in this repo.
 - No dashboard UI or app code changed; no new VS Code extension was actually
   installed by this pass — governance/docs only.
+
+## 2026-07-23 — Agent taxonomy decision (current vs historical)
+
+- 2026-07-23 — created — `decisions/agent-taxonomy-current.md` — authoritative
+  promptable lanes are Chief · Research · Librarian · Repo · Knowledge; older
+  Planner/Build/Research/Content (+ reserved Reliability) runbook list marked
+  historical. Cross-linked from `docs/AGENT_RUNBOOK.md` banner, `MEMORY.md`,
+  and `index.md`.
