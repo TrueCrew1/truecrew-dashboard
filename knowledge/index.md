@@ -16,7 +16,8 @@ for the full rule set.
 | Concepts | 6 | 10 |
 | Projects | 3 | 5 |
 | Decisions | 4 | 15 |
-| Sources | 10 | 50 |
+| Sources | 11 | 50 |
+| Findings | 3 | — (V1 Research filing shelf; not under first-month source cap) |
 | Lessons | 7 | 20 |
 | Reference | 6 | 10 |
 
@@ -129,9 +130,34 @@ just a folder pointer) so every note is actually reachable from this page, per t
 - [Build ↔ Vercel read-only status-check experiment](sources/vercel-status-check-experiment.md)
 - [Agent Runbook § Approval Load](sources/approval-load-runbook-section.md)
 - [Second Brain governance rules added](sources/second-brain-governance-rules.md)
+- [M&S Painting platform improvement plan input](sources/ms-painting-platform-improvement-plan-input.md)
+  — *planning input — needs verification* (reported / provisional; not platform spec)
+
+## Findings
+
+Operator-filed Research lane outputs (V1). Distinct from `sources/` raw artifacts.
+
+- [M&S estimating roadmap](findings/m-and-s/estimating-roadmap.md) — *draft / provisional* —
+  target path for `start research on M&S estimating roadmap` → Knowledge status card.
+- [Painter SaaS market scan](findings/m-and-s/painter-saas-market-scan.md) — *draft / provisional* —
+  competitor features/pricing/performance scaffold for the V2 "Painter SaaS Market Scan" card
+  (`req-ms-painting-v2-market-scan`).
+- [TrueCrew design standard](findings/m-and-s/truecrew-design-standard.md) — *draft / provisional* —
+  standardized TrueCrew formatting/color/layout scaffold for the V2 "TrueCrew Design Standard"
+  card (`req-ms-painting-v2-design-standard`).
 
 ## Recent updates
 
+- **2026-07-22** — V2 program repositioned as a resellable TrueCrew asset: cards reframed
+  (TrueCrew-standard default theme, deployable legal document set), two new queued
+  workstreams (Painter SaaS Market Scan, TrueCrew Design Standard) with adapter research
+  requests and finding scaffolds under `findings/m-and-s/`.
+- **2026-07-22** — V1 live-readiness Research E2E slice: status machine on session research
+  requests, Knowledge **M&S research status** card, finding scaffold at
+  `findings/m-and-s/estimating-roadmap.md`. See `docs/true-crew/live-readiness-v1.md`.
+- **2026-07-22** — Filed M&S Painting platform improvement plan as a reported research
+  source (`sources/ms-painting-platform-improvement-plan-input.md`). Planning input only;
+  does not overwrite `projects/ms-painting-v2-*.md` truth notes.
 - **2026-07-21** — Maintenance runbooks landed in `docs/runbooks/`; operations index and
   history-rewrite lesson wired. Unified command/search reference + lesson indexed.
   Repo docs are canonical for executable procedures; vault links only. See [log.md](log.md).

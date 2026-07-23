@@ -26,6 +26,21 @@ function extractTopic(rawQuery: string, pattern: RegExp): string {
   return phraseAfter(rawQuery, pattern);
 }
 
+/**
+ * Topic from an explicit research command — "start research on X",
+ * "start research X", "research X", "research on X" — or null when the input
+ * isn't a research command or names no topic. Shared by parseCommand and
+ * Chief's research bridge so both surfaces accept the same command forms.
+ */
+export function extractResearchTopic(input: string): string | null {
+  const rawQuery = normalizeQuery(input);
+  if (!/^(?:start\s+)?research\b/i.test(rawQuery)) return null;
+  const topic =
+    extractTopic(rawQuery, /^start\s+research(?:\s+on)?\s+/i) ||
+    extractTopic(rawQuery, /^research(?:\s+on)?\s+/i);
+  return topic || null;
+}
+
 function resolveAssignmentTarget(rawQuery: string): CommandIntent["assignmentTarget"] {
   if (/\bchief\b/i.test(rawQuery)) return "chief";
   if (/\becosystem\b/i.test(rawQuery)) return "ecosystem";
@@ -62,19 +77,18 @@ export function parseCommand(input: string): CommandIntent {
     };
   }
 
-  if (/^start\s+research\b/i.test(rawQuery)) {
-    const topic =
-      extractTopic(rawQuery, /^start\s+research(?:\s+on)?\s+/i) ||
-      extractTopic(rawQuery, /^research\s+/i) ||
-      rawQuery;
+  // Both "start research on X" and short-form "research X" are explicit
+  // commands; a bare "research" with no topic falls through to plain search.
+  const researchTopic = extractResearchTopic(rawQuery);
+  if (researchTopic) {
     return {
       mode: "action",
       rawQuery,
-      searchQuery: topic,
+      searchQuery: researchTopic,
       action: "start_research",
       assignmentTarget: "ecosystem",
-      topic,
-      target: { label: topic, phrase: topic },
+      topic: researchTopic,
+      target: { label: researchTopic, phrase: researchTopic },
       confidence: 0.92,
       reason: "Explicit research start command",
     };

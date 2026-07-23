@@ -29,7 +29,8 @@ export type ApprovalCategory =
   | "workflow_link"
   | "focus_escalation"
   | "overdue_review"
-  | "alert_action";
+  | "alert_action"
+  | "research_start";
 
 export type CommandHistoryStatus = "completed" | "pending" | "failed";
 
@@ -145,6 +146,13 @@ export interface ApprovalProposal {
   /** Chief's suggested call, distinct from the operator's actual decision (`status`). */
   recommendedDecision?: ApprovalRecommendedDecision;
   source?: ApprovalSource;
+  /**
+   * Research queue row this card gates. When set and the card is approved,
+   * ChiefApprovalsContext auto-transitions that request queued → in_progress
+   * (see researchStartApprovals.ts) — the approval IS the start signal for
+   * the research runner. Approval never runs research itself.
+   */
+  researchRequestId?: string;
 }
 
 /**

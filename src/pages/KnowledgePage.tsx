@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { PageHeader, Panel, PanelEmpty, TableScroll } from "@/components/ui";
+import { MsResearchStatusCard } from "@/components/research/MsResearchStatusCard";
 import { ResearchQueuePanel } from "@/components/research/ResearchQueuePanel";
 import { useData } from "@/context/DataContext";
 import {
@@ -141,7 +142,8 @@ export function KnowledgePage() {
         subtitle="Research queue, prompt library, and Obsidian-routed knowledge entries"
       />
 
-      <div className="knowledge-research-panel">
+      <div className="knowledge-research-panel knowledge-research-panel--split">
+        <MsResearchStatusCard />
         <Panel title="Research queue">
           <ResearchQueuePanel highlightId={highlightId} />
         </Panel>

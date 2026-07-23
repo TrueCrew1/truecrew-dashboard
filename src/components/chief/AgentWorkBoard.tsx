@@ -148,7 +148,9 @@ function WorkStoryPanel({
   const linkedTask = story.linkedTaskTitle
     ? buildGateTasks.find((task) => task.title === story.linkedTaskTitle)
     : undefined;
-  const request = researchRequests.find((candidate) => candidate.id === story.researchRequestId);
+  const request = story.researchRequestId
+    ? researchRequests.find((candidate) => candidate.id === story.researchRequestId)
+    : undefined;
   // Stable id-based resolution first; title match is only a compatibility
   // fallback for notes filed before work_story_id existed.
   const latestNote =

@@ -23,6 +23,8 @@ import {
 import { loadSessionState, saveSessionState } from "./chiefSessionStorage";
 import { buildChiefLiveContext, type ChiefLiveContext } from "./chiefLiveContext";
 import { deriveApprovalCandidates, mergeApprovalSources } from "./chiefApprovalBoard";
+import { deriveResearchStartApprovals } from "./researchStartApprovals";
+import { useResearchRequests } from "@/context/ResearchRequestsContext";
 import type {
   ApprovalAction,
   ApprovalDecision,
@@ -88,12 +90,21 @@ function isApprovalDecisionRecord(value: unknown): value is Record<string, Appro
 
 export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
   const { data, source } = useData();
+  const { allRequests: researchRequests, updateRequestStatus } = useResearchRequests();
   const liveContext = useMemo(() => buildChiefLiveContext(data), [data]);
   // Derived dashboard signals only on the live Supabase rail — mock-rail
   // Acme/Billing demo ops must not surface as actionable approvals.
   const derivedApprovals = useMemo(
     () => (source === "supabase" ? deriveApprovalCandidates(data, liveContext) : []),
     [data, liveContext, source],
+  );
+
+  // One card per queued research request, on both rails — the research queue
+  // is real on either (live DB rows, or adapter/session rows), unlike the
+  // mock ops data gated above. Approving releases the row to in_progress.
+  const researchStartApprovals = useMemo(
+    () => deriveResearchStartApprovals(researchRequests),
+    [researchRequests],
   );
 
   // Static demo seeds are intentionally empty (see chiefApprovalSeeds.ts).
@@ -165,7 +176,7 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const approvals = useMemo(() => {
-    const merged = mergeApprovalSources(derivedApprovals, commandApprovals);
+    const merged = mergeApprovalSources(derivedApprovals, researchStartApprovals, commandApprovals);
     return merged.map((proposal) => {
       const decision = approvalDecisions[proposal.id];
       if (!decision) return proposal;
@@ -176,7 +187,7 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
         decidedBy: decision.actor ?? undefined,
       };
     });
-  }, [derivedApprovals, commandApprovals, approvalDecisions]);
+  }, [derivedApprovals, researchStartApprovals, commandApprovals, approvalDecisions]);
 
   const pendingApprovalCount = useMemo(
     () => approvals.filter((proposal) => proposal.status === "pending").length,
@@ -198,6 +209,24 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
     setHistory((prev) => [entry, ...prev]);
   }, []);
 
+  // Approval → research bridge (transition half; derivation half is
+  // researchStartApprovals above). An approved card that carries a
+  // researchRequestId releases its queue row to in_progress — the runner's
+  // pickup signal. Failure to transition (already released, done, etc.) never
+  // fails the decision itself: the queue row's real state wins.
+  const releaseResearchRequest = useCallback(
+    (proposalId: string) => {
+      const requestId = proposalsById.get(proposalId)?.researchRequestId;
+      if (!requestId) return;
+      try {
+        updateRequestStatus(requestId, "in_progress");
+      } catch (error) {
+        console.error("[research-rail] approval_release_failed", { requestId, error });
+      }
+    },
+    [proposalsById, updateRequestStatus],
+  );
+
   const recordDecision = useCallback(
     async (id: string, action: ApprovalAction): Promise<ApprovalDecision> => {
       const nextStatus = approvalActionToStatus(action);
@@ -212,6 +241,7 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
             actor: decision.actor,
           };
           applyDecision(applied);
+          if (applied.status === "approved") releaseResearchRequest(id);
           // ADR-001: observability-only emit after decision persists.
           emitApprovalDecisionRecorded(
             applied.proposalId,
@@ -238,6 +268,7 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
         actor: null,
       };
       applyDecision(decision);
+      if (decision.status === "approved") releaseResearchRequest(id);
       // ADR-001: observability-only emit after local decision applies.
       emitApprovalDecisionRecorded(
         decision.proposalId,
@@ -247,7 +278,7 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
       );
       return decision;
     },
-    [liveApi, applyDecision],
+    [liveApi, applyDecision, releaseResearchRequest],
   );
 
   const value = useMemo<ChiefApprovalsContextValue>(

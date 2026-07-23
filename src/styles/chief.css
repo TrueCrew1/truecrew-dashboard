@@ -3499,6 +3499,10 @@ button.chief-brief-metric {
   line-height: 1.5;
 }
 
+.agent-research-queue-sync-error {
+  color: var(--red);
+}
+
 .agent-research-queue-list {
   display: flex;
   flex-direction: column;
@@ -3569,6 +3573,117 @@ button.chief-brief-metric {
 
 .knowledge-research-panel {
   margin-bottom: 16px;
+}
+
+.knowledge-research-panel--split {
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 900px) {
+  .knowledge-research-panel--split {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    align-items: start;
+  }
+}
+
+.agent-research-queue-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.agent-research-queue-filed,
+.agent-research-queue-blocker,
+.agent-research-queue-adapter-note {
+  margin: 4px 0 0;
+  font-size: 10px;
+  color: var(--steel-dim);
+  line-height: 1.45;
+}
+
+.agent-research-queue-blocker {
+  color: var(--red, #e85d4c);
+}
+
+.agent-research-queue-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.agent-research-queue-actions .chief-btn {
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  font-size: 10px;
+}
+
+.ms-research-status-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ms-research-status-lede,
+.ms-research-status-empty,
+.ms-research-status-path,
+.ms-research-status-focus-meta {
+  margin: 0;
+  font-size: 11px;
+  color: var(--steel);
+  line-height: 1.5;
+}
+
+.ms-research-status-counts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ms-research-status-counts li {
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  text-align: center;
+}
+
+.ms-research-status-count-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+}
+
+.ms-research-status-count-value {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.ms-research-status-focus-topic {
+  margin: 0 0 4px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.ms-research-status-link {
+  display: inline-flex;
+  margin-top: 8px;
+  width: fit-content;
+  padding: 6px 12px;
+  text-decoration: none;
 }
 
 .agent-work-story {

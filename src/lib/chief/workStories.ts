@@ -10,8 +10,13 @@ export interface WorkStoryDefinition {
   title: string;
   /** Short, human summary shown regardless of how much live backing exists. */
   summary: string;
-  /** Matching ResearchRequest.id in src/lib/research/requests.ts. */
-  researchRequestId: string;
+  /**
+   * Matching ResearchRequest.id in the live research queue (adapter backlog in
+   * src/lib/research/adapterRequests.ts). Omit when no queue request tracks
+   * this story — the UI shows "Not queued." honestly rather than pointing at
+   * an id that doesn't exist.
+   */
+  researchRequestId?: string;
   /**
    * Task.title to look up in live Build-gate data (useBuildTasks) for Planner
    * checklist / priority-reason context. Omit if no live task backs this story
@@ -28,7 +33,9 @@ export const WORK_STORIES: WorkStoryDefinition[] = [
     title: "Billing API rate limiter",
     summary:
       "Per-tenant rate limiting for the Billing API — one required gate (\"PR opened\") still open.",
-    researchRequestId: "req-billing-rate-limiter",
+    // No researchRequestId: the old "req-billing-rate-limiter" request was
+    // removed when the queue became the M&S adapter backlog; the filed note
+    // below still resolves via work_story_id.
     linkedTaskTitle: "Billing API rate limiter",
     noteMatchTitle: "billing api rate limiter",
   },
@@ -38,7 +45,6 @@ export const WORK_STORIES: WorkStoryDefinition[] = [
     summary:
       "ChiefPanel's card-created/card-resolved notification hooks are stubbed with no vendor wired " +
       "in yet — no live Build task tracks this, so there's no live Planner checklist for it either.",
-    researchRequestId: "req-notification-vendor",
     noteMatchTitle: "notification",
   },
 ];

@@ -68,8 +68,10 @@ export function AppShell() {
 
   return (
     <SelectionContext.Provider value={{ selectedEntityId, setSelectedEntityId }}>
-      <ChiefApprovalsProvider>
-        <ResearchRequestsProvider>
+      {/* Research outside approvals: ChiefApprovalsProvider derives research-start
+          approval cards from the queue and releases rows on approval. */}
+      <ResearchRequestsProvider>
+        <ChiefApprovalsProvider>
         <div className={shellClass}>
           <Sidebar
             collapsed={sidebarCollapsed}
@@ -97,8 +99,8 @@ export function AppShell() {
             selectedEntityId={selectedEntityId}
           />
         </div>
-        </ResearchRequestsProvider>
-      </ChiefApprovalsProvider>
+        </ChiefApprovalsProvider>
+      </ResearchRequestsProvider>
     </SelectionContext.Provider>
   );
 }

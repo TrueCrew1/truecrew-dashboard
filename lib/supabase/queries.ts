@@ -1,5 +1,6 @@
 import type { DbTaskRow } from "./admin.js";
 import { getSupabaseAdmin } from "./admin.js";
+import type { ResearchRequestStatus } from "../research/status.js";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -154,4 +155,97 @@ export async function fetchRawCommandCenterRows() {
     prompts: promptsRes.data ?? [],
     notes: notesRes.data ?? [],
   };
+}
+
+// ---------------------------------------------------------------------------
+// Research requests (public.research_requests — see the 20260722000001
+// migration). Status vocabulary/transitions come from lib/research/status.ts.
+
+const RESEARCH_REQUEST_COLUMNS =
+  "id, topic, why_it_matters, suggested_outcome, source, status, filed_path, blocker_note, created_at, updated_at";
+
+export interface DbResearchRequestRow {
+  id: string;
+  topic: string;
+  why_it_matters: string;
+  suggested_outcome: string;
+  source: "adapter" | "session";
+  status: ResearchRequestStatus;
+  filed_path: string | null;
+  blocker_note: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function fetchResearchRequests(): Promise<DbResearchRequestRow[]> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("research_requests")
+    .select(RESEARCH_REQUEST_COLUMNS)
+    .order("updated_at", { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []) as DbResearchRequestRow[];
+}
+
+export async function getResearchRequest(id: string): Promise<DbResearchRequestRow | null> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("research_requests")
+    .select(RESEARCH_REQUEST_COLUMNS)
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw error;
+  return (data as DbResearchRequestRow | null) ?? null;
+}
+
+export async function insertResearchRequest(row: {
+  id: string;
+  topic: string;
+  why_it_matters: string;
+  suggested_outcome: string;
+  created_at: string;
+  updated_at: string;
+}): Promise<{ row: DbResearchRequestRow; created: boolean }> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("research_requests")
+    .insert({ ...row, source: "session", status: "queued" })
+    .select(RESEARCH_REQUEST_COLUMNS)
+    .single();
+
+  if (error) {
+    if (error.code === "23505") {
+      const raced = await getResearchRequest(row.id);
+      if (raced) return { row: raced, created: false };
+    }
+    throw error;
+  }
+
+  return { row: data as DbResearchRequestRow, created: true };
+}
+
+export async function updateResearchRequestStatus(
+  id: string,
+  status: ResearchRequestStatus,
+  options: { filedPath?: string; blockerNote?: string },
+): Promise<DbResearchRequestRow | null> {
+  const supabase = getSupabaseAdmin();
+  const patch: Record<string, string> = {
+    status,
+    updated_at: new Date().toISOString(),
+  };
+  if (status === "done" && options.filedPath) patch.filed_path = options.filedPath;
+  if (status === "blocked" && options.blockerNote) patch.blocker_note = options.blockerNote;
+
+  const { data, error } = await supabase
+    .from("research_requests")
+    .update(patch)
+    .eq("id", id)
+    .select(RESEARCH_REQUEST_COLUMNS)
+    .maybeSingle();
+
+  if (error) throw error;
+  return (data as DbResearchRequestRow | null) ?? null;
 }

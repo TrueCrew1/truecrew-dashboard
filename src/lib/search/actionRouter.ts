@@ -10,7 +10,11 @@ import type {
 export interface ActionDispatchContext {
   navigate?: (path: string) => void;
   focusChief?: (query: string) => void;
-  createResearchRequest?: (topic: string) => { id: string; topic: string } | null;
+  /** `rail` tells the result message where the request actually persists;
+   * omitted means browser-session only (the honest default). */
+  createResearchRequest?: (
+    topic: string,
+  ) => { id: string; topic: string; rail?: "live" | "session" } | null;
 }
 
 function buildSuggestedActions(intent: CommandIntent, response: SearchResponse): SuggestedAction[] {
@@ -58,7 +62,12 @@ function buildSuggestedActions(intent: CommandIntent, response: SearchResponse):
       action: "start_research",
       assignmentTarget: "Research Agent",
       route: CHIEF_ROUTES.knowledge,
-      payload: { topic: intent.searchQuery },
+      // `query` is what CommandBar re-dispatches on click (payload?.query),
+      // so it must be a parseable research command — not just the raw topic.
+      payload: {
+        query: `start research on ${intent.searchQuery}`,
+        topic: intent.searchQuery,
+      },
     });
   }
 
@@ -163,7 +172,9 @@ export function dispatchAction(
         ok: true,
         action: "start_research",
         message: created
-          ? `Session research request created for "${topic}" — saved in this browser. See the queue on Knowledge; file a finding when ready. Nothing auto-runs.`
+          ? created.rail === "live"
+            ? `Research request created for "${topic}" — saved to the live queue. See Knowledge; file a finding when ready. Nothing auto-runs.`
+            : `Session research request created for "${topic}" — saved in this browser. See the queue on Knowledge; file a finding when ready. Nothing auto-runs.`
           : `Opened Knowledge for "${topic}" — research request creation is unavailable in this context.`,
         route,
         routeLabel: "Knowledge",

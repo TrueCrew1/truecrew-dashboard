@@ -19,7 +19,13 @@ import { buildApprovalFromResponse, buildHistoryEntry } from "./chiefMock";
 import { approvalActionSuccessMessage, type ApprovalActionState } from "./chiefApproval";
 import { deriveChiefBoardItems } from "./chiefApprovalBoard";
 import { buildChiefContextSummary, resolveChiefCommand } from "./chiefCommandRouter";
+import {
+  buildResearchRequestCreatedResponse,
+  buildResearchRequestFailedResponse,
+  extractResearchTopic,
+} from "./chiefResearchCommand";
 import { useChiefApprovals } from "./ChiefApprovalsContext";
+import { useResearchRequests } from "@/context/ResearchRequestsContext";
 import { SpecialistCards } from "./SpecialistCards";
 import { ChiefSituationBrief } from "./ChiefSituationBrief";
 import { ChiefBoard } from "./ChiefBoard";
@@ -38,6 +44,7 @@ const EXAMPLE_COMMANDS = [
   "Show approvals I need to review",
   "What tasks are missing customer context?",
   "Show open alerts",
+  "Start research on M&S estimating roadmap",
 ];
 
 type ChiefTab = "command" | "board" | "agents" | "programs" | "approvals" | "history" | "governance";
@@ -58,6 +65,7 @@ export function ChiefPanel() {
     history,
     addHistoryEntry,
   } = useChiefApprovals();
+  const { createSessionRequest, rail: researchRail } = useResearchRequests();
 
   const [activeTab, setActiveTab] = useState<ChiefTab>("command");
   const [input, setInput] = useState("");
@@ -279,6 +287,24 @@ export function ChiefPanel() {
     setIsProcessing(true);
     setActiveTab("command");
     setResponse(null);
+
+    // Chief → Research bridge: explicit research commands go straight to the
+    // live session queue (the same store the ⌘K command bar and Knowledge page
+    // use) instead of the specialist router. Session-only, operator-driven.
+    const researchTopic = extractResearchTopic(command);
+    if (researchTopic) {
+      let result: ChiefResponse;
+      try {
+        const request = createSessionRequest(researchTopic);
+        result = buildResearchRequestCreatedResponse(request, researchRail);
+      } catch {
+        result = buildResearchRequestFailedResponse(researchTopic);
+      }
+      setResponse(result);
+      addHistoryEntry(buildHistoryEntry(command, result));
+      setIsProcessing(false);
+      return;
+    }
 
     // resolveChiefCommand is synchronous (regex/keyword dispatch against
     // already-loaded live context, no I/O) — no artificial delay needed.

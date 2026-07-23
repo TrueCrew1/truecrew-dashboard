@@ -1,5 +1,7 @@
 import { ApprovalSectionHeader, ApprovalSectionShell } from "./approvalWrappers";
 import { V2_PROGRAM_CARDS, type V2ProgramCard } from "@/data/v2Program";
+import { useResearchRequests } from "@/context/ResearchRequestsContext";
+import { deriveV2CardStatus } from "./v2ProgramLiveStatus";
 
 function V2ProgramCardView({ card }: { card: V2ProgramCard }) {
   return (
@@ -55,8 +57,15 @@ function V2ProgramCardView({ card }: { card: V2ProgramCard }) {
  * (knowledge/projects/ms-painting-v2-program.md).
  */
 export function V2ProgramBoard() {
-  const masterCard = V2_PROGRAM_CARDS.find((card) => card.isMaster);
-  const workstreamCards = V2_PROGRAM_CARDS.filter((card) => !card.isMaster);
+  const { allRequests } = useResearchRequests();
+  // Research-workstream cards take their status badge from the live queue row
+  // (one source of truth); cards without a linked request keep static status.
+  const cards = V2_PROGRAM_CARDS.map((card) => ({
+    ...card,
+    ...deriveV2CardStatus(card, allRequests),
+  }));
+  const masterCard = cards.find((card) => card.isMaster);
+  const workstreamCards = cards.filter((card) => !card.isMaster);
 
   return (
     <ApprovalSectionShell className="v2-program-board">
@@ -65,9 +74,9 @@ export function V2ProgramBoard() {
         count={`${V2_PROGRAM_CARDS.length} cards`}
       />
       <p className="agent-work-board-note">
-        Adapter-backed program cards from <code>src/data/v2Program.ts</code> — static config, not
-        live deploy or ops state. Content is filed under{" "}
-        <code>knowledge/projects/ms-painting-v2-*.md</code>.
+        Program cards from <code>src/data/v2Program.ts</code> — card content is static config;
+        research-workstream status badges are derived live from the Research queue. Content is
+        filed under <code>knowledge/projects/ms-painting-v2-*.md</code>.
       </p>
       <p className="agent-work-board-note">
         ms-painting (TrueCrew1/ms-painting) repositioning initiative — from a single-customer

@@ -104,12 +104,24 @@ export function ChiefHomePanel() {
   // Verified/Cited one. See docs/AGENT_RUNBOOK.md § Knowledge Precedence &
   // Task-Time Retrieval and src/lib/knowledge/taskTimeResearch.ts.
   const researchLane: LaneStatus = useMemo(() => {
+    const queued = researchRequests.filter((row) => row.status === "queued").length;
+    const inProgress = researchRequests.filter((row) => row.status === "in_progress").length;
+    const done = researchRequests.filter((row) => row.status === "done").length;
+    const blocked = researchRequests.filter((row) => row.status === "blocked").length;
+    const statusDetail = `${queued} queued · ${inProgress} in progress · ${done} done · ${blocked} blocked`;
+
     if (researchRequests.length === 0 && !HAS_FILED_RESEARCH) {
       return {
         state: "Awaiting live work feed",
         tone: "steel",
         detail: "No research requests queued or notes filed yet.",
       };
+    }
+    if (blocked > 0) {
+      return { state: "Blocked work", tone: "red", detail: statusDetail };
+    }
+    if (inProgress > 0) {
+      return { state: "In progress", tone: "yellow", detail: statusDetail };
     }
     if (RECENT_RESEARCH_ACTIVITY) {
       // Honestly labeled via the note's own verification (getRecentResearchActivity,
@@ -118,15 +130,18 @@ export function ChiefHomePanel() {
       return {
         state: RECENT_RESEARCH_ACTIVITY.badgeTone === "green" ? "Active" : "Provisional only",
         tone: RECENT_RESEARCH_ACTIVITY.badgeTone,
-        detail: `Latest: ${RECENT_RESEARCH_ACTIVITY.title} — ${RECENT_RESEARCH_ACTIVITY.badgeLabel} (${RECENT_RESEARCH_ACTIVITY.createdDate})`,
+        detail: `Latest: ${RECENT_RESEARCH_ACTIVITY.title} — ${RECENT_RESEARCH_ACTIVITY.badgeLabel} (${RECENT_RESEARCH_ACTIVITY.createdDate}) · ${statusDetail}`,
       };
     }
+    if (queued > 0) {
+      return { state: "Queued", tone: "yellow", detail: statusDetail };
+    }
     return {
-      state: "Active",
+      state: done > 0 ? "Done (session)" : "Active",
       tone: "green",
-      detail: `${researchRequests.length} request${researchRequests.length === 1 ? "" : "s"} queued`,
+      detail: statusDetail,
     };
-  }, [researchRequests.length]);
+  }, [researchRequests]);
 
   const boardItems = useMemo(
     () => deriveChiefBoardItems(liveContext, approvals),

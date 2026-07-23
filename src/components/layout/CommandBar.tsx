@@ -33,7 +33,7 @@ export function CommandBar() {
   const navigate = useNavigate();
   const { data, source } = useData();
   const { approvals } = useChiefApprovals();
-  const { allRequests, createSessionRequest } = useResearchRequests();
+  const { allRequests, createSessionRequest, rail } = useResearchRequests();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [response, setResponse] = useState<SearchResponse | null>(null);
@@ -117,7 +117,7 @@ export function CommandBar() {
         },
         createResearchRequest: (topic) => {
           try {
-            return createSessionRequest(topic);
+            return { ...createSessionRequest(topic), rail };
           } catch {
             return null;
           }
@@ -133,7 +133,7 @@ export function CommandBar() {
         setQuery("");
       }
     },
-    [handleNavigate, searchContext, createSessionRequest],
+    [handleNavigate, searchContext, createSessionRequest, rail],
   );
 
   const onSubmit = (event: React.FormEvent) => {

@@ -117,6 +117,90 @@ test("dispatchAction: M&S Painting research creates session request and opens Kn
   assert.equal(result.createdEntityId, "req-session-ms-painting");
 });
 
+test("parseCommand: start research on M&S estimating roadmap", () => {
+  const intent = parseCommand("start research on M&S estimating roadmap");
+  assert.equal(intent.action, "start_research");
+  assert.equal(intent.topic, "M&S estimating roadmap");
+});
+
+test("dispatchAction: M&S estimating roadmap creates session request and opens Knowledge", () => {
+  const intent = parseCommand("start research on M&S estimating roadmap");
+  const ctx = buildSearchDataContext(mockData, { dataRail: "mock" });
+  const response = executeUnifiedSearch(intent.rawQuery, ctx);
+  let route = "";
+  let createdTopic = "";
+  const result = dispatchAction(intent, response, {
+    navigate: (path) => {
+      route = path;
+    },
+    createResearchRequest: (topic) => {
+      createdTopic = topic;
+      return { id: "req-session-ms-estimating-roadmap", topic };
+    },
+  });
+  assert.equal(result.ok, true);
+  assert.equal(createdTopic, "M&S estimating roadmap");
+  assert.match(route, /^\/knowledge\?highlight=/);
+  assert.match(result.message ?? "", /saved in this browser/i);
+  assert.equal(result.createdEntityId, "req-session-ms-estimating-roadmap");
+});
+
+test("parseCommand: short-form research command", () => {
+  const intent = parseCommand("research M&S estimating roadmap");
+  assert.equal(intent.mode, "action");
+  assert.equal(intent.action, "start_research");
+  assert.equal(intent.topic, "M&S estimating roadmap");
+});
+
+test("parseCommand: short-form research on <topic>", () => {
+  const intent = parseCommand("research on tenant branding options");
+  assert.equal(intent.action, "start_research");
+  assert.equal(intent.topic, "tenant branding options");
+});
+
+test("parseCommand: bare research word is not an action", () => {
+  const intent = parseCommand("research");
+  assert.equal(intent.mode, "search");
+  assert.equal(intent.action, undefined);
+});
+
+test("suggested Start research action round-trips through dispatch", () => {
+  const ctx = buildSearchDataContext(mockData, { dataRail: "mock" });
+  // Free-text query that merely mentions research — pressing Enter would just
+  // search, but clicking the suggested action must still create a request.
+  const first = executeUnifiedSearch("M&S estimating research notes", ctx);
+  const action = first.suggestedActions.find((entry) => entry.action === "start_research");
+  assert.ok(action, "expected a Start research suggested action");
+  // CommandBar.onSelectAction re-dispatches payload.query, so it must be a
+  // parseable research command.
+  const replay = action.payload?.query ?? "";
+  assert.match(replay, /^start research on /i);
+  const second = executeUnifiedSearch(replay, ctx);
+  let createdTopic = "";
+  const result = dispatchAction(second.intent, second, {
+    createResearchRequest: (topic) => {
+      createdTopic = topic;
+      return { id: "req-session-roundtrip", topic };
+    },
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.action, "start_research");
+  assert.equal(createdTopic, "M&S estimating research notes");
+  assert.equal(result.createdEntityId, "req-session-roundtrip");
+});
+
+test("dispatchAction start_research message reflects the live rail", () => {
+  const intent = parseCommand("start research on estimating engine");
+  const ctx = buildSearchDataContext(mockData, { dataRail: "mock" });
+  const response = executeUnifiedSearch(intent.rawQuery, ctx);
+  const result = dispatchAction(intent, response, {
+    createResearchRequest: (topic) => ({ id: "req-live-test", topic, rail: "live" }),
+  });
+  assert.equal(result.ok, true);
+  assert.match(result.message ?? "", /saved to the live queue/i);
+  assert.doesNotMatch(result.message ?? "", /saved in this browser/i);
+});
+
 test("searchProjects marks adapter source", () => {
   const ctx = buildSearchDataContext(mockData, { dataRail: "mock" });
   const results = searchProjects(ctx, "painting");
