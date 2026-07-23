@@ -211,6 +211,91 @@ export const BUILD_REQUEST_DUPLICATE_AUTH_FIX: BuildApprovalRequest = {
   createdAt: "2026-07-04T07:20:01.000Z",
 };
 
+/**
+ * Real, not illustrative — Daily Build Health Check stress test (2026-07-04):
+ *
+ * PR #61 (branch claude/chief-approval-alerts-8jmzqu, a different session's
+ * work, CONFLICTING against main) already implements Phase 4 (Alerts &
+ * Escalation): a real ApprovalAlertsPanel on Monitor wired to
+ * chiefApprovalUrgency.ts's getUrgency()/DUE_SOON_HOURS/OVERDUE_HOURS.
+ * Planner's PLANNER_REQUEST_START_PHASE_4 (PR #72) asks "should we start
+ * Phase 4?" on the premise that it hasn't started — but it has, in a
+ * conflicting, unmerged PR neither Planner nor this session knew about
+ * until this scan. High impact: it directly changes what PR #72 is even
+ * asking. Kept as its own card, not bundled with the lower-stakes stale-PR
+ * cleanup below — this is a distinct, higher-priority decision.
+ */
+export const BUILD_REQUEST_PHASE4_PR_CONFLICT: BuildApprovalRequest = {
+  id: "apr-build-pr61-phase4-conflict",
+  gate: APPROVAL_GATES.build[0],
+  summary:
+    "PR #61 already implements Phase 4 (Alerts & Escalation) — a real ApprovalAlertsPanel wired to the existing getUrgency() thresholds — but is unmerged and conflicting. This directly overlaps with Planner's pending 'should we start Phase 4?' card (PR #72), which assumed Phase 4 hadn't started yet.",
+  riskLevel: "medium",
+  testsOrChecksDone: [
+    { label: "Confirmed PR #61's real diff (ApprovalAlertsPanel.tsx, useApprovalAlerts.ts, approvalAlerts.ts, MonitorPage.tsx wiring)", status: "pass" },
+    { label: "Confirmed PR #61 is CONFLICTING against current main", status: "pass" },
+    { label: "Cross-checked against Planner's PR #72 — direct overlap confirmed, not assumed", status: "pass" },
+    { label: "Reconciliation plan (rebase #61 vs. fold into #72's decision)", status: "pending" },
+  ],
+  requestedAction:
+    "Resolve before deciding PR #72: either treat PR #61 as the real Phase 4 start (review/rebase it) and consider #72 answered, or hold both until you pick a path.",
+  filesOrAreas: [
+    "src/components/chief/ApprovalAlertsPanel.tsx",
+    "src/components/chief/useApprovalAlerts.ts",
+    "src/pages/MonitorPage.tsx",
+    "(cross-references PR #72)",
+  ],
+  createdAt: "2026-07-04T17:09:01.000Z",
+};
+
+/**
+ * Real, not illustrative — Daily Build Health Check stress test (2026-07-04):
+ *
+ * Bundled batch of 13 stale/superseded open PRs from 2026-06-28/29 (6+ days
+ * old), all sharing one decision ("close as superseded"), found via
+ * `gh pr list --state open` plus cross-checks: #29/#32 and #38/#39 are
+ * confirmed exact duplicates (identical file sets via `gh pr diff --name-only`,
+ * same pattern as PR #57/#58); the Obsidian-notes PRs (#34/#36/#37/#42/#43)
+ * are superseded because that feature is already wired on main independently
+ * (KnowledgePage.tsx calls fetchObsidianNotes() today); the Today/Operations
+ * polish PRs (#23/#24/#25/#26/#27/#28/#30/#33) are superseded because their
+ * underlying features (signal clarity, customer visibility, workflow gates)
+ * are confirmed closed via different commits per the Current Priority List.
+ * One card, one checklist item per cluster — not 13 separate cards.
+ *
+ * NOT included here (deferred instead — see Build Log): PR #46/#47 (local-dev
+ * /api/* serving — checked vite.config.ts, no existing fix found, so NOT
+ * confirmed superseded) and PR #56 (Vercel Speed Insights — unrelated theme,
+ * just stale, no conflict either way). These don't share this bundle's
+ * confident "close as superseded" recommendation, so bundling them in would
+ * misrepresent the analysis — deferred to the next Chief Weekly Digest queue
+ * instead of forced into this card or given their own cards past the cap.
+ *
+ * RESOLVED (2026-07-04): approved in full via the Chief → Approvals bundled-
+ * card walkthrough. All 15 PRs closed on GitHub with an explanatory comment
+ * each (#23,24,25,26,27,28,30,33,34,36,37,42,43 as superseded; #29 and #38
+ * as duplicates, keeping #32 and #39 per the default). See Build Log for
+ * the full outcome. Removed from AGENT_APPROVAL_CARDS below — kept here,
+ * not deleted, as the record of what was decided and why.
+ */
+export const BUILD_REQUEST_STALE_PR_CLEANUP: BuildApprovalRequest = {
+  id: "apr-build-stale-pr-cleanup-batch",
+  gate: APPROVAL_GATES.build[0],
+  summary:
+    "13 open PRs from 2026-06-28/29 appear superseded by shipped work or are exact duplicates of each other — bundled as one batch-close decision rather than 13 separate cards.",
+  riskLevel: "low",
+  testsOrChecksDone: [
+    { label: "#29 / #32 confirmed exact duplicates (identical file sets)", status: "pass" },
+    { label: "#38 / #39 confirmed exact duplicates (identical file sets)", status: "pass" },
+    { label: "#34 / #36 / #37 / #42 / #43 (Obsidian notes) confirmed superseded — feature already wired on main independently", status: "pass" },
+    { label: "#23 / #24 / #25 / #26 / #27 / #28 / #30 / #33 (Today/Operations polish) confirmed superseded per Current Priority List closures", status: "pass" },
+  ],
+  requestedAction:
+    "Approve closing all 13 as superseded/duplicate: #23, #24, #25, #26, #27, #28, #30, #33 (Today/Operations polish), #34, #36, #37, #42, #43 (Obsidian notes), plus one of #29/#32 and one of #38/#39 as duplicates (keep whichever you prefer, close the other).",
+  filesOrAreas: ["13 open PRs — see checklist for cluster breakdown"],
+  createdAt: "2026-07-04T17:09:01.000Z",
+};
+
 export const EXAMPLE_RESEARCH_REQUEST: ResearchApprovalRequest = {
   id: "apr-research-example-notification-vendor",
   gate: APPROVAL_GATES.research[1],
@@ -244,6 +329,9 @@ export const EXAMPLE_CONTENT_REQUEST: ContentApprovalRequest = {
 export const AGENT_APPROVAL_CARDS: ApprovalCard[] = [
   createApprovalCardFromPlannerRequest(EXAMPLE_PLANNER_REQUEST),
   createApprovalCardFromBuildRequest(BUILD_REQUEST_DUPLICATE_AUTH_FIX),
+  createApprovalCardFromBuildRequest(BUILD_REQUEST_PHASE4_PR_CONFLICT),
+  // BUILD_REQUEST_STALE_PR_CLEANUP intentionally omitted — resolved (see its
+  // comment above and the Build Log); no longer pending.
   createApprovalCardFromResearchRequest(EXAMPLE_RESEARCH_REQUEST),
   createApprovalCardFromContentRequest(EXAMPLE_CONTENT_REQUEST),
 ];
