@@ -104,8 +104,9 @@ the four-line format above. Mapping UI fields → contract:
 | Next action | Derived from recommendation; keep singular |
 | Approval request | `approvalNeeded` + `approvalPrompt` / title, or `none` |
 
-Wiring the dashboard renderer to print this format literally is a future UI task —
-out of scope for this contract baseline.
+Dashboard command surfaces (`ChiefHomePanel`, `ChiefPanel`) render this format via
+`ChiefReplyBlock` / `formatChiefReplyLines` (mapping from `ChiefResponse` fields).
+Resolvers still produce `ChiefResponse`; presentation is aligned to this contract.
 
 ---
 

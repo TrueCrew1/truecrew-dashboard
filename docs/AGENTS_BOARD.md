@@ -12,7 +12,7 @@ A green **live** badge means the row is derived from real app data; a gray
 
 | Agent | Status | Data source |
 |---|---|---|
-| Build Agent | live | Tasks with `workflowType === "build"` |
+| Build Agent (shown as **Repo**) | live | Tasks with `workflowType === "build"` — display label Repo per AGENT_SYSTEM |
 | Workflow Gate Agent | live | Non-build, non-decision tasks with an open gate checklist |
 | Research Agent | live | Active/resolved incidents |
 | Librarian Agent | live | Tasks plus indexed Obsidian artifacts (filed vs. pending) |

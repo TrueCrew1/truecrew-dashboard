@@ -85,7 +85,7 @@ describe("deriveAgentStatusStrip", () => {
       },
     });
 
-    expect(rows.map((row) => row.agent)).toEqual(["Research", "Build", "Librarian", "Monitor"]);
+    expect(rows.map((row) => row.agent)).toEqual(["Research", "Repo", "Librarian", "Monitor"]);
   });
 
   it("maps monitor probe failures to degraded", () => {

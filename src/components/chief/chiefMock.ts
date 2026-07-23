@@ -4,6 +4,7 @@ import type {
   CommandHistoryEntry,
   CommandHistoryStatus,
 } from "./types";
+import { formatChiefReplyPlainText } from "./chiefReplyFormat";
 
 export function nextChiefId(prefix: string): string {
   return `${prefix}-${crypto.randomUUID()}`;
@@ -53,7 +54,7 @@ export function buildHistoryEntry(
     id: nextChiefId("cmd"),
     command,
     timestamp: new Date().toISOString(),
-    resultSummary: response.summary,
+    resultSummary: formatChiefReplyPlainText(response),
     status,
   };
 }

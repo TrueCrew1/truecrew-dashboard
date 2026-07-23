@@ -93,14 +93,13 @@ Do not write system prompts for the rows above until an explicit decision adds t
 
 ## Runtime wiring gaps (honest)
 
-Contracts here are documentation/prompt baseline. Known gaps:
-
-- Dashboard `resolveChiefCommand()` still returns `ChiefResponse` fields; it does
-  not yet render the four-line Chief format in the UI.
+- Dashboard `resolveChiefCommand()` still returns `ChiefResponse` fields; **UI now
+  maps them** to the four-line format via `ChiefReplyBlock`.
 - Approval TypeScript types still use names like `BuildApprovalRequest` /
-  `ContentApprovalRequest` — functional, not renamed.
-- UI Agents board still shows Build / Roadmap / Workflow Gate / Marketer rows
-  ([AGENTS_BOARD.md](./AGENTS_BOARD.md)) — product labels, not prompt taxonomy.
+  `ContentApprovalRequest` — functional, not renamed (user-facing labels say **Repo**).
+- UI Agents board may still *store* “Build Agent” internally while displaying **Repo**;
+  Roadmap / Workflow Gate / Marketer remain board labels, not prompt lanes
+  ([AGENTS_BOARD.md](./AGENTS_BOARD.md)).
 - No automatic loader injects `docs/prompts/*.md` into model calls; operators/agents
   attach them in session.
 

@@ -140,9 +140,10 @@ export function createApprovalCardFromPlannerRequest(request: PlannerApprovalReq
 }
 
 export function createApprovalCardFromBuildRequest(request: BuildApprovalRequest): ApprovalCard {
+  // Title prefix "Repo" is the canonical lane name; type remains BuildApprovalRequest.
   return baseCardFields(
     request,
-    "Build",
+    "Repo",
     "agent_build",
     `Touches: ${request.filesOrAreas.join(", ")}.`,
   );

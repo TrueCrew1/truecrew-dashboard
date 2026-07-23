@@ -23,8 +23,14 @@ const SPECIALIST_INITIALS: Record<AgentWorkItem["agent"], string> = {
   "Research Agent": "RS",
   "Roadmap Agent": "RM",
   "Marketer Agent": "MK",
-  "Build Agent": "BD",
+  "Build Agent": "RP",
 };
+
+/** User-facing lane label — internal agent id may still say "Build Agent". */
+function displayAgentWorkName(agent: AgentWorkItem["agent"]): string {
+  if (agent === "Build Agent") return "Repo";
+  return agent;
+}
 
 const PRIORITY_BADGE_VARIANT: Record<TaskPriority, "red" | "orange" | "yellow" | "steel"> = {
   critical: "red",
@@ -61,7 +67,7 @@ function AgentWorkCard({
           <span className="agent-work-card-avatar" aria-hidden="true">
             {SPECIALIST_INITIALS[item.agent]}
           </span>
-          <span className="agent-work-card-agent-name">{item.agent}</span>
+          <span className="agent-work-card-agent-name">{displayAgentWorkName(item.agent)}</span>
         </div>
         <span className="agent-work-card-badges">
           {item.source === "live" ? <span className="badge badge-green">live</span> : null}

@@ -4288,30 +4288,44 @@ button.chief-brief-metric {
   background: var(--bg-elevated);
 }
 
-.chief-home-response-summary {
-  margin: 0 0 6px;
+/* Canonical Chief reply: Status → Recommendation → Next action → Approval request */
+.chief-reply {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chief-reply-line {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.chief-reply-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+}
+
+.chief-reply-value {
+  margin: 0;
   font-size: 12px;
   color: var(--text);
   line-height: 1.5;
 }
 
-.chief-home-response-action {
-  margin: 0;
-  font-size: 11px;
-  color: var(--steel);
-  line-height: 1.5;
+.chief-reply--home .chief-reply-value {
+  font-size: 12px;
 }
 
-.chief-home-response-label {
-  font-weight: 600;
-  color: var(--steel-dim);
+.chief-reply--panel {
+  margin-top: 6px;
 }
 
-.chief-home-response-approval {
-  margin: 6px 0 0;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--orange);
+.chief-history-result--reply {
+  white-space: pre-wrap;
 }
 
 .chief-home-snapshots {

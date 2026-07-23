@@ -51,7 +51,7 @@ export const APPROVAL_RECOMMENDED_DECISION_BADGE: Record<ApprovalRecommendedDeci
 
 export const APPROVAL_SOURCE_LABEL: Record<ApprovalSource, string> = {
   pr: "PR",
-  agent_build: "Build",
+  agent_build: "Repo",
   ops_change: "Ops change",
   repo_change: "Repo",
   planner_agent: "Planner",

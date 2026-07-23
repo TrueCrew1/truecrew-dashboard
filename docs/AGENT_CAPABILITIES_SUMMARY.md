@@ -27,7 +27,7 @@ Mission activity and status is visible on Today/Home (`AgentMissionsCard`) and i
 Surfaces four core agents at a glance on Today’s Chief panel:
 
 - **Research** — handoff mission hook (`useProjectSummaryHandoffMissions`). **Healthy:** idle or completed missions. **Degraded:** running/queued handoffs or blocked/failed missions. **Not started / Not live:** mock mode or mission fetch unavailable.
-- **Build** — build-gate tasks and pending Build approval cards. **Healthy:** configured approval path or pending build approvals. **Degraded:** build tasks blocked on open gates. **Configured** label when idle but approval path is wired (no autonomous build runner).
+- **Repo** — repo-gate tasks and pending Repo (`agent_build`) approval cards. **Healthy:** configured approval path or pending repo approvals. **Degraded:** repo tasks blocked on open gates. **Configured** label when idle but approval path is wired (no autonomous runner).
 - **Librarian** — `deriveLibrarianAgentWorkItems` from tasks + Obsidian notes. **Healthy:** active or completed filing candidates. **Degraded:** blocked filing candidates. **Not started / Not live:** no candidates or mock mode.
 - **Monitor** — `useMonitorHealth` Vercel + Supabase probes (same as Monitor page). **Healthy:** probes OK. **Degraded:** probe errors or unreachable DB. **Config only / Not live:** mock mode or probes not yet loaded.
 
