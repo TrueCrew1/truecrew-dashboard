@@ -87,6 +87,16 @@ describe("research runner client", () => {
     expect(result.env.internalKey).toBe("secret");
   });
 
+  it("resolveResearchRunnerEnv strips a mistaken trailing /api", () => {
+    const result = resolveResearchRunnerEnv({
+      TRUECREW_API_URL: "https://example.vercel.app/api",
+      TRUECREW_INTERNAL_KEY: "secret",
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.env.apiUrl).toBe("https://example.vercel.app");
+  });
+
   it("pickOldestInProgress returns the earliest updated in_progress row", () => {
     const requests = [
       runnerRow({ id: "a", status: "queued", updatedAt: "2026-07-22T10:00:00.000Z" }),

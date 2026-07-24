@@ -89,7 +89,7 @@ Branch tested: `cursor/research-agent-live-4a27`
 
 | Check | Result |
 |---|---|
-| `npm test` | 53 files / **363** tests passed (latest audit; see also QA commands below) |
+| `npm test` | 53 files / **364** tests passed (latest; see also QA commands below) |
 | `npm run lint` | Clean |
 | `npm run build` | Clean (`tsc -b && vite build`) |
 | `npm run check:api-functions` | 12 / 12 |
@@ -367,6 +367,8 @@ Covers: resolve order (adapter during loading), soft-poll override prune, fail-c
 
 ```bash
 export TRUECREW_API_URL=https://<staging-or-preview>.vercel.app
+# Origin only — do NOT append /api (client calls /api/research).
+# A trailing /api is stripped as a safety net, but prefer the bare origin.
 export TRUECREW_INTERNAL_KEY=<same as INTERNAL_API_SECRET>
 npm run research:smoke -- --read-only   # safe probe
 npm run research:smoke                  # seed → release → pickup → done

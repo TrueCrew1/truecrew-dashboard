@@ -30,7 +30,13 @@ export type ResearchRunnerEnvResult =
 export function resolveResearchRunnerEnv(
   processEnv: NodeJS.ProcessEnv = process.env,
 ): ResearchRunnerEnvResult {
-  const apiUrl = processEnv.TRUECREW_API_URL?.trim().replace(/\/$/, "") ?? "";
+  // Origin only — client paths already include /api/research.
+  // Strip trailing slash and a mistaken trailing /api so ops URLs still work.
+  let apiUrl = processEnv.TRUECREW_API_URL?.trim() ?? "";
+  apiUrl = apiUrl.replace(/\/+$/, "");
+  if (apiUrl.toLowerCase().endsWith("/api")) {
+    apiUrl = apiUrl.slice(0, -4).replace(/\/+$/, "");
+  }
   const internalKey = processEnv.TRUECREW_INTERNAL_KEY?.trim() ?? "";
   const missing: string[] = [];
   if (!apiUrl) missing.push("TRUECREW_API_URL");
