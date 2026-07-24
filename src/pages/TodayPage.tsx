@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
+import { MsPaintingV2ProgressModule } from "@/components/dashboard/MsPaintingV2ProgressModule";
 import { ShiftStatsStrip } from "@/components/dashboard/ShiftStatsStrip";
 import { ChiefHomePanel } from "@/components/chief/ChiefHomePanel";
 import { AgentMissionsCard } from "@/components/missions/AgentMissionsCard";
@@ -67,6 +68,8 @@ export function TodayPage() {
         title="Today"
         subtitle="Focus items, overdue gates, and active Sev 1–2 incidents"
       />
+
+      <MsPaintingV2ProgressModule />
 
       <ShiftStatsStrip />
 
