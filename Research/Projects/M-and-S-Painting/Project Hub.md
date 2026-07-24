@@ -11,7 +11,7 @@ type: "hub"
 M&S Painting V2 (customer app context in True Crew; customer-app code lives in `TrueCrew1/ms-painting`, not this dashboard repo).
 
 ## Current status
-**Filing structure active.** Filed: request log, V2 improvement plan, all three OS standards templates, competitive landscape & demand brief. Still **MISSING**: blocked initial research package. Hub is usable for navigation; Research should not invent requirements beyond what the filed V2 plan and market brief state.
+**Filing checklist complete** for the planned OS/Obsidian structure. Filed: request log, V2 improvement plan, all three OS standards templates, competitive landscape & demand brief, and the blocked initial research package (from `M7S RESEARCH BLOCK.docx`). The package itself remains **status: blocked** — do not authorize implementation from it; first executable task is source acquisition/validation. Note: V2 plan and Research Lane template are now filed in this repo, which may satisfy part of the package’s exit criteria for a re-run — that re-run is not done in this filing PR.
 
 ## Primary source documents
 - [[2026-07-23 - V2 Improvement Plan]] — **STATUS: FILED** (repo: `docs/ms-painting-v2/improvement-plan-v2.md`; source: M&S Painting Platform Improvement Plan)
