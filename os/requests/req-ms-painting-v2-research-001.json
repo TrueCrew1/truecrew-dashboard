@@ -1,0 +1,13 @@
+{
+  "id": "req-ms-painting-v2-research-001",
+  "status": "MISSING",
+  "purpose": "OS request log for M&S Painting V2 research routing",
+  "project": "M&S Painting V2",
+  "type": "os_request_log",
+  "path": "/os/requests/req-ms-painting-v2-research-001.json",
+  "missing_input": "Full routing JSON payload as provided by the operator (exact fields and values). Do not invent route keys, risk scores, or center targets.",
+  "notes": [
+    "This placeholder was created because the routing JSON was not present in the workspace at filing time.",
+    "Related adapter research IDs already in code (not this log): req-ms-painting-v2-debrand, req-ms-painting-v2-tenant-branding, req-ms-painting-v2-rollout, req-ms-painting-v2-market-scan, req-ms-painting-v2-design-standard, req-ms-painting-v2-legal-doc-set."
+  ]
+}
