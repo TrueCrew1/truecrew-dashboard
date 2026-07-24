@@ -18,11 +18,8 @@ import {
   isLiveApiEnabled,
   recordChiefApprovalDecision,
 } from "@/lib/api/client";
-import { AGENT_APPROVAL_CARDS } from "./agentApprovalGates";
-import { chiefLog } from "./chiefLog";
-import { MOCK_PR_APPROVAL_CARDS } from "./chiefApprovalCardMocks";
-import { REPO_CHANGE_APPROVAL_CARDS } from "./repoChangeApprovals";
 import { MS_PAINTING_APPROVAL_CARDS } from "./msPaintingApprovals";
+import { chiefLog } from "./chiefLog";
 import { scopeDataToChiefContext } from "./chiefContextScope";
 import { APPROVAL_ACTION_DELAY_MS, approvalActionToStatus } from "./chiefApproval";
 import {
@@ -92,22 +89,22 @@ export function ChiefApprovalsProvider({ children }: { children: ReactNode }) {
   // activeContext !== "global". See chiefContextScope.ts.
   const chiefData = useMemo(() => scopeDataToChiefContext(data, activeContext), [data, activeContext]);
   const liveContext = useMemo(() => buildChiefLiveContext(chiefData), [chiefData]);
-  const derivedApprovals = useMemo(
-    () => deriveApprovalCandidates(chiefData, liveContext),
-    [chiefData, liveContext],
-  );
+  const derivedApprovals = useMemo(() => {
+    // Offline global still loads legacy mockData.ts SaaS placeholders
+    // (Billing API, Auth p99, etc.) — do not surface those as approval cards.
+    // Live API + project contexts keep deriveApprovalCandidates.
+    if (activeContext === "global" && !isLiveApiEnabled()) return [];
+    return deriveApprovalCandidates(chiefData, liveContext);
+  }, [activeContext, chiefData, liveContext]);
 
-  // Static approval sources are context-scoped, not merged once and filtered
-  // after: global's demo PR cards (chiefApprovalCardMocks.ts), the one real
-  // wired repo-change source (repoChangeApprovals.ts), and one example
-  // request per agent (agentApprovalGates.ts) only ever appear in the
-  // "global" context. M&S Painting has its own source instead
-  // (msPaintingApprovals.ts) — a real governed Research mission wired to its
-  // workflow, not a copy of the global demo cards. See
-  // docs/CHIEF_CONTEXT_SWITCHING.md.
+  // Static approval seeds: global no longer seeds demo PR / example-agent /
+  // stale repo-change cards. M&S Painting keeps its governed Research mission
+  // source (msPaintingApprovals.ts). Live/derived sources (research start,
+  // monitor, planner, command proposals, deriveApprovalCandidates) still merge
+  // below. See docs/CHIEF_CONTEXT_SWITCHING.md.
   const contextStaticApprovalCards = useMemo(() => {
     if (activeContext === "ms-painting") return MS_PAINTING_APPROVAL_CARDS;
-    return [...MOCK_PR_APPROVAL_CARDS, ...REPO_CHANGE_APPROVAL_CARDS, ...AGENT_APPROVAL_CARDS];
+    return [];
   }, [activeContext]);
 
   // Dynamic proposals the operator creates by typing a Chief command

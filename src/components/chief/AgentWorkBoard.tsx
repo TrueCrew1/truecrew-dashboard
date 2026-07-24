@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { ApprovalSectionHeader, ApprovalSectionShell, ApprovalSurfaceEmpty } from "./approvalWrappers";
-import { AGENT_WORK_ITEMS, AGENT_WORK_STATUS_CONFIG } from "./agentWorkBoardMock";
+import { AGENT_WORK_STATUS_CONFIG } from "./agentWorkBoardMock";
 import { formatChiefTimestamp } from "./chiefMock";
 import {
   deriveAgentAwaitingApprovalWorkItems,
@@ -140,9 +140,7 @@ export function AgentWorkBoard() {
     }
     return map;
   }, [approvals]);
-  // AGENT_WORK_ITEMS (Roadmap/Marketer mock rows) are global platform demo
-  // data — not M&S Painting work — so they only render in the global
-  // context, same rule as the static approval-card sources.
+  // Live/derived agent rows only — Roadmap/Marketer mock seeds removed.
   const items = useMemo(
     () => [
       ...buildItems,
@@ -151,7 +149,6 @@ export function AgentWorkBoard() {
       ...handoffItems,
       ...librarianItems,
       ...awaitingApprovalItems,
-      ...(activeContext === "global" ? AGENT_WORK_ITEMS : []),
     ],
     [
       buildItems,
@@ -160,7 +157,6 @@ export function AgentWorkBoard() {
       handoffItems,
       librarianItems,
       awaitingApprovalItems,
-      activeContext,
     ],
   );
 

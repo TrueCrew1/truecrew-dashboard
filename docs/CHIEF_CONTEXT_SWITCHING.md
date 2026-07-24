@@ -13,17 +13,14 @@ operator typed. That's because those cards come from three sources that were
 never filtered by anything:
 
 1. **`deriveApprovalCandidates(data, liveContext)`** in `chiefLiveContext.ts` —
-   derives gate/incident/deploy/customer/focus/alert proposals from
-   `mockData.ts`'s global task/workflow/incident/customer/alert records (the
-   generic-SaaS placeholder data CLAUDE.md already flags as legacy). "Q3
-   pricing model decision" and "Auth p99 latency spike" are literal task/
-   incident titles in that file.
-2. **Static demo/gate cards** — `chiefApprovalCardMocks.ts` (2 PR demo cards),
-   `repoChangeApprovals.ts` (1 real repo-change card), `agentApprovalGates.ts`
-   (one illustrative request per agent role — this is where "vendor
-   selection," "homepage copy," and "New roadmap phase" come from). These
-   were seeded once into `ChiefApprovalsContext`'s `commandApprovals` state
-   and never re-evaluated.
+   derives gate/incident/deploy/customer/focus/alert proposals from live or
+   scoped project data. Offline **global** mode no longer surfaces cards from
+   legacy `mockData.ts` SaaS placeholders (Billing API, Auth p99, etc.).
+2. **Static demo/gate cards** — previously `chiefApprovalCardMocks.ts`,
+   `repoChangeApprovals.ts`, and EXAMPLE_* seeds in `agentApprovalGates.ts`.
+   Those static seeds are **removed**; global Approvals no longer shows them.
+   M&S Painting still has its governed Research mission source
+   (`msPaintingApprovals.ts`).
 3. **`monitorApprovals`** — derived from live Vercel/Supabase platform health.
 
 None of this had any concept of "which job is Chief working." A prompt can't
