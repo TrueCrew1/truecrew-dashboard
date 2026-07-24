@@ -12,6 +12,8 @@ import {
   TableText,
   TaskStageSelect,
 } from "@/components/ui";
+import { proposePlannerReprioritization } from "@/components/chief/plannerReprioritizationProposal";
+import { useChiefApprovals } from "@/components/chief/ChiefApprovalsContext";
 import { TaskCell } from "@/components/tasks/TaskCell";
 import { TaskWarningSummary } from "@/components/tasks/TaskWarningSummary";
 import { useData } from "@/context/DataContext";
@@ -44,12 +46,27 @@ const FILTER_EMPTY_COPY: Record<OperationsTaskFilter, string> = {
     "This filter shows open tasks past their due date. Nothing is overdue at the moment.",
 };
 
+type PlannerSignalFeedback = "queued" | "already_pending" | "no_signal" | null;
+
 export function OperationsPage() {
   const { selectedEntityId, setSelectedEntityId } = useSelection();
   const { data, source } = useData();
+  const { liveContext, approvals, addCommandApproval } = useChiefApprovals();
   const [searchParams] = useSearchParams();
   const filter = searchParams.get("filter");
   const [warningKind, setWarningKind] = useState<TaskWarningKind | null>(null);
+  const [plannerSignalFeedback, setPlannerSignalFeedback] =
+    useState<PlannerSignalFeedback>(null);
+
+  function handleProposePlannerReprioritization() {
+    const result = proposePlannerReprioritization(liveContext, approvals);
+    if (result.outcome === "queued") {
+      addCommandApproval(result.card);
+    }
+    setPlannerSignalFeedback(
+      result.outcome === "blocked" ? "already_pending" : result.outcome,
+    );
+  }
 
   const activeWorkflows = useMemo(
     () => data.workflows.filter((wf) => isOpenTaskStage(wf.stage)),
@@ -89,6 +106,41 @@ export function OperationsPage() {
       ) : null}
 
       <div className="page-stack">
+        <Panel
+          title="Planner re-sequencing signal"
+          action={
+            <button
+              type="button"
+              className="empty-state-link"
+              onClick={handleProposePlannerReprioritization}
+            >
+              Check overdue work
+            </button>
+          }
+        >
+          <p className="cell-muted">
+            When open tasks are past due, Planner files a roadmap re-sequencing
+            proposal into Chief&apos;s approval queue. Review on Chief &rarr;
+            Approvals; the Agents tab shows it under Awaiting approval.
+          </p>
+          {plannerSignalFeedback === "queued" ? (
+            <p className="cell-muted" role="status">
+              Queued for operator approval — open Chief &rarr; Approvals to decide.
+            </p>
+          ) : null}
+          {plannerSignalFeedback === "already_pending" ? (
+            <p className="cell-muted" role="status">
+              Already awaiting approval — review the pending re-sequencing proposal on Chief
+              &rarr; Approvals.
+            </p>
+          ) : null}
+          {plannerSignalFeedback === "no_signal" ? (
+            <p className="cell-muted" role="status">
+              No overdue open tasks right now — nothing to re-sequence.
+            </p>
+          ) : null}
+        </Panel>
+
         <Panel title="Active workflows">
           {activeWorkflows.length === 0 ? (
             <PanelEmpty
