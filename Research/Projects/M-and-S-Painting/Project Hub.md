@@ -58,7 +58,7 @@ Related provisional findings already in knowledge (not complete packages):
 
 ## Next recommended filing step
 1. Paste the **blocked research package** (from `# Request Header` through `### Approval Required`) into `research/ms-painting-v2/0000-initial-research-package-blocked.md` and Obsidian mirror.
-2. Paste **Research Lane Standard Template**, **Research Package Obsidian Template**, and **Founder Decision Summary Template** into `os/standards/` + `Research/Standards/`.
+2. Paste **Research Package Obsidian Template** and **Founder Decision Summary Template** into `os/standards/` + `Research/Standards/`.
 3. Paste the **competitive landscape & demand brief** into `research/ms-painting-v2/market/competition-and-demand.md` and Obsidian market mirror (do not invent).
 
 ## Repo ↔ Obsidian map
