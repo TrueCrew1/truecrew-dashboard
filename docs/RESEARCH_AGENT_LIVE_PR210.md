@@ -163,7 +163,7 @@ Core approve → live `in_progress` → soft-poll → runner CLI path was alread
 - Tests: expanded runner client tests plus new `tests/api-research-requests.test.ts` (mocked E2E)
 - Docs: this runbook plus `docs/RESEARCH_RUNNER.md` smoke notes
 
-Verified: lint clean, **355** tests pass, build OK. Runner without env fails closed as designed.
+Verified: lint clean, full suite green, build OK. Runner without env fails closed as designed. See **QA commands** below for exact numbers after the latest pass.
 
 ### How to run (dev/staging)
 
@@ -183,15 +183,51 @@ npm test -- tests/research-runner-client.test.ts tests/api-research-requests.tes
 
 ### Remaining ops (production)
 
-Configure Vercel/live secrets, confirm migration on prod Supabase, point the research agent at the live API, and smoke approve → pickup → done once. Schema/status vocab and `releaseResearchRequest` semantics remain unchanged.
+Checklist before calling the live path production-ready:
+
+- [ ] Vercel/live secrets configured: `INTERNAL_API_SECRET`, `VITE_INTERNAL_KEY` (match), `VITE_USE_LIVE_API=true`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
+- [ ] Research runner host has `TRUECREW_API_URL` (deployed app origin) and `TRUECREW_INTERNAL_KEY` (same as `INTERNAL_API_SECRET`)
+- [ ] Prod Supabase has `research_requests` with the same schema used in migrations/tests (`npm run db:push` / migration `20260722000001_research_requests.sql` if missing)
+- [ ] One real production smoke: approve a Start-research card → queue shows `in_progress` → `npm run research:runner -- status | pickup | run | done` (or `block`) once
+- [ ] Azure LLM + Obsidian vault only if exercising handoff/postmortem mission paths (optional for queue/runner smoke)
+
+Unchanged by design: schema/status vocabulary (`queued`, `in_progress`, `done`, `blocked`), `/api/research`, and `releaseResearchRequest` semantics.
 
 ---
 
-## Dev / staging runbook
+## QA commands
+
+Run these before reviewing or shipping:
+
+```bash
+npm test -- tests/research-runner-client.test.ts tests/api-research-requests.test.ts
+npm test
+npm run lint
+npm run build
+npm run check:api-functions
+npm run research:runner -- status   # expect fail-closed without TRUECREW_*
+```
+
+Expected (local agent verify):
+
+- Focused suites green (lifecycle, resolve order, env fail-closed, queued refusal, API PATCH transitions)
+- Full `npm test` green
+- Lint + build clean; API function count `12 / 12`
+- Runner without env prints degraded / fail-closed message and does not call the network
+
+Automated coverage maps to Flows B–D and the happy-path lifecycle; Flow A and production smoke remain manual when live env is available.
+
+---
+
+## QA flows (manual + automated)
+
+Contract under test: **approval** moves `queued` → `in_progress`; the runner only picks already-released `in_progress` and never mutates `queued`.
+
+### Flow A — Happy path (dev/staging, manual)
 
 End-to-end path once env is set. Migration: `supabase/migrations/20260722000001_research_requests.sql` (seeded adapter ids such as `req-ms-painting-v2-market-scan`).
 
-### 0. Prerequisites
+#### 0. Prerequisites
 
 ```bash
 npm run db:push   # apply research_requests if missing
@@ -210,7 +246,7 @@ export TRUECREW_API_URL=https://<your-deploy>.vercel.app
 export TRUECREW_INTERNAL_KEY=<same as INTERNAL_API_SECRET>
 ```
 
-### 1. Seed / confirm a queued row
+#### 1. Seed / confirm a queued row
 
 Migration seeds already include queued adapter rows. Or create from the app:
 
@@ -218,7 +254,7 @@ Migration seeds already include queued adapter rows. Or create from the app:
 
 Expected UI: Knowledge → Research queue shows the row as **Queued** with a live badge.
 
-### 2. Approve in Chief → Approvals
+#### 2. Approve in Chief → Approvals
 
 1. Open Chief with **global** context (Start-research cards are global-only).
 2. Find card **Start research: &lt;topic&gt;** (`apr-research-start-<requestId>`).
@@ -229,9 +265,9 @@ Expected:
 - Card decision recorded as approved.
 - Queue row → **In progress** (optimistic immediately; persisted via `PATCH /api/research/:id`).
 - Soft-poll (30s) / Retry keeps UI aligned without hard reload.
-- On PATCH failure: status reverts + `syncError` banner.
+- DB row is `in_progress` after PATCH (confirm via soft-poll or Supabase).
 
-### 3. Runner pickup
+#### 3. Runner pickup
 
 ```bash
 npm run research:runner -- status   # counts + all rows
@@ -241,9 +277,7 @@ npm run research:runner -- run      # pickup + next-step hints
 
 Expected: printed id matches the approved request; other **queued** rows are listed but not selected.
 
-### 4. Complete or block
-
-After investigation / filing a provisional finding:
+#### 4. Complete or block
 
 ```bash
 npm run research:runner -- done --id <id> --path knowledge/findings/m-and-s/<note>.md
@@ -256,10 +290,44 @@ Expected:
 - `done` / `block` refuse **queued** ids (runner guard — approve first).
 - Queue / M&S status card show **Done** or **Blocked** after soft-poll.
 
-### 5. Automated verification (no live env)
+### Flow B — Approve during `"loading"` rail
+
+**Automated:** `tests/research-runner-client.test.ts` — “Flow B: approve during loading…”, resolve-order + `shouldPatchWhileLoading`.
+
+**Manual (optional):**
+
+1. Live API on; throttle or delay `GET /api/research` (DevTools / mock).
+2. Reload Chief; approve a Start-research card **before** the first fetch completes.
+3. Verify: no “request not found”; PATCH issued; UI lands on **In progress** (override until soft-poll).
+
+### Flow C — Adapter/session-only ids (offline)
+
+**Automated:** “Flow C: session/offline promote…” in `tests/research-runner-client.test.ts`.
+
+**Manual (optional):**
+
+1. Live API **off** (`VITE_USE_LIVE_API` unset/false).
+2. Approve Start-research for an adapter id (`req-ms-painting-v2-*`).
+3. Verify: row becomes session-sourced `in_progress` in the queue; survives local session; runner still refuses to `done`/`block` a `queued` id if any remain.
+
+### Flow D — PATCH failure / `syncError`
+
+**Automated:** “Flow D: optimistic in_progress reverts…” in `tests/research-runner-client.test.ts`.
+
+**Manual (optional):**
+
+1. Force `PATCH /api/research/:id` to fail (mock 500 / wrong key).
+2. Approve in live mode.
+3. Verify: brief optimistic **In progress**, then revert to prior status, `syncError` banner in queue / M&S card, console `[research-rail] live_update_failed`.
+
+### Production smoke
+
+Same steps as Flow A against production URL/secrets. Confirm schema/status vocab and `releaseResearchRequest` semantics remain unchanged.
+
+### Automated lifecycle (no live env)
 
 ```bash
 npm test -- tests/research-runner-client.test.ts tests/api-research-requests.test.ts
 ```
 
-Covers: resolve order (adapter during loading), soft-poll override prune, fail-closed env, oldest `in_progress` pickup, mocked approve → pickup → done, API GET/PATCH transitions, runner refusal to mutate queued rows.
+Covers: resolve order (adapter during loading), soft-poll override prune, fail-closed env (both or either `TRUECREW_*` missing), oldest `in_progress` pickup, mocked approve → pickup → done, API GET/PATCH transitions including invalid `queued` → `done`/`blocked`, runner refusal to mutate queued rows on `done` and `block`.

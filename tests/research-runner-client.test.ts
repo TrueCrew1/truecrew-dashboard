@@ -61,6 +61,20 @@ describe("research runner client", () => {
     expect(result.error).toMatch(/TRUECREW_API_URL/);
   });
 
+  it("resolveResearchRunnerEnv fails closed when only TRUECREW_API_URL is missing", () => {
+    const result = resolveResearchRunnerEnv({ TRUECREW_INTERNAL_KEY: "secret" });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.missing).toEqual(["TRUECREW_API_URL"]);
+  });
+
+  it("resolveResearchRunnerEnv fails closed when only TRUECREW_INTERNAL_KEY is missing", () => {
+    const result = resolveResearchRunnerEnv({ TRUECREW_API_URL: "https://example.vercel.app" });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.missing).toEqual(["TRUECREW_INTERNAL_KEY"]);
+  });
+
   it("resolveResearchRunnerEnv strips trailing slash from API URL", () => {
     const result = resolveResearchRunnerEnv({
       TRUECREW_API_URL: "https://example.vercel.app/",
@@ -90,24 +104,26 @@ describe("research runner client", () => {
     ).toBeNull();
   });
 
-  it("countByStatus tallies the four statuses", () => {
-    expect(
-      countByStatus([
-        runnerRow({ id: "1", status: "queued", updatedAt: "2026-07-22T10:00:00.000Z" }),
-        runnerRow({ id: "2", status: "in_progress", updatedAt: "2026-07-22T10:00:00.000Z" }),
-        runnerRow({ id: "3", status: "in_progress", updatedAt: "2026-07-22T10:00:00.000Z" }),
-        runnerRow({ id: "4", status: "blocked", updatedAt: "2026-07-22T10:00:00.000Z" }),
-      ]),
-    ).toEqual({ queued: 1, in_progress: 2, done: 0, blocked: 1 });
+  it("status tallies include queued without selecting them for pickup", () => {
+    const requests = [
+      runnerRow({ id: "1", status: "queued", updatedAt: "2026-07-22T10:00:00.000Z" }),
+      runnerRow({ id: "2", status: "in_progress", updatedAt: "2026-07-22T10:00:00.000Z" }),
+      runnerRow({ id: "3", status: "in_progress", updatedAt: "2026-07-22T09:00:00.000Z" }),
+      runnerRow({ id: "4", status: "blocked", updatedAt: "2026-07-22T10:00:00.000Z" }),
+    ];
+    expect(countByStatus(requests)).toEqual({
+      queued: 1,
+      in_progress: 2,
+      done: 0,
+      blocked: 1,
+    });
+    expect(pickOldestInProgress(requests)?.id).toBe("3");
   });
 
-  it("assertRunnerMayMutate refuses queued rows", () => {
-    expect(() =>
-      assertRunnerMayMutate(
-        runnerRow({ id: "q", status: "queued", updatedAt: "2026-07-22T10:00:00.000Z" }),
-        "done",
-      ),
-    ).toThrow(/refuses to done queued/);
+  it("assertRunnerMayMutate refuses queued rows for done and block", () => {
+    const queued = runnerRow({ id: "q", status: "queued", updatedAt: "2026-07-22T10:00:00.000Z" });
+    expect(() => assertRunnerMayMutate(queued, "done")).toThrow(/refuses to done queued/);
+    expect(() => assertRunnerMayMutate(queued, "block")).toThrow(/refuses to block queued/);
   });
 
   it("assertRunnerMayMutate allows in_progress", () => {
@@ -159,8 +175,74 @@ describe("research request resolve order (approve path)", () => {
     expect(
       deriveResearchRailMode({ liveApiEnabled: true, liveLoading: false, hasServerRows: true }),
     ).toBe("live");
+    expect(
+      deriveResearchRailMode({ liveApiEnabled: true, liveLoading: false, hasServerRows: false }),
+    ).toBe("degraded_session");
+    expect(deriveResearchRailMode({ liveApiEnabled: false, liveLoading: false, hasServerRows: false })).toBe(
+      "off",
+    );
     expect(shouldPatchWhileLoading(true)).toBe(true);
     expect(shouldPostCreateWhileLoading(true)).toBe(true);
+  });
+
+  it("Flow B: approve during loading still resolves adapter and expects PATCH", () => {
+    expect(
+      deriveResearchRailMode({ liveApiEnabled: true, liveLoading: true, hasServerRows: false }),
+    ).toBe("loading");
+    const adapter = clientRow({ id: "req-ms-painting-v2-market-scan", status: "queued" });
+    const resolved = resolveResearchRequestForUpdate({
+      // server/session empty during first-fetch window
+      adapter,
+    });
+    expect(resolved?.id).toBe(adapter.id);
+    expect(simulateApproveRelease(resolved)).toEqual({ ok: true, nextStatus: "in_progress" });
+    expect(shouldPatchWhileLoading(true)).toBe(true);
+  });
+
+  it("Flow C: session/offline promote marks adapter row as session + in_progress", () => {
+    expect(
+      deriveResearchRailMode({ liveApiEnabled: false, liveLoading: false, hasServerRows: false }),
+    ).toBe("off");
+    const adapter = clientRow({
+      id: "req-ms-painting-v2-market-scan",
+      status: "queued",
+      source: "adapter",
+    });
+    const resolved = resolveResearchRequestForUpdate({ adapter });
+    expect(simulateApproveRelease(resolved).ok).toBe(true);
+    const nextRow = applyResearchStatus(resolved!, "in_progress");
+    // Mirrors ResearchRequestsContext session-rail promote
+    const sessionNext: ResearchRequest = { ...nextRow, source: "session" };
+    expect(sessionNext).toMatchObject({
+      id: adapter.id,
+      status: "in_progress",
+      source: "session",
+    });
+    expect(() =>
+      assertRunnerMayMutate(
+        runnerRow({ id: adapter.id, status: "queued", updatedAt: adapter.updatedAt }),
+        "done",
+      ),
+    ).toThrow(/refuses to done queued/);
+  });
+
+  it("Flow D: optimistic in_progress reverts and surfaces syncError shape on PATCH failure", () => {
+    const queued = clientRow({ id: "a", status: "queued", topic: "Painter SaaS market scan" });
+    const optimistic = clientRow({ id: "a", status: "in_progress", topic: queued.topic });
+    let overrides: Record<string, ResearchRequest> = { a: optimistic };
+    expect(applyStatusOverrides([queued], overrides)[0]?.status).toBe("in_progress");
+
+    // Catch path: drop override → UI shows prior status again
+    const rest = { ...overrides };
+    delete rest.a;
+    overrides = rest;
+    expect(applyStatusOverrides([queued], overrides)[0]?.status).toBe("queued");
+
+    const syncError =
+      `Live update failed for "${queued.topic}" — status reverted to ${queued.status}. ` +
+      `Check VITE_INTERNAL_KEY / Supabase, then try again.`;
+    expect(syncError).toMatch(/status reverted to queued/);
+    expect(syncError).toMatch(/Painter SaaS market scan/);
   });
 
   it("pruneStatusOverridesMatchingServer clears only matching statuses", () => {
@@ -255,12 +337,16 @@ describe("approve → pickup → done lifecycle (mocked network)", () => {
     expect(pickOldestInProgress(listed)?.id).toBe(queuedA.id);
     expect(findRequestById(listed, queuedB.id)?.status).toBe("queued");
 
-    // 5) done refuses if still queued; succeeds for released row
+    // 5) done/block refuse if still queued; done succeeds for released row
     await expect(
       mutateReleasedRequestViaApi(env, queuedB.id, "done", {
         filedPath: "knowledge/findings/m-and-s/x.md",
       }),
     ).rejects.toThrow(/refuses to done queued/);
+    await expect(
+      mutateReleasedRequestViaApi(env, queuedB.id, "block", { blockerNote: "not yet" }),
+    ).rejects.toThrow(/refuses to block queued/);
+    expect(findRequestById(listed, queuedB.id)?.status).toBe("queued");
 
     const done = await mutateReleasedRequestViaApi(env, queuedA.id, "done", {
       filedPath: "knowledge/findings/m-and-s/painter-saas-market-scan.md",
@@ -268,11 +354,12 @@ describe("approve → pickup → done lifecycle (mocked network)", () => {
     expect(done.status).toBe("done");
     expect(done.filedPath).toMatch(/painter-saas-market-scan/);
 
-    // queued B never patched
+    // queued B never patched — only the released id is mutated
     const patchCalls = fetchMock.mock.calls.filter(
       (call) => String(call[1]?.method) === "PATCH",
     );
     expect(patchCalls).toHaveLength(1);
     expect(String(patchCalls[0]?.[0])).toContain(queuedA.id);
+    expect(String(patchCalls[0]?.[0])).not.toContain(queuedB.id);
   });
 });

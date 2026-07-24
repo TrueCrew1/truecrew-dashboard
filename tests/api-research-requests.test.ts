@@ -171,6 +171,61 @@ describe("/api/research request queue", () => {
     expect(updateResearchRequestStatusMock).not.toHaveBeenCalled();
   });
 
+  it("PATCH allows queued → blocked when a blocker note is present (API transition table)", async () => {
+    // Schema allows queued → blocked; the Research runner CLI still refuses to
+    // mutate queued rows — approval owns the happy-path release to in_progress.
+    getResearchRequestMock.mockResolvedValue(dbRow);
+    updateResearchRequestStatusMock.mockResolvedValue({
+      ...dbRow,
+      status: "blocked",
+      blocker_note: "waiting on scope",
+      updated_at: "2026-07-22T14:30:00.000Z",
+    });
+    const res = createMockResponse();
+    await handler(
+      createMockRequest({
+        method: "PATCH",
+        query: { id: dbRow.id },
+        body: { status: "blocked", blockerNote: "waiting on scope" },
+      }),
+      res as unknown as VercelResponse,
+    );
+    expect(res.statusCode).toBe(200);
+    expect(updateResearchRequestStatusMock).toHaveBeenCalledWith(dbRow.id, "blocked", {
+      filedPath: undefined,
+      blockerNote: "waiting on scope",
+    });
+  });
+
+  it("PATCH in_progress → done persists terminal state", async () => {
+    const inProgress = { ...dbRow, status: "in_progress" as const };
+    getResearchRequestMock.mockResolvedValue(inProgress);
+    updateResearchRequestStatusMock.mockResolvedValue({
+      ...inProgress,
+      status: "done",
+      filed_path: "knowledge/findings/m-and-s/painter-saas-market-scan.md",
+      updated_at: "2026-07-22T15:00:00.000Z",
+    });
+    const res = createMockResponse();
+    await handler(
+      createMockRequest({
+        method: "PATCH",
+        query: { id: dbRow.id },
+        body: {
+          status: "done",
+          filedPath: "knowledge/findings/m-and-s/painter-saas-market-scan.md",
+        },
+      }),
+      res as unknown as VercelResponse,
+    );
+    expect(res.statusCode).toBe(200);
+    const body = res.body as { request: { status: string; filedPath?: string } };
+    expect(body.request).toMatchObject({
+      status: "done",
+      filedPath: "knowledge/findings/m-and-s/painter-saas-market-scan.md",
+    });
+  });
+
   it("returns 503 when database is not configured", async () => {
     isSupabaseConfiguredMock.mockReturnValue(false);
     const res = createMockResponse();
