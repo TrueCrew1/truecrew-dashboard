@@ -1,0 +1,17 @@
+{
+  "request_id": "req-ms-painting-v2-research-001",
+  "timestamp": "2025-03-08T00:00:00Z",
+  "intent": "Convert the M&S Painting V2 improvement plan into a builder-ready implementation package supported by competitive market research.",
+  "work_type": "learn",
+  "owning_center": "research_center",
+  "smallest_executable_slice": "Review the M&S Painting V2 improvement plan, extract its requirements, identify evidence gaps, and define the package outline and competitor research criteria.",
+  "model_target": "gpt-5-mini",
+  "expected_artifact": "An Obsidian-ready markdown requirements and research brief covering functional, technical, security, legal documentation, QA, filing, and competitor-analysis sections, with known requirements, open questions, and evidence needs.",
+  "verification_method": "Confirm the brief includes every required section, traces each known requirement to the V2 plan, labels unsupported assumptions as open questions, and defines competitor comparison criteria for features, pricing, reviews, strengths, weaknesses, and demand.",
+  "approval_required": false,
+  "route_keys": {
+    "work_type": "learn",
+    "owning_center": "research_center",
+    "model_target": "gpt-5-mini"
+  }
+}
