@@ -11,7 +11,7 @@ type: "hub"
 M&S Painting V2 (customer app context in True Crew; customer-app code lives in `TrueCrew1/ms-painting`, not this dashboard repo).
 
 ## Current status
-**Filing structure active.** Filed: request log, V2 improvement plan, Research Lane Standard Template. Still **MISSING**: blocked research package, Research Package Obsidian Template, Founder Decision Summary Template, competitive landscape & demand brief. Hub is usable for navigation; Research should not invent requirements beyond what the filed V2 plan states.
+**Filing structure active.** Filed: request log, V2 improvement plan, Research Lane Standard Template, competitive landscape & demand brief. Still **MISSING**: blocked research package, Research Package Obsidian Template, Founder Decision Summary Template. Hub is usable for navigation; Research should not invent requirements beyond what the filed V2 plan and market brief state.
 
 ## Primary source documents
 - [[2026-07-23 - V2 Improvement Plan]] — **STATUS: FILED** (repo: `docs/ms-painting-v2/improvement-plan-v2.md`; source: M&S Painting Platform Improvement Plan)
@@ -41,7 +41,7 @@ Related provisional findings already in knowledge (not complete packages):
 - `knowledge/findings/m-and-s/estimating-roadmap.md`
 
 ## Market research
-- [[Market - Competitive Landscape and Demand]] — **STATUS: MISSING** (repo: `research/ms-painting-v2/market/competition-and-demand.md`)
+- [[Market - Competitive Landscape and Demand]] — **STATUS: FILED** (repo: `research/ms-painting-v2/market/competition-and-demand.md`; directional themes only — verify pricing/claims before GTM)
 
 ## Decisions
 - Folder: `Research/Projects/M-and-S-Painting/Decisions/` — empty aside from index README
@@ -54,12 +54,11 @@ Related provisional findings already in knowledge (not complete packages):
 - [x] Research Lane Standard Template body — filed at `os/standards/research_lane_standard_template.md`
 - [ ] Research Package Obsidian Template body
 - [ ] Founder Decision Summary Template body
-- [ ] Competitive landscape and demand brief body
+- [x] Competitive landscape and demand brief body — filed at `research/ms-painting-v2/market/competition-and-demand.md`
 
 ## Next recommended filing step
 1. Paste the **blocked research package** (from `# Request Header` through `### Approval Required`) into `research/ms-painting-v2/0000-initial-research-package-blocked.md` and Obsidian mirror.
 2. Paste **Research Package Obsidian Template** and **Founder Decision Summary Template** into `os/standards/` + `Research/Standards/`.
-3. Paste the **competitive landscape & demand brief** into `research/ms-painting-v2/market/competition-and-demand.md` and Obsidian market mirror (do not invent).
 
 ## Repo ↔ Obsidian map
 | Concept | Repo path | Obsidian note |
