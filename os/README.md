@@ -8,7 +8,7 @@ Index for OS standards and request logs related to M&S Painting V2.
 - `os/standards/founder_decision_summary_template.md` — MISSING content
 
 ## Requests
-- `os/requests/req-ms-painting-v2-research-001.json` — MISSING routing payload
+- `os/requests/req-ms-painting-v2-research-001.json` — FILED (routing JSON)
 
 ## Project hub
 Obsidian entry: `Research/Projects/M-and-S-Painting/Project Hub.md`
