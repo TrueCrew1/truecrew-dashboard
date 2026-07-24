@@ -55,6 +55,11 @@ async function failMission(
   status: Extract<MissionStatus, "failed" | "blocked">,
   error: string,
 ): Promise<ProjectSummaryHandoffMission> {
+  console.error(`[research-handoff] mission_${status}`, {
+    proposalId: mission.proposalId,
+    projectId: mission.projectId,
+    error,
+  });
   const updated: ProjectSummaryHandoffMission = {
     ...mission,
     status,

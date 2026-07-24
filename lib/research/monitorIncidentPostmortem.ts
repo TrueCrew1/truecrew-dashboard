@@ -50,6 +50,11 @@ async function failMission(
   status: Extract<MissionStatus, "failed" | "blocked">,
   error: string,
 ): Promise<MonitorIncidentPostmortemMission> {
+  console.error(`[research-postmortem] mission_${status}`, {
+    proposalId: mission.proposalId,
+    incidentId: mission.incidentId,
+    error,
+  });
   const updated: MonitorIncidentPostmortemMission = {
     ...mission,
     status,
