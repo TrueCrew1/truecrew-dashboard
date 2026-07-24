@@ -211,9 +211,11 @@ npm run research:runner -- status   # expect fail-closed without TRUECREW_*
 Expected (local agent verify):
 
 - Focused suites green (lifecycle, resolve order, env fail-closed, queued refusal, API PATCH transitions)
-- Full `npm test` green
+- Full `npm test` green (**362** tests)
 - Lint + build clean; API function count `12 / 12`
 - Runner without env prints degraded / fail-closed message and does not call the network
+
+Note: the shared status transition table allows `queued` → `blocked` on the API. The Research **runner CLI** still refuses `done`/`block` on `queued` rows so approval owns the happy-path release to `in_progress`.
 
 Automated coverage maps to Flows B–D and the happy-path lifecycle; Flow A and production smoke remain manual when live env is available.
 
