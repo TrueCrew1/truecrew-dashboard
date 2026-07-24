@@ -15,6 +15,7 @@ Minimal gate before calling work **shippable**. Run `npm run verify` first. Appr
 - [ ] No fabricated product claims, APIs, or integrations — ask if uncertain
 - [ ] Scope matches the ask (no drive-by refactors)
 - [ ] No M&S Painting customer-app code landed here by accident (Chief context seeds are OK)
+- [ ] `npm run check:api-functions` passes (Vercel Hobby ≤12 Serverless Functions under `api/`)
 
 ## Security (when touching auth / API / deploy)
 
