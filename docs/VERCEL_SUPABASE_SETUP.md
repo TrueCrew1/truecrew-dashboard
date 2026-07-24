@@ -93,6 +93,14 @@ Requires Vercel CLI: `npm i -g vercel`.
 | `/api/tasks` | GET | Tasks subset (legacy) |
 | `/api/github/webhook` | POST | GitHub gate automation |
 
+## Hobby plan: Serverless Function cap (12)
+
+Vercel Hobby allows at most **12 Serverless Functions** per deployment. On this Vite + `/api` layout, **each file** under `api/**/*.{ts,js}` counts as one function.
+
+- Prefer extending an existing dispatch handler (query-param / `view` / `kind`) and a `vercel.json` rewrite over adding a new `api/` file.
+- Local + CI guardrail: `npm run check:api-functions` (also runs inside `npm run verify`). Fails when the count exceeds 12.
+- Script: `scripts/check-api-function-count.sh`.
+
 ## Troubleshooting
 
 | Symptom | Fix |
@@ -102,3 +110,4 @@ Requires Vercel CLI: `npm i -g vercel`.
 | Webhook 401 | Secret mismatch between GitHub and Vercel |
 | Webhook 500 | Check Vercel function logs; confirm migrations ran |
 | Empty `/api/data` | Run seed migration in Supabase |
+| Deploy fails with `exceeded_serverless_functions_per_deployment` | Count is over 12 — consolidate into an existing handler; run `npm run check:api-functions` |

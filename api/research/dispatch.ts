@@ -16,7 +16,18 @@ import { executeMonitorIncidentPostmortem } from "../../lib/research/monitorInci
 import { executeProjectSummaryHandoff } from "../../lib/research/projectSummaryHandoff.js";
 import { isVaultConfigured } from "../../lib/obsidian/config.js";
 import { isSupabaseConfigured } from "../../lib/supabase/admin.js";
-import { getChiefApprovalDecision } from "../../lib/supabase/queries.js";
+import {
+  getChiefApprovalDecision,
+  fetchResearchRequests,
+  insertResearchRequest,
+  getResearchRequest,
+  updateResearchRequestStatus,
+} from "../../lib/supabase/queries.js";
+import { mapDbResearchRequestToClient } from "../../lib/mappers/research-requests.js";
+import {
+  isResearchRequestStatus,
+  researchStatusChangeError,
+} from "../../lib/research/status.js";
 
 const HANDOFF_KIND = "project-summary-handoff";
 const POSTMORTEM_KIND = "monitor-incident-postmortem";
@@ -268,17 +279,151 @@ async function handlePostmortem(req: VercelRequest, res: VercelResponse) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Research requests (the operator's research queue — GET/POST /api/research,
+// PATCH /api/research/:id, both rewritten here by vercel.json). Folded into
+// this same function file rather than given their own api/research/index.ts
+// and api/research/[id].ts files: Vercel's Hobby plan caps a deployment at
+// 12 Serverless Functions, main was already sitting at that limit, and this
+// file already uses query-param dispatch for the two mission kinds above —
+// same pattern, same file, no new function slot spent. See
+// docs/RESEARCH_RUNNER.md for what these routes are for.
+
+async function handleResearchRequestsList(req: VercelRequest, res: VercelResponse) {
+  if (!isSupabaseConfigured()) {
+    return res.status(503).json({ error: "Database not configured" });
+  }
+
+  if (req.method === "GET") {
+    try {
+      const rows = await fetchResearchRequests();
+      return res.status(200).json({ requests: rows.map(mapDbResearchRequestToClient) });
+    } catch (error) {
+      console.error("Failed to fetch research requests", error);
+      return res.status(500).json({
+        error: "Failed to fetch research requests",
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+
+  if (req.method === "POST") {
+    // Operator-created session request. The client builds the full row (id,
+    // topic, why/outcome copy, timestamps) via buildSessionResearchRequest;
+    // the server pins source/status to session/queued.
+    const body = req.body as {
+      id?: unknown;
+      topic?: unknown;
+      whyItMatters?: unknown;
+      suggestedOutcome?: unknown;
+      createdAt?: unknown;
+      updatedAt?: unknown;
+    };
+
+    const fields = [body?.id, body?.topic, body?.whyItMatters, body?.suggestedOutcome] as const;
+    if (fields.some((value) => typeof value !== "string" || !value.trim())) {
+      return res
+        .status(400)
+        .json({ error: "id, topic, whyItMatters, and suggestedOutcome are required" });
+    }
+
+    const now = new Date().toISOString();
+    try {
+      const { row, created } = await insertResearchRequest({
+        id: (body.id as string).trim(),
+        topic: (body.topic as string).trim(),
+        why_it_matters: (body.whyItMatters as string).trim(),
+        suggested_outcome: (body.suggestedOutcome as string).trim(),
+        created_at: typeof body.createdAt === "string" ? body.createdAt : now,
+        updated_at: typeof body.updatedAt === "string" ? body.updatedAt : now,
+      });
+
+      const request = mapDbResearchRequestToClient(row);
+      if (!created) {
+        return res.status(409).json({ error: "Request already exists", request });
+      }
+      return res.status(201).json({ request });
+    } catch (error) {
+      console.error("Failed to create research request", error);
+      return res.status(500).json({
+        error: "Failed to create research request",
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+
+  return res.status(405).json({ error: "Method not allowed" });
+}
+
+async function handleResearchRequestUpdate(req: VercelRequest, res: VercelResponse, id: string) {
+  if (!isSupabaseConfigured()) {
+    return res.status(503).json({ error: "Database not configured" });
+  }
+
+  if (req.method !== "PATCH") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  const body = req.body as {
+    status?: unknown;
+    filedPath?: unknown;
+    blockerNote?: unknown;
+  };
+
+  if (typeof body?.status !== "string" || !isResearchRequestStatus(body.status)) {
+    return res.status(400).json({ error: "Invalid status value" });
+  }
+
+  const filedPath = typeof body.filedPath === "string" ? body.filedPath : undefined;
+  const blockerNote = typeof body.blockerNote === "string" ? body.blockerNote : undefined;
+
+  try {
+    const current = await getResearchRequest(id);
+    if (!current) {
+      return res.status(404).json({ error: "Research request not found" });
+    }
+
+    // Same transition rules the client enforces (lib/research/status.ts) —
+    // the server is the backstop, not a second vocabulary.
+    const validationError = researchStatusChangeError(current.status, body.status, {
+      filedPath: filedPath ?? current.filed_path,
+      blockerNote: blockerNote ?? current.blocker_note,
+    });
+    if (validationError) {
+      return res.status(409).json({ error: validationError });
+    }
+
+    const row = await updateResearchRequestStatus(id, body.status, { filedPath, blockerNote });
+    if (!row) {
+      return res.status(404).json({ error: "Research request not found" });
+    }
+    return res.status(200).json({ request: mapDbResearchRequestToClient(row) });
+  } catch (error) {
+    console.error("Failed to update research request", error);
+    return res.status(500).json({
+      error: "Failed to update research request",
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!requireInternalAuth(req, res)) return;
 
   const kind = parseKind(req.query.kind);
-  if (!kind) {
-    return res.status(404).json({ ok: false, error: "Unknown research mission route" });
-  }
-
   if (kind === HANDOFF_KIND) {
     return handleHandoff(req, res);
   }
+  if (kind === POSTMORTEM_KIND) {
+    return handlePostmortem(req, res);
+  }
 
-  return handlePostmortem(req, res);
+  // No mission kind: this is a research-request queue call — vercel.json
+  // rewrites /api/research/:id to ?id=:id for PATCH, and /api/research
+  // (bare) here with neither param for GET/POST.
+  const id = typeof req.query.id === "string" ? req.query.id : null;
+  if (id) {
+    return handleResearchRequestUpdate(req, res, id);
+  }
+  return handleResearchRequestsList(req, res);
 }

@@ -19,6 +19,8 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci
+      # Hobby plan hard-caps Serverless Functions at 12; each api/**/*.{ts,js} counts as one.
+      - run: npm run check:api-functions
       - run: npm run lint
       - run: npm run test
       - run: npm run build
