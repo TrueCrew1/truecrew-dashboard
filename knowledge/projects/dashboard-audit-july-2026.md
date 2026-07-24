@@ -3,10 +3,10 @@ title: Dashboard Audit — July 2026
 type: project
 status: active
 confidence: high
-last_reviewed: 2026-07-04
+last_reviewed: 2026-07-24
 created: 2026-07-04
-updated: 2026-07-04
-related_pages: [dashboard-maintenance, truecrew-dashboard]
+updated: 2026-07-24
+related_pages: [dashboard-maintenance, truecrew-dashboard, agent-readiness-july-2026]
 related_prs: [75, 76, 77, 79]
 related_cards: [apr-build-dashboard-maintenance-bundle]
 ---
@@ -51,9 +51,12 @@ all three merged to `main` 2026-07-04.
   either lower-priority or judged not safe/small enough for this pass; not itemized
   further in this vault yet (a gap worth closing in a future Second Brain pass if those
   findings' detail is still needed).
+- Agent-start gaps (board refresh / Roadmap derivation / research-runner ops) are
+  tracked in [agent-readiness-july-2026](agent-readiness-july-2026.md), not reopened
+  here.
 
 ## Related
 
-- Pages: [dashboard-maintenance](../concepts/dashboard-maintenance.md), [truecrew-dashboard](truecrew-dashboard.md)
+- Pages: [dashboard-maintenance](../concepts/dashboard-maintenance.md), [truecrew-dashboard](truecrew-dashboard.md), [agent-readiness-july-2026](agent-readiness-july-2026.md)
 - PRs: #75, #76, #77, #79
 - Decisions: [dashboard-maintenance-bundle](../decisions/dashboard-maintenance-bundle.md)

@@ -47,6 +47,9 @@ execution. Don't treat this list as a substitute for that check.
 
 - [projects/truecrew-dashboard](projects/truecrew-dashboard.md) — the umbrella
   project; start here for "what's the current state of the dashboard."
+- [projects/agent-readiness-july-2026](projects/agent-readiness-july-2026.md) — what
+  is still missing before agents can start real work (PR #208/#180 + runner/ops
+  checklist). Check before re-auditing Agents or assuming the research runner is live.
 - [projects/dashboard-audit-july-2026](projects/dashboard-audit-july-2026.md) — the
   audit behind PRs #75/#76/#77; check before starting a new dashboard audit so you
   don't re-find what's already fixed or already deferred.

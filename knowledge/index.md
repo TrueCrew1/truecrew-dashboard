@@ -14,7 +14,7 @@ for the full rule set.
 | Category | Count | Cap |
 |---|---|---|
 | Concepts | 6 | 10 |
-| Projects | 3 | 5 |
+| Projects | 4 | 5 |
 | Decisions | 4 | 15 |
 | Sources | 10 | 50 |
 | Findings | 3 | — (V1 Research filing shelf; not under first-month source cap) |
@@ -68,6 +68,9 @@ Active efforts.
 
 - [True Crew Dashboard](projects/truecrew-dashboard.md) — *active, high* — the
   umbrella project: the product itself and its agent-mediated workflow.
+- [Agent Readiness Audit — July 2026](projects/agent-readiness-july-2026.md) —
+  *active, high* — gaps blocking agents from starting real work (board PRs +
+  research-runner/ops checklist).
 - [Dashboard Audit — July 2026](projects/dashboard-audit-july-2026.md) — *active,
   high* — the audit that produced PRs #75/#76/#77.
 - [Second Brain Setup](projects/second-brain-setup.md) — *active, medium* — this
@@ -134,6 +137,12 @@ Operator-filed Research lane outputs (V1). Distinct from `sources/` raw artifact
 
 ## Recent updates
 
+- **2026-07-24** — Agent readiness audit filed:
+  [projects/agent-readiness-july-2026.md](projects/agent-readiness-july-2026.md).
+  Verdict: agents partially ready — merge PR #208 (and reconcile #180), then clear
+  research-runner env + `research_requests` migration + one Start-research smoke
+  approval. Build has no autonomous runner by design. Production Vercel env not
+  probed in that pass (MCP unauthenticated).
 - **2026-07-22** — Research lane live end to end: session-backed Research queue on
   Knowledge (⌘K `start research on <topic>` or Chief command), a Supabase-backed
   `research_requests` table + API for cross-device status, an approval card auto-releasing

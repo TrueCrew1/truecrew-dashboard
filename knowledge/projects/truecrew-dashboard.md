@@ -3,10 +3,10 @@ title: True Crew Dashboard
 type: project
 status: active
 confidence: high
-last_reviewed: 2026-07-04
+last_reviewed: 2026-07-24
 created: 2026-07-04
-updated: 2026-07-04
-related_pages: [chief-approvals, dashboard-audit-july-2026, second-brain-setup]
+updated: 2026-07-24
+related_pages: [chief-approvals, dashboard-audit-july-2026, agent-readiness-july-2026, second-brain-setup]
 related_prs: []
 related_cards: []
 ---
@@ -54,6 +54,11 @@ Recent real threads, all live at once:
 
 ## Open items
 
+- **Agent readiness (2026-07-24)** — see
+  `projects/agent-readiness-july-2026.md`. Highest-leverage next steps: merge PR
+  #208 (Agents board live status/refresh), reconcile PR #180, then ops: research
+  runner env (`TRUECREW_API_URL` / `TRUECREW_INTERNAL_KEY`), confirm
+  `research_requests` migration, Azure + vault + live API for mission slices.
 - **Slice 2 — Supabase Health Monitor (PR #59)** is the current dashboard-internal
   task per Obsidian's active-task doc, blocked on a Vercel Deployment Protection
   setting (human-only — not actioned from this repo). This is a pointer, not a live
@@ -74,6 +79,6 @@ Recent real threads, all live at once:
 
 ## Related
 
-- Pages: [chief-approvals](../concepts/chief-approvals.md), [dashboard-audit-july-2026](dashboard-audit-july-2026.md), [second-brain-setup](second-brain-setup.md)
-- PRs: #51, #62, #64, #66, #67, #68, #69, #70, #71, #75, #76, #77, #78, #79
+- Pages: [chief-approvals](../concepts/chief-approvals.md), [dashboard-audit-july-2026](dashboard-audit-july-2026.md), [agent-readiness-july-2026](agent-readiness-july-2026.md), [second-brain-setup](second-brain-setup.md)
+- PRs: #51, #62, #64, #66, #67, #68, #69, #70, #71, #75, #76, #77, #78, #79, #180, #208
 - Decisions: [agent-runbook-adoption](../decisions/agent-runbook-adoption.md), [dashboard-maintenance-bundle](../decisions/dashboard-maintenance-bundle.md), [vercel-preview-secret-scope](../decisions/vercel-preview-secret-scope.md), [auth-fix-secret-rotation](../decisions/auth-fix-secret-rotation.md)
