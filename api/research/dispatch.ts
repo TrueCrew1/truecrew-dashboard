@@ -300,9 +300,16 @@ async function handleResearchRequestsList(req: VercelRequest, res: VercelRespons
       return res.status(200).json({ requests: rows.map(mapDbResearchRequestToClient) });
     } catch (error) {
       console.error("Failed to fetch research requests", error);
+      const message = error instanceof Error ? error.message : "Unknown error";
+      // Common production miss: migration not applied → relation does not exist.
+      if (/relation .*research_requests.* does not exist/i.test(message)) {
+        console.error(
+          "[research-requests] research_requests table missing — run `npm run db:push` against the live Supabase project.",
+        );
+      }
       return res.status(500).json({
         error: "Failed to fetch research requests",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message,
       });
     }
   }

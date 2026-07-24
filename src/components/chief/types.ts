@@ -50,14 +50,12 @@ export type ApprovalRecommendedDecision = "approve" | "hold" | "needs_changes";
 
 /**
  * Where a proposal originated. Populated today: "ops_change" (live
- * operational signals, via deriveApprovalCandidates), "pr" (see
- * chiefApprovalCardMocks.ts, demo data only), "repo_change" (see
- * repoChangeApprovals.ts — a real pending local repo change), and the four
- * agent sources — "planner_agent" / "agent_build" / "research_agent" /
- * "content_agent" (see agentApprovalGates.ts — each agent's approval
- * requests mapped to cards; example/mock requests for now, same helper
- * pattern every agent must use). Extension point: add a real source (e.g.
- * "github_pr" backed by the GitHub API) as that integration comes online.
+ * operational signals, via deriveApprovalCandidates), "pr" / "repo_change"
+ * (extension points — static demo seeds removed), and the four agent sources
+ * — "planner_agent" / "agent_build" / "research_agent" / "content_agent"
+ * (see agentApprovalGates.ts helpers; Approvals only shows cards from live
+ * agent output, not EXAMPLE_* seeds). Extension point: add a real source
+ * (e.g. "github_pr" backed by the GitHub API) as that integration comes online.
  */
 export type ApprovalSource =
   | "pr"
@@ -94,11 +92,9 @@ export interface ApprovalProposal {
   source?: ApprovalSource;
   /**
    * Which Chief context this proposal belongs to — set explicitly on
-   * project-scoped static cards (see msPaintingApprovals.ts) and stamped
-   * onto command-created proposals at creation time. Absent means it's one
-   * of the pre-existing global/demo sources (chiefApprovalCardMocks.ts,
-   * repoChangeApprovals.ts, agentApprovalGates.ts) and only shows in the
-   * "global" context.
+   * project-scoped cards (see msPaintingApprovals.ts) and stamped onto
+   * command-created proposals at creation time. Absent means global-scoped
+   * (live/derived or command proposals without an explicit project).
    */
   contextId?: ChiefContextId;
   /**

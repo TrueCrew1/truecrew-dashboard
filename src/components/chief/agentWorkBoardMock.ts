@@ -12,26 +12,6 @@ export const AGENT_WORK_STATUS_CONFIG: AgentWorkStatusConfig[] = [
   { status: "completed", label: "Completed", emptyMessage: "No completed work yet this shift." },
 ];
 
-// Mock only — see AgentWorkItem in types.ts for the extension point once
-// agents report real status. Workflow Gate, Research, and Librarian entries
-// are now derived from real data (see chiefLiveContext.ts), same as Build.
-export const AGENT_WORK_ITEMS: AgentWorkItem[] = [
-  {
-    id: "agentwork-roadmap-1",
-    agent: "Roadmap Agent",
-    task: "Draft next roadmap phase scope note",
-    status: "queued",
-    priority: "medium",
-    note: "Starts once the current phase's approval clears.",
-    updatedAt: "2026-07-06T09:30:00.000Z",
-  },
-  {
-    id: "agentwork-marketer-1",
-    agent: "Marketer Agent",
-    task: "Draft homepage copy update for review",
-    status: "completed",
-    priority: "low",
-    note: "Sent for content approval — see Approvals tab.",
-    updatedAt: "2026-07-06T08:15:00.000Z",
-  },
-];
+// Status column config for the Agents board. Mock Roadmap/Marketer rows were
+// removed — this board now shows only live/derived agent work items.
+export const AGENT_WORK_ITEMS: AgentWorkItem[] = [];

@@ -15,7 +15,8 @@ the Build side — same shape, different agent.
 ## Purpose
 
 Research Agent today is illustrative: one seeded example request
-(`EXAMPLE_RESEARCH_REQUEST` in `agentApprovalGates.ts`) and one docs-only QA proposal
+(`agentApprovalGates.ts` helpers; illustrative EXAMPLE_* seeds removed from Approvals)
+and one docs-only QA proposal
 (`researchAgentTestProposal.ts`, exercised from the Monitor page). Neither reads a real
 signal or produces a real recommendation.
 

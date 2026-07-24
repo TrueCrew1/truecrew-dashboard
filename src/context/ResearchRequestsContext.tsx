@@ -21,6 +21,11 @@ import {
   mergeResearchRequests,
   saveSessionResearchRequests,
 } from "@/lib/research/sessionStore";
+import {
+  applyStatusOverrides,
+  pruneStatusOverridesMatchingServer,
+  resolveResearchRequestForUpdate,
+} from "@/lib/research/requestResolution";
 import type { ResearchRequest, ResearchRequestStatus } from "@/lib/research/types";
 
 /**
@@ -29,8 +34,12 @@ import type { ResearchRequest, ResearchRequestStatus } from "@/lib/research/type
  *   device. Locally-created rows not yet on the server still merge in.
  * - "session": live API off or unreachable — adapter backlog (static) plus
  *   browser-local session rows, exactly the pre-database behavior.
+ * - "loading": live API on, first fetch not finished — do not treat as session
+ *   for approve/create (avoids silent adapter approve failures).
  */
-export type ResearchRail = "live" | "session";
+export type ResearchRail = "live" | "session" | "loading";
+
+const LIVE_SOFT_POLL_MS = 30_000;
 
 interface ResearchRequestsContextValue {
   rail: ResearchRail;
@@ -46,53 +55,121 @@ interface ResearchRequestsContextValue {
     next: ResearchRequestStatus,
     options?: { filedPath?: string; blockerNote?: string },
   ) => ResearchRequest;
+  /** Soft-refresh live queue (no-op when live API is off). */
+  refreshLiveQueue: () => void;
 }
 
 const ResearchRequestsContext = createContext<ResearchRequestsContextValue | null>(null);
 
+function findAdapterRequest(id: string): ResearchRequest | undefined {
+  return ADAPTER_RESEARCH_REQUESTS.find((row) => row.id === id);
+}
+
 export function ResearchRequestsProvider({ children }: { children: ReactNode }) {
+  const liveApi = isLiveApiEnabled();
   const [sessionRequests, setSessionRequests] = useState<ResearchRequest[]>(() =>
     loadSessionResearchRequests(),
   );
   // null until a live fetch succeeds; presence of server rows IS the live rail.
   const [serverRequests, setServerRequests] = useState<ResearchRequest[] | null>(null);
+  const [liveLoading, setLiveLoading] = useState(liveApi);
   const [syncError, setSyncError] = useState<string | null>(null);
+  // Optimistic patches that must remain visible while the first live fetch is
+  // still in flight (or briefly after a write before soft-poll catches up).
+  const [statusOverrides, setStatusOverrides] = useState<Record<string, ResearchRequest>>({});
 
   useEffect(() => {
     saveSessionResearchRequests(sessionRequests);
   }, [sessionRequests]);
 
-  useEffect(() => {
+  const ingestServerRows = useCallback((rows: ResearchRequest[]) => {
+    setServerRequests(rows);
+    setLiveLoading(false);
+    setSyncError(null);
+    // Drop overrides the server already reflects (same id + status).
+    setStatusOverrides((prev) => pruneStatusOverridesMatchingServer(prev, rows));
+  }, []);
+
+  const refreshLiveQueue = useCallback(() => {
     if (!isLiveApiEnabled()) return;
-    let cancelled = false;
     fetchResearchRequestsFromApi()
       .then((rows) => {
-        if (cancelled) return;
-        setServerRequests(rows);
-        setSyncError(null);
+        ingestServerRows(rows);
       })
       .catch((error) => {
-        if (cancelled) return;
         console.error("[research-rail] live_fetch_failed", error);
+        setLiveLoading(false);
         setSyncError(
           "Live research queue unavailable — showing the local session + adapter backlog instead.",
         );
       });
+  }, [ingestServerRows]);
+
+  useEffect(() => {
+    if (!liveApi) {
+      setLiveLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setLiveLoading(true);
+    fetchResearchRequestsFromApi()
+      .then((rows) => {
+        if (cancelled) return;
+        ingestServerRows(rows);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.error("[research-rail] live_fetch_failed", error);
+        setLiveLoading(false);
+        setSyncError(
+          "Live research queue unavailable — showing the local session + adapter backlog instead.",
+        );
+      });
+
+    const timer = window.setInterval(() => {
+      fetchResearchRequestsFromApi()
+        .then((rows) => {
+          if (cancelled) return;
+          ingestServerRows(rows);
+        })
+        .catch((error) => {
+          if (cancelled) return;
+          console.error("[research-rail] live_soft_poll_failed", error);
+          setSyncError(
+            "Live research queue refresh failed — last known rows may be stale. Retry or reload.",
+          );
+        });
+    }, LIVE_SOFT_POLL_MS);
+
     return () => {
       cancelled = true;
+      window.clearInterval(timer);
     };
-  }, []);
+  }, [liveApi, ingestServerRows]);
 
-  const rail: ResearchRail = serverRequests ? "live" : "session";
+  const rail: ResearchRail = liveApi
+    ? liveLoading && !serverRequests
+      ? "loading"
+      : serverRequests
+        ? "live"
+        : "session"
+    : "session";
 
   const staticAdapterRequests = useMemo(() => [...ADAPTER_RESEARCH_REQUESTS], []);
+
+  // Session-promoted adapter rows (offline approve) replace the static copy so
+  // the same id never appears twice in the queue.
+  const sessionIds = useMemo(
+    () => new Set(sessionRequests.map((row) => row.id)),
+    [sessionRequests],
+  );
 
   const adapterRequests = useMemo(
     () =>
       serverRequests
         ? serverRequests.filter((row) => row.source === "adapter")
-        : staticAdapterRequests,
-    [serverRequests, staticAdapterRequests],
+        : staticAdapterRequests.filter((row) => !sessionIds.has(row.id)),
+    [serverRequests, staticAdapterRequests, sessionIds],
   );
 
   // Session rows the server doesn't know about (created offline, or a POST
@@ -103,13 +180,18 @@ export function ResearchRequestsProvider({ children }: { children: ReactNode }) 
     return sessionRequests.filter((row) => !serverIds.has(row.id));
   }, [serverRequests, sessionRequests]);
 
-  const allRequests = useMemo(
-    () =>
-      serverRequests
-        ? mergeResearchRequests(localOnlySessionRequests, serverRequests)
-        : mergeResearchRequests(sessionRequests, staticAdapterRequests),
-    [serverRequests, localOnlySessionRequests, sessionRequests, staticAdapterRequests],
-  );
+  const allRequests = useMemo(() => {
+    const merged = serverRequests
+      ? mergeResearchRequests(localOnlySessionRequests, serverRequests)
+      : mergeResearchRequests(sessionRequests, adapterRequests);
+    return applyStatusOverrides(merged, statusOverrides);
+  }, [
+    serverRequests,
+    localOnlySessionRequests,
+    sessionRequests,
+    adapterRequests,
+    statusOverrides,
+  ]);
 
   const createSessionRequest = useCallback(
     (topic: string) => {
@@ -123,10 +205,12 @@ export function ResearchRequestsProvider({ children }: { children: ReactNode }) 
       // lands in serverRequests.
       setSessionRequests((prev) => [request, ...prev]);
 
-      if (rail === "live") {
+      // POST whenever live API is enabled — not only after the first fetch —
+      // so creates during "loading" still sync to Supabase.
+      if (isLiveApiEnabled()) {
         createResearchRequestOnApi(request)
           .then((serverRow) => {
-            setServerRequests((prev) => (prev ? [serverRow, ...prev] : prev));
+            setServerRequests((prev) => (prev ? [serverRow, ...prev.filter((r) => r.id !== serverRow.id)] : prev));
             setSyncError(null);
           })
           .catch((error) => {
@@ -138,7 +222,7 @@ export function ResearchRequestsProvider({ children }: { children: ReactNode }) 
       }
       return request;
     },
-    [rail],
+    [],
   );
 
   const updateRequestStatus = useCallback(
@@ -148,41 +232,79 @@ export function ResearchRequestsProvider({ children }: { children: ReactNode }) 
       options?: { filedPath?: string; blockerNote?: string },
     ) => {
       const serverRow = serverRequests?.find((row) => row.id === id);
-      if (serverRow) {
-        // Validate + apply locally first (throws on an invalid transition),
-        // then persist; revert the optimistic change if the server rejects.
-        const nextRow = applyResearchStatus(serverRow, next, options);
-        setServerRequests((prev) =>
-          prev ? prev.map((row) => (row.id === id ? nextRow : row)) : prev,
-        );
+      const sessionRow = sessionRequests.find((row) => row.id === id);
+      const overrideRow = statusOverrides[id];
+      const adapterRow = findAdapterRequest(id);
+      const current = resolveResearchRequestForUpdate({
+        override: overrideRow,
+        server: serverRow,
+        session: sessionRow,
+        adapter: adapterRow,
+      });
+      if (!current) {
+        throw new Error(`Research request not found: ${id}`);
+      }
+
+      const nextRow = applyResearchStatus(current, next, options);
+
+      if (isLiveApiEnabled()) {
+        // Always keep an override until the server reflects the new status.
+        // Soft-poll GET can otherwise clobber optimistic in_progress with a
+        // stale queued row when serverRequests is already loaded.
+        setStatusOverrides((prev) => ({ ...prev, [id]: nextRow }));
+        if (serverRequests) {
+          setServerRequests((prev) =>
+            prev ? prev.map((row) => (row.id === id ? nextRow : row)) : prev,
+          );
+        }
+
         patchResearchRequestStatusOnApi(id, next, options)
           .then((persisted) => {
-            setServerRequests((prev) =>
-              prev ? prev.map((row) => (row.id === id ? persisted : row)) : prev,
+            setServerRequests((prev) => {
+              if (!prev) return [persisted];
+              return prev.map((row) => (row.id === id ? persisted : row));
+            });
+            setStatusOverrides((prev) =>
+              pruneStatusOverridesMatchingServer(prev, [persisted]),
             );
             setSyncError(null);
+            // If the first list fetch has not landed yet, pull once so the
+            // full queue replaces the single-row seed from this PATCH.
+            if (!serverRequests) {
+              refreshLiveQueue();
+            }
           })
           .catch((error) => {
             console.error("[research-rail] live_update_failed", error);
-            setServerRequests((prev) =>
-              prev ? prev.map((row) => (row.id === id ? serverRow : row)) : prev,
-            );
+            if (serverRow) {
+              setServerRequests((prev) =>
+                prev ? prev.map((row) => (row.id === id ? serverRow : row)) : prev,
+              );
+            }
+            setStatusOverrides((prev) => {
+              if (!prev[id]) return prev;
+              const rest = { ...prev };
+              delete rest[id];
+              return rest;
+            });
             setSyncError(
-              `Live update failed for "${serverRow.topic}" — status reverted to ${serverRow.status}. Try again.`,
+              `Live update failed for "${current.topic}" — status reverted to ${current.status}. Check VITE_INTERNAL_KEY / Supabase, then try again.`,
             );
           });
         return nextRow;
       }
 
-      const current = sessionRequests.find((row) => row.id === id);
-      if (!current) {
-        throw new Error(`Research request not found: ${id}`);
-      }
-      const nextRow = applyResearchStatus(current, next, options);
-      setSessionRequests((prev) => prev.map((row) => (row.id === id ? nextRow : row)));
-      return nextRow;
+      // Session rail: promote adapter backlog into the editable session store
+      // so Start-research approve can truthfully move queued → in_progress
+      // (source becomes session so the change survives reload).
+      const sessionNext: ResearchRequest = { ...nextRow, source: "session" };
+      setSessionRequests((prev) => {
+        const without = prev.filter((row) => row.id !== id);
+        return [sessionNext, ...without];
+      });
+      return sessionNext;
     },
-    [serverRequests, sessionRequests],
+    [serverRequests, sessionRequests, statusOverrides, refreshLiveQueue],
   );
 
   const value = useMemo<ResearchRequestsContextValue>(
@@ -194,6 +316,7 @@ export function ResearchRequestsProvider({ children }: { children: ReactNode }) 
       allRequests,
       createSessionRequest,
       updateRequestStatus,
+      refreshLiveQueue,
     }),
     [
       rail,
@@ -203,6 +326,7 @@ export function ResearchRequestsProvider({ children }: { children: ReactNode }) 
       allRequests,
       createSessionRequest,
       updateRequestStatus,
+      refreshLiveQueue,
     ],
   );
 

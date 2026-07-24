@@ -13,10 +13,10 @@ export { extractResearchTopic };
 
 export function buildResearchRequestCreatedResponse(
   request: ResearchRequest,
-  rail: "live" | "session" = "session",
+  rail: "live" | "session" | "loading" = "session",
 ): ChiefResponse {
   const persistence =
-    rail === "live"
+    rail === "live" || rail === "loading"
       ? "saved to the live queue — visible from any device."
       : "session-backed, saved in this browser only.";
   return {
@@ -30,7 +30,7 @@ export function buildResearchRequestCreatedResponse(
       {
         specialist: "Research Agent",
         contribution:
-          rail === "live"
+          rail === "live" || rail === "loading"
             ? "Request queued to the live store — operator-driven, no auto-run"
             : "Session request queued — operator-driven, no auto-run",
       },

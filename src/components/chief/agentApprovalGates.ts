@@ -17,13 +17,10 @@ import type {
  * operator sees approvals on. See docs/AGENT_WORKFLOW.md for the repo-level
  * statement of this rule.
  *
- * Build's request (BUILD_REQUEST_DUPLICATE_AUTH_FIX below) is a real one,
- * grounded in verifiable repo state — not mocked. Planner's overdue-work
- * re-sequencing gate is also live (see plannerReprioritizationProposal.ts).
- * Research/Content still use one illustrative example each (clearly marked
- * EXAMPLE_*), not live agent output yet. Extension point: replace each
- * EXAMPLE_* constant with a real request object once that agent's workflow
- * actually produces one, following the same pattern as Build's.
+ * No illustrative EXAMPLE_* or stale static seed cards are shown in Approvals.
+ * Wire a real request through createApprovalCardFrom* when an agent produces
+ * one. Planner overdue re-sequencing is live (plannerReprioritizationProposal.ts).
+ * Research start cards come from the live/session research queue.
  */
 
 export type AgentRole = "planner" | "build" | "research" | "content";
@@ -170,18 +167,13 @@ export function createApprovalCardFromContentRequest(request: ContentApprovalReq
   return baseCardFields(request, "Content", "content_agent", `Audience: ${request.audience}.`);
 }
 
-// --- Requests: Build is real (below); Research/Content are illustrative examples ---
-// Planner's live overdue re-sequencing signal lives in plannerReprioritizationProposal.ts
-// (not seeded here).
+// --- Historical request fixtures (not seeded into Approvals) ---
+// Planner's live overdue re-sequencing signal lives in plannerReprioritizationProposal.ts.
+// Keep BUILD_REQUEST_DUPLICATE_AUTH_FIX for knowledge/decision cross-refs; do not re-seed.
 
 /**
- * Real, not illustrative: two open PRs — #57 (build/auth-trim-fix) and #58
- * (fix/internal-auth-401) — carry a byte-for-byte identical diff to
- * lib/auth.ts, opened 8 minutes apart (2026-07-03T23:07:40Z and
- * 2026-07-03T23:15:32Z), both green on CI and mergeable against main.
- * Verified via `gh pr diff 57` / `gh pr diff 58` (empty `diff` between the
- * two) and `gh pr view` for CI status. Merging both would double-apply the
- * same fix; one needs to merge and the other needs to close.
+ * Historical fixture for PRs #57/#58 duplicate auth fix (July 2026).
+ * Not shown in Approvals — kept for knowledge/decisions cross-references.
  */
 export const BUILD_REQUEST_DUPLICATE_AUTH_FIX: BuildApprovalRequest = {
   id: "apr-build-duplicate-auth-prs",
@@ -198,38 +190,5 @@ export const BUILD_REQUEST_DUPLICATE_AUTH_FIX: BuildApprovalRequest = {
   createdAt: "2026-07-04T07:20:01.000Z",
 };
 
-export const EXAMPLE_RESEARCH_REQUEST: ResearchApprovalRequest = {
-  id: "apr-research-example-notification-vendor",
-  gate: APPROVAL_GATES.research[1],
-  summary:
-    "Evaluate a transactional-email vendor for the notification hooks already stubbed in ChiefPanel.tsx (card created / card resolved), ahead of building that integration.",
-  riskLevel: "medium",
-  testsOrChecksDone: [
-    { label: "Compared 2 vendors on pricing and delivery reliability", status: "pass" },
-    { label: "Confirmed no PII leaves the app beyond what's already sent", status: "pending" },
-  ],
-  requestedAction: "Approve a vendor to unblock the notification-hook build, or hold for a wider survey.",
-  alternativesConsidered: ["Resend", "Postmark"],
-  createdAt: "2026-07-04T12:10:00.000Z",
-};
-
-export const EXAMPLE_CONTENT_REQUEST: ContentApprovalRequest = {
-  id: "apr-content-example-homepage-hero",
-  gate: APPROVAL_GATES.content[0],
-  summary:
-    'Draft homepage hero copy update describing the new Chief Approval Panel feature for prospective customers.',
-  riskLevel: "low",
-  testsOrChecksDone: [
-    { label: "Reviewed against product tone guidance (industrial, plain, practical)", status: "pass" },
-    { label: "No unverified feature claims beyond what's shipped", status: "pass" },
-  ],
-  requestedAction: "Approve copy for publish, or send back with edits.",
-  audience: "public",
-  createdAt: "2026-07-04T12:15:00.000Z",
-};
-
-export const AGENT_APPROVAL_CARDS: ApprovalCard[] = [
-  createApprovalCardFromBuildRequest(BUILD_REQUEST_DUPLICATE_AUTH_FIX),
-  createApprovalCardFromResearchRequest(EXAMPLE_RESEARCH_REQUEST),
-  createApprovalCardFromContentRequest(EXAMPLE_CONTENT_REQUEST),
-];
+/** Empty seed list — Approvals no longer shows illustrative agent example cards. */
+export const AGENT_APPROVAL_CARDS: ApprovalCard[] = [];

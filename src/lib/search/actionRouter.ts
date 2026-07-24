@@ -14,7 +14,7 @@ export interface ActionDispatchContext {
    * omitted means browser-session only (the honest default). */
   createResearchRequest?: (
     topic: string,
-  ) => { id: string; topic: string; rail?: "live" | "session" } | null;
+  ) => { id: string; topic: string; rail?: "live" | "session" | "loading" } | null;
 }
 
 function buildSuggestedActions(intent: CommandIntent, response: SearchResponse): SuggestedAction[] {
@@ -172,7 +172,7 @@ export function dispatchAction(
         ok: true,
         action: "start_research",
         message: created
-          ? created.rail === "live"
+          ? created.rail === "live" || created.rail === "loading"
             ? `Research request created for "${topic}" — saved to the live queue. See Knowledge; file a finding when ready. Nothing auto-runs.`
             : `Session research request created for "${topic}" — saved in this browser. See the queue on Knowledge; file a finding when ready. Nothing auto-runs.`
           : `Opened Knowledge for "${topic}" — research request creation is unavailable in this context.`,

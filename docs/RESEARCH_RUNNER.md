@@ -83,3 +83,28 @@ honest — nothing pretends to be synced.
 - Apply the queue migration if not yet applied: `npm run db:push`
 - Configure the scheduled agent's env (`TRUECREW_API_URL`, `TRUECREW_INTERNAL_KEY`)
   for live status sync; without them the runner uses the repo-native fallback above.
+- Invoke the runner CLI (same contract the scheduled agent should call):
+
+```bash
+npm run research:runner -- status    # list queue + counts
+npm run research:runner -- pickup    # oldest in_progress (exit 2 if none)
+npm run research:runner -- run       # same as pickup + next-step hints
+npm run research:runner -- done --id <id> --path knowledge/findings/...
+npm run research:runner -- block --id <id> --note "<why>"
+```
+
+Approval (Chief → Approvals “Start research”) is what moves `queued` → `in_progress`.
+The runner never auto-approves — it only picks up rows already released.
+`done` / `block` refuse **queued** ids (approve first).
+
+## Dev / staging smoke (short)
+
+1. `npm run db:push` if `research_requests` is missing.
+2. Live app: `VITE_USE_LIVE_API=true` + matching internal key + Supabase.
+3. Confirm a **Queued** row (migration seed or `start research on <topic>`).
+4. Chief → Approvals (global) → approve **Start research: …**.
+5. Queue shows **In progress** (no hard reload required; soft-poll 30s).
+6. `TRUECREW_API_URL` + `TRUECREW_INTERNAL_KEY` set → `npm run research:runner -- pickup`.
+7. After filing: `npm run research:runner -- done --id <id> --path knowledge/findings/...`.
+
+Full checklist and expected UI/DB states: `docs/RESEARCH_AGENT_LIVE_PR210.md` (§ How to run / QA flows).
