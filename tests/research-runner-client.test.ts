@@ -245,6 +245,22 @@ describe("research request resolve order (approve path)", () => {
     expect(syncError).toMatch(/Painter SaaS market scan/);
   });
 
+  it("soft-poll cannot clobber optimistic override until server status matches", () => {
+    const queued = clientRow({ id: "a", status: "queued" });
+    const optimistic = clientRow({ id: "a", status: "in_progress" });
+    const overrides = { a: optimistic };
+
+    // Stale soft-poll still returns queued — override must win in the UI merge
+    expect(applyStatusOverrides([queued], overrides)[0]?.status).toBe("in_progress");
+    expect(pruneStatusOverridesMatchingServer(overrides, [queued]).a?.status).toBe(
+      "in_progress",
+    );
+
+    // After PATCH lands, prune clears the override
+    const persisted = clientRow({ id: "a", status: "in_progress" });
+    expect(pruneStatusOverridesMatchingServer(overrides, [persisted]).a).toBeUndefined();
+  });
+
   it("pruneStatusOverridesMatchingServer clears only matching statuses", () => {
     const overrides = {
       a: clientRow({ id: "a", status: "in_progress" }),

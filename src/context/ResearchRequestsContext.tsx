@@ -248,32 +248,28 @@ export function ResearchRequestsProvider({ children }: { children: ReactNode }) 
       const nextRow = applyResearchStatus(current, next, options);
 
       if (isLiveApiEnabled()) {
-        // Optimistic: prefer patching the live list; fall back to an override
-        // so approve-during-loading still shows in_progress immediately.
+        // Always keep an override until the server reflects the new status.
+        // Soft-poll GET can otherwise clobber optimistic in_progress with a
+        // stale queued row when serverRequests is already loaded.
+        setStatusOverrides((prev) => ({ ...prev, [id]: nextRow }));
         if (serverRequests) {
           setServerRequests((prev) =>
             prev ? prev.map((row) => (row.id === id ? nextRow : row)) : prev,
           );
-        } else {
-          setStatusOverrides((prev) => ({ ...prev, [id]: nextRow }));
         }
 
         patchResearchRequestStatusOnApi(id, next, options)
           .then((persisted) => {
-            setServerRequests((prev) =>
-              prev
-                ? prev.map((row) => (row.id === id ? persisted : row))
-                : prev,
-            );
-            setStatusOverrides((prev) => {
-              if (!prev[id]) return prev;
-              const rest = { ...prev };
-              delete rest[id];
-              return rest;
+            setServerRequests((prev) => {
+              if (!prev) return [persisted];
+              return prev.map((row) => (row.id === id ? persisted : row));
             });
+            setStatusOverrides((prev) =>
+              pruneStatusOverridesMatchingServer(prev, [persisted]),
+            );
             setSyncError(null);
-            // If the first list fetch has not landed yet, pull once so rail
-            // becomes "live" with the patched row instead of staying on overrides.
+            // If the first list fetch has not landed yet, pull once so the
+            // full queue replaces the single-row seed from this PATCH.
             if (!serverRequests) {
               refreshLiveQueue();
             }

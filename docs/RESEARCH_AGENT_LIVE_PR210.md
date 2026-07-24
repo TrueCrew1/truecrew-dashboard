@@ -66,17 +66,20 @@ This was **not** a runner pickup defect in the approve → `in_progress` transit
 | File | Change |
 |---|---|
 | `src/context/ResearchRequestsContext.tsx` | Core approve, persist, optimistic override, revert, and soft-poll fix |
+| `src/lib/research/requestResolution.ts` | Pure resolve/rail/override helpers (**added**) |
 | `src/components/research/ResearchQueuePanel.tsx` | Loading/live/error/retry states |
 | `src/components/research/MsResearchStatusCard.tsx` | Rail visibility, sync error, in-progress focus |
 | `src/components/chief/chiefResearchCommand.ts` | Treat `loading` like live for create messaging |
 | `src/lib/search/actionRouter.ts` | Same handling for command routing |
-| `lib/research/runnerClient.ts` | Added fail-closed runner client |
-| `scripts/research-runner.ts` | Added CLI for `status`, `pickup`, `run`, `done`, `block` |
-| `tests/research-runner-client.test.ts` | Added env and pickup tests |
+| `lib/research/runnerClient.ts` | Fail-closed runner client; refuse `done`/`block` on queued |
+| `scripts/research-runner.ts` | CLI for `status`, `pickup`, `run`, `done`, `block` |
+| `tests/research-runner-client.test.ts` | Env, pickup, lifecycle, Flows B–D |
+| `tests/api-research-requests.test.ts` | API GET/PATCH transitions (**added**) |
 | `api/research/dispatch.ts` | Missing-table log improvement |
 | `lib/research/projectSummaryHandoff.ts` | Louder mission failure logging |
 | `lib/research/monitorIncidentPostmortem.ts` | Louder mission failure logging |
-| `docs/RESEARCH_RUNNER.md` | CLI usage update |
+| `docs/RESEARCH_RUNNER.md` | CLI usage + smoke |
+| `docs/RESEARCH_AGENT_LIVE_PR210.md` | Deliverable, readiness, QA runbook (**added**) |
 | `.env.example` | Add `TRUECREW_API_URL` and `TRUECREW_INTERNAL_KEY` |
 | `package.json` | Add `research:runner` script |
 
@@ -86,11 +89,12 @@ Branch tested: `cursor/research-agent-live-4a27`
 
 | Check | Result |
 |---|---|
-| `npm test` | 52 files / 342 tests passed |
+| `npm test` | 53 files / **362** tests passed (latest QA; see also QA commands below) |
 | `npm run lint` | Clean |
 | `npm run build` | Clean (`tsc -b && vite build`) |
 | `npm run check:api-functions` | 12 / 12 |
 | `npm run research:runner -- status` | Fails closed without `TRUECREW_API_URL` and `TRUECREW_INTERNAL_KEY` |
+| CI | Green on branch |
 
 Not verified in this environment:
 
@@ -332,4 +336,34 @@ Same steps as Flow A against production URL/secrets. Confirm schema/status vocab
 npm test -- tests/research-runner-client.test.ts tests/api-research-requests.test.ts
 ```
 
-Covers: resolve order (adapter during loading), soft-poll override prune, fail-closed env (both or either `TRUECREW_*` missing), oldest `in_progress` pickup, mocked approve → pickup → done, API GET/PATCH transitions including invalid `queued` → `done`/`blocked`, runner refusal to mutate queued rows on `done` and `block`.
+Covers: resolve order (adapter during loading), soft-poll override prune, fail-closed env (both or either `TRUECREW_*` missing), oldest `in_progress` pickup, mocked approve → pickup → done, API GET/PATCH transitions including invalid `queued` → `done`, runner refusal to mutate queued rows on `done` and `block`.
+
+---
+
+## Audit snapshot (filing + function)
+
+| Area | Status |
+|---|---|
+| Migration `research_requests` + seeds | Filed; matches adapter ids |
+| `/api/research` GET/POST/PATCH | Connected via `dispatch` rewrite |
+| Approve → `in_progress` + soft-poll + syncError | Wired; overrides survive soft-poll until server matches |
+| Runner CLI fail-closed + oldest `in_progress` + refuse queued | Wired + tested |
+| Canonical doc + `.env.example` + `RESEARCH_RUNNER.md` | Filed |
+| Automated tests | Green; React/RTL context tests **not** present (Flows B–D are pure/mocked) |
+| Live browser / prod smoke | **Not** run in agent env |
+| PR draft state | Still **draft** until human marks ready |
+
+### Blocking (ops — not code)
+
+1. Confirm `research_requests` on live/prod Supabase.
+2. Production secrets: `VITE_USE_LIVE_API`, matching internal keys, Supabase URL + service role.
+3. Runner host: `TRUECREW_API_URL` + `TRUECREW_INTERNAL_KEY`.
+4. One production smoke: approve → queue `in_progress` → `research:runner` pickup/done.
+
+### Concerns (non-blocking)
+
+- No React integration tests for `ResearchRequestsContext` / queue UI (pure helpers + API mocks cover contract).
+- UI **Block** on a queued row can call API `queued` → `blocked` (allowed by status table); runner CLI still refuses — intentional asymmetry.
+- Handoff/postmortem missions need Azure LLM + Obsidian (optional for queue/runner path).
+- Older PR comments may cite stale test counts (342/355); canonical numbers live in this doc + latest QA comment.
+- Packet-spec still labels AgentPacket runner as future work (different layer than queue CLI) — easy to misread.

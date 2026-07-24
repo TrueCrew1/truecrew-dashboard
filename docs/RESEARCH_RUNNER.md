@@ -107,4 +107,4 @@ The runner never auto-approves — it only picks up rows already released.
 6. `TRUECREW_API_URL` + `TRUECREW_INTERNAL_KEY` set → `npm run research:runner -- pickup`.
 7. After filing: `npm run research:runner -- done --id <id> --path knowledge/findings/...`.
 
-Full checklist and expected UI/DB states: `docs/RESEARCH_AGENT_LIVE_PR210.md` § Dev / staging runbook.
+Full checklist and expected UI/DB states: `docs/RESEARCH_AGENT_LIVE_PR210.md` (§ How to run / QA flows).
