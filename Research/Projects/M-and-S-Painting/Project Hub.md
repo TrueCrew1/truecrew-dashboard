@@ -21,7 +21,7 @@ M&S Painting V2 (customer app context in True Crew; customer-app code lives in `
 - [[Research Package Obsidian Template]] — **STATUS: MISSING** (`os/standards/research_package_obsidian_template.md`)
 - [[Founder Decision Summary Template]] — **STATUS: FILED** (`os/standards/founder_decision_summary_template.md`)
 
-Related True Crew docs (not substitutes for the MISSING templates):
+Related True Crew docs (related context, not substitutes for project packages):
 - `docs/RESEARCH_AGENT_PACKET_SPEC.md`
 - `docs/RESEARCH_RUNNER.md`
 - `docs/AGENT_RUNBOOK.md` (Research sections)
