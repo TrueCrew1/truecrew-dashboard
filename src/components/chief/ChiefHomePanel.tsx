@@ -205,7 +205,20 @@ export function ChiefHomePanel() {
           <div className={`chief-home-lane chief-home-lane--${chiefLane.tone}`}>
             <header className="chief-home-lane-header">
               <span className="chief-home-lane-name">Chief</span>
-              <span className="chief-board-lane-count">{chiefLane.count}</span>
+              <span className="chief-home-lane-chips">
+                <span
+                  className="chief-home-lane-chip chief-home-lane-chip--approvals"
+                  title="Pending approvals"
+                >
+                  {pendingApprovals.length}
+                </span>
+                <span
+                  className="chief-home-lane-chip chief-home-lane-chip--blocked"
+                  title="Blocked tasks"
+                >
+                  {blockedItems.length}
+                </span>
+              </span>
             </header>
             <p className="chief-home-lane-status">{chiefLane.status}</p>
             <p className="chief-home-lane-detail">{chiefLane.detail}</p>

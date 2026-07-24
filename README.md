@@ -83,6 +83,43 @@ See `.env.example` for the full list (auth, LLM, Obsidian, Slack).
 | `/review` | Review |
 | `/settings` | Settings |
 
+## Chief home lanes
+
+The Today page (`/`) renders three lane cards in `ChiefHomePanel`
+(`src/components/chief/ChiefHomePanel.tsx`), giving the operator a
+one-glance read on what Chief, Builder, and Research are each doing right
+now, without opening a tab. The counts and CTAs are wired to the same data
+Chief and the sidebar panel already use, so the numbers on Today always
+agree with the Approvals/Board tabs — nothing here is a separate or
+optimistic signal. Read the three lanes as: **Chief** is the operator's own
+queue (approvals to decide, blockers to clear); **Builder** is real gated
+build work waiting on checks; **Research** is real incident/knowledge work
+Research Agent is tracking. Chief supervises the latter two, it doesn't do
+their work itself.
+
+- **Chief lane** — count = pending approvals (`status === "pending"`) +
+  blocked tasks (task-blocker board items only, matching the Situation
+  Brief's "Blocked" tile). Status text is `"N approval(s) · M blocker(s)"`,
+  or `"Queue clear · no blockers"` when both are zero. Detail is the top
+  pending approval's title, falling back to the top blocked task's title.
+  The **"Review approvals →"** button calls `scrollIntoView({ behavior:
+  "smooth", block: "start" })` on the "Needs approval" snapshot section
+  directly below — no route change.
+- **Builder lane** — count = `useBuildTasks().buildGateTasks.length` (build
+  tasks currently waiting on at least one required, unpassed gate). Status
+  is `"Gate overdue"` if any of those tasks is overdue, `"Gated build
+  work"` otherwise, or `"Build queue clear"` when the list is empty. The
+  **"Open Builds →"** link navigates to `/builds`.
+- **Research lane** — count = active Research Agent work items
+  (`deriveResearchAgentWorkItems(activeIncidents)` filtered to `status ===
+  "active"`) + pending approvals where `specialist === "Research Agent"`.
+  Status is `"Research active"` above zero, `"No active research"`
+  otherwise. The **"Open Knowledge →"** link navigates to `/knowledge`.
+
+Component tests: `tests/chief-home-panel.test.tsx` (Vitest + React Testing
+Library, mocks `useChiefApprovals`/`useBuildTasks`/the chiefLiveContext
+derive functions to drive each lane's inputs directly).
+
 ## Workflow stages
 
 Inbox → Triage → Planned → In Progress → Waiting → Review → Done → Logged
