@@ -3313,6 +3313,86 @@ button.chief-brief-metric {
   line-height: 1.5;
 }
 
+.agent-work-board-banner {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+
+.agent-work-board-banner--error {
+  border-color: color-mix(in srgb, var(--red, #c44) 45%, var(--border));
+}
+
+.agent-work-board-banner--warn {
+  border-color: color-mix(in srgb, var(--orange, #d97820) 45%, var(--border));
+}
+
+.agent-work-board-banner-lead {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--steel);
+}
+
+.agent-work-board-banner-detail {
+  margin: 0 0 8px;
+  font-size: 11px;
+  color: var(--steel-dim);
+  line-height: 1.45;
+}
+
+.agent-work-board-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.agent-work-lane--skeleton {
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+}
+
+.agent-work-skeleton-line {
+  height: 10px;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--bg-elevated) 0%,
+    color-mix(in srgb, var(--steel-dim) 18%, var(--bg-elevated)) 50%,
+    var(--bg-elevated) 100%
+  );
+  background-size: 200% 100%;
+  animation: agent-work-skeleton-pulse 1.2s ease-in-out infinite;
+}
+
+.agent-work-skeleton-line--title {
+  width: 40%;
+  height: 12px;
+}
+
+.agent-work-skeleton-line--short {
+  width: 55%;
+}
+
+@keyframes agent-work-skeleton-pulse {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+.agent-status-strip-loading {
+  margin: 0 0 10px;
+  font-size: 11px;
+  color: var(--steel-dim);
+}
+
 .agent-work-lanes {
   display: flex;
   flex-direction: column;

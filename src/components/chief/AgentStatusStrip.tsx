@@ -1,3 +1,4 @@
+import { useData } from "@/context/DataContext";
 import { isLiveApiEnabled } from "@/lib/api/client";
 import { useMonitorHealth } from "@/hooks/useMonitorHealth";
 import { useProjectSummaryHandoffMissions } from "@/hooks/useProjectSummaryHandoffMissions";
@@ -13,8 +14,14 @@ import {
 
 export function AgentStatusStrip() {
   const liveApi = isLiveApiEnabled();
+  const { loading: dataLoading, error: dataError, refresh: refreshData } = useData();
   const { chiefData, approvals } = useChiefApprovals();
-  const { missions, error: handoffError } = useProjectSummaryHandoffMissions(null);
+  const {
+    missions,
+    loading: missionsLoading,
+    error: handoffError,
+    refresh: refreshMissions,
+  } = useProjectSummaryHandoffMissions(15_000);
   const platformHealth = useMonitorHealth();
   const { buildGateTasks } = useBuildTasks();
 
@@ -35,6 +42,9 @@ export function AgentStatusStrip() {
     platformHealth,
   });
 
+  const showSkeleton = liveApi && dataLoading && !dataError;
+  const stripError = dataError ?? handoffError;
+
   return (
     <section className="agent-status-strip" aria-label="Agent status">
       <header className="agent-status-strip-header">
@@ -44,6 +54,30 @@ export function AgentStatusStrip() {
           probes.
         </p>
       </header>
+
+      {stripError ? (
+        <div className="agent-work-board-banner agent-work-board-banner--warn" role="status">
+          <p className="agent-work-board-banner-lead">Status may be incomplete</p>
+          <p className="agent-work-board-banner-detail">{stripError}</p>
+          <button
+            type="button"
+            className="chief-ops-status-retry"
+            onClick={() => {
+              void refreshData();
+              void refreshMissions();
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      ) : null}
+
+      {showSkeleton && missionsLoading ? (
+        <p className="agent-status-strip-loading" role="status">
+          Loading agent status…
+        </p>
+      ) : null}
+
       <ul className="agent-status-strip-list">
         {rows.map((row) => (
           <AgentStatusStripRow key={row.agent} row={row} />

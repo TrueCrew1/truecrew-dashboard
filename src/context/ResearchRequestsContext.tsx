@@ -65,21 +65,30 @@ export function ResearchRequestsProvider({ children }: { children: ReactNode }) 
   useEffect(() => {
     if (!isLiveApiEnabled()) return;
     let cancelled = false;
-    fetchResearchRequestsFromApi()
-      .then((rows) => {
-        if (cancelled) return;
-        setServerRequests(rows);
-        setSyncError(null);
-      })
-      .catch((error) => {
-        if (cancelled) return;
-        console.error("[research-rail] live_fetch_failed", error);
-        setSyncError(
-          "Live research queue unavailable — showing the local session + adapter backlog instead.",
-        );
-      });
+
+    const load = () =>
+      fetchResearchRequestsFromApi()
+        .then((rows) => {
+          if (cancelled) return;
+          setServerRequests(rows);
+          setSyncError(null);
+        })
+        .catch((error) => {
+          if (cancelled) return;
+          console.error("[research-rail] live_fetch_failed", error);
+          setSyncError(
+            "Live research queue unavailable — showing the local session + adapter backlog instead.",
+          );
+        });
+
+    void load();
+    const timer = window.setInterval(() => {
+      void load();
+    }, 30_000);
+
     return () => {
       cancelled = true;
+      window.clearInterval(timer);
     };
   }, []);
 

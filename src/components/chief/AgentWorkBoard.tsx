@@ -1,4 +1,6 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
+import { useData } from "@/context/DataContext";
+import { isLiveApiEnabled } from "@/lib/api/client";
 import { ApprovalSectionHeader, ApprovalSectionShell, ApprovalSurfaceEmpty } from "./approvalWrappers";
 import { AGENT_WORK_ITEMS, AGENT_WORK_STATUS_CONFIG } from "./agentWorkBoardMock";
 import { formatChiefTimestamp } from "./chiefMock";
@@ -8,6 +10,7 @@ import {
   deriveLibrarianAgentWorkItems,
   deriveProjectSummaryHandoffWorkItems,
   deriveResearchAgentWorkItems,
+  deriveRoadmapAgentWorkItems,
   deriveWorkflowGateAgentWorkItems,
 } from "./chiefLiveContext";
 import { getApprovalUrgencyBadge, OVERDUE_HOURS } from "./chiefApprovalUrgency";
@@ -65,6 +68,7 @@ function AgentWorkCard({
         </div>
         <span className="agent-work-card-badges">
           {item.source === "live" ? <span className="badge badge-green">live</span> : null}
+          {item.source !== "live" ? <span className="badge badge-steel">mock</span> : null}
           {urgencyBadge ? (
             <span
               className={`badge ${urgencyBadge.badgeClass}`}
@@ -98,21 +102,44 @@ function AgentWorkCard({
   );
 }
 
+function AgentWorkBoardSkeleton() {
+  return (
+    <div className="agent-work-board-skeleton" aria-hidden="true">
+      {AGENT_WORK_STATUS_CONFIG.map((lane) => (
+        <div key={lane.status} className="agent-work-lane agent-work-lane--skeleton">
+          <div className="agent-work-skeleton-line agent-work-skeleton-line--title" />
+          <div className="agent-work-skeleton-line" />
+          <div className="agent-work-skeleton-line agent-work-skeleton-line--short" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function AgentWorkBoard() {
+  const liveApi = isLiveApiEnabled();
+  const { loading: dataLoading, error: dataError, refresh: refreshData } = useData();
   const { chiefData, approvals } = useChiefApprovals();
   const { activeContext } = useChiefContext();
-  const { missions: handoffMissions } = useProjectSummaryHandoffMissions();
-  // Missions carry their own projectId (a workflow id) — scope them to the
-  // active context's own workflows the same way every other Chief-derived
-  // list here is scoped, instead of showing every project's missions.
+  const {
+    missions: handoffMissions,
+    error: missionsError,
+    refresh: refreshMissions,
+  } = useProjectSummaryHandoffMissions();
+
   const scopedHandoffMissions = useMemo(() => {
     if (activeContext === "global") return handoffMissions;
     const workflowIds = new Set(chiefData.workflows.map((workflow) => workflow.id));
     return handoffMissions.filter((mission) => workflowIds.has(mission.projectId));
   }, [handoffMissions, activeContext, chiefData.workflows]);
+
   const buildItems = useMemo(() => deriveBuildAgentWorkItems(chiefData.tasks), [chiefData.tasks]);
   const workflowGateItems = useMemo(
     () => deriveWorkflowGateAgentWorkItems(chiefData.tasks),
+    [chiefData.tasks],
+  );
+  const roadmapItems = useMemo(
+    () => deriveRoadmapAgentWorkItems(chiefData.tasks),
     [chiefData.tasks],
   );
   const researchItems = useMemo(
@@ -140,37 +167,93 @@ export function AgentWorkBoard() {
     }
     return map;
   }, [approvals]);
-  // AGENT_WORK_ITEMS (Roadmap/Marketer mock rows) are global platform demo
-  // data — not M&S Painting work — so they only render in the global
-  // context, same rule as the static approval-card sources.
+
+  // Marketer mock rows only: Roadmap is live-derived. Drop mocks in live API
+  // mode and outside the global context.
+  const mockAgentItems = useMemo(() => {
+    if (liveApi || activeContext !== "global") return [];
+    return AGENT_WORK_ITEMS;
+  }, [liveApi, activeContext]);
+
   const items = useMemo(
     () => [
       ...buildItems,
       ...workflowGateItems,
+      ...roadmapItems,
       ...researchItems,
       ...handoffItems,
       ...librarianItems,
       ...awaitingApprovalItems,
-      ...(activeContext === "global" ? AGENT_WORK_ITEMS : []),
+      ...mockAgentItems,
     ],
     [
       buildItems,
       workflowGateItems,
+      roadmapItems,
       researchItems,
       handoffItems,
       librarianItems,
       awaitingApprovalItems,
-      activeContext,
+      mockAgentItems,
     ],
   );
+
+  const showLoadingSkeleton = liveApi && dataLoading && !dataError;
+  const degraded =
+    Boolean(dataError) || (liveApi && Boolean(missionsError) && items.length > 0);
+  const hardError = Boolean(dataError) && items.length === 0 && !dataLoading;
+
+  const handleRetry = useCallback(() => {
+    void refreshData();
+    void refreshMissions();
+  }, [refreshData, refreshMissions]);
+
+  if (showLoadingSkeleton) {
+    return (
+      <ApprovalSectionShell className="agent-work-board" title="Agent work board">
+        <p className="agent-work-board-note" role="status">
+          Loading agent status…
+        </p>
+        <AgentWorkBoardSkeleton />
+      </ApprovalSectionShell>
+    );
+  }
+
+  if (hardError) {
+    return (
+      <ApprovalSectionShell className="agent-work-board">
+        <ApprovalSectionHeader title="Agent work board" />
+        <div className="agent-work-board-banner agent-work-board-banner--error" role="alert">
+          <p className="agent-work-board-banner-lead">Could not load agent data</p>
+          <p className="agent-work-board-banner-detail">{dataError}</p>
+          <button type="button" className="chief-ops-status-retry" onClick={handleRetry}>
+            Retry
+          </button>
+        </div>
+      </ApprovalSectionShell>
+    );
+  }
 
   if (items.length === 0) {
     return (
       <ApprovalSectionShell className="agent-work-board">
         <ApprovalSectionHeader title="Agent work board" />
+        {missionsError ? (
+          <div className="agent-work-board-banner agent-work-board-banner--warn" role="status">
+            <p className="agent-work-board-banner-lead">Handoff missions unavailable</p>
+            <p className="agent-work-board-banner-detail">{missionsError}</p>
+            <button type="button" className="chief-ops-status-retry" onClick={handleRetry}>
+              Retry
+            </button>
+          </div>
+        ) : null}
         <ApprovalSurfaceEmpty
-          lead="No agent work tracked"
-          description="Queued, active, blocked, awaiting-approval, and completed work will appear here once agents pick up tasks."
+          lead="No agents yet in this workspace"
+          description={
+            activeContext === "global"
+              ? "Queued, active, blocked, awaiting-approval, and completed work will appear here once agents pick up tasks or incidents."
+              : "No agent work is scoped to this context yet. Switch to Global, or add tasks/workflows for this workspace."
+          }
         />
       </ApprovalSectionShell>
     );
@@ -182,11 +265,29 @@ export function AgentWorkBoard() {
       title="Agent work board"
       count={`${items.length} item${items.length === 1 ? "" : "s"}`}
     >
+      {degraded ? (
+        <div className="agent-work-board-banner agent-work-board-banner--warn" role="status">
+          <p className="agent-work-board-banner-lead">Partial agent status</p>
+          <p className="agent-work-board-banner-detail">
+            {[dataError, missionsError].filter(Boolean).join(" · ")} Showing the latest data that
+            loaded.
+          </p>
+          <button type="button" className="chief-ops-status-retry" onClick={handleRetry}>
+            Retry
+          </button>
+        </div>
+      ) : null}
+
       <p className="agent-work-board-note">
-        Snapshot of what each agent is carrying right now. Build, Workflow Gate, Research,
-        Librarian, and Awaiting approval rows marked <span className="badge badge-green">live</span>{" "}
-        reflect real task/incident/artifact data or pending proposals from the shared Approvals
-        queue; other agents are still mock for this slice. Read-only — no actions taken here.
+        Live snapshot of what each agent is carrying. Rows marked{" "}
+        <span className="badge badge-green">live</span> come from tasks, incidents, artifacts,
+        handoff missions, or pending Approvals
+        {mockAgentItems.length > 0 ? (
+          <>
+            ; <span className="badge badge-steel">mock</span> rows are demo-only (Marketer)
+          </>
+        ) : null}
+        . Updates about every 30s in live mode. Read-only — no actions taken here.
       </p>
 
       <div className="agent-work-lanes">
