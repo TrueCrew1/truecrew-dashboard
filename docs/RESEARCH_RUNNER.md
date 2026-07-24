@@ -42,7 +42,9 @@ fetch, repo, PRs) — no new API keys are required for the primary loop.
 
 To read and update the live queue, the runner needs:
 
-- `TRUECREW_API_URL` — deployed app origin (e.g. `https://<app>.vercel.app`)
+- `TRUECREW_API_URL` — deployed app **origin** (e.g. `https://<app>.vercel.app`).
+  Do **not** append `/api` — the client calls `/api/research` itself. A trailing
+  `/api` is stripped as a safety net.
 - `TRUECREW_INTERNAL_KEY` — value of `INTERNAL_API_SECRET` (same `x-internal-key`
   header every internal route uses)
 
