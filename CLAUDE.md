@@ -89,6 +89,22 @@ This repo already has an approval-first process — don't restate or reinvent it
 - `docs/PR_SUMMARY_TEMPLATE.md` — use this template for every PR description.
 - `docs/OBSIDIAN_LOGGING.md` — how decisions/PRs get logged to the vault after merge.
 
+## How to use Cursor Agent here
+
+- **Scope:** Cursor is PROPOSE-ONLY (`docs/AGENT_TOOL_LANES.md`) — it drafts diffs and PRs;
+  merges and deploys stay on the Claude Code / approver path (`docs/AGENT_WORKFLOW.md`).
+- **Core loop before any PR:** `npm run lint && npm test && npm run build` (or `npm run qa`).
+  All three must pass; 171 tests across 20 files today.
+- **UI work:** follow `src/pages` + `src/components/{chief,dashboard,layout,tasks,ui}` patterns;
+  entry is `index.html` → `src/main.tsx` → `src/routes/index.tsx`.
+- **API work:** serverless handlers live in `api/`; client fetch helpers in `src/lib/api/`.
+  Use `npm run dev:vercel` (not `npm run dev`) when exercising live API routes locally.
+- **LLM router:** lives on branch `cursor/llm-router-v1-17ad` until merged — `npm run llm -- --routing`
+  for the lane matrix; smoke calls need `DEEPSEEK_API_KEY`, `KIMI_API_KEY`, and
+  `AZURE_OPENAI_*` in `.env.local`. Run router checks after any `src/llm/*` edit.
+- **Keep diffs small:** ≤5 files per agent run unless the task explicitly needs more; no new deps,
+  no CI/deploy config edits without a separate approval-gated task.
+
 ## Tool routing
 
 The AI/editor tool stack itself is governed at two levels — don't restate either here,
