@@ -37,13 +37,17 @@ function applyTaskStage(data: MockData, taskId: string, stage: WorkflowStage): M
   };
 }
 
+/** Soft-poll interval for live command-center data (Agents board, Today, etc.). */
+const LIVE_DATA_POLL_MS = 30_000;
+
 interface DataContextValue {
   data: MockData;
   tasks: MockData["tasks"];
   loading: boolean;
   source: "mock" | "supabase" | "mock-fallback";
   error: string | null;
-  refresh: () => Promise<void>;
+  /** `soft: true` refreshes without flipping the global loading skeleton (used by polling). */
+  refresh: (options?: { soft?: boolean }) => Promise<void>;
   updateTaskStage: (taskId: string, stage: WorkflowStage) => Promise<void>;
   isTaskUpdating: (taskId: string) => boolean;
   getTaskArtifacts: (taskId: string) => Artifact[];
@@ -75,15 +79,17 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     Set<string>
   >(new Set());
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (options?: { soft?: boolean }) => {
     if (!isLiveApiEnabled()) {
       setData(mockData);
       setSource("mock");
       setError(null);
+      setLoading(false);
       return;
     }
 
-    setLoading(true);
+    const soft = options?.soft === true;
+    if (!soft) setLoading(true);
     try {
       const live = await fetchCommandCenterData();
       const hasLiveTasks = live.tasks.length > 0;
@@ -91,11 +97,14 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       setSource(hasLiveTasks ? "supabase" : "mock-fallback");
       setError(null);
     } catch (err) {
-      setData(mockData);
-      setSource("mock-fallback");
+      // Soft polls keep the last good payload; hard refresh falls back to mock.
+      if (!soft) {
+        setData(mockData);
+        setSource("mock-fallback");
+      }
       setError(err instanceof Error ? err.message : "Failed to load data");
     } finally {
-      setLoading(false);
+      if (!soft) setLoading(false);
     }
   }, []);
 
@@ -236,6 +245,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     void refresh();
+  }, [refresh]);
+
+  useEffect(() => {
+    if (!isLiveApiEnabled()) return undefined;
+
+    const timer = window.setInterval(() => {
+      void refresh({ soft: true });
+    }, LIVE_DATA_POLL_MS);
+
+    return () => window.clearInterval(timer);
   }, [refresh]);
 
   const value = useMemo(

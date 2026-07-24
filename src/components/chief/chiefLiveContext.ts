@@ -477,14 +477,9 @@ export function deriveBuildAgentWorkItems(tasks: Task[]): AgentWorkItem[] {
  * Real, not mock: derives Workflow Gate Agent's Agents-tab entries the same
  * way deriveBuildAgentWorkItems does — a task's own gates/blocker/stage IS
  * the truthful signal, no separate agent-status source exists. Scoped to
- * non-build tasks with a gate checklist (workflowType !== "build" &&
- * task.gates.length > 0) so a task isn't listed under two different
- * agents' rows at once — build tasks already have their own row via
- * deriveBuildAgentWorkItems, and Workflow Gate Agent's real job elsewhere
- * in this file (see specialist attribution on gate/deploy/onboarding
- * proposals above) already spans every workflow type, build included.
- * Second live-derived row for the Agents tab; Librarian, Research,
- * Roadmap, and Marketer remain mock pending their own real signal.
+ * non-build, non-decision tasks with a gate checklist so a task isn't
+ * listed under two agents at once — build tasks use deriveBuildAgentWorkItems,
+ * decision tasks use deriveRoadmapAgentWorkItems (see docs/AGENTS_BOARD.md).
  *
  * Status mapping: same rules as deriveBuildAgentWorkItems — Done/Logged ->
  * completed; an open required gate or a blocker string -> blocked;
@@ -493,7 +488,12 @@ export function deriveBuildAgentWorkItems(tasks: Task[]): AgentWorkItem[] {
  */
 export function deriveWorkflowGateAgentWorkItems(tasks: Task[]): AgentWorkItem[] {
   return tasks
-    .filter((task) => task.workflowType !== "build" && task.gates.length > 0)
+    .filter(
+      (task) =>
+        task.workflowType !== "build" &&
+        task.workflowType !== "decision" &&
+        task.gates.length > 0,
+    )
     .map((task) => {
       const blockingGates = getBlockingGates(task.gates);
       const isBlocked = blockingGates.length > 0 || Boolean(task.blocker);
@@ -543,6 +543,54 @@ const INCIDENT_SEVERITY_PRIORITY: Record<IncidentSeverity, TaskPriority> = {
 };
 
 /**
+ * Real, not mock: derives Roadmap Agent's Agents-tab entries from decision
+ * workflow tasks (`workflowType === "decision"`), matching docs/AGENTS_BOARD.md.
+ * Same status mapping as Build / Workflow Gate.
+ */
+export function deriveRoadmapAgentWorkItems(tasks: Task[]): AgentWorkItem[] {
+  return tasks
+    .filter((task) => task.workflowType === "decision")
+    .map((task) => {
+      const blockingGates = getBlockingGates(task.gates);
+      const isBlocked = blockingGates.length > 0 || Boolean(task.blocker);
+      const isDone = task.stage === WorkflowStage.Done || task.stage === WorkflowStage.Logged;
+      const isUnstarted =
+        task.stage === WorkflowStage.Inbox ||
+        task.stage === WorkflowStage.Triage ||
+        task.stage === WorkflowStage.Planned;
+
+      const status: AgentWorkItem["status"] = isDone
+        ? "completed"
+        : isBlocked
+          ? "blocked"
+          : isUnstarted
+            ? "queued"
+            : "active";
+
+      const note = isDone
+        ? "Decision recorded — see task for follow-up."
+        : task.blocker
+          ? task.blocker
+          : blockingGates.length > 0
+            ? formatOpenGateSummary(blockingGates)
+            : isUnstarted
+              ? "Not yet started."
+              : "In progress — no open blockers.";
+
+      return {
+        id: `agentwork-roadmap-${task.id}`,
+        agent: "Roadmap Agent",
+        task: task.title,
+        status,
+        priority: task.priority,
+        note,
+        updatedAt: task.updatedAt,
+        source: "live",
+      };
+    });
+}
+
+/**
  * Real, not mock: derives Research Agent's Agents-tab entries from real
  * incident data — the same signal Chief already treats as Research
  * Agent's domain elsewhere in this file (see the specialist attribution
@@ -559,8 +607,7 @@ const INCIDENT_SEVERITY_PRIORITY: Record<IncidentSeverity, TaskPriority> = {
  * same constant Chief's shift stats already use) -> active; resolved or
  * post_mortem_filed -> completed.
  *
- * Third live-derived row for the Agents tab; Librarian, Roadmap, and
- * Marketer remain mock pending their own real signal.
+ * Marketer remains mock-only (no marketing/content workflow type yet).
  */
 export function deriveResearchAgentWorkItems(incidents: Incident[]): AgentWorkItem[] {
   return incidents.map((incident) => {
