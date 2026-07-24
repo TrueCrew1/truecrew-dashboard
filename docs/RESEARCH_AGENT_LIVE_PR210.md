@@ -192,10 +192,14 @@ Checklist before calling the live path production-ready:
 - [ ] Vercel/live secrets configured: `INTERNAL_API_SECRET`, `VITE_INTERNAL_KEY` (match), `VITE_USE_LIVE_API=true`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
 - [ ] Research runner host has `TRUECREW_API_URL` (deployed app origin) and `TRUECREW_INTERNAL_KEY` (same as `INTERNAL_API_SECRET`)
 - [ ] Prod Supabase has `research_requests` with the same schema used in migrations/tests (`npm run db:push` / migration `20260722000001_research_requests.sql` if missing)
-- [ ] One real production smoke: approve a Start-research card → queue shows `in_progress` → `npm run research:runner -- status | pickup | run | done` (or `block`) once
+- [ ] Staging: `npm run research:smoke` then one browser approve → runner pickup/done
+- [ ] Production: one controlled `npm run research:smoke` + one browser approve → runner pickup/done
+- [ ] Kill switches verified (`VITE_USE_LIVE_API=false`, stop runner / unset `TRUECREW_*`)
 - [ ] Azure LLM + Obsidian vault only if exercising handoff/postmortem mission paths (optional for queue/runner smoke)
 
 Unchanged by design: schema/status vocabulary (`queued`, `in_progress`, `done`, `blocked`), `/api/research`, and `releaseResearchRequest` semantics.
+
+**Rollout phase:** **0 – Code ready** until ops completes staging+prod smoke (see § Rollout plan).
 
 ---
 
@@ -210,14 +214,15 @@ npm run lint
 npm run build
 npm run check:api-functions
 npm run research:runner -- status   # expect fail-closed without TRUECREW_*
+npm run research:smoke              # expect fail-closed without TRUECREW_*
 ```
 
 Expected (local agent verify):
 
 - Focused suites green (lifecycle, resolve order, env fail-closed, queued refusal, API PATCH transitions)
-- Full `npm test` green (**363** tests)
+- Full `npm test` green
 - Lint + build clean; API function count `12 / 12`
-- Runner without env prints degraded / fail-closed message and does not call the network
+- Runner / smoke without env print fail-closed and do not call the network
 
 Note: the shared status transition table allows `queued` → `blocked` on the API. The Research **runner CLI** still refuses `done`/`block` on `queued` rows so approval owns the happy-path release to `in_progress`.
 
@@ -340,6 +345,141 @@ Covers: resolve order (adapter during loading), soft-poll override prune, fail-c
 
 ---
 
+## Staging smoke: status and findings
+
+### Agent environment (2026-07-24)
+
+| Check | Result |
+|---|---|
+| Local secrets (`.env`, `TRUECREW_*`, Supabase) | **Absent** — cannot run live staging smoke here |
+| Vercel / Supabase MCP | **needsAuth** — not usable from this agent |
+| Production/public `/api/health` + `/api/research` | Reachable; returns **401 Unauthorized** without key (auth gate OK) |
+| Automated contract tests | Green (`npm test`, focused research suites) |
+| `npm run research:smoke` without env | Fail-closed as designed |
+
+**Staging smoke: not executed in this agent run.** Blocked on missing staging secrets and MCP auth. Ops must run the checklist below once credentials are available.
+
+### Staging checklist (ops)
+
+1. `npm run db:push` (or confirm migration `20260722000001_research_requests.sql` applied).
+2. App env: `VITE_USE_LIVE_API=true`, matching `INTERNAL_API_SECRET` / `VITE_INTERNAL_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`.
+3. API smoke (no browser):
+
+```bash
+export TRUECREW_API_URL=https://<staging-or-preview>.vercel.app
+export TRUECREW_INTERNAL_KEY=<same as INTERNAL_API_SECRET>
+npm run research:smoke -- --read-only   # safe probe
+npm run research:smoke                  # seed → release → pickup → done
+```
+
+4. Browser smoke: Chief → Approvals (global) → approve Start-research → queue **In progress** → soft-poll / Retry.
+5. Runner: `npm run research:runner -- status | pickup | run | done --id … --path …`.
+6. Record results in this section (pass/fail + date + env URL).
+
+### Staging findings template
+
+```
+Date:
+Env URL:
+db:push / research_requests present: yes/no
+research:smoke: pass/fail
+Browser approve → in_progress: pass/fail
+Runner pickup/done; queued untouched: pass/fail
+Notes / deviations:
+```
+
+---
+
+## Production wiring and smoke
+
+### Production readiness checklist
+
+- [ ] Prod Supabase has `research_requests` (same schema as migration/tests)
+- [ ] Deployed app exposes `/api/research` against prod DB
+- [ ] `VITE_USE_LIVE_API=true`
+- [ ] `INTERNAL_API_SECRET` ↔ `VITE_INTERNAL_KEY` match
+- [ ] Runner: `TRUECREW_API_URL` = prod origin, `TRUECREW_INTERNAL_KEY` = prod secret
+- [ ] One controlled smoke: `npm run research:smoke` then one browser approve → runner pickup/done
+- [ ] Kill switches verified (below)
+
+### Production smoke: status
+
+| Check | Result |
+|---|---|
+| Public prod API without key | **401** (auth present) — observed 2026-07-24 |
+| Full prod smoke with secrets | **Not run** in agent env — ops required |
+
+### Ops guardrails (disable / fallback)
+
+| Goal | Action |
+|---|---|
+| Disable live Research queue UI | Set `VITE_USE_LIVE_API=false` (or unset) and redeploy — app falls back to session/offline rail |
+| Stop runner mutations | Unset `TRUECREW_*` on the runner host, or stop the scheduled job — CLI fail-closed, no PATCH |
+| Pause only writes | Do not approve Start-research cards; leave rows `queued` |
+| Recover UI after bad live state | Queue **Retry** / soft-poll; or toggle live API off temporarily |
+
+---
+
+## Rollout plan
+
+| Phase | Who | How enabled | Current |
+|---|---|---|---|
+| **0 – Code ready** | Engineers | PR merged; secrets not required for offline | **Here** (PR #210) until ops smoke |
+| **1 – Internal only** | Founder / internal | Prod secrets + `VITE_USE_LIVE_API=true`; runner on internal host only; no broad announce | Next after staging+prod smoke |
+| **2 – Limited pilot** | Selected operators | Same flags; limited Start-research usage; watch logs | After Phase 1 stable |
+| **3 – Default on** | Supported scenarios | Live API default for deployed app; runner scheduled | After pilot |
+
+There is **no separate role feature-flag** today — the live path is gated by `VITE_USE_LIVE_API` + presence of runner env. Role-based gating is a follow-up if needed.
+
+### Monitoring (what exists today)
+
+| Signal | Where |
+|---|---|
+| Approve → live PATCH failures | Browser console `[research-rail] live_update_failed`; UI `syncError` |
+| Live fetch / soft-poll failures | `[research-rail] live_fetch_failed` / `live_soft_poll_failed` |
+| Missing `research_requests` relation | API `api/research/dispatch.ts` logs |
+| Runner refuse queued | CLI error `Runner refuses to … queued` (no PATCH) |
+| Mission handoff/postmortem fails | `console.error` in handoff/postmortem modules |
+
+No dedicated metrics backend yet — treat Vercel function logs + browser `syncError` as the inspection path. Re-run `npm run research:smoke -- --read-only` after incidents.
+
+---
+
+## Incident response
+
+### Symptoms
+
+- Start-research approve shows approved but queue stays **Queued**
+- Queue shows `syncError` / status flickers after approve
+- Runner `pickup` empty while UI claims In progress
+- Runner or API 401/503
+- Soft-poll never catches up
+
+### Immediate mitigations
+
+1. Stop the runner job / unset `TRUECREW_*` (fail-closed).
+2. Set `VITE_USE_LIVE_API=false` and redeploy if UI is misleading operators.
+3. Do not approve additional Start-research cards until diagnosis.
+
+### Where to look
+
+1. Vercel logs for `/api/research` (auth, missing table, 409 transitions).
+2. Browser console `[research-rail]*` and queue `syncError` banner.
+3. Supabase: `research_requests` row status for the id on the card.
+4. Runner stdout for refuse-queued / env incomplete messages.
+
+### Re-verify
+
+```bash
+npm test -- tests/research-runner-client.test.ts tests/api-research-requests.test.ts
+npm run research:smoke -- --read-only   # with staging/prod TRUECREW_*
+npm run research:runner -- status
+```
+
+Then one controlled browser approve on staging before re-enabling prod runner.
+
+---
+
 ## Audit snapshot (filing + function)
 
 | Area | Status |
@@ -350,15 +490,16 @@ Covers: resolve order (adapter during loading), soft-poll override prune, fail-c
 | Runner CLI fail-closed + oldest `in_progress` + refuse queued | Wired + tested |
 | Canonical doc + `.env.example` + `RESEARCH_RUNNER.md` | Filed |
 | Automated tests | Green; React/RTL context tests **not** present (Flows B–D are pure/mocked) |
-| Live browser / prod smoke | **Not** run in agent env |
+| Live browser / staging / prod smoke | **Blocked in agent env** (no secrets); API 401 without key confirmed |
+| `npm run research:smoke` | Added — ops API smoke when `TRUECREW_*` set |
 | PR draft state | Still **draft** until human marks ready |
 
 ### Blocking (ops — not code)
 
-1. Confirm `research_requests` on live/prod Supabase.
-2. Production secrets: `VITE_USE_LIVE_API`, matching internal keys, Supabase URL + service role.
-3. Runner host: `TRUECREW_API_URL` + `TRUECREW_INTERNAL_KEY`.
-4. One production smoke: approve → queue `in_progress` → `research:runner` pickup/done.
+1. Authenticate / provide staging+prod secrets (`TRUECREW_*`, Supabase, matching internal keys).
+2. Run staging checklist (`db:push` → `research:smoke` → browser approve → runner).
+3. Run one production smoke; then advance rollout Phase 0 → 1.
+4. Confirm kill switches (`VITE_USE_LIVE_API`, stop runner) once.
 
 ### Concerns (non-blocking)
 

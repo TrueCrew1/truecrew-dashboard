@@ -20,6 +20,7 @@
     "db:reset": "supabase db reset",
     "db:status": "supabase migration list",
     "research:runner": "npx tsx scripts/research-runner.ts",
+    "research:smoke": "npx tsx scripts/research-agent-live-smoke.ts",
     "obsidian:log": "npx tsx scripts/obsidian-log.ts",
     "obsidian:setup-vault": "npx tsx scripts/setup-obsidian-vault.ts",
     "llm": "npx tsx scripts/llm-task.ts"

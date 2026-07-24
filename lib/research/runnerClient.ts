@@ -105,6 +105,30 @@ export async function listResearchRequestsViaApi(
   return body.requests ?? [];
 }
 
+/** Create a queued research row via POST /api/research (ops smoke / tooling). */
+export async function createResearchRequestViaApi(
+  env: ResearchRunnerEnv,
+  input: {
+    id?: string;
+    topic: string;
+    whyItMatters: string;
+    suggestedOutcome: string;
+  },
+): Promise<RunnerResearchRequest> {
+  const response = await runnerFetch(env, "/api/research", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  const body = (await response.json().catch(() => ({}))) as {
+    error?: string;
+    request?: RunnerResearchRequest;
+  };
+  if ((!response.ok && response.status !== 201) || !body.request) {
+    throw new Error(body.error ?? `POST /api/research failed with ${response.status}`);
+  }
+  return body.request;
+}
+
 /**
  * Runner must not mutate queued rows — approval releases them first.
  * Allows in_progress (normal), blocked (retry/done paths), and done (idempotent read).

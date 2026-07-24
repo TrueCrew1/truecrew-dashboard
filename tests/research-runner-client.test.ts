@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   assertRunnerMayMutate,
   countByStatus,
+  createResearchRequestViaApi,
   findRequestById,
   listResearchRequestsViaApi,
   mutateReleasedRequestViaApi,
@@ -133,6 +134,36 @@ describe("research runner client", () => {
         "done",
       ),
     ).not.toThrow();
+  });
+
+  it("createResearchRequestViaApi POSTs a queued row", async () => {
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      expect(init?.method).toBe("POST");
+      const body = JSON.parse(String(init?.body)) as { id: string; topic: string };
+      return new Response(
+        JSON.stringify({
+          request: runnerRow({
+            id: body.id,
+            status: "queued",
+            topic: body.topic,
+            updatedAt: "2026-07-24T18:00:00.000Z",
+            source: "session",
+          }),
+        }),
+        { status: 201 },
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const row = await createResearchRequestViaApi(
+      { apiUrl: "https://app.example", internalKey: "secret" },
+      {
+        id: "req-smoke-1",
+        topic: "[SMOKE] topic",
+        whyItMatters: "why",
+        suggestedOutcome: "outcome",
+      },
+    );
+    expect(row).toMatchObject({ id: "req-smoke-1", status: "queued" });
   });
 });
 
