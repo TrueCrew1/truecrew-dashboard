@@ -22,7 +22,7 @@ import "dotenv/config";
 import {
   countByStatus,
   listResearchRequestsViaApi,
-  patchResearchRequestViaApi,
+  mutateReleasedRequestViaApi,
   pickOldestInProgress,
   resolveResearchRunnerEnv,
   type RunnerResearchRequest,
@@ -145,7 +145,7 @@ async function main(): Promise<void> {
   if (command === "block") {
     const note = flags.get("note")?.trim();
     if (!note) throw new Error("--note is required for block");
-    const row = await patchResearchRequestViaApi(env, id, "blocked", { blockerNote: note });
+    const row = await mutateReleasedRequestViaApi(env, id, "block", { blockerNote: note });
     console.log("[research-runner] Marked blocked:");
     printRequest(row);
     return;
@@ -154,7 +154,7 @@ async function main(): Promise<void> {
   if (command === "done") {
     const path = flags.get("path")?.trim();
     if (!path) throw new Error("--path is required for done");
-    const row = await patchResearchRequestViaApi(env, id, "done", { filedPath: path });
+    const row = await mutateReleasedRequestViaApi(env, id, "done", { filedPath: path });
     console.log("[research-runner] Marked done:");
     printRequest(row);
   }

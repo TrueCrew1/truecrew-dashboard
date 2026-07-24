@@ -137,3 +137,81 @@ Intentional non-blockers:
 - Runner never touches `queued` rows
 
 **Risk:** low to medium pending production smoke — scoped and test-clean; live browser and deployed-env path still need confirmation.
+
+## Dev / staging runbook
+
+End-to-end path once env is set. Migration: `supabase/migrations/20260722000001_research_requests.sql` (seeded adapter ids such as `req-ms-painting-v2-market-scan`).
+
+### 0. Prerequisites
+
+```bash
+npm run db:push   # apply research_requests if missing
+```
+
+App / Vercel:
+
+- `VITE_USE_LIVE_API=true`
+- Matching `INTERNAL_API_SECRET` + `VITE_INTERNAL_KEY`
+- `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`
+
+Runner shell:
+
+```bash
+export TRUECREW_API_URL=https://<your-deploy>.vercel.app
+export TRUECREW_INTERNAL_KEY=<same as INTERNAL_API_SECRET>
+```
+
+### 1. Seed / confirm a queued row
+
+Migration seeds already include queued adapter rows. Or create from the app:
+
+- Command bar / Chief: `start research on <topic>` (POSTs when live API is on).
+
+Expected UI: Knowledge → Research queue shows the row as **Queued** with a live badge.
+
+### 2. Approve in Chief → Approvals
+
+1. Open Chief with **global** context (Start-research cards are global-only).
+2. Find card **Start research: &lt;topic&gt;** (`apr-research-start-<requestId>`).
+3. Approve.
+
+Expected:
+
+- Card decision recorded as approved.
+- Queue row → **In progress** (optimistic immediately; persisted via `PATCH /api/research/:id`).
+- Soft-poll (30s) / Retry keeps UI aligned without hard reload.
+- On PATCH failure: status reverts + `syncError` banner.
+
+### 3. Runner pickup
+
+```bash
+npm run research:runner -- status   # counts + all rows
+npm run research:runner -- pickup   # oldest in_progress (exit 2 if none)
+npm run research:runner -- run      # pickup + next-step hints
+```
+
+Expected: printed id matches the approved request; other **queued** rows are listed but not selected.
+
+### 4. Complete or block
+
+After investigation / filing a provisional finding:
+
+```bash
+npm run research:runner -- done --id <id> --path knowledge/findings/m-and-s/<note>.md
+# or
+npm run research:runner -- block --id <id> --note "<why>"
+```
+
+Expected:
+
+- `done` / `block` refuse **queued** ids (runner guard — approve first).
+- Queue / M&S status card show **Done** or **Blocked** after soft-poll.
+
+### 5. Automated verification (no live env)
+
+```bash
+npm test -- tests/research-runner-client.test.ts tests/api-research-requests.test.ts
+```
+
+Covers: resolve order (adapter during loading), soft-poll override prune, fail-closed env, oldest `in_progress` pickup, mocked approve → pickup → done, API GET/PATCH transitions, runner refusal to mutate queued rows.
+

@@ -105,6 +105,28 @@ export async function listResearchRequestsViaApi(
   return body.requests ?? [];
 }
 
+/**
+ * Runner must not mutate queued rows — approval releases them first.
+ * Allows in_progress (normal), blocked (retry/done paths), and done (idempotent read).
+ */
+export function assertRunnerMayMutate(
+  row: RunnerResearchRequest,
+  operation: "done" | "block",
+): void {
+  if (row.status === "queued") {
+    throw new Error(
+      `Runner refuses to ${operation} queued request "${row.id}" — approve Start-research in Chief first (queued must become in_progress).`,
+    );
+  }
+}
+
+export function findRequestById(
+  requests: readonly RunnerResearchRequest[],
+  id: string,
+): RunnerResearchRequest | null {
+  return requests.find((row) => row.id === id) ?? null;
+}
+
 export async function patchResearchRequestViaApi(
   env: ResearchRunnerEnv,
   id: string,
@@ -127,4 +149,24 @@ export async function patchResearchRequestViaApi(
     throw new Error(body.error ?? `PATCH /api/research/${id} failed with ${response.status}`);
   }
   return body.request;
+}
+
+/**
+ * List → guard → PATCH for done/block so the runner never mutates queued rows
+ * even if an operator passes a queued id on the CLI.
+ */
+export async function mutateReleasedRequestViaApi(
+  env: ResearchRunnerEnv,
+  id: string,
+  operation: "done" | "block",
+  options: { filedPath?: string; blockerNote?: string },
+): Promise<RunnerResearchRequest> {
+  const requests = await listResearchRequestsViaApi(env);
+  const current = findRequestById(requests, id);
+  if (!current) {
+    throw new Error(`Research request not found: ${id}`);
+  }
+  assertRunnerMayMutate(current, operation);
+  const nextStatus: ResearchRequestStatus = operation === "done" ? "done" : "blocked";
+  return patchResearchRequestViaApi(env, id, nextStatus, options);
 }

@@ -21,6 +21,11 @@ import {
   mergeResearchRequests,
   saveSessionResearchRequests,
 } from "@/lib/research/sessionStore";
+import {
+  applyStatusOverrides,
+  pruneStatusOverridesMatchingServer,
+  resolveResearchRequestForUpdate,
+} from "@/lib/research/requestResolution";
 import type { ResearchRequest, ResearchRequestStatus } from "@/lib/research/types";
 
 /**
@@ -60,14 +65,6 @@ function findAdapterRequest(id: string): ResearchRequest | undefined {
   return ADAPTER_RESEARCH_REQUESTS.find((row) => row.id === id);
 }
 
-function applyOverrides(
-  rows: ResearchRequest[],
-  overrides: Record<string, ResearchRequest>,
-): ResearchRequest[] {
-  if (Object.keys(overrides).length === 0) return rows;
-  return rows.map((row) => overrides[row.id] ?? row);
-}
-
 export function ResearchRequestsProvider({ children }: { children: ReactNode }) {
   const liveApi = isLiveApiEnabled();
   const [sessionRequests, setSessionRequests] = useState<ResearchRequest[]>(() =>
@@ -90,18 +87,7 @@ export function ResearchRequestsProvider({ children }: { children: ReactNode }) 
     setLiveLoading(false);
     setSyncError(null);
     // Drop overrides the server already reflects (same id + status).
-    setStatusOverrides((prev) => {
-      const next = { ...prev };
-      let changed = false;
-      for (const row of rows) {
-        const override = next[row.id];
-        if (override && override.status === row.status) {
-          delete next[row.id];
-          changed = true;
-        }
-      }
-      return changed ? next : prev;
-    });
+    setStatusOverrides((prev) => pruneStatusOverridesMatchingServer(prev, rows));
   }, []);
 
   const refreshLiveQueue = useCallback(() => {
@@ -198,7 +184,7 @@ export function ResearchRequestsProvider({ children }: { children: ReactNode }) 
     const merged = serverRequests
       ? mergeResearchRequests(localOnlySessionRequests, serverRequests)
       : mergeResearchRequests(sessionRequests, adapterRequests);
-    return applyOverrides(merged, statusOverrides);
+    return applyStatusOverrides(merged, statusOverrides);
   }, [
     serverRequests,
     localOnlySessionRequests,
@@ -249,7 +235,12 @@ export function ResearchRequestsProvider({ children }: { children: ReactNode }) 
       const sessionRow = sessionRequests.find((row) => row.id === id);
       const overrideRow = statusOverrides[id];
       const adapterRow = findAdapterRequest(id);
-      const current = overrideRow ?? serverRow ?? sessionRow ?? adapterRow;
+      const current = resolveResearchRequestForUpdate({
+        override: overrideRow,
+        server: serverRow,
+        session: sessionRow,
+        adapter: adapterRow,
+      });
       if (!current) {
         throw new Error(`Research request not found: ${id}`);
       }
