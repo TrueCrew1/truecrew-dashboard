@@ -89,7 +89,7 @@ Branch tested: `cursor/research-agent-live-4a27`
 
 | Check | Result |
 |---|---|
-| `npm test` | 53 files / **362** tests passed (latest QA; see also QA commands below) |
+| `npm test` | 53 files / **363** tests passed (latest audit; see also QA commands below) |
 | `npm run lint` | Clean |
 | `npm run build` | Clean (`tsc -b && vite build`) |
 | `npm run check:api-functions` | 12 / 12 |
@@ -215,7 +215,7 @@ npm run research:runner -- status   # expect fail-closed without TRUECREW_*
 Expected (local agent verify):
 
 - Focused suites green (lifecycle, resolve order, env fail-closed, queued refusal, API PATCH transitions)
-- Full `npm test` green (**362** tests)
+- Full `npm test` green (**363** tests)
 - Lint + build clean; API function count `12 / 12`
 - Runner without env prints degraded / fail-closed message and does not call the network
 
