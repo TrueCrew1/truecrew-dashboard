@@ -83,3 +83,15 @@ honest — nothing pretends to be synced.
 - Apply the queue migration if not yet applied: `npm run db:push`
 - Configure the scheduled agent's env (`TRUECREW_API_URL`, `TRUECREW_INTERNAL_KEY`)
   for live status sync; without them the runner uses the repo-native fallback above.
+- Invoke the runner CLI (same contract the scheduled agent should call):
+
+```bash
+npm run research:runner -- status    # list queue + counts
+npm run research:runner -- pickup    # oldest in_progress (exit 2 if none)
+npm run research:runner -- run       # same as pickup + next-step hints
+npm run research:runner -- done --id <id> --path knowledge/findings/...
+npm run research:runner -- block --id <id> --note "<why>"
+```
+
+Approval (Chief → Approvals “Start research”) is what moves `queued` → `in_progress`.
+The runner never auto-approves — it only picks up rows already released.

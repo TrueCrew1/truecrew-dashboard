@@ -22,16 +22,15 @@ function isMsResearch(request: ResearchRequest): boolean {
 const STATUS_ORDER: ResearchRequestStatus[] = ["in_progress", "queued", "blocked", "done"];
 
 /**
- * V1 live-readiness card: session + adapter M&S research status with filing path.
- * Reads ResearchRequestsContext — not mock ops data.
+ * M&S research status — live or session rail from ResearchRequestsContext.
  */
 export function MsResearchStatusCard() {
-  const { allRequests, sessionRequests } = useResearchRequests();
+  const { allRequests, rail, syncError, refreshLiveQueue } = useResearchRequests();
 
   const msRequests = useMemo(() => allRequests.filter(isMsResearch), [allRequests]);
   const estimating = useMemo(
-    () => sessionRequests.filter((row) => isMsEstimatingRoadmapTopic(row.topic)),
-    [sessionRequests],
+    () => allRequests.filter((row) => isMsEstimatingRoadmapTopic(row.topic)),
+    [allRequests],
   );
 
   const counts = useMemo(() => {
@@ -47,16 +46,42 @@ export function MsResearchStatusCard() {
     return tallies;
   }, [msRequests]);
 
-  const headline = estimating[0] ?? msRequests.find((r) => r.source === "session") ?? msRequests[0];
+  const headline =
+    estimating.find((row) => row.status === "in_progress") ??
+    estimating[0] ??
+    msRequests.find((r) => r.status === "in_progress") ??
+    msRequests.find((r) => r.source === "session") ??
+    msRequests[0];
 
   return (
     <Panel title="M&S research status">
       <div className="ms-research-status-card" aria-label="M and S research status">
         <p className="ms-research-status-lede">
-          Session-backed Research lane for M&amp;S work. Create with{" "}
-          <code>start research on M&amp;S estimating roadmap</code>, advance status in the queue,
-          file under <code>{MS_ESTIMATING_ROADMAP_FINDING_PATH}</code>.
+          {rail === "live" ? (
+            <>
+              <span className="badge badge-green">live</span> Research lane — approve Start-research
+              in Chief to release a topic to <strong>in progress</strong>, then the research runner
+              picks it up.
+            </>
+          ) : rail === "loading" ? (
+            <>Loading live research queue…</>
+          ) : (
+            <>
+              <span className="badge badge-steel">session</span> Research lane — create with{" "}
+              <code>start research on M&amp;S estimating roadmap</code>, or enable{" "}
+              <code>VITE_USE_LIVE_API</code> for the database-backed queue.
+            </>
+          )}
         </p>
+
+        {syncError ? (
+          <p className="agent-research-queue-sync-error" role="alert">
+            {syncError}{" "}
+            <button type="button" className="chief-btn" onClick={refreshLiveQueue}>
+              Retry
+            </button>
+          </p>
+        ) : null}
 
         <ul className="ms-research-status-counts" aria-label="Status counts">
           {STATUS_ORDER.map((status) => (
@@ -86,6 +111,8 @@ export function MsResearchStatusCard() {
               Open in research queue
             </Link>
           </div>
+        ) : rail === "loading" ? (
+          <p className="ms-research-status-empty">Waiting for live queue…</p>
         ) : (
           <p className="ms-research-status-empty">
             No M&amp;S research requests yet. Use the command bar to create one — nothing is queued

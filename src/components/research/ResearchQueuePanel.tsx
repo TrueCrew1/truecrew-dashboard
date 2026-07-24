@@ -23,18 +23,25 @@ const STATUS_BADGE_CLASS: Record<ResearchRequestStatus, string> = {
   blocked: "badge badge-red",
 };
 
-function ResearchSourceBadge({ source }: { source: ResearchRequestSource }) {
+function ResearchSourceBadge({
+  source,
+  liveRail,
+}: {
+  source: ResearchRequestSource;
+  liveRail: boolean;
+}) {
   const className =
     source === "session" ? "badge badge-green" : "badge badge-steel research-source-badge--adapter";
+  const title =
+    source === "session"
+      ? liveRail
+        ? "Created from a command — stored in the live research_requests table when sync succeeds."
+        : "Created this browser session from a command — not yet on the live API."
+      : liveRail
+        ? "Program backlog row from the live research_requests table."
+        : "Hand-maintained program backlog (static) until the live API rail is available.";
   return (
-    <span
-      className={className}
-      title={
-        source === "session"
-          ? "Created this browser session from a command — not live API data."
-          : "Hand-maintained program backlog — adapter-backed, not live API data."
-      }
-    >
+    <span className={className} title={title}>
       {SOURCE_LABEL[source]}
     </span>
   );
@@ -46,11 +53,26 @@ interface ResearchQueuePanelProps {
 }
 
 /**
- * Shared research queue — adapter-backed M&S backlog plus session requests
- * from the command bar. Session rows support operator-driven status; nothing auto-runs.
+ * Shared research queue — live Supabase rows when the API rail is up, otherwise
+ * adapter backlog plus session requests. Operator approve (Chief) or Start work
+ * moves queued → in_progress; the research runner picks in_progress only.
  */
 export function ResearchQueuePanel({ highlightId, className }: ResearchQueuePanelProps) {
-  const { allRequests, rail, syncError } = useResearchRequests();
+  const { allRequests, rail, syncError, refreshLiveQueue } = useResearchRequests();
+  const liveRail = rail === "live";
+
+  if (rail === "loading") {
+    return (
+      <section
+        className={["agent-research-queue", className].filter(Boolean).join(" ")}
+        aria-label="Research queue"
+        aria-busy="true"
+      >
+        <span className="agent-research-queue-label">Research queue</span>
+        <p className="agent-research-queue-note">Loading live research queue…</p>
+      </section>
+    );
+  }
 
   if (allRequests.length === 0) {
     return (
@@ -62,8 +84,16 @@ export function ResearchQueuePanel({ highlightId, className }: ResearchQueuePane
         <p className="agent-research-queue-note">
           No research requests yet. Run{" "}
           <code>start research on M&amp;S estimating roadmap</code> from the command bar to add a
-          session-backed request.
+          request, or confirm the live API + <code>research_requests</code> migration.
         </p>
+        {syncError ? (
+          <p className="agent-research-queue-note agent-research-queue-sync-error" role="alert">
+            {syncError}{" "}
+            <button type="button" className="chief-btn" onClick={refreshLiveQueue}>
+              Retry
+            </button>
+          </p>
+        ) : null}
       </section>
     );
   }
@@ -74,22 +104,25 @@ export function ResearchQueuePanel({ highlightId, className }: ResearchQueuePane
       aria-label="Research queue"
     >
       <span className="agent-research-queue-label">Research queue</span>
-      {rail === "live" ? (
+      {liveRail ? (
         <p className="agent-research-queue-note">
-          <span className="badge badge-green">live</span> queue backed by the database — status
-          changes persist for every device. Advance status yourself; nothing auto-runs.
+          <span className="badge badge-green">live</span> queue backed by{" "}
+          <code>research_requests</code> — approve a Start-research card in Chief to move a row to{" "}
+          <strong>in progress</strong> (runner pickup signal). Soft-refreshes every 30s.
         </p>
       ) : (
         <p className="agent-research-queue-note">
-          <span className="badge badge-green">session</span> rows are created from your commands and
-          saved in this browser only. Advance status yourself — nothing auto-runs.{" "}
-          <span className="badge badge-steel">adapter</span> rows are hand-maintained M&amp;S program
-          backlog (status display only).
+          <span className="badge badge-steel">session</span> rail — live API off or unreachable.
+          Approving Start-research still moves a row to in progress in this browser; it will not sync
+          to other devices until the live rail is up.
         </p>
       )}
       {syncError ? (
         <p className="agent-research-queue-note agent-research-queue-sync-error" role="alert">
-          {syncError}
+          {syncError}{" "}
+          <button type="button" className="chief-btn" onClick={refreshLiveQueue}>
+            Retry
+          </button>
         </p>
       ) : null}
       <ul className="agent-research-queue-list">
@@ -98,12 +131,14 @@ export function ResearchQueuePanel({ highlightId, className }: ResearchQueuePane
             key={request.id}
             request={request}
             highlighted={highlightId === request.id}
+            liveRail={liveRail}
           />
         ))}
       </ul>
       <p className="agent-research-queue-next">
         Next: investigate, then mark done with a filed path under{" "}
-        <code>knowledge/findings/m-and-s/</code>.
+        <code>knowledge/findings/m-and-s/</code> (or{" "}
+        <code>npm run research:runner -- done …</code>).
       </p>
     </section>
   );
@@ -112,14 +147,13 @@ export function ResearchQueuePanel({ highlightId, className }: ResearchQueuePane
 function ResearchQueueItem({
   request,
   highlighted,
+  liveRail,
 }: {
   request: ResearchRequest;
   highlighted: boolean;
+  liveRail: boolean;
 }) {
-  const { updateRequestStatus, rail } = useResearchRequests();
-  // Live rail: every row is database-backed and editable. Session rail:
-  // adapter rows are static code, only browser-session rows can move.
-  const canEdit = rail === "live" || request.source === "session";
+  const { updateRequestStatus } = useResearchRequests();
 
   const startWork = () => {
     updateRequestStatus(request.id, "in_progress");
@@ -157,7 +191,7 @@ function ResearchQueueItem({
           <span className={STATUS_BADGE_CLASS[request.status]}>
             {RESEARCH_STATUS_LABEL[request.status]}
           </span>
-          <ResearchSourceBadge source={request.source} />
+          <ResearchSourceBadge source={request.source} liveRail={liveRail} />
         </div>
       </div>
       <p className="agent-research-queue-why">{request.whyItMatters}</p>
@@ -173,34 +207,28 @@ function ResearchQueueItem({
       <time className="agent-research-queue-time" dateTime={request.updatedAt}>
         Updated {formatChiefTimestamp(request.updatedAt)}
       </time>
-      {canEdit ? (
-        <div className="agent-research-queue-actions" role="group" aria-label="Advance research status">
-          {canTransitionResearchStatus(request.status, "in_progress") ? (
-            <button type="button" className="chief-btn chief-btn-primary" onClick={startWork}>
-              Start work
-            </button>
-          ) : null}
-          {canTransitionResearchStatus(request.status, "done") ? (
-            <button type="button" className="chief-btn chief-btn-primary" onClick={markDone}>
-              Mark done &amp; file
-            </button>
-          ) : null}
-          {canTransitionResearchStatus(request.status, "blocked") ? (
-            <button type="button" className="chief-btn" onClick={markBlocked}>
-              Block
-            </button>
-          ) : null}
-          {canTransitionResearchStatus(request.status, "queued") ? (
-            <button type="button" className="chief-btn" onClick={requeue}>
-              Re-queue
-            </button>
-          ) : null}
-        </div>
-      ) : (
-        <p className="agent-research-queue-adapter-note">
-          Adapter backlog — edit status in code/docs, not from this panel.
-        </p>
-      )}
+      <div className="agent-research-queue-actions" role="group" aria-label="Advance research status">
+        {canTransitionResearchStatus(request.status, "in_progress") ? (
+          <button type="button" className="chief-btn chief-btn-primary" onClick={startWork}>
+            Start work
+          </button>
+        ) : null}
+        {canTransitionResearchStatus(request.status, "done") ? (
+          <button type="button" className="chief-btn chief-btn-primary" onClick={markDone}>
+            Mark done &amp; file
+          </button>
+        ) : null}
+        {canTransitionResearchStatus(request.status, "blocked") ? (
+          <button type="button" className="chief-btn" onClick={markBlocked}>
+            Block
+          </button>
+        ) : null}
+        {canTransitionResearchStatus(request.status, "queued") ? (
+          <button type="button" className="chief-btn" onClick={requeue}>
+            Re-queue
+          </button>
+        ) : null}
+      </div>
     </li>
   );
 }
