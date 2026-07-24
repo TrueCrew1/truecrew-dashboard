@@ -11,14 +11,14 @@ type: "hub"
 M&S Painting V2 (customer app context in True Crew; customer-app code lives in `TrueCrew1/ms-painting`, not this dashboard repo).
 
 ## Current status
-**Filing structure active.** Filed: request log, V2 improvement plan, Research Lane Standard Template, Founder Decision Summary Template, competitive landscape & demand brief. Still **MISSING**: blocked research package, Research Package Obsidian Template. Hub is usable for navigation; Research should not invent requirements beyond what the filed V2 plan and market brief state.
+**Filing structure active.** Filed: request log, V2 improvement plan, all three OS standards templates, competitive landscape & demand brief. Still **MISSING**: blocked initial research package. Hub is usable for navigation; Research should not invent requirements beyond what the filed V2 plan and market brief state.
 
 ## Primary source documents
 - [[2026-07-23 - V2 Improvement Plan]] — **STATUS: FILED** (repo: `docs/ms-painting-v2/improvement-plan-v2.md`; source: M&S Painting Platform Improvement Plan)
 
 ## Standards used
 - [[Research Lane Standard Template]] — **STATUS: FILED** (`os/standards/research_lane_standard_template.md`)
-- [[Research Package Obsidian Template]] — **STATUS: MISSING** (`os/standards/research_package_obsidian_template.md`)
+- [[Research Package Obsidian Template]] — **STATUS: FILED** (`os/standards/research_package_obsidian_template.md`)
 - [[Founder Decision Summary Template]] — **STATUS: FILED** (`os/standards/founder_decision_summary_template.md`)
 
 Related True Crew docs (related context, not substitutes for project packages):
@@ -52,13 +52,12 @@ Related provisional findings already in knowledge (not complete packages):
 - [x] Full V2 improvement plan content — filed at `docs/ms-painting-v2/improvement-plan-v2.md`
 - [ ] Full blocked initial research package markdown
 - [x] Research Lane Standard Template body — filed at `os/standards/research_lane_standard_template.md`
-- [ ] Research Package Obsidian Template body
+- [x] Research Package Obsidian Template body — filed at `os/standards/research_package_obsidian_template.md`
 - [x] Founder Decision Summary Template body — filed at `os/standards/founder_decision_summary_template.md`
 - [x] Competitive landscape and demand brief body — filed at `research/ms-painting-v2/market/competition-and-demand.md`
 
 ## Next recommended filing step
 1. Paste the **blocked research package** (from `# Request Header` through `### Approval Required`) into `research/ms-painting-v2/0000-initial-research-package-blocked.md` and Obsidian mirror.
-2. Paste **Research Package Obsidian Template** into `os/standards/research_package_obsidian_template.md` + `Research/Standards/`.
 
 ## Repo ↔ Obsidian map
 | Concept | Repo path | Obsidian note |
