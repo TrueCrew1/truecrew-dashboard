@@ -3,7 +3,7 @@ title: "0000 — Initial Research Package (Blocked)"
 status: "blocked"
 project: "M&S Painting V2"
 type: "research"
-source: "M7S RESEARCH BLOCK.docx"
+source: "M&S RESEARCH BLOCK.docx"
 ---
 
 # Request Header

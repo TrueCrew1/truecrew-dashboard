@@ -11,7 +11,7 @@ type: "hub"
 M&S Painting V2 (customer app context in True Crew; customer-app code lives in `TrueCrew1/ms-painting`, not this dashboard repo).
 
 ## Current status
-**Filing checklist complete** for the planned OS/Obsidian structure. Filed: request log, V2 improvement plan, all three OS standards templates, competitive landscape & demand brief, and the blocked initial research package (from `M7S RESEARCH BLOCK.docx`). The package itself remains **status: blocked** — do not authorize implementation from it; first executable task is source acquisition/validation. Note: V2 plan and Research Lane template are now filed in this repo, which may satisfy part of the package’s exit criteria for a re-run — that re-run is not done in this filing PR.
+**Filing checklist complete** for the planned OS/Obsidian structure. Filed: request log, V2 improvement plan, all three OS standards templates, competitive landscape & demand brief, and the blocked initial research package (from `M&S RESEARCH BLOCK.docx`). The package itself remains **status: blocked** — do not authorize implementation from it; first executable task is source acquisition/validation. Note: V2 plan and Research Lane template are now filed in this repo, which may satisfy part of the package’s exit criteria for a re-run — that re-run is not done in this filing PR.
 
 ## Primary source documents
 - [[2026-07-23 - V2 Improvement Plan]] — **STATUS: FILED** (repo: `docs/ms-painting-v2/improvement-plan-v2.md`; source: M&S Painting Platform Improvement Plan)
@@ -33,7 +33,7 @@ Related True Crew docs (related context, not substitutes for project packages):
 Other M&S research request IDs exist in adapter backlog (`src/lib/research/adapterRequests.ts`) but are separate from this OS request log.
 
 ## Research artifacts
-- [[0000 - Initial Research Package (Blocked)]] — **STATUS: FILED (blocked)** (repo: `research/ms-painting-v2/0000-initial-research-package-blocked.md`; source: `M7S RESEARCH BLOCK.docx`)
+- [[0000 - Initial Research Package (Blocked)]] — **STATUS: FILED (blocked)** (repo: `research/ms-painting-v2/0000-initial-research-package-blocked.md`; source: `M&S RESEARCH BLOCK.docx`)
 
 Related provisional findings already in knowledge (not complete packages):
 - `knowledge/findings/m-and-s/painter-saas-market-scan.md`
@@ -50,7 +50,7 @@ Related provisional findings already in knowledge (not complete packages):
 ## Missing items
 - [x] Full routing JSON for `req-ms-painting-v2-research-001` — filed at `/os/requests/req-ms-painting-v2-research-001.json`
 - [x] Full V2 improvement plan content — filed at `docs/ms-painting-v2/improvement-plan-v2.md`
-- [x] Full blocked initial research package markdown — filed from `M7S RESEARCH BLOCK.docx`
+- [x] Full blocked initial research package markdown — filed from `M&S RESEARCH BLOCK.docx`
 - [x] Research Lane Standard Template body — filed at `os/standards/research_lane_standard_template.md`
 - [x] Research Package Obsidian Template body — filed at `os/standards/research_package_obsidian_template.md`
 - [x] Founder Decision Summary Template body — filed at `os/standards/founder_decision_summary_template.md`
