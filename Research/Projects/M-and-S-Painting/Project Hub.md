@@ -11,13 +11,13 @@ type: "hub"
 M&S Painting V2 (customer app context in True Crew; customer-app code lives in `TrueCrew1/ms-painting`, not this dashboard repo).
 
 ## Current status
-**Filing structure active.** Filed: request log + V2 improvement plan. Still **MISSING**: blocked research package, three standards templates, competitive landscape & demand brief. Hub is usable for navigation; Research should not invent requirements beyond what the filed V2 plan states.
+**Filing structure active.** Filed: request log, V2 improvement plan, Research Lane Standard Template. Still **MISSING**: blocked research package, Research Package Obsidian Template, Founder Decision Summary Template, competitive landscape & demand brief. Hub is usable for navigation; Research should not invent requirements beyond what the filed V2 plan states.
 
 ## Primary source documents
 - [[2026-07-23 - V2 Improvement Plan]] — **STATUS: FILED** (repo: `docs/ms-painting-v2/improvement-plan-v2.md`; source: M&S Painting Platform Improvement Plan)
 
 ## Standards used
-- [[Research Lane Standard Template]] — **STATUS: MISSING** (`os/standards/research_lane_standard_template.md`)
+- [[Research Lane Standard Template]] — **STATUS: FILED** (`os/standards/research_lane_standard_template.md`)
 - [[Research Package Obsidian Template]] — **STATUS: MISSING** (`os/standards/research_package_obsidian_template.md`)
 - [[Founder Decision Summary Template]] — **STATUS: MISSING** (`os/standards/founder_decision_summary_template.md`)
 
@@ -51,7 +51,7 @@ Related provisional findings already in knowledge (not complete packages):
 - [x] Full routing JSON for `req-ms-painting-v2-research-001` — filed at `/os/requests/req-ms-painting-v2-research-001.json`
 - [x] Full V2 improvement plan content — filed at `docs/ms-painting-v2/improvement-plan-v2.md`
 - [ ] Full blocked initial research package markdown
-- [ ] Research Lane Standard Template body
+- [x] Research Lane Standard Template body — filed at `os/standards/research_lane_standard_template.md`
 - [ ] Research Package Obsidian Template body
 - [ ] Founder Decision Summary Template body
 - [ ] Competitive landscape and demand brief body
