@@ -396,3 +396,10 @@ playbooks. Full reasoning in the Obsidian Build Log entry of the same name.
   `docs/AGENT_WORKFLOW.md`, which already serve that purpose in this repo.
 - No dashboard UI or app code changed; no new VS Code extension was actually
   installed by this pass — governance/docs only.
+
+## 2026-07-24 — Agent readiness audit
+
+- 2026-07-24 — created — `projects/agent-readiness-july-2026.md` — dashboard/agent readiness audit: what blocks agents from starting real work (PR #208/#180 + research-runner/ops checklist). Source: repo Truth Map, AGENTS_BOARD, RESEARCH_RUNNER, open PRs #180/#208, operational readiness composition.
+- 2026-07-24 — updated — `MEMORY.md`, `index.md` — linked the new project page; projects count 3 → 4.
+- 2026-07-24 — updated — `projects/truecrew-dashboard.md` — open item pointing at agent readiness; related PRs #180/#208.
+- 2026-07-24 — updated — `projects/dashboard-audit-july-2026.md` — pointer that agent-start gaps live on the readiness page, not this UI-audit page.
