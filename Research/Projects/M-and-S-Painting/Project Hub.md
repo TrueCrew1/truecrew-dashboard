@@ -33,7 +33,7 @@ Related True Crew docs (related context, not substitutes for project packages):
 Other M&S research request IDs exist in adapter backlog (`src/lib/research/adapterRequests.ts`) but are separate from this OS request log.
 
 ## Research artifacts
-- [[0000 - Initial Research Package (Blocked)]] — **STATUS: MISSING** (repo: `research/ms-painting-v2/0000-initial-research-package-blocked.md`)
+- [[0000 - Initial Research Package (Blocked)]] — **STATUS: FILED (blocked)** (repo: `research/ms-painting-v2/0000-initial-research-package-blocked.md`; source: `M7S RESEARCH BLOCK.docx`)
 
 Related provisional findings already in knowledge (not complete packages):
 - `knowledge/findings/m-and-s/painter-saas-market-scan.md`
@@ -50,14 +50,15 @@ Related provisional findings already in knowledge (not complete packages):
 ## Missing items
 - [x] Full routing JSON for `req-ms-painting-v2-research-001` — filed at `/os/requests/req-ms-painting-v2-research-001.json`
 - [x] Full V2 improvement plan content — filed at `docs/ms-painting-v2/improvement-plan-v2.md`
-- [ ] Full blocked initial research package markdown
+- [x] Full blocked initial research package markdown — filed from `M7S RESEARCH BLOCK.docx`
 - [x] Research Lane Standard Template body — filed at `os/standards/research_lane_standard_template.md`
 - [x] Research Package Obsidian Template body — filed at `os/standards/research_package_obsidian_template.md`
 - [x] Founder Decision Summary Template body — filed at `os/standards/founder_decision_summary_template.md`
 - [x] Competitive landscape and demand brief body — filed at `research/ms-painting-v2/market/competition-and-demand.md`
 
 ## Next recommended filing step
-1. Paste the **blocked research package** (from `# Request Header` through `### Approval Required`) into `research/ms-painting-v2/0000-initial-research-package-blocked.md` and Obsidian mirror.
+1. After source-access review: re-run Research against the now-filed V2 plan + Research Lane template + current-state repo evidence (do not invent).
+2. When a builder-ready package exists: copy [[Research Package Obsidian Template]] into a project package note and copy [[Founder Decision Summary Template]] into `Decisions/` (keep decision **Blocked** until evidence supports a choice).
 
 ## Repo ↔ Obsidian map
 | Concept | Repo path | Obsidian note |
